@@ -13,6 +13,10 @@ const session = require('express-session');
 const transporter = require('./middleware/emailConfig'); // Import the transporter from middleware
 const MongoStore = require('connect-mongo');
 
+
+const flash = require('connect-flash');
+
+
 // Connect to MongoDB
 mongo
   .connect(db.url)
@@ -28,6 +32,22 @@ const profileRouter = require('./routes/profile');
 const homeRouter = require('./routes/home');
 
 const app = express();
+
+
+app.use(session({
+  secret: 'your_secret_key',
+  resave: false,
+  saveUninitialized: true
+}));
+
+app.use(flash());
+
+// Middleware pour rendre flash disponible dans les vues
+app.use((req, res, next) => {
+  res.locals.successMessage = req.flash('success');
+  res.locals.errorMessage = req.flash('error');
+  next();
+});
 
 // View engine setup
 app.set('views', path.join(__dirname, 'views'));
