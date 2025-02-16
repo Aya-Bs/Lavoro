@@ -22,6 +22,13 @@ exports.validatePassword = (password) => {
     }
     return null; // No error
   };
+<<<<<<< HEAD
+=======
+
+
+
+
+>>>>>>> 8f75611c7520dcc56ddcbd67b874a45bafac7fc7
   
 
 

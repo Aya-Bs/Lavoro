@@ -1,4 +1,8 @@
 require('dotenv').config();
+<<<<<<< HEAD
+=======
+
+>>>>>>> 8f75611c7520dcc56ddcbd67b874a45bafac7fc7
 const createError = require('http-errors');
 const express = require('express');
 const path = require('path');
@@ -11,8 +15,16 @@ const db = require('./config/dbConnection.json');
 const session = require('express-session');
 const transporter = require('./middleware/emailConfig'); // Import the transporter from middleware
 const MongoStore = require('connect-mongo');
+<<<<<<< HEAD
 const authRouter = require ('./routes/authRouter.js');
 const cors = require('cors');
+=======
+
+
+const flash = require('connect-flash');
+
+
+>>>>>>> 8f75611c7520dcc56ddcbd67b874a45bafac7fc7
 // Connect to MongoDB
 mongo
   .connect(db.url)
@@ -24,14 +36,38 @@ mongo
   });
 
 const usersRouter = require('./routes/users');
+<<<<<<< HEAD
+=======
+const profileRouter = require('./routes/profile');
+>>>>>>> 8f75611c7520dcc56ddcbd67b874a45bafac7fc7
 const homeRouter = require('./routes/home');
 
 const app = express();
 
+<<<<<<< HEAD
+=======
+
+app.use(session({
+  secret: 'your_secret_key',
+  resave: false,
+  saveUninitialized: true
+}));
+
+app.use(flash());
+
+// Middleware pour rendre flash disponible dans les vues
+app.use((req, res, next) => {
+  res.locals.successMessage = req.flash('success');
+  res.locals.errorMessage = req.flash('error');
+  next();
+});
+
+>>>>>>> 8f75611c7520dcc56ddcbd67b874a45bafac7fc7
 // View engine setup
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'twig');
 
+<<<<<<< HEAD
 
 
 
@@ -41,6 +77,8 @@ app.use(cors({
   methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
   credentials: true
 }));
+=======
+>>>>>>> 8f75611c7520dcc56ddcbd67b874a45bafac7fc7
 // Middleware
 app.use(logger('dev'));
 app.use(express.json());
@@ -69,6 +107,7 @@ app.use(
 
 // Routes
 app.use('/users', usersRouter);
+<<<<<<< HEAD
 app.use('/', homeRouter);
 app.use('/auth',authRouter);
 
@@ -103,14 +142,41 @@ app.get('/home', (req, res) => {
 //       res.status(500).send('Error sending test email.');
 //     }
 //   });
+=======
+app.use('/profiles', profileRouter);
+app.use('/', homeRouter);
+>>>>>>> 8f75611c7520dcc56ddcbd67b874a45bafac7fc7
 
 
 
 
+<<<<<<< HEAD
 // Default route
 app.get('/', (req, res) => {
   res.send('signin');
 });
+=======
+// // Middleware to redirect authenticated users away from signin/signup pages
+// function redirectIfAuthenticated(req, res, next) {
+//   if (req.session.user) {
+//     console.log('User already signed in. Redirecting to home.');
+//     return res.redirect('/home'); // Redirect to home if user is already authenticated
+//   }
+//   next(); // Continue to signin/signup if not authenticated
+// }
+
+// // Apply the middleware to the signin and signup routes
+// app.get('/users/signin', redirectIfAuthenticated, (req, res) => {
+//   res.render('signin');
+// });
+
+// app.get('/users/signup', redirectIfAuthenticated, (req, res) => {
+//   res.render('signup');
+// });
+
+
+
+>>>>>>> 8f75611c7520dcc56ddcbd67b874a45bafac7fc7
 
 // Error handling
 app.use((req, res, next) => {
@@ -125,8 +191,11 @@ app.use((err, req, res, next) => {
   res.render('error');
 });
 
+<<<<<<< HEAD
 
 
+=======
+>>>>>>> 8f75611c7520dcc56ddcbd67b874a45bafac7fc7
 // Create server
 const server = http.createServer(app);
 
