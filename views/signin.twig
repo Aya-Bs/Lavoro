@@ -7,6 +7,17 @@
 </head>
 <body>
     <h1>Sign In</h1>
+{% if successMessage %}
+    <script>
+        alert("{{ successMessage }}");
+    </script>
+{% endif %}
+
+{% if errorMessage %}
+    <script>
+        alert("{{ errorMessage }}");
+    </script>
+{% endif %}
 
     {% if error %}
     <p style="color: red;">{{ error }}</p>
@@ -31,9 +42,11 @@
 <form id="forgotPasswordForm" action="/users/request-reset" method="POST">
     <input type="hidden" name="email" id="hiddenEmail">
     <button type="button" onclick="sendForgotPassword()">Mot de passe oublié ?</button>
-</form>
 
+</form>
+  <p>Don't have an account? <a href="/users/signup">Sign Up</a></p>
 <script>
+
     function sendForgotPassword() {
         // Récupérer l'email du champ principal
         const email = document.getElementById('email').value;
@@ -42,4 +55,5 @@
         // Soumettre le formulaire caché
         document.getElementById('forgotPasswordForm').submit();
     }
+
 </script>

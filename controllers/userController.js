@@ -218,16 +218,17 @@ exports.verifyEmail = async (req, res) => {
   };
 
   //reset password
-
-//reset password
-exports.resetPassword = async (req, res) => {
-  const { token } = req.query; // Récupère le token depuis l'URL
-  const { newPassword, confirmPassword } = req.body;
+  exports.resetPassword = async (req, res) => {
+    const token = req.query.token || req.body.token; 
+  const {  newPassword, confirmPassword } = req.body;
 
   try {
-    // Vérifier si l'utilisateur avec ce token existe et si le token n'est pas expiré
+    if (!token) {
+      return res.render('resetPassword.twig', { error: 'Token manquant.' ,token });
+    }
+
     const user = await User.findOne({
-      resetPasswordToken: token, 
+      resetPasswordToken: token,
       resetPasswordExpires: { $gt: Date.now() }
     });
 
@@ -235,12 +236,17 @@ exports.resetPassword = async (req, res) => {
       return res.render('resetPassword.twig', { error: 'Lien expiré ou invalide.' });
     }
 
-    // Vérifie que les mots de passe correspondent
     if (newPassword !== confirmPassword) {
       return res.render('resetPassword.twig', { error: 'Les mots de passe ne correspondent pas.' });
     }
 
-    // Hash le nouveau mot de passe et met à jour l'utilisateur
+    // Validation du mot de passe
+    const passwordError = validatePassword(newPassword);
+    if (passwordError) {
+      return res.render('resetPassword.twig', { error: passwordError });
+    }
+
+    // Mettre à jour le mot de passe
     user.password_hash = await bcrypt.hash(newPassword, 10);
     user.resetPasswordToken = null;
     user.resetPasswordExpires = null;
@@ -253,33 +259,30 @@ exports.resetPassword = async (req, res) => {
   }
 };
 
-
-
 exports.forgotPassword = async (req, res) => {
   const { email } = req.body;
   try {
-    const user = await User.findOne({ email });
-    if (!user) {
-      return res.status(404).json({ message: 'Utilisateur non trouvé' });
-    }
+      const user = await User.findOne({ email });
+      if (!user) {
+          req.flash('error', 'Utilisateur non trouvé');
+          return res.redirect('/users/signin');
+      }
 
-    // Générer un token
-    const token = crypto.randomBytes(32).toString('hex');
-    user.resetPasswordToken = token;
-    user.resetPasswordExpires = Date.now() + 3600000; // Expire dans 1 heure
-    await user.save();
+      // Générer un token
+      const token = crypto.randomBytes(32).toString('hex');
+      user.resetPasswordToken = token;
+      user.resetPasswordExpires = Date.now() + 3600000;
+      await user.save();
 
-    // Envoi de l'email
-    const resetLink = `http://localhost:3000/users/resetpassword?token=${token}`;
-    await sendEmail(
-      user.email,
-      'Réinitialisation de mot de passe',
-      `Cliquez sur ce lien pour réinitialiser votre mot de passe : ${resetLink}`
-    );
+      // Envoi de l'email
+      const resetLink = `http://localhost:3000/users/resetpassword?token=${token}`;
+      await sendEmail(user.email, 'Réinitialisation de mot de passe', `Cliquez sur ce lien pour réinitialiser votre mot de passe : ${resetLink}`);
 
-    res.status(200).json({ message: 'E-mail de réinitialisation envoyé' });
+      req.flash('success', 'E-mail de réinitialisation envoyé');
+      res.redirect('/users/signin');
   } catch (error) {
-    console.error('Erreur:', error);
-    res.status(500).json({ message: "Erreur lors de l'envoi de l'email" });
+      console.error('Erreur:', error);
+      req.flash('error', "Erreur lors de l'envoi de l'email");
+      res.redirect('/users/signin');
   }
 };
