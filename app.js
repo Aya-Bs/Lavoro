@@ -10,7 +10,6 @@ const http = require('http');
 const bodyparser = require('body-parser');
 const db = require('./config/dbConnection.json');
 const session = require('express-session');
-const transporter = require('./middleware/emailConfig'); // Import the transporter from middleware
 const MongoStore = require('connect-mongo');
 
 
@@ -34,20 +33,15 @@ const homeRouter = require('./routes/home');
 const app = express();
 
 
-app.use(session({
-  secret: 'your_secret_key',
-  resave: false,
-  saveUninitialized: true
-}));
-
 app.use(flash());
 
-// Middleware pour rendre flash disponible dans les vues
-app.use((req, res, next) => {
-  res.locals.successMessage = req.flash('success');
-  res.locals.errorMessage = req.flash('error');
-  next();
-});
+
+
+// app.use((req, res, next) => {
+//   res.locals.successMessage = req.flash('success');
+//   res.locals.errorMessage = req.flash('error');
+//   next();
+// });
 
 // View engine setup
 app.set('views', path.join(__dirname, 'views'));
@@ -83,28 +77,6 @@ app.use(
 app.use('/users', usersRouter);
 app.use('/profiles', profileRouter);
 app.use('/', homeRouter);
-
-
-
-
-// // Middleware to redirect authenticated users away from signin/signup pages
-// function redirectIfAuthenticated(req, res, next) {
-//   if (req.session.user) {
-//     console.log('User already signed in. Redirecting to home.');
-//     return res.redirect('/home'); // Redirect to home if user is already authenticated
-//   }
-//   next(); // Continue to signin/signup if not authenticated
-// }
-
-// // Apply the middleware to the signin and signup routes
-// app.get('/users/signin', redirectIfAuthenticated, (req, res) => {
-//   res.render('signin');
-// });
-
-// app.get('/users/signup', redirectIfAuthenticated, (req, res) => {
-//   res.render('signup');
-// });
-
 
 
 
