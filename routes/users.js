@@ -23,6 +23,19 @@ router.get('/signin', (req, res) => {
 
   router.get('/verify-email', userController.verifyEmail);
 
+  router.post('/request-reset', userController.forgotPassword);
 
+  router.get('/resetpassword', (req, res) => {
+    const { token } = req.query;
+    
+    if (!token) {
+      return res.status(400).json({ message: 'Token manquant.' });
+    }
+  
+    res.render('resetPassword.twig', { token });
+  });
+  
+  
+  router.post('/resetpassword', userController.resetPassword);
 
 module.exports = router;

@@ -218,3 +218,74 @@ exports.verifyEmail = async (req, res) => {
       res.status(500).render('signin', { error: 'An error occurred while verifying your email. Please try again.' });
     }
   };
+  
+
+  //reset password
+  exports.resetPassword = async (req, res) => {
+    const token = req.query.token || req.body.token; 
+  const {  newPassword, confirmPassword } = req.body;
+
+  try {
+    if (!token) {
+      return res.render('resetPassword.twig', { error: 'Token manquant.' ,token });
+    }
+
+    const user = await User.findOne({
+      resetPasswordToken: token,
+      resetPasswordExpires: { $gt: Date.now() }
+    });
+
+    if (!user) {
+      return res.render('resetPassword.twig', { error: 'Lien expiré ou invalide.' });
+    }
+
+    if (newPassword !== confirmPassword) {
+      return res.render('resetPassword.twig', { error: 'Les mots de passe ne correspondent pas.' });
+    }
+
+    // Validation du mot de passe
+    const passwordError = validatePassword(newPassword);
+    if (passwordError) {
+      return res.render('resetPassword.twig', { error: passwordError });
+    }
+
+    // Mettre à jour le mot de passe
+    user.password_hash = await bcrypt.hash(newPassword, 10);
+    user.resetPasswordToken = null;
+    user.resetPasswordExpires = null;
+    await user.save();
+
+    res.render('signin.twig', { message: 'Mot de passe modifié avec succès !' });
+  } catch (error) {
+    console.error('Erreur:', error);
+    res.status(500).render('resetPassword.twig', { error: 'Erreur lors de la réinitialisation du mot de passe.' });
+  }
+};
+
+exports.forgotPassword = async (req, res) => {
+  const { email } = req.body;
+  try {
+      const user = await User.findOne({ email });
+      if (!user) {
+          req.flash('error', 'Utilisateur non trouvé');
+          return res.redirect('/users/signin');
+      }
+
+      // Générer un token
+      const token = crypto.randomBytes(32).toString('hex');
+      user.resetPasswordToken = token;
+      user.resetPasswordExpires = Date.now() + 3600000;
+      await user.save();
+
+      // Envoi de l'email
+      const resetLink = `http://localhost:3000/users/resetpassword?token=${token}`;
+      await sendEmail(user.email, 'Réinitialisation de mot de passe', `Cliquez sur ce lien pour réinitialiser votre mot de passe : ${resetLink}`);
+
+      req.flash('success', 'E-mail de réinitialisation envoyé');
+      res.redirect('/users/signin');
+  } catch (error) {
+      console.error('Erreur:', error);
+      req.flash('error', "Erreur lors de l'envoi de l'email");
+      res.redirect('/users/signin');
+  }
+};
