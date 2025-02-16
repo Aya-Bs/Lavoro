@@ -14,10 +14,6 @@
             color: blue;
             margin-bottom: 5px;
         }
-        .valid { color: green; }
-        .invalid { color: red; }
-        .validation-icon { margin-left: 10px; }
-        .error-message { color: red; font-size: 0.9em; }
     </style>
 </head>
 <body>
@@ -48,7 +44,6 @@
                 <!-- Suggested passwords will be dynamically added here -->
             </ul>
         </div>
-
         <div>
             <p>Password must meet the following requirements:</p>
             <ul>
@@ -61,13 +56,8 @@
         </div>
 
         <!-- Role -->
-
         <label for="role">Role:</label>
                 <input type="number" id="role" name="role"><br>
-
-        <!--<label for="role">Role:</label>
-                <input type="number" id="role" name="role"><br>
-        -->
 
 
         <!-- Phone Number -->
@@ -86,7 +76,6 @@
     </form>
 
     <script>
-
          function generateRandomPassword() {
             const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*";
             let password = "";
@@ -121,7 +110,7 @@
 
         // Display suggested passwords when the page loads
         window.onload = displaySuggestedPasswords;
-
+        
     function showPopup() {
       alert('Please check your email for a verification link.');
     }
