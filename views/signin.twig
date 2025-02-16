@@ -8,22 +8,38 @@
 <body>
     <h1>Sign In</h1>
 
+    {% if error %}
+    <p style="color: red;">{{ error }}</p>
+    {% endif %}
+
     {% if message %}
     <p style="color: green;">{{ message }}</p>
     {% endif %}
 
-    <form action="/users/signin" method="POST">
-        <!-- Email -->
-        <label for="email">Email:</label>
+    <!-- Formulaire de connexion -->
+<form action="/users/signin" method="POST">
+    <label for="email">Email:</label>
     <input type="email" id="email" name="email" value="{{ email }}" required><br>
-        <label for="password">Password:</label>
-        <input type="password" id="password" name="password" required><br>
 
-        <!-- Submit Button -->
-        <button type="submit">Sign In</button>
-    </form>
+    <label for="password">Mot de passe:</label>
+    <input type="password" id="password" name="password" required><br>
 
-    <!-- Link to Signup Page -->
-    <p>Don't have an account? <a href="/users/signup">Sign Up</a></p>
-</body>
-</html>
+    <button type="submit">Se connecter</button>
+</form>
+
+<!-- Lien "Mot de passe oublié" -->
+<form id="forgotPasswordForm" action="/users/request-reset" method="POST">
+    <input type="hidden" name="email" id="hiddenEmail">
+    <button type="button" onclick="sendForgotPassword()">Mot de passe oublié ?</button>
+</form>
+
+<script>
+    function sendForgotPassword() {
+        // Récupérer l'email du champ principal
+        const email = document.getElementById('email').value;
+        document.getElementById('hiddenEmail').value = email;
+
+        // Soumettre le formulaire caché
+        document.getElementById('forgotPasswordForm').submit();
+    }
+</script>
