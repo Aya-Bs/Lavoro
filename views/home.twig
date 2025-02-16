@@ -26,6 +26,12 @@
     <p>Hello, {{ user.firstName }} {{ user.lastName }}!</p>
     <p>You have successfully signed in.</p>
 
+
+    <!-- Button to redirect to profile page -->
+    <a href="/profiles/profile">
+        <button type="button">View Profile</button>
+    </a>
+
     <!-- Logout Form -->
     <form action="/users/logout" method="POST">
         <button type="submit">Logout</button>

@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Update Profile</title>
+</head>
+<body>
+    <h1>Update Profile</h1>
+
+    <!-- Formulaire de mise à jour du profil -->
+    <form action="/profiles/update" method="post" enctype="multipart/form-data">
+        <label>First Name:</label>
+        <input type="text" name="firstName" value="{{ user.firstName }}" required>
+        
+        <label>Last Name:</label>
+        <input type="text" name="lastName" value="{{ user.lastName }}" required>
+
+        <!-- Champ pour télécharger une image -->
+        <label>Profile Image:</label>
+        
+        <input type="file" name="image">
+
+        <button type="submit">Update</button>
+    </form>
+
+    <a href="/profiles/profile">
+        <button type="button">Cancel</button>
+    </a>
+</body>
+</html>
