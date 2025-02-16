@@ -1,40 +1,124 @@
-var createError = require('http-errors');
-var express = require('express');
-var path = require('path');
-var cookieParser = require('cookie-parser');
-var logger = require('morgan');
-const db = require('./src/config/dbConnection.json');
+require('dotenv').config();
+
+const createError = require('http-errors');
+const express = require('express');
+const path = require('path');
+const cookieParser = require('cookie-parser');
+const logger = require('morgan');
 const mongo = require('mongoose');
 const http = require('http');
-mongo.connect(db.url).then(()=> {
-  console.log('Connected to the database');
-}
-).catch((err) => {
-  console.log('Cannot connect to the database', err);
-})
+const bodyparser = require('body-parser');
+const db = require('./config/dbConnection.json');
+const session = require('express-session');
+const transporter = require('./middleware/emailConfig'); // Import the transporter from middleware
+const MongoStore = require('connect-mongo');
 
+// Connect to MongoDB
+mongo
+  .connect(db.url)
+  .then(() => {
+    console.log('Connected to MongoDB');
+  })
+  .catch((err) => {
+    console.log(err);
+  });
 
+const usersRouter = require('./routes/users');
+const homeRouter = require('./routes/home');
 
 const app = express();
 
-// view engine setup
+// View engine setup
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'twig');
 
+// Middleware
 app.use(logger('dev'));
 app.use(express.json());
-app.use(express.urlencoded({ extended: false }));
+app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
+// Session configuration
+app.use(
+  session({
+    secret: process.env.SESSION_SECRET, // Use a secure secret key
+    resave: false,
+    saveUninitialized: true,
+    store: MongoStore.create({
+      mongoUrl: db.url, // MongoDB connection URL
+      ttl: 24 * 60 * 60, // Session TTL (1 day)
+    }),
+    cookie: {
+      secure: false, // Set to true if using HTTPS
+      httpOnly: true, // Prevent client-side JavaScript from accessing the cookie
+      maxAge: 1000 * 60 * 60 * 24, // 1 day
+      sameSite: 'lax', // Prevent CSRF attacks
+    },
+  })
+);
 
+// Routes
+app.use('/users', usersRouter);
+app.use('/', homeRouter);
 
-app.get('/' , (req, res) => {
-  res.send('Hello World');
+// Home route
+app.get('/home', (req, res) => {
+  console.log('Session:', req.session); // Log the session data
+
+  // Check if the user is authenticated
+  if (!req.session.user) {
+    console.log('User not authenticated. Redirecting to sign-in page.');
+    return res.redirect('/users/signin');
+  }
+
+  // Render the home page for authenticated users
+  res.render('home', { user: req.session.user });
 });
-const server = http.createServer(app,console.log('Server is running on port 3001'));
+
+// Test email route
+// app.get('/test-email', async (req, res) => {
+//     try {
+//       const mailOptions = {
+//         to: 'test@example.com', // Optional: Use a placeholder email
+//         from: `Your App Name <${process.env.EMAIL_USER}>`, // Sender name and email
+//         subject: 'Test Email',
+//         text: 'This is a test email from your application.',
+//       };
+  
+//       await transporter.sendMail(mailOptions);
+//       res.send('Test email sent successfully! Check your Mailtrap inbox.');
+//     } catch (error) {
+//       console.error('Error sending test email:', error);
+//       res.status(500).send('Error sending test email.');
+//     }
+//   });
 
 
-server.listen(3009);
 
-module.exports = app;
+
+// Default route
+app.get('/', (req, res) => {
+  res.send('signin');
+});
+
+// Error handling
+app.use((req, res, next) => {
+  next(createError(404));
+});
+
+app.use((err, req, res, next) => {
+  res.locals.message = err.message;
+  res.locals.error = req.app.get('env') === 'development' ? err : {};
+
+  res.status(err.status || 500);
+  res.render('error');
+});
+
+// Create server
+const server = http.createServer(app);
+
+// Start server
+server.listen(3000, () => {
+  console.log('Server is running on port 3000');
+});
