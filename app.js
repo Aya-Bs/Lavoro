@@ -62,45 +62,28 @@ app.use(
 app.use('/users', usersRouter);
 app.use('/', homeRouter);
 
-// Home route
-app.get('/home', (req, res) => {
-  console.log('Session:', req.session); // Log the session data
 
-  // Check if the user is authenticated
-  if (!req.session.user) {
-    console.log('User not authenticated. Redirecting to sign-in page.');
-    return res.redirect('/users/signin');
-  }
 
-  // Render the home page for authenticated users
-  res.render('home', { user: req.session.user });
-});
+// // Middleware to redirect authenticated users away from signin/signup pages
+// function redirectIfAuthenticated(req, res, next) {
+//   if (req.session.user) {
+//     console.log('User already signed in. Redirecting to home.');
+//     return res.redirect('/home'); // Redirect to home if user is already authenticated
+//   }
+//   next(); // Continue to signin/signup if not authenticated
+// }
 
-// Test email route
-// app.get('/test-email', async (req, res) => {
-//     try {
-//       const mailOptions = {
-//         to: 'test@example.com', // Optional: Use a placeholder email
-//         from: `Your App Name <${process.env.EMAIL_USER}>`, // Sender name and email
-//         subject: 'Test Email',
-//         text: 'This is a test email from your application.',
-//       };
-  
-//       await transporter.sendMail(mailOptions);
-//       res.send('Test email sent successfully! Check your Mailtrap inbox.');
-//     } catch (error) {
-//       console.error('Error sending test email:', error);
-//       res.status(500).send('Error sending test email.');
-//     }
-//   });
+// // Apply the middleware to the signin and signup routes
+// app.get('/users/signin', redirectIfAuthenticated, (req, res) => {
+//   res.render('signin');
+// });
+
+// app.get('/users/signup', redirectIfAuthenticated, (req, res) => {
+//   res.render('signup');
+// });
 
 
 
-
-// Default route
-app.get('/', (req, res) => {
-  res.send('signin');
-});
 
 // Error handling
 app.use((req, res, next) => {
