@@ -24,6 +24,7 @@ mongo
   });
 
 const usersRouter = require('./routes/users');
+const profileRouter = require('./routes/profile');
 const homeRouter = require('./routes/home');
 const rolesRouter = require('./routes/roles');
 const adminRouter = require('./routes/admin');
@@ -63,6 +64,7 @@ app.use(
 
 // Routes
 app.use('/users', usersRouter);
+app.use('/profiles', profileRouter);
 app.use('/', homeRouter);
 app.use('/roles', rolesRouter);
 app.use('/admin', adminRouter);
