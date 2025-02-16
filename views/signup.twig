@@ -5,6 +5,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sign Up</title>
     <style>
+.valid { color: green; }
+        .invalid { color: red; }
+        .validation-icon { margin-left: 10px; }
+        .error-message { color: red; font-size: 0.9em; }
+        #password-suggestions li {
+            cursor: pointer;
+            color: blue;
+            margin-bottom: 5px;
+        }
         .valid { color: green; }
         .invalid { color: red; }
         .validation-icon { margin-left: 10px; }
@@ -33,6 +42,13 @@
         <!-- Password -->
         <label for="password">Password:</label>
         <input type="password" id="password" name="password" required><br>
+        <div id="suggested-passwords">
+            <p>Suggested Passwords:</p>
+            <ul id="password-suggestions">
+                <!-- Suggested passwords will be dynamically added here -->
+            </ul>
+        </div>
+
         <div>
             <p>Password must meet the following requirements:</p>
             <ul>
@@ -45,9 +61,14 @@
         </div>
 
         <!-- Role -->
+
+        <label for="role">Role:</label>
+                <input type="number" id="role" name="role"><br>
+
         <!--<label for="role">Role:</label>
                 <input type="number" id="role" name="role"><br>
         -->
+
 
         <!-- Phone Number -->
         <label for="phone_number">Phone Number:</label>
@@ -65,7 +86,42 @@
     </form>
 
     <script>
-    
+
+         function generateRandomPassword() {
+            const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*";
+            let password = "";
+            for (let i = 0; i < 12; i++) {
+                password += chars.charAt(Math.floor(Math.random() * chars.length));
+            }
+            return password;
+        }
+
+        // Function to display suggested passwords
+        function displaySuggestedPasswords() {
+            const passwordSuggestions = document.getElementById('password-suggestions');
+            passwordSuggestions.innerHTML = ''; // Clear previous suggestions
+
+            // Generate 3 random passwords
+            for (let i = 0; i < 3; i++) {
+                const password = generateRandomPassword();
+                const li = document.createElement('li');
+                li.textContent = password;
+                li.style.cursor = 'pointer';
+                li.style.color = 'blue';
+                li.style.marginBottom = '5px';
+
+                // Add click event to populate the password input
+                li.addEventListener('click', () => {
+                    document.getElementById('password').value = password;
+                });
+
+                passwordSuggestions.appendChild(li);
+            }
+        }
+
+        // Display suggested passwords when the page loads
+        window.onload = displaySuggestedPasswords;
+
     function showPopup() {
       alert('Please check your email for a verification link.');
     }

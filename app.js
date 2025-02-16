@@ -64,6 +64,30 @@ app.use(
 // Routes
 app.use('/users', usersRouter);
 app.use('/', homeRouter);
+
+
+
+
+// // Middleware to redirect authenticated users away from signin/signup pages
+// function redirectIfAuthenticated(req, res, next) {
+//   if (req.session.user) {
+//     console.log('User already signed in. Redirecting to home.');
+//     return res.redirect('/home'); // Redirect to home if user is already authenticated
+//   }
+//   next(); // Continue to signin/signup if not authenticated
+// }
+
+// // Apply the middleware to the signin and signup routes
+// app.get('/users/signin', redirectIfAuthenticated, (req, res) => {
+//   res.render('signin');
+// });
+
+// app.get('/users/signup', redirectIfAuthenticated, (req, res) => {
+//   res.render('signup');
+// });
+
+
+
 app.use('/roles', rolesRouter);
 app.use('/admin', adminRouter);
 
@@ -117,7 +141,8 @@ app.use((err, req, res, next) => {
   res.locals.error = req.app.get('env') === 'development' ? err : {};
 
   res.status(err.status || 500);
-  //res.render('error');
+  res.render('error');
+
 });
 
 // Create server

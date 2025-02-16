@@ -1,6 +1,7 @@
 
 const express = require('express');
 const router = express.Router();
+
 const User = require('../models/user');  
 const Role = require('../models/role');  
 
@@ -14,6 +15,7 @@ router.get('/home', (req, res) => {
   // Render the home page for authenticated users
   res.render('home', { user: req.session.user });
 });
+
 */
 
 
