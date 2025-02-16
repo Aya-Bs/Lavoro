@@ -23,9 +23,6 @@ exports.validatePassword = (password) => {
     return null; // No error
   };
 
-
-
-
   
 
 

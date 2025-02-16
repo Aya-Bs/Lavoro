@@ -5,9 +5,16 @@ const upload = require('../middleware/upload'); // Import the upload middleware
 
 router.post('/signup', upload.single('image'), userController.signup);
 
+const setDefaultRole = require('../middleware/setDefaultRole'); 
+
+
+// Signup route with file upload
+router.post('/signup',setDefaultRole, upload.single('image'), userController.signup);
+
 
 
 router.post('/signin', userController.signin);
+
 
   router.get('/check-email', userController.checkmail);
 

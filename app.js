@@ -25,6 +25,9 @@ mongo
 
 const usersRouter = require('./routes/users');
 const homeRouter = require('./routes/home');
+const rolesRouter = require('./routes/roles');
+const adminRouter = require('./routes/admin');
+
 
 const app = express();
 
@@ -64,6 +67,7 @@ app.use('/', homeRouter);
 
 
 
+
 // // Middleware to redirect authenticated users away from signin/signup pages
 // function redirectIfAuthenticated(req, res, next) {
 //   if (req.session.user) {
@@ -84,6 +88,48 @@ app.use('/', homeRouter);
 
 
 
+app.use('/roles', rolesRouter);
+app.use('/admin', adminRouter);
+
+// Home route
+app.get('/home', (req, res) => {
+  console.log('Session:', req.session); // Log the session data
+
+  // Check if the user is authenticated
+  if (!req.session.user) {
+    console.log('User not authenticated. Redirecting to sign-in page.');
+    return res.redirect('/users/signin');
+  }
+
+  // Render the home page for authenticated users
+  res.render('home', { user: req.session.user });
+});
+
+// Test email route
+// app.get('/test-email', async (req, res) => {
+//     try {
+//       const mailOptions = {
+//         to: 'test@example.com', // Optional: Use a placeholder email
+//         from: `Your App Name <${process.env.EMAIL_USER}>`, // Sender name and email
+//         subject: 'Test Email',
+//         text: 'This is a test email from your application.',
+//       };
+  
+//       await transporter.sendMail(mailOptions);
+//       res.send('Test email sent successfully! Check your Mailtrap inbox.');
+//     } catch (error) {
+//       console.error('Error sending test email:', error);
+//       res.status(500).send('Error sending test email.');
+//     }
+//   });
+
+
+
+
+// Default route
+app.get('/', (req, res) => {
+  res.send('signin');
+});
 
 // Error handling
 app.use((req, res, next) => {
@@ -96,6 +142,7 @@ app.use((err, req, res, next) => {
 
   res.status(err.status || 500);
   res.render('error');
+
 });
 
 // Create server
