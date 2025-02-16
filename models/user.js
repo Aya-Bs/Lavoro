@@ -10,7 +10,8 @@ const userSchema = new mongoose.Schema({
 
   password_hash: { type: String, required: true },
 
-  role: { type: Number , required: false },
+  //role: { type: Number , required: false },
+  role: { type: mongoose.Schema.Types.ObjectId, ref: 'role', default: null },
 
   image: { type: String },
 

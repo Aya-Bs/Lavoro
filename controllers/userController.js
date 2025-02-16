@@ -1,5 +1,7 @@
 
 const User = require('../models/user');
+const Role = require('../models/role');
+
 const bcrypt = require('bcrypt');
 const { createCanvas } = require('canvas');
 const fs = require('fs');
@@ -75,12 +77,19 @@ exports.signup = async (req, res) => {
       // Generate verification token
       const verificationToken = crypto.randomBytes(20).toString('hex');
   
+      let userRole;
+        if (role) {
+          userRole = await Role.findOne({ RoleName: role }); // Fetch role based on provided RoleName
+        } else {
+          userRole = await Role.findOne({ RoleName: 'Developer' }); // Default to 'Developer' role
+        }
+
       const user = new User({
         firstName,
         lastName,
         email,
         password_hash,
-        role,
+        role:userRole._id,
         phone_number,
         image: imagePath,
         verificationToken,
@@ -118,7 +127,8 @@ exports.signup = async (req, res) => {
       console.log('Sign-in attempt for email:', email); // Log the email
   
       // Find the user by email
-      const user = await User.findOne({ email });
+      //const user = await User.findOne({ email });
+      const user = await User.findOne({ email }).populate('role');
       if (!user) {
         console.log('User not found for email:', email); // Log if user is not found
         return res.status(400).render('signin', { error: 'User not found.' });
@@ -147,16 +157,19 @@ exports.signup = async (req, res) => {
       // Set the user session
       req.session.user = user;
       console.log('Session created for user:', user.email); // Log session creation
-  
       // Redirect to the home page
-      res.redirect('/home'); // Redirect to the home route
+      if (user.role.RoleName === 'Admin') {
+        //console.log('Redirecting to admin dashboard'); // Log admin redirection
+        res.redirect('/admin/dashboard'); // Redirect to admin dashboard if role is admin
+      } else {
+        //console.log('Redirecting to home'); // Log admin redirection
+        res.redirect('/home'); // Redirect to home for other roles
+      }
     } catch (error) {
       console.error('Error during sign-in:', error); // Log the error for debugging
       res.status(500).render('signin', { error: 'An error occurred during sign-in. Please try again.' });
     }
   };
-
-
 
 
 exports.checkmail =  async (req, res) => {

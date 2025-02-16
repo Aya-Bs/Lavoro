@@ -25,6 +25,9 @@ mongo
 
 const usersRouter = require('./routes/users');
 const homeRouter = require('./routes/home');
+const rolesRouter = require('./routes/roles');
+const adminRouter = require('./routes/admin');
+
 
 const app = express();
 
@@ -61,6 +64,8 @@ app.use(
 // Routes
 app.use('/users', usersRouter);
 app.use('/', homeRouter);
+app.use('/roles', rolesRouter);
+app.use('/admin', adminRouter);
 
 // Home route
 app.get('/home', (req, res) => {
@@ -112,7 +117,7 @@ app.use((err, req, res, next) => {
   res.locals.error = req.app.get('env') === 'development' ? err : {};
 
   res.status(err.status || 500);
-  res.render('error');
+  //res.render('error');
 });
 
 // Create server
