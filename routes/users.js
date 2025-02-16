@@ -18,13 +18,13 @@ const upload = require('../middleware/upload'); // Import the upload middleware
 
 
 
-//     router.get('/signin', userController.redirectIfAuthenticated, (req, res) => {
-//     res.render('signin');
-//   });
+    router.get('/signin', userController.redirectIfAuthenticated, (req, res) => {
+    res.render('signin');
+  });
   
-//   router.get('/signup', userController.redirectIfAuthenticated, (req, res) => {
-//     res.render('signup');
-//   });
+  router.get('/signup', userController.redirectIfAuthenticated, (req, res) => {
+    res.render('signup');
+  });
 
 
 router.post('/signup', upload.single('image'), userController.signup);

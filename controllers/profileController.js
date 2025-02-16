@@ -11,6 +11,15 @@ exports.updateProfile = async (req, res) => {
       imagePath = '/imagesUser/' + req.file.filename; // Chemin de la nouvelle image
     }
 
+    // Si une image est capturée avec la webcam
+    if (req.body.capturedImage) {
+      // Convertir l'image Base64 en fichier
+      const base64Data = req.body.capturedImage.replace(/^data:image\/png;base64,/, "");
+      const filename = `public/imagesUser/${Date.now()}-captured.png`;
+      require("fs").writeFileSync(filename, base64Data, 'base64');
+      imagePath = filename.replace("public", ""); // Stocker sans "public/"
+    }
+
     // Mettre à jour l'utilisateur dans la base de données
     const updatedUser = await User.findByIdAndUpdate(userId, {
       image: imagePath,           // Mise à jour de l'image (si nouvelle image téléchargée)

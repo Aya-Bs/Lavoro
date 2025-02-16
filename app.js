@@ -66,6 +66,7 @@ app.use('/', homeRouter);
 
 
 
+
 // // Middleware to redirect authenticated users away from signin/signup pages
 // function redirectIfAuthenticated(req, res, next) {
 //   if (req.session.user) {
