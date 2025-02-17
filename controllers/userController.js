@@ -6,8 +6,6 @@ const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
 const nodemailer = require('nodemailer');
-
-
 const { validatePassword , validateUserInput} = require('../middleware/validate'); // Import the validation function
 const transporter = require('../utils/emailConfig'); // Import the email transporter
 

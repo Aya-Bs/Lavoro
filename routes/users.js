@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const userController = require('../controllers/userController');
+const upload = require('../middleware/upload'); // Import the upload middleware
 const upload = require('../middleware/upload'); // Middleware pour upload d'image
 
 // Signup route with file upload
@@ -23,6 +24,9 @@ router.get('/signup', userController.redirectIfAuthenticated, (req, res) => {
   router.post('/logout', userController.logout);
 
   router.get('/verify-email', userController.verifyEmail);
+
+
+
 
 
 
