@@ -1,7 +1,6 @@
-<<<<<<< HEAD
+
 const { default: mongoose } = require('mongoose');
-=======
->>>>>>> 8f75611c7520dcc56ddcbd67b874a45bafac7fc7
+
 const mongo = require('mongoose');
 const Schema = mongo.Schema;
 
@@ -13,7 +12,7 @@ const OAuth = new Schema(
             unique: true,
             required: true,
           },
-<<<<<<< HEAD
+
          
           firstName: {
             type: String, required: true 
@@ -27,12 +26,11 @@ const OAuth = new Schema(
 
            },
           image: { 
-            type: String 
-=======
+            type: String ,
           user_id: {
             type: mongoose.Schema.Types.UUID,
             required: true,
->>>>>>> 8f75611c7520dcc56ddcbd67b874a45bafac7fc7
+
           },
           provider: {
             type: String,
@@ -47,14 +45,11 @@ const OAuth = new Schema(
             type: Date,
             default: Date.now,
           },  
-    }
-
-
-
+        }
+      }
 );
-<<<<<<< HEAD
 const UserModel= mongoose.model('social-logins', OAuth);
 module.exports = UserModel;
-=======
-module.exports = mongo.model('oAuth', OAuth);
->>>>>>> 8f75611c7520dcc56ddcbd67b874a45bafac7fc7
+
+
+
