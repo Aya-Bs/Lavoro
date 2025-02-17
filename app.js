@@ -35,6 +35,8 @@ const usersRouter = require('./routes/users');
 const profileRouter = require('./routes/profile');
 
 const homeRouter = require('./routes/home');
+const adminRouter = require('./routes/admin');
+
 
 const app = express();
 
@@ -101,6 +103,8 @@ app.use('/users', usersRouter);
 
 app.use('/', homeRouter);
 app.use('/auth',authRouter);
+app.use('/admin',adminRouter);
+
 
 // Home route
 app.get('/home', (req, res) => {
