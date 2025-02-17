@@ -7,8 +7,6 @@
 </head>
 <body>
     <h1>Sign In</h1>
-<<<<<<< HEAD
-=======
 {% if successMessage %}
     <script>
         alert("{{ successMessage }}");
@@ -24,29 +22,11 @@
     {% if error %}
     <p style="color: red;">{{ error }}</p>
     {% endif %}
->>>>>>> 8f75611c7520dcc56ddcbd67b874a45bafac7fc7
 
     {% if message %}
     <p style="color: green;">{{ message }}</p>
     {% endif %}
 
-<<<<<<< HEAD
-    <form action="/users/signin" method="POST">
-        <!-- Email -->
-        <label for="email">Email:</label>
-    <input type="email" id="email" name="email" value="{{ email }}" required><br>
-        <label for="password">Password:</label>
-        <input type="password" id="password" name="password" required><br>
-
-        <!-- Submit Button -->
-        <button type="submit">Sign In</button>
-    </form>
-
-    <!-- Link to Signup Page -->
-    <p>Don't have an account? <a href="/users/signup">Sign Up</a></p>
-</body>
-</html>
-=======
     <!-- Formulaire de connexion -->
 <form action="/users/signin" method="POST">
     <label for="email">Email:</label>
@@ -77,4 +57,3 @@
     }
 
 </script>
->>>>>>> 8f75611c7520dcc56ddcbd67b874a45bafac7fc7

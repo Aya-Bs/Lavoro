@@ -22,13 +22,7 @@ exports.validatePassword = (password) => {
     }
     return null; // No error
   };
-<<<<<<< HEAD
-=======
 
-
-
-
-<<<<<<< HEAD
   // Phone Number Validator
   exports.validatePhoneNumber = (phoneNumber) => {
     const minLength = 8; // Minimum length for a valid phone number
@@ -103,9 +97,7 @@ exports.validatePassword = (password) => {
 
 
 
-=======
->>>>>>> 8f75611c7520dcc56ddcbd67b874a45bafac7fc7
->>>>>>> lilia-jemai
+
   
 
 
