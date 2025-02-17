@@ -5,6 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sign Up</title>
     <style>
+<<<<<<< HEAD
+        .valid { color: green; }
+        .invalid { color: red; }
+        .validation-icon { margin-left: 10px; }
+        .error-message { color: red; font-size: 0.9em; }
+=======
 .valid { color: green; }
         .invalid { color: red; }
         .validation-icon { margin-left: 10px; }
@@ -14,6 +20,7 @@
             color: blue;
             margin-bottom: 5px;
         }
+>>>>>>> 8f75611c7520dcc56ddcbd67b874a45bafac7fc7
     </style>
 </head>
 <body>
@@ -38,12 +45,15 @@
         <!-- Password -->
         <label for="password">Password:</label>
         <input type="password" id="password" name="password" required><br>
+<<<<<<< HEAD
+=======
         <div id="suggested-passwords">
             <p>Suggested Passwords:</p>
             <ul id="password-suggestions">
                 <!-- Suggested passwords will be dynamically added here -->
             </ul>
         </div>
+>>>>>>> 8f75611c7520dcc56ddcbd67b874a45bafac7fc7
         <div>
             <p>Password must meet the following requirements:</p>
             <ul>
@@ -76,6 +86,9 @@
     </form>
 
     <script>
+<<<<<<< HEAD
+    
+=======
          function generateRandomPassword() {
             const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*";
             let password = "";
@@ -111,6 +124,7 @@
         // Display suggested passwords when the page loads
         window.onload = displaySuggestedPasswords;
         
+>>>>>>> 8f75611c7520dcc56ddcbd67b874a45bafac7fc7
     function showPopup() {
       alert('Please check your email for a verification link.');
     }

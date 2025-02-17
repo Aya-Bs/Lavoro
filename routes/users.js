@@ -1,7 +1,11 @@
 const express = require('express');
 const router = express.Router();
 const userController = require('../controllers/userController');
+<<<<<<< HEAD
+const upload = require('../middleware/upload'); // Import the upload middleware
+=======
 const upload = require('../middleware/upload'); // Middleware pour upload d'image
+>>>>>>> 8f75611c7520dcc56ddcbd67b874a45bafac7fc7
 
 // Signup route with file upload
 
@@ -24,12 +28,20 @@ router.get('/signup', userController.redirectIfAuthenticated, (req, res) => {
 
   router.get('/verify-email', userController.verifyEmail);
 
+<<<<<<< HEAD
 
 
 
 
   
 
+=======
+<<<<<<< HEAD
+
+
+module.exports = router;
+=======
+>>>>>>> lilia-jemai
   router.post('/request-reset', userController.forgotPassword);
 
   router.get('/resetpassword', (req, res) => {
@@ -46,3 +58,4 @@ router.get('/signup', userController.redirectIfAuthenticated, (req, res) => {
   router.post('/resetpassword', userController.resetPassword);
 
 module.exports = router;
+>>>>>>> 8f75611c7520dcc56ddcbd67b874a45bafac7fc7

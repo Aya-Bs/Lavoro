@@ -1,3 +1,6 @@
+
+const { default: mongoose } = require('mongoose');
+
 const mongo = require('mongoose');
 const Schema = mongo.Schema;
 
@@ -9,9 +12,25 @@ const OAuth = new Schema(
             unique: true,
             required: true,
           },
+
+         
+          firstName: {
+            type: String, required: true 
+          },
+          
+          lastName: {
+             type: String
+           },
+           email: { 
+            type: String, required: true, unique: true 
+
+           },
+          image: { 
+            type: String ,
           user_id: {
             type: mongoose.Schema.Types.UUID,
             required: true,
+
           },
           provider: {
             type: String,
@@ -26,9 +45,11 @@ const OAuth = new Schema(
             type: Date,
             default: Date.now,
           },  
-    }
-
-
-
+        }
+      }
 );
-module.exports = mongo.model('oAuth', OAuth);
+const UserModel= mongoose.model('social-logins', OAuth);
+module.exports = UserModel;
+
+
+
