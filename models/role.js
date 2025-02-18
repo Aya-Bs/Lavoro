@@ -3,8 +3,7 @@ const Schema = mongo.Schema;
 
 const Role = new Schema({
   RoleID: {
-    type: mongoose.Schema.Types.UUID,
-    default: () => new mongoose.Types.UUID(),
+    
 
     type: mongo.Schema.Types.UUID,
     default: () => new mongo.Types.UUID(),

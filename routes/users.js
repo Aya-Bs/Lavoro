@@ -1,11 +1,12 @@
 const express = require('express');
 const router = express.Router();
 const userController = require('../controllers/userController');
-const upload = require('../middleware/upload'); // Middleware pour upload d'image
+const upload = require('../middleware/upload'); // Import the upload middleware
+const setDefaultRole = require('../middleware/setDefaultRole'); 
 
 // Signup route with file upload
 
-router.post('/signup', upload.single('image'), userController.signup);
+router.post('/signup',setDefaultRole, upload.single('image'), userController.signup);
 
 router.post('/signin', userController.signin);
 
@@ -24,12 +25,6 @@ router.get('/signup', userController.redirectIfAuthenticated, (req, res) => {
 
   router.get('/verify-email', userController.verifyEmail);
 
-
-
-
-
-  
-
   router.post('/request-reset', userController.forgotPassword);
 
   router.get('/resetpassword', (req, res) => {
@@ -46,3 +41,7 @@ router.get('/signup', userController.redirectIfAuthenticated, (req, res) => {
   router.post('/resetpassword', userController.resetPassword);
 
 module.exports = router;
+
+
+
+

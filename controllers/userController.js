@@ -1,16 +1,20 @@
+
 const User = require('../models/user');
+const Role = require('../models/role');
 const bcrypt = require('bcrypt');
 const { createCanvas } = require('canvas');
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
 const nodemailer = require('nodemailer');
-
-const { validatePassword , validateUserInput} = require('../middleware/validate'); // Import the validation function
 const transporter = require('../utils/emailConfig'); // Import the email transporter
+const { validatePassword , validateUserInput} = require('../middleware/validate'); // Import the validation function
+
+
 
 const jwt = require('jsonwebtoken');
 const sendEmail = require('../utils/email');
+
 // Function to generate a dynamic avatar
 
 // Function to generate a dynamic avatar
@@ -40,76 +44,6 @@ const generateAvatar = (firstName, lastName) => {
 
   return `/imagesAvatar/${path.basename(avatarPath)}`;
 };
-
-
-
-// exports.signup = async (req, res) => {
-//     try {
-//       const { firstName, lastName, email, password, role, phone_number } = req.body;
-  
-//       // Hash the password
-//       const password_hash = await bcrypt.hash(password, 10);
-  
-//       let imagePath;
-  
-//       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  
-//       if (req.file) {
-//         imagePath = `/imagesUser/${req.file.filename}`;
-//       } else {
-//         imagePath = generateAvatar(firstName, lastName);
-//       }
-  
-//       if (!emailRegex.test(email)) {
-//         return res.status(400).render('signup', { error: 'Please enter a valid email address.' });
-//       }
-  
-//       // Check if email already exists
-//       const existingUser = await User.findOne({ email });
-//       if (existingUser) {
-//         return res.status(400).render('signup', { error: 'This email is already in use.' });
-//       }
-  
-  
-//       const passwordError = validatePassword(password);
-//       if (passwordError) {
-//         return res.status(400).render('signup', { error: passwordError });
-//       }
-  
-//       // Generate verification token
-//       const verificationToken = crypto.randomBytes(20).toString('hex');
-  
-//       const user = new User({
-//         firstName,
-//         lastName,
-//         email,
-//         password_hash,
-//         role,
-//         phone_number,
-//         image: imagePath,
-//         verificationToken,
-//         isVerified: false,
-//       });
-  
-//       // Save the user to the database
-//       await user.save();
-  
-//       const verificationUrl = `http://${req.headers.host}/users/verify-email?token=${verificationToken}`;
-//       const mailOptions = {
-//         to: email, // Send the email to the user's provided email address
-//         from: `LAVORO <${process.env.EMAIL_USER || 'no-reply@example.com'}>`, // Sender name and email
-//         subject: 'Email Verification',
-//         text: `Please verify your email by clicking the following link: ${verificationUrl}`,
-//       };
-  
-//       await transporter.sendMail(mailOptions);
-  
-//       res.redirect('/users/signup');
-//     } catch (error) {
-//       console.error('Error during signup:', error); // Log the error for debugging
-//       res.status(500).render('signup', { error: 'An error occurred during signup. Please try again.' });
-//     }
-//   };
 
 
 
@@ -153,13 +87,18 @@ exports.signup = async (req, res) => {
 
     // Generate verification token
     const verificationToken = crypto.randomBytes(20).toString('hex');
-
+    let userRole;
+        if (role) {
+          userRole = await Role.findOne({ RoleName: role }); // Fetch role based on provided RoleName
+        } else {
+          userRole = await Role.findOne({ RoleName: 'Developer' }); // Default to 'Developer' role
+        }
     const user = new User({
       firstName,
       lastName,
       email,
       password_hash,
-      role,
+      role:userRole._id,
       phone_number,
       image: imagePath,
       verificationToken,
@@ -197,7 +136,7 @@ exports.signup = async (req, res) => {
       console.log('Sign-in attempt for email:', email); // Log the email
   
       // Find the user by email
-      const user = await User.findOne({ email });
+      const user = await User.findOne({ email }).populate('role');
       if (!user) {
         console.log('User not found for email:', email); // Log if user is not found
         return res.status(400).render('signin', { error: 'User not found.' });
@@ -227,8 +166,13 @@ exports.signup = async (req, res) => {
       req.session.user = user;
       console.log('Session created for user:', user.email); // Log session creation
   
-      // Redirect to the home page
-      res.redirect('/home'); // Redirect to the home route
+      if (user.role.RoleName === 'Admin') {
+        //console.log('Redirecting to admin dashboard'); // Log admin redirection
+        res.redirect('/admin/dashboard'); // Redirect to admin dashboard if role is admin
+      } else {
+        //console.log('Redirecting to home'); // Log admin redirection
+        res.redirect('/home'); // Redirect to home for other roles
+      }
     } catch (error) {
       console.error('Error during sign-in:', error); // Log the error for debugging
       res.status(500).render('signin', { error: 'An error occurred during sign-in. Please try again.' });
@@ -307,13 +251,8 @@ exports.verifyEmail = async (req, res) => {
   }
 
 
-
-
-
-
-
-  //reset password
-  exports.resetPassword = async (req, res) => {
+   //reset password
+   exports.resetPassword = async (req, res) => {
     const token = req.query.token || req.body.token; 
   const {  newPassword, confirmPassword } = req.body;
 

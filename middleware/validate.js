@@ -23,9 +23,6 @@ exports.validatePassword = (password) => {
     return null; // No error
   };
 
-
-
-
   // Phone Number Validator
   exports.validatePhoneNumber = (phoneNumber) => {
     const minLength = 8; // Minimum length for a valid phone number
@@ -97,6 +94,7 @@ exports.validatePassword = (password) => {
   
     return null; // No errors
   };
+
 
 
 

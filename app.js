@@ -1,5 +1,4 @@
 require('dotenv').config();
-
 const createError = require('http-errors');
 const express = require('express');
 const path = require('path');
@@ -12,8 +11,13 @@ const db = require('./config/dbConnection.json');
 const session = require('express-session');
 const MongoStore = require('connect-mongo');
 
+const authRouter = require ('./routes/authRouter.js');
+const cors = require('cors');
 
-const flash = require('connect-flash');
+
+
+// const flash = require('connect-flash');
+
 
 
 // Connect to MongoDB
@@ -27,15 +31,23 @@ mongo
   });
 
 const usersRouter = require('./routes/users');
+
 const profileRouter = require('./routes/profile');
+
 const homeRouter = require('./routes/home');
+const adminRouter = require('./routes/admin');
+
 
 const app = express();
 
 
-app.use(flash());
+app.use(session({
+  secret: 'your_secret_key',
+  resave: false,
+  saveUninitialized: true
+}));
 
-
+// app.use(flash());
 
 // app.use((req, res, next) => {
 //   res.locals.successMessage = req.flash('success');
@@ -43,9 +55,21 @@ app.use(flash());
 //   next();
 // });
 
+
 // View engine setup
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'twig');
+
+
+
+
+
+//Place CORS avant les routes et autres middlewares
+app.use(cors({
+  origin: "http://localhost:5173",
+  methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
+  credentials: true
+}));
 
 // Middleware
 app.use(logger('dev'));
@@ -75,6 +99,28 @@ app.use(
 
 // Routes
 app.use('/users', usersRouter);
+
+app.use('/', homeRouter);
+app.use('/auth',authRouter);
+app.use('/admin',adminRouter);
+
+
+// Home route
+app.get('/home', (req, res) => {
+  console.log('Session:', req.session); // Log the session data
+
+  // Check if the user is authenticated
+  if (!req.session.user) {
+    console.log('User not authenticated. Redirecting to sign-in page.');
+    return res.redirect('/users/signin');
+  }
+
+  // Render the home page for authenticated users
+  res.render('home', { user: req.session.user });
+});
+
+
+
 app.use('/profiles', profileRouter);
 app.use('/', homeRouter);
 
@@ -92,6 +138,9 @@ app.use((err, req, res, next) => {
   res.status(err.status || 500);
   res.render('error');
 });
+
+
+
 
 // Create server
 const server = http.createServer(app);
