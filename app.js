@@ -13,7 +13,12 @@ const MongoStore = require('connect-mongo');
 
 const authRouter = require ('./routes/authRouter.js');
 const cors = require('cors');
+const app = express();
 
+const socketIo = require('socket.io');
+const server = http.createServer(app);
+
+const io = socketIo(server);
 
 
 const flash = require('connect-flash');
@@ -38,7 +43,6 @@ const homeRouter = require('./routes/home');
 const adminRouter = require('./routes/admin');
 
 
-const app = express();
 
 
 app.use(session({
@@ -56,6 +60,7 @@ app.use(flash());
 //   res.locals.errorMessage = req.flash('error');
 //   next();
 // });
+
 
 // View engine setup
 app.set('views', path.join(__dirname, 'views'));
@@ -104,6 +109,7 @@ app.use('/users', usersRouter);
 app.use('/', homeRouter);
 app.use('/auth',authRouter);
 app.use('/admin',adminRouter);
+app.set('io', io);
 
 
 // Home route
@@ -115,56 +121,17 @@ app.get('/home', (req, res) => {
     console.log('User not authenticated. Redirecting to sign-in page.');
     return res.redirect('/users/signin');
   }
+  const flashMessage = req.session.flashMessage;
+  console.log('Flash message:', flashMessage);
+  req.session.flashMessage = null;
+
 
   // Render the home page for authenticated users
   res.render('home', { user: req.session.user });
 });
 
-// Test email route
-// app.get('/test-email', async (req, res) => {
-//     try {
-//       const mailOptions = {
-//         to: 'test@example.com', // Optional: Use a placeholder email
-//         from: `Your App Name <${process.env.EMAIL_USER}>`, // Sender name and email
-//         subject: 'Test Email',
-//         text: 'This is a test email from your application.',
-//       };
-  
-//       await transporter.sendMail(mailOptions);
-//       res.send('Test email sent successfully! Check your Mailtrap inbox.');
-//     } catch (error) {
-//       console.error('Error sending test email:', error);
-//       res.status(500).send('Error sending test email.');
-//     }
-//   });
-
 app.use('/profiles', profileRouter);
 app.use('/', homeRouter);
-
-
-
-
-// // Middleware to redirect authenticated users away from signin/signup pages
-// function redirectIfAuthenticated(req, res, next) {
-//   if (req.session.user) {
-//     console.log('User already signed in. Redirecting to home.');
-//     return res.redirect('/home'); // Redirect to home if user is already authenticated
-//   }
-//   next(); // Continue to signin/signup if not authenticated
-// }
-
-// // Apply the middleware to the signin and signup routes
-// app.get('/users/signin', redirectIfAuthenticated, (req, res) => {
-//   res.render('signin');
-// });
-
-// app.get('/users/signup', redirectIfAuthenticated, (req, res) => {
-//   res.render('signup');
-// });
-
-
-
-
 
 // Error handling
 app.use((req, res, next) => {
@@ -178,12 +145,18 @@ app.use((err, req, res, next) => {
   res.status(err.status || 500);
   res.render('error');
 });
+io.on('connection', (socket) => {
+  console.log('A user connected');
 
+  // Handle disconnection
+  socket.on('disconnect', () => {
+    console.log('User disconnected');
+  });
+});
 
 
 
 // Create server
-const server = http.createServer(app);
 
 // Start server
 server.listen(3000, () => {

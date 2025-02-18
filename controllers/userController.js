@@ -9,6 +9,7 @@ const crypto = require('crypto');
 const nodemailer = require('nodemailer');
 const transporter = require('../utils/emailConfig'); // Import the email transporter
 const { validatePassword , validateUserInput} = require('../middleware/validate'); // Import the validation function
+const AccountActivityLog = require('../models/accountActivityLog');
 
 
 
@@ -46,74 +47,6 @@ const generateAvatar = (firstName, lastName) => {
 };
 
 
-
-// exports.signup = async (req, res) => {
-//     try {
-//       const { firstName, lastName, email, password, role, phone_number } = req.body;
-  
-//       // Hash the password
-//       const password_hash = await bcrypt.hash(password, 10);
-  
-//       let imagePath;
-  
-//       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  
-//       if (req.file) {
-//         imagePath = `/imagesUser/${req.file.filename}`;
-//       } else {
-//         imagePath = generateAvatar(firstName, lastName);
-//       }
-  
-//       if (!emailRegex.test(email)) {
-//         return res.status(400).render('signup', { error: 'Please enter a valid email address.' });
-//       }
-  
-//       // Check if email already exists
-//       const existingUser = await User.findOne({ email });
-//       if (existingUser) {
-//         return res.status(400).render('signup', { error: 'This email is already in use.' });
-//       }
-  
-  
-//       const passwordError = validatePassword(password);
-//       if (passwordError) {
-//         return res.status(400).render('signup', { error: passwordError });
-//       }
-  
-//       // Generate verification token
-//       const verificationToken = crypto.randomBytes(20).toString('hex');
-  
-//       const user = new User({
-//         firstName,
-//         lastName,
-//         email,
-//         password_hash,
-//         role,
-//         phone_number,
-//         image: imagePath,
-//         verificationToken,
-//         isVerified: false,
-//       });
-  
-//       // Save the user to the database
-//       await user.save();
-  
-//       const verificationUrl = `http://${req.headers.host}/users/verify-email?token=${verificationToken}`;
-//       const mailOptions = {
-//         to: email, // Send the email to the user's provided email address
-//         from: `LAVORO <${process.env.EMAIL_USER || 'no-reply@example.com'}>`, // Sender name and email
-//         subject: 'Email Verification',
-//         text: `Please verify your email by clicking the following link: ${verificationUrl}`,
-//       };
-  
-//       await transporter.sendMail(mailOptions);
-  
-//       res.redirect('/users/signup');
-//     } catch (error) {
-//       console.error('Error during signup:', error); // Log the error for debugging
-//       res.status(500).render('signup', { error: 'An error occurred during signup. Please try again.' });
-//     }
-//   };
 
 
 
@@ -235,6 +168,10 @@ exports.signup = async (req, res) => {
       // Set the user session
       req.session.user = user;
       console.log('Session created for user:', user.email); // Log session creation
+      await AccountActivityLog.create({
+        userId: user._id,
+        action: 'User Logged In',
+      });
   
       if (user.role.RoleName === 'Admin') {
         //console.log('Redirecting to admin dashboard'); // Log admin redirection

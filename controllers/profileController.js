@@ -1,4 +1,6 @@
 const User = require('../models/user');
+const AccountActivityLog = require('../models/accountActivityLog');
+
 
 // Fonction pour mettre à jour le profil de l'utilisateur
 exports.updateProfile = async (req, res) => {
@@ -33,6 +35,10 @@ exports.updateProfile = async (req, res) => {
 
     // Mettre à jour la session avec les nouvelles informations
     req.session.user = updatedUser;
+    await AccountActivityLog.create({
+            userId: updatedUser._id,
+            action: 'User Updated Profile',
+          });
 
     // Rediriger vers la page de profil après la mise à jour
     res.redirect('/profiles/profile');
