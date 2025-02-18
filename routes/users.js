@@ -2,10 +2,11 @@ const express = require('express');
 const router = express.Router();
 const userController = require('../controllers/userController');
 const upload = require('../middleware/upload'); // Import the upload middleware
+const setDefaultRole = require('../middleware/setDefaultRole'); 
 
 // Signup route with file upload
 
-router.post('/signup', upload.single('image'), userController.signup);
+router.post('/signup',setDefaultRole, upload.single('image'), userController.signup);
 
 router.post('/signin', userController.signin);
 

@@ -1,5 +1,6 @@
 
 const User = require('../models/user');
+const Role = require('../models/role');
 const bcrypt = require('bcrypt');
 const { createCanvas } = require('canvas');
 const fs = require('fs');
@@ -8,6 +9,7 @@ const crypto = require('crypto');
 const nodemailer = require('nodemailer');
 const transporter = require('../utils/emailConfig'); // Import the email transporter
 const { validatePassword , validateUserInput} = require('../middleware/validate'); // Import the validation function
+
 
 
 const jwt = require('jsonwebtoken');
@@ -155,13 +157,18 @@ exports.signup = async (req, res) => {
 
     // Generate verification token
     const verificationToken = crypto.randomBytes(20).toString('hex');
-
+    let userRole;
+        if (role) {
+          userRole = await Role.findOne({ RoleName: role }); // Fetch role based on provided RoleName
+        } else {
+          userRole = await Role.findOne({ RoleName: 'Developer' }); // Default to 'Developer' role
+        }
     const user = new User({
       firstName,
       lastName,
       email,
       password_hash,
-      role,
+      role:userRole._id,
       phone_number,
       image: imagePath,
       verificationToken,
@@ -199,7 +206,7 @@ exports.signup = async (req, res) => {
       console.log('Sign-in attempt for email:', email); // Log the email
   
       // Find the user by email
-      const user = await User.findOne({ email });
+      const user = await User.findOne({ email }).populate('role');
       if (!user) {
         console.log('User not found for email:', email); // Log if user is not found
         return res.status(400).render('signin', { error: 'User not found.' });
