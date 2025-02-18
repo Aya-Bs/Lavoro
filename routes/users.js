@@ -25,14 +25,6 @@ router.get('/signup', userController.redirectIfAuthenticated, (req, res) => {
 
   router.get('/verify-email', userController.verifyEmail);
 
-
-
-
-
-
-module.exports = router;
-
-
   router.post('/request-reset', userController.forgotPassword);
 
   router.get('/resetpassword', (req, res) => {
@@ -49,4 +41,7 @@ module.exports = router;
   router.post('/resetpassword', userController.resetPassword);
 
 module.exports = router;
+
+
+
 

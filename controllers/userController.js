@@ -322,7 +322,8 @@ exports.verifyEmail = async (req, res) => {
 
 
   //reset password
-  exports.resetPassword = async (req, res) => {
+   //reset password
+   exports.resetPassword = async (req, res) => {
     const token = req.query.token || req.body.token; 
   const {  newPassword, confirmPassword } = req.body;
 

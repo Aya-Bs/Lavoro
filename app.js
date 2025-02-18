@@ -49,13 +49,12 @@ app.use(session({
 
 app.use(flash());
 
+app.use((req, res, next) => {
+  res.locals.successMessage = req.flash('success');
+  res.locals.errorMessage = req.flash('error');
+  next();
+});
 
-
-// app.use((req, res, next) => {
-//   res.locals.successMessage = req.flash('success');
-//   res.locals.errorMessage = req.flash('error');
-//   next();
-// });
 
 // View engine setup
 app.set('views', path.join(__dirname, 'views'));
