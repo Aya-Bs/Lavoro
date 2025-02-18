@@ -32,5 +32,5 @@ const userSchema = new mongoose.Schema({
   resetPasswordExpires: { type: Date },  // Pareil ici
 });
 
-const User = mongoose.model('user', userSchema);
+const User = mongoose.models.User || mongoose.model('User', userSchema);
 module.exports = User;

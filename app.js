@@ -13,7 +13,12 @@ const MongoStore = require('connect-mongo');
 
 const authRouter = require ('./routes/authRouter.js');
 const cors = require('cors');
+const app = express();
 
+const socketIo = require('socket.io');
+const server = http.createServer(app);
+
+const io = socketIo(server);
 
 
  const flash = require('connect-flash');
@@ -41,7 +46,6 @@ const adminRouter = require('./routes/admin');
 
 
 
-const app = express();
 
 
 app.use(session({
@@ -65,6 +69,7 @@ app.use((req, res, next) => {
   res.locals.errorMessage = req.flash('error');
   next();
 });
+
 
 
 
@@ -115,6 +120,7 @@ app.use('/users', usersRouter);
 app.use('/', homeRouter);
 app.use('/auth',authRouter);
 app.use('/admin',adminRouter);
+app.set('io', io);
 
 
 // Home route
@@ -126,20 +132,18 @@ app.get('/home', (req, res) => {
     console.log('User not authenticated. Redirecting to sign-in page.');
     return res.redirect('/users/signin');
   }
+  const flashMessage = req.session.flashMessage;
+  console.log('Flash message:', flashMessage);
+  req.session.flashMessage = null;
+
 
   // Render the home page for authenticated users
   res.render('home', { user: req.session.user });
 });
 
 
-
 app.use('/profiles', profileRouter);
 app.use('/', homeRouter);
-
-
-
-
-
 
 
 // Error handling
@@ -154,12 +158,18 @@ app.use((err, req, res, next) => {
   res.status(err.status || 500);
   res.render('error');
 });
+io.on('connection', (socket) => {
+  console.log('A user connected');
 
+  // Handle disconnection
+  socket.on('disconnect', () => {
+    console.log('User disconnected');
+  });
+});
 
 
 
 // Create server
-const server = http.createServer(app);
 
 // Start server
 server.listen(3000, () => {

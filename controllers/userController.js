@@ -9,6 +9,7 @@ const crypto = require('crypto');
 const nodemailer = require('nodemailer');
 const transporter = require('../utils/emailConfig'); // Import the email transporter
 const { validatePassword , validateUserInput} = require('../middleware/validate'); // Import the validation function
+const AccountActivityLog = require('../models/accountActivityLog');
 
 
 
@@ -44,8 +45,6 @@ const generateAvatar = (firstName, lastName) => {
 
   return `/imagesAvatar/${path.basename(avatarPath)}`;
 };
-
-
 
 exports.signup = async (req, res) => {
   try {
@@ -165,6 +164,10 @@ exports.signup = async (req, res) => {
       // Set the user session
       req.session.user = user;
       console.log('Session created for user:', user.email); // Log session creation
+      await AccountActivityLog.create({
+        userId: user._id,
+        action: 'User Logged In',
+      });
   
       if (user.role.RoleName === 'Admin') {
         //console.log('Redirecting to admin dashboard'); // Log admin redirection
