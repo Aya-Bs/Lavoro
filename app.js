@@ -21,7 +21,9 @@ const server = http.createServer(app);
 const io = socketIo(server);
 
 
-const flash = require('connect-flash');
+ const flash = require('connect-flash');
+
+
 
 
 
@@ -45,6 +47,15 @@ const adminRouter = require('./routes/admin');
 
 
 
+
+app.use(session({
+  secret: 'your_secret_key',
+  resave: false,
+  saveUninitialized: true
+}));
+
+// app.use(flash());
+
 app.use(session({
   secret: 'your_secret_key',
   resave: false,
@@ -53,13 +64,13 @@ app.use(session({
 
 app.use(flash());
 
+app.use((req, res, next) => {
+  res.locals.successMessage = req.flash('success');
+  res.locals.errorMessage = req.flash('error');
+  next();
+});
 
 
-// app.use((req, res, next) => {
-//   res.locals.successMessage = req.flash('success');
-//   res.locals.errorMessage = req.flash('error');
-//   next();
-// });
 
 
 // View engine setup
@@ -130,8 +141,10 @@ app.get('/home', (req, res) => {
   res.render('home', { user: req.session.user });
 });
 
+
 app.use('/profiles', profileRouter);
 app.use('/', homeRouter);
+
 
 // Error handling
 app.use((req, res, next) => {
