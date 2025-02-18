@@ -253,13 +253,13 @@ exports.verifyEmail = async (req, res) => {
 
   //reset password
  
-   exports.resetPassword = async (req, res) => {
-    const token = req.query.token || req.body.token; 
+  exports.resetPassword = async (req, res) => {
+    const token = req.query.token || req.body.token;
     const { newPassword, confirmPassword } = req.body;
 
     try {
         if (!token) {
-            return res.render('resetPassword.twig', { error: 'Token manquant.', token: null });
+            return res.render('resetPassword.twig', { error: 'Token is missing.', token });
         }
 
         const user = await User.findOne({
@@ -271,26 +271,32 @@ exports.verifyEmail = async (req, res) => {
             return res.render('resetPassword.twig', { error: 'Link expired or invalid.', token: null });
         }
 
+        // Check if the new password is the same as the current password
+        const isSamePassword = await bcrypt.compare(newPassword, user.password_hash);
+        if (isSamePassword) {
+            return res.render('resetPassword.twig', { error: 'Please choose a new password. You cannot reuse your current password.', token });
+        }
+
         if (newPassword !== confirmPassword) {
             return res.render('resetPassword.twig', { error: 'Passwords do not match.', token });
         }
 
-        // Validation du mot de passe
+        // Validate the new password
         const passwordError = validatePassword(newPassword);
         if (passwordError) {
             return res.render('resetPassword.twig', { error: passwordError, token });
         }
 
-        // Mettre à jour le mot de passe
+        // Update the password
         user.password_hash = await bcrypt.hash(newPassword, 10);
         user.resetPasswordToken = null;
         user.resetPasswordExpires = null;
         await user.save();
 
-        res.render('signin.twig', { message: 'Password Updated with sucess !' });
+        res.render('signin.twig', { message: 'Password successfully updated!' });
     } catch (error) {
-        console.error('Erreur:', error);
-        res.status(500).render('resetPassword.twig', { error: 'Erreur lors de la réinitialisation du mot de passe.', token });
+        console.error('Error:', error);
+        res.status(500).render('resetPassword.twig', { error: 'An error occurred while resetting your password.', token });
     }
 };
 
