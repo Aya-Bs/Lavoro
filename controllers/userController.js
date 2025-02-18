@@ -252,48 +252,48 @@ exports.verifyEmail = async (req, res) => {
 
 
 
-   //reset password
+  //reset password
+ 
    exports.resetPassword = async (req, res) => {
-    const token = req.query.token || req.body.token;
+    const token = req.query.token || req.body.token; 
     const { newPassword, confirmPassword } = req.body;
-  
+
     try {
-      if (!token) {
-        return res.render('resetPassword.twig', { error: 'Token manquant.', token });
-      }
-  
-      // Vérifier si le token est valide et non expiré
-      const user = await User.findOne({
-        resetPasswordToken: token,
-        resetPasswordExpires: { $gt: Date.now() }
-      });
-  
-      if (!user) {
-        return res.render('resetPassword.twig', { error: 'Lien expiré ou invalide.' });
-      }
-  
-      if (newPassword !== confirmPassword) {
-        return res.render('resetPassword.twig', { error: 'Les mots de passe ne correspondent pas.' });
-      }
-  
-      // Vérifier la complexité du mot de passe
-      const passwordError = validatePassword(newPassword);
-      if (passwordError) {
-        return res.render('resetPassword.twig', { error: passwordError });
-      }
-  
-      // Hacher le mot de passe et supprimer le token
-      user.password_hash = await bcrypt.hash(newPassword, 10);
-      user.resetPasswordToken = null;
-      user.resetPasswordExpires = null;
-      await user.save();
-  
-      res.render('signin.twig', { message: 'Mot de passe modifié avec succès !' });
+        if (!token) {
+            return res.render('resetPassword.twig', { error: 'Token manquant.', token: null });
+        }
+
+        const user = await User.findOne({
+            resetPasswordToken: token,
+            resetPasswordExpires: { $gt: Date.now() }
+        });
+
+        if (!user) {
+            return res.render('resetPassword.twig', { error: 'Link expired or invalid.', token: null });
+        }
+
+        if (newPassword !== confirmPassword) {
+            return res.render('resetPassword.twig', { error: 'Passwords do not match.', token });
+        }
+
+        // Validation du mot de passe
+        const passwordError = validatePassword(newPassword);
+        if (passwordError) {
+            return res.render('resetPassword.twig', { error: passwordError, token });
+        }
+
+        // Mettre à jour le mot de passe
+        user.password_hash = await bcrypt.hash(newPassword, 10);
+        user.resetPasswordToken = null;
+        user.resetPasswordExpires = null;
+        await user.save();
+
+        res.render('signin.twig', { message: 'Password Updated with sucess !' });
     } catch (error) {
-      console.error('Erreur:', error);
-      res.status(500).render('resetPassword.twig', { error: 'Erreur lors de la réinitialisation du mot de passe.' });
+        console.error('Erreur:', error);
+        res.status(500).render('resetPassword.twig', { error: 'Erreur lors de la réinitialisation du mot de passe.', token });
     }
-  };
+};
 
 exports.forgotPassword = async (req, res) => {
   const { email } = req.body;
@@ -301,8 +301,8 @@ exports.forgotPassword = async (req, res) => {
   try {
     const user = await User.findOne({ email });
     if (!user) {
-      req.flash('error', 'Utilisateur non trouvé.');
-      return res.redirect('/users/signin');
+        req.flash('error', 'User not found');
+        return res.redirect('/users/signin');
     }
 
     // Générer un token sécurisé
@@ -313,31 +313,29 @@ exports.forgotPassword = async (req, res) => {
     user.resetPasswordExpires = Date.now() + 3600000;
     await user.save();
 
-    // Générer le lien de réinitialisation
-    const resetLink = `http://localhost:3000/users/resetpassword?token=${token}`;
+      // Envoi de l'email
+      const resetLink = `http://localhost:3000/users/resetpassword?token=${token}`;
+      const subject = "Password Reset";
+      const message = `
+      
+        Hello ${user.firstName},
+  
+        We received a password reset request for your account.  
+        If you did not request this, please ignore this email.
+  
+        ➡️ **Click the link below to reset your password:**  
+        🔗 ${resetLink}  
+  
+        This link will expire in 1 hour.
+  
+        Best regards,  
+        The Lavoro Team
+      `;
+  
+      await sendEmail(user.email, subject, message);
 
-    // Contenu de l’email en anglais et français
-    const subject = "Password Reset";
-    const message = `
-    
-      Hello ${user.firstName},
-
-      We received a password reset request for your account.  
-      If you did not request this, please ignore this email.
-
-      ➡️ **Click the link below to reset your password:**  
-      🔗 ${resetLink}  
-
-      This link will expire in 1 hour.
-
-      Best regards,  
-      The Lavoro Team
-    `;
-
-    await sendEmail(user.email, subject, message);
-
-    req.flash('success', "Vous allez recevoir un email pour réinitialiser votre mot de passe.");
-    res.redirect('/users/signin');
+      req.flash('success', 'E-mail is send to reset your password');
+      res.redirect('/users/signin');
   } catch (error) {
     console.error('Erreur:', error);
     req.flash('error', "Erreur lors de l'envoi de l'email.");
