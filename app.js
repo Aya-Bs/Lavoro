@@ -20,6 +20,8 @@ const cors = require('cors');
 
 
 
+
+
 // Connect to MongoDB
 mongo
   .connect(db.url)
@@ -38,6 +40,7 @@ const homeRouter = require('./routes/home');
 const adminRouter = require('./routes/admin');
 
 
+
 const app = express();
 
 
@@ -49,11 +52,20 @@ app.use(session({
 
 // app.use(flash());
 
-// app.use((req, res, next) => {
-//   res.locals.successMessage = req.flash('success');
-//   res.locals.errorMessage = req.flash('error');
-//   next();
-// });
+app.use(session({
+  secret: 'your_secret_key',
+  resave: false,
+  saveUninitialized: true
+}));
+
+app.use(flash());
+
+app.use((req, res, next) => {
+  res.locals.successMessage = req.flash('success');
+  res.locals.errorMessage = req.flash('error');
+  next();
+});
+
 
 
 // View engine setup
@@ -123,6 +135,10 @@ app.get('/home', (req, res) => {
 
 app.use('/profiles', profileRouter);
 app.use('/', homeRouter);
+
+
+
+
 
 
 
