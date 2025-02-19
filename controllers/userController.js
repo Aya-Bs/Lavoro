@@ -126,59 +126,68 @@ exports.signup = async (req, res) => {
 };
 
 
+const MAX_ATTEMPTS = 3; // Nombre max de tentatives
+const LOCK_TIME = 5 * 60 * 1000; // 5 minutes en millisecondes
 
+exports.signin = async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    const user = await User.findOne({ email }).populate('role');
 
-
-  exports.signin = async (req, res) => {
-    try {
-      const { email, password } = req.body;
-  
-      console.log('Sign-in attempt for email:', email); // Log the email
-  
-      // Find the user by email
-      const user = await User.findOne({ email }).populate('role');
-      if (!user) {
-        console.log('User not found for email:', email); // Log if user is not found
-        return res.status(400).render('signin', { error: 'User not found.' });
-      }
-  
-      console.log('User found:', user.email); // Log the found user
-  
-      // Check if the user is verified
-      if (!user.isVerified) {
-        console.log('User not verified:', email); // Log if user is not verified
-        return res.status(400).render('signin', { error: 'Please verify your email before signing in.', email });
-      }
-  
-      // Compare the password
-      const isPasswordValid = await bcrypt.compare(password, user.password_hash);
-      if (!isPasswordValid) {
-        console.log('Invalid password for email:', email); // Log if password is invalid
-        return res.status(400).render('signin', { error: 'Invalid password.', email });
-      }
-  
-      console.log('Sign-in successful for email:', email); // Log successful sign-in
-  
-      user.last_activity = Date.now();
-      await user.save();
-  
-      // Set the user session
-      req.session.user = user;
-      console.log('Session created for user:', user.email); // Log session creation
-  
-      if (user.role.RoleName === 'Admin') {
-        //console.log('Redirecting to admin dashboard'); // Log admin redirection
-        res.redirect('/admin/dashboard'); // Redirect to admin dashboard if role is admin
-      } else {
-        //console.log('Redirecting to home'); // Log admin redirection
-        res.redirect('/home'); // Redirect to home for other roles
-      }
-    } catch (error) {
-      console.error('Error during sign-in:', error); // Log the error for debugging
-      res.status(500).render('signin', { error: 'An error occurred during sign-in. Please try again.' });
+    if (!user) {
+      return res.status(400).render('signin', { error: 'Utilisateur non trouvé.', email });
     }
-  };
 
+    // Vérifier si le compte est verrouillé
+    if (user.lockUntil && user.lockUntil > Date.now()) {
+      const remainingTime = Math.ceil((user.lockUntil - Date.now()) / 60000); // en minutes
+      return res.status(403).render('signin', { 
+        error: `Vous êtes bloqué jusqu'à ${new Date(user.lockUntil).toLocaleTimeString()}.`,
+        email 
+      });
+    }
+
+    // Vérifier le mot de passe
+    const isPasswordValid = await bcrypt.compare(password, user.password_hash);
+    if (!isPasswordValid) {
+      user.loginAttempts += 1;
+
+      if (user.loginAttempts >= MAX_ATTEMPTS) {
+        user.lockUntil = Date.now() + LOCK_TIME;
+
+        // Envoyer un e-mail à l'utilisateur
+        const emailSubject = 'Votre compte est verrouillé';
+        const emailText = `  Hello ${user.firstName},
+  
+        Your account has been locked for 5 minutes due to multiple failed login attempts.
+       Please try again later
+  
+        Best regards,  
+        The Lavoro Team`;
+        await sendEmail(user.email, emailSubject, emailText);
+      }
+
+      await user.save();
+      return res.status(400).render('signin', { error: 'Mot de passe invalide.', email });
+    }
+
+    // Réinitialiser les tentatives après une connexion réussie
+    user.loginAttempts = 0;
+    user.lockUntil = null;
+    user.last_activity = Date.now();
+    await user.save();
+
+    req.session.user = user;
+    if (user.role.RoleName === 'Admin') {
+      return res.redirect('/admin/dashboard');
+    } else {
+      return res.redirect('/home');
+    }
+  } catch (error) {
+    console.error('Erreur lors de la connexion:', error);
+    res.status(500).render('signin', { error: 'Erreur interne, veuillez réessayer.', email });
+  }
+};
 
 
 
