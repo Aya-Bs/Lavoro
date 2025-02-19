@@ -177,6 +177,15 @@ exports.signin = async (req, res) => {
     await user.save();
 
     req.session.user = user;
+
+    console.log('Session created for user:', user.email); // Log session creation
+    await AccountActivityLog.create({
+      userId: user._id,
+      action: 'User Logged In',
+    });
+
+
+
     if (user.role.RoleName === 'Admin') {
       return res.redirect('/admin/dashboard');
     } else {
@@ -300,6 +309,12 @@ exports.verifyEmail = async (req, res) => {
         user.resetPasswordToken = null;
         user.resetPasswordExpires = null;
         await user.save();
+
+               // Log the password reset action
+               await AccountActivityLog.create({
+                userId: user._id,
+                action: 'User has reset their password',
+            });
 
         res.render('signin.twig', { message: 'Password successfully updated!' });
     } catch (error) {
