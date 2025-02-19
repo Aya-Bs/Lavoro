@@ -1,6 +1,6 @@
 
-const mongo = require('mongoose');
-const Schema = mongo.Schema;
+const mongoose = require('mongoose');
+const Schema = mongoose.Schema;
 
 const Notification = new Schema(
     {
@@ -16,4 +16,4 @@ const Notification = new Schema(
       });
     
 
-module.exports = mongo.model('notification', Notification);
+module.exports = mongoose.model('notification', Notification);
