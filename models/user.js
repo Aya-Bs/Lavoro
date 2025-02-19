@@ -30,6 +30,10 @@ const userSchema = new mongoose.Schema({
   isVerified: { type: Boolean, default: false },
   resetPasswordToken: { type: String },  // Assurez-vous que ce champ est bien utilisé partout
   resetPasswordExpires: { type: Date },  // Pareil ici
+
+  loginAttempts: { type: Number, default: 0 },
+  lockUntil: { type: Date, default: null },
+
 });
 
 const User = mongoose.models.User || mongoose.model('User', userSchema);
