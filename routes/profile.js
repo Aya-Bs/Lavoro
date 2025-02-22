@@ -1,9 +1,9 @@
 const profileController = require('../controllers/profileController');
-const upload = require('../middleware/upload'); // Importer le middleware d'upload
+const upload = require('../middleware/upload');
 const express = require('express');
 const router = express.Router();
 
-
+// Get user profile
 router.get('/profile', async (req, res) => {
     try {
       const user = req.session.user;
@@ -33,6 +33,8 @@ router.get('/profile', async (req, res) => {
     }
 });
 
+// Request account deletion
+router.post('/request-delete', profileController.requestDelete);
 
-  
+
 module.exports = router;

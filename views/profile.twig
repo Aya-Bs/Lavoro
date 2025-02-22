@@ -33,7 +33,11 @@
     <a href="/profiles/update">
         <button type="button">Update Profile</button>
     </a>
-    
+
+    <!-- Button to request account deletion -->
+    <form action="/profiles/request-delete" method="POST" onsubmit="return confirm('Are you sure you want to request account deletion?');">
+        <button type="submit">delete request</button>
+    </form>
 
     <!-- Button to go back to home -->
     <a href="/home">

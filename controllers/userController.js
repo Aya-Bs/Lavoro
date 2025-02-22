@@ -134,7 +134,8 @@ exports.signin = async (req, res) => {
     const user = await User.findOne({ email }).populate('role');
 
     if (!user) {
-      return res.status(400).render('signin', { error: 'Utilisateur non trouvé.', email });
+      console.log('User not found for email:', email); // Log if user is not found
+      return res.status(400).render('signin', { error: 'User not found.' });
     }
 
     // Vérifier si le compte est verrouillé
@@ -144,6 +145,14 @@ exports.signin = async (req, res) => {
         error: `Vous êtes bloqué jusqu'à ${new Date(user.lockUntil).toLocaleTimeString()}.`,
         email 
       });
+    }
+
+    console.log('User found:', user.email); // Log the found user
+  
+    // Check if the user is verified
+    if (!user.isVerified) {
+      console.log('User not verified:', email); // Log if user is not verified
+      return res.status(400).render('signin', { error: 'Please verify your email before signing in.', email });
     }
 
     // Vérifier le mot de passe
