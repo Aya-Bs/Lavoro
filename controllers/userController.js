@@ -282,55 +282,56 @@ exports.verifyEmail = async (req, res) => {
   exports.resetPassword = async (req, res) => {
     const token = req.query.token || req.body.token;
     const { newPassword, confirmPassword } = req.body;
-
+  
     try {
-        if (!token) {
-            return res.render('resetPassword.twig', { error: 'Token is missing.', token });
-        }
-
-        const user = await User.findOne({
-            resetPasswordToken: token,
-            resetPasswordExpires: { $gt: Date.now() }
-        });
-
-        if (!user) {
-            return res.render('resetPassword.twig', { error: 'Link expired or invalid.', token: null });
-        }
-
-        // Check if the new password is the same as the current password
-        const isSamePassword = await bcrypt.compare(newPassword, user.password_hash);
-        if (isSamePassword) {
-            return res.render('resetPassword.twig', { error: 'Please choose a new password. You cannot reuse your current password.', token });
-        }
-
-        if (newPassword !== confirmPassword) {
-            return res.render('resetPassword.twig', { error: 'Passwords do not match.', token });
-        }
-
-        // Validate the new password
-        const passwordError = validatePassword(newPassword);
-        if (passwordError) {
-            return res.render('resetPassword.twig', { error: passwordError, token });
-        }
-
-        // Update the password
-        user.password_hash = await bcrypt.hash(newPassword, 10);
-        user.resetPasswordToken = null;
-        user.resetPasswordExpires = null;
-        await user.save();
-
-               // Log the password reset action
-               await AccountActivityLog.create({
-                userId: user._id,
-                action: 'User has reset their password',
-            });
-
-        res.render('signin.twig', { message: 'Password successfully updated!' });
+      if (!token) {
+        return res.status(400).json({ error: 'Token is missing.' });
+      }
+  
+      const user = await User.findOne({
+        resetPasswordToken: token,
+        resetPasswordExpires: { $gt: Date.now() },
+      });
+  
+      if (!user) {
+        return res.status(400).json({ error: 'Link expired or invalid.' });
+      }
+  
+      // Vérifier si le nouveau mot de passe est identique à l'ancien
+      const isSamePassword = await bcrypt.compare(newPassword, user.password_hash);
+      if (isSamePassword) {
+        return res.status(400).json({ error: 'Please choose a new password. You cannot reuse your current password.' });
+      }
+  
+      // Vérifier que les mots de passe correspondent
+      if (newPassword !== confirmPassword) {
+        return res.status(400).json({ error: 'Passwords do not match.' });
+      }
+  
+      // Valider le nouveau mot de passe
+      const passwordError = validatePassword(newPassword);
+      if (passwordError) {
+        return res.status(400).json({ error: passwordError });
+      }
+  
+      // Mettre à jour le mot de passe
+      user.password_hash = await bcrypt.hash(newPassword, 10);
+      user.resetPasswordToken = null;
+      user.resetPasswordExpires = null;
+      await user.save();
+  
+      // Log l'action de réinitialisation du mot de passe
+      await AccountActivityLog.create({
+        userId: user._id,
+        action: 'User has reset their password',
+      });
+  
+      res.status(200).json({ message: 'Password successfully updated!' });
     } catch (error) {
-        console.error('Error:', error);
-        res.status(500).render('resetPassword.twig', { error: 'An error occurred while resetting your password.', token });
+      console.error('Error:', error);
+      res.status(500).json({ error: 'An error occurred while resetting your password.' });
     }
-};
+  };
 
 exports.forgotPassword = async (req, res) => {
   const { email } = req.body;
@@ -338,8 +339,8 @@ exports.forgotPassword = async (req, res) => {
   try {
     const user = await User.findOne({ email });
     if (!user) {
-        req.flash('error', 'User not found');
-        return res.redirect('/users/signin');
+      console.log('User not found:', email); // Log si l'utilisateur n'est pas trouvé
+      return res.status(404).json({ error: 'User not found' });
     }
 
     // Générer un token sécurisé
@@ -347,35 +348,35 @@ exports.forgotPassword = async (req, res) => {
 
     // Mettre à jour l'utilisateur avec le token et la date d'expiration (1h)
     user.resetPasswordToken = token;
-    user.resetPasswordExpires = Date.now() + 3600000;
+    user.resetPasswordExpires = Date.now() + 3600000; // 1 heure
     await user.save();
 
-      // Envoi de l'email
-      const resetLink = `http://localhost:3000/users/resetpassword?token=${token}`;
-      const subject = "Password Reset";
-      const message = `
-      
-        Hello ${user.firstName},
-  
-        We received a password reset request for your account.  
-        If you did not request this, please ignore this email.
-  
-        ➡️ **Click the link below to reset your password:**  
-        🔗 ${resetLink}  
-  
-        This link will expire in 1 hour.
-  
-        Best regards,  
-        The Lavoro Team
-      `;
-  
-      await sendEmail(user.email, subject, message);
+    // Envoi de l'email
+    const resetLink = `http://localhost:5173/resetpassword?token=${token}`;
+    const subject = "Password Reset";
+    const message = `
+      Hello ${user.firstName},
 
-      req.flash('success', 'E-mail is send to reset your password');
-      res.redirect('/users/signin');
+      We received a password reset request for your account.  
+      If you did not request this, please ignore this email.
+
+      ➡️ **Click the link below to reset your password:**  
+      🔗 ${resetLink}  
+
+      This link will expire in 1 hour.
+
+      Best regards,  
+      The Lavoro Team
+    `;
+
+    console.log('Sending email to:', user.email); // Log avant l'envoi de l'email
+    await sendEmail(user.email, subject, message);
+    console.log('Email sent successfully to:', user.email); // Log après l'envoi de l'email
+
+    // Renvoyer une réponse JSON au lieu de rediriger
+    res.status(200).json({ message: 'Email sent successfully' });
   } catch (error) {
-    console.error('Erreur:', error);
-    req.flash('error', "Erreur lors de l'envoi de l'email.");
-    res.redirect('/users/signin');
+    console.error('Error:', error);
+    res.status(500).json({ error: 'An error occurred while sending the email.' });
   }
 };

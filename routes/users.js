@@ -27,12 +27,12 @@ router.post('/request-reset', userController.forgotPassword);
 
 router.get('/resetpassword', (req, res) => {
   const { token } = req.query;
-  
+
   if (!token) {
-    return res.status(400).json({ message: 'Token manquant.' });
+    return res.status(400).json({ error: 'Token is missing.' });
   }
 
-  res.render('resetPassword.twig', { token });
+  res.status(200).json({ token });
 });
 
 router.post('/resetpassword', userController.resetPassword);
