@@ -1,5 +1,5 @@
-const mongo = require('mongoose');
-const Schema = mongo.Schema;
+const mongoose = require('mongoose');
+const Schema = mongoose.Schema;
 const TaskHistory = new Schema({
     task_id: { type: mongoose.Schema.Types.UUID, required: true },
     changed_by: { type: mongoose.Schema.Types.UUID, required: true },
@@ -12,4 +12,4 @@ const TaskHistory = new Schema({
     new_value: { type: String, required: true },
     changed_at: { type: Date, default: Date.now }
 });
-module.exports = mongo.model('taskHistory', TaskHistory);
+module.exports = mongoose.model('taskHistory', TaskHistory);

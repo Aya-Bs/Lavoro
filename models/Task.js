@@ -1,5 +1,6 @@
-const mongo = require('mongoose');
-const Schema = mongo.Schema;
+const mongoose = require('mongoose'); 
+const Schema = mongoose.Schema;
+
 const Tasks = new Schema({
     title: { type: String, required: true },
     description: { type: String }, // "text" n'existe pas en Mongoose, String est suffisant
@@ -17,4 +18,4 @@ const Tasks = new Schema({
     updated_at: { type: Date, default: Date.now }
 
 });
-module.exports = mongo.model('tasks', Tasks);
+module.exports = mongoose.model('tasks', Tasks);

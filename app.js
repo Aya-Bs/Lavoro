@@ -38,12 +38,11 @@ mongo
   });
 
 const usersRouter = require('./routes/users');
-
+const taskRouter=require('./routes/Task.js')
 const profileRouter = require('./routes/profile');
 
 const homeRouter = require('./routes/home');
 const adminRouter = require('./routes/admin');
-
 
 
 
@@ -121,8 +120,7 @@ app.use('/', homeRouter);
 app.use('/auth',authRouter);
 app.use('/admin',adminRouter);
 app.set('io', io);
-
-
+app.set('/task',taskRouter);
 // Home route
 app.get('/home', (req, res) => {
   console.log('Session:', req.session); // Log the session data
