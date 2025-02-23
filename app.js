@@ -1,4 +1,5 @@
 require('dotenv').config();
+
 const createError = require('http-errors');
 const express = require('express');
 const path = require('path');
@@ -9,23 +10,9 @@ const http = require('http');
 const bodyparser = require('body-parser');
 const db = require('./config/dbConnection.json');
 const session = require('express-session');
+const transporter = require('./utils/emailConfig'); // Import the transporter from middleware
 const MongoStore = require('connect-mongo');
-
-const authRouter = require ('./routes/authRouter.js');
 const cors = require('cors');
-const app = express();
-
-const socketIo = require('socket.io');
-const server = http.createServer(app);
-
-const io = socketIo(server);
-
-
- const flash = require('connect-flash');
-
-
-
-
 
 // Connect to MongoDB
 mongo
@@ -37,55 +24,30 @@ mongo
     console.log(err);
   });
 
-const usersRouter = require('./routes/users');
-const taskRouter=require('./routes/Task.js')
+  const usersRouter = require('./routes/users');
+  const taskRouter=require('./routes/Task.js')
 const profileRouter = require('./routes/profile');
+const authRouter = require ('./routes/authRouter.js');
 
-const homeRouter = require('./routes/home');
+// const homeRouter = require('./routes/home');
 const adminRouter = require('./routes/admin');
 
 
 
+const app = express();
+const socketIo = require('socket.io');
+const server = http.createServer(app);
 
-app.use(session({
-  secret: 'your_secret_key',
-  resave: false,
-  saveUninitialized: true
+const io = socketIo(server);
+
+app.use(cors({
+  origin: 'http://localhost:5173', // Frontend URL
+  credentials: true, // Allow cookies to be sent/received
 }));
-
-// app.use(flash());
-
-app.use(session({
-  secret: 'your_secret_key',
-  resave: false,
-  saveUninitialized: true
-}));
-
-app.use(flash());
-
-app.use((req, res, next) => {
-  res.locals.successMessage = req.flash('success');
-  res.locals.errorMessage = req.flash('error');
-  next();
-});
-
-
-
 
 // View engine setup
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'twig');
-
-
-
-
-
-//Place CORS avant les routes et autres middlewares
-app.use(cors({
-  origin: "http://localhost:5173",
-  methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
-  credentials: true
-}));
 
 // Middleware
 app.use(logger('dev'));
@@ -115,33 +77,14 @@ app.use(
 
 // Routes
 app.use('/users', usersRouter);
-
-app.use('/', homeRouter);
+// app.use('/', homeRouter);
 app.use('/auth',authRouter);
 app.use('/admin',adminRouter);
 app.set('io', io);
 app.set('/task',taskRouter);
-// Home route
-app.get('/home', (req, res) => {
-  console.log('Session:', req.session); // Log the session data
-
-  // Check if the user is authenticated
-  if (!req.session.user) {
-    console.log('User not authenticated. Redirecting to sign-in page.');
-    return res.redirect('/users/signin');
-  }
-  const flashMessage = req.session.flashMessage;
-  console.log('Flash message:', flashMessage);
-  req.session.flashMessage = null;
-
-
-  // Render the home page for authenticated users
-  res.render('home', { user: req.session.user });
-});
 
 
 app.use('/profiles', profileRouter);
-app.use('/', homeRouter);
 
 
 // Error handling
@@ -156,6 +99,7 @@ app.use((err, req, res, next) => {
   res.status(err.status || 500);
   res.render('error');
 });
+
 io.on('connection', (socket) => {
   console.log('A user connected');
 
@@ -164,10 +108,6 @@ io.on('connection', (socket) => {
     console.log('User disconnected');
   });
 });
-
-
-
-// Create server
 
 // Start server
 server.listen(3000, () => {

@@ -2,7 +2,6 @@ const mongoose = require('mongoose');
 
 const userSchema = new mongoose.Schema({
 
-
   firstName: { type: String, required: true },
 
   lastName: { type: String, required: true },
@@ -11,7 +10,9 @@ const userSchema = new mongoose.Schema({
 
   password_hash: { type: String, required: true },
 
+  // role: { type: Number , required: false },
   role: { type: mongoose.Schema.Types.ObjectId, ref: 'role', default: null },
+
 
   image: { type: String },
 
@@ -28,6 +29,7 @@ const userSchema = new mongoose.Schema({
   verificationToken: {type : String},
 
   isVerified: { type: Boolean, default: false },
+
   resetPasswordToken: { type: String },  // Assurez-vous que ce champ est bien utilisé partout
   resetPasswordExpires: { type: Date },  // Pareil ici
 
@@ -36,5 +38,6 @@ const userSchema = new mongoose.Schema({
 
 });
 
-const User = mongoose.models.User || mongoose.model('User', userSchema);
+const User = mongoose.model('user', userSchema);
+
 module.exports = User;

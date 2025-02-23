@@ -1,22 +1,21 @@
 
 const User = require('../models/user');
-const Role = require('../models/role');
 const bcrypt = require('bcrypt');
 const { createCanvas } = require('canvas');
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
 const nodemailer = require('nodemailer');
+
+const { validatePassword ,validateUserInput } = require('../middleware/validate'); // Import the validation function
 const transporter = require('../utils/emailConfig'); // Import the email transporter
-const { validatePassword , validateUserInput} = require('../middleware/validate'); // Import the validation function
 const AccountActivityLog = require('../models/accountActivityLog');
-
-
+const Role = require('../models/role');
 
 const jwt = require('jsonwebtoken');
 const sendEmail = require('../utils/email');
 
-// Function to generate a dynamic avatar
+
 
 // Function to generate a dynamic avatar
 const generateAvatar = (firstName, lastName) => {
@@ -24,7 +23,7 @@ const generateAvatar = (firstName, lastName) => {
   const ctx = canvas.getContext('2d');
 
   // Set background color
-  ctx.fillStyle = '#4CAF50'; // Green background
+  ctx.fillStyle = '#FF416C'; // Green background
   ctx.fillRect(0, 0, 200, 200);
 
   // Set text properties
@@ -46,165 +45,240 @@ const generateAvatar = (firstName, lastName) => {
   return `/imagesAvatar/${path.basename(avatarPath)}`;
 };
 
+
 exports.signup = async (req, res) => {
   try {
-    const { firstName, lastName, email, password, role, phone_number } = req.body;
+      const { firstName, lastName, email, password, role, phone_number } = req.body;
 
-    // Validate user input
-    const validationError = validateUserInput({ firstName, lastName, phoneNumber: phone_number, password });
-    if (validationError) {
-      return res.status(400).render('signup', { error: validationError });
-    }
+      // Validate user input
+      const validationError = validateUserInput({ firstName, lastName, phoneNumber: phone_number, password });
+      if (validationError) {
+          return res.status(400).json({ error: validationError });
+      }
 
-    // Hash the password
-    const password_hash = await bcrypt.hash(password, 10);
+      // Hash the password
+      const password_hash = await bcrypt.hash(password, 10);
 
-    let imagePath;
+      // Handle image upload or generate avatar
+      let imagePath;
+      if (req.file) {
+          imagePath = `/imagesUser/${req.file.filename}`;
+      } else {
+          imagePath = generateAvatar(firstName, lastName);
+      }
 
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      // Validate email format
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+          return res.status(400).json({ error: 'Please enter a valid email address.' });
+      }
 
-    if (req.file) {
-      imagePath = `/imagesUser/${req.file.filename}`;
-    } else {
-      imagePath = generateAvatar(firstName, lastName);
-    }
+      // Check if email already exists
+      const existingUser = await User.findOne({ email });
+      if (existingUser) {
+          return res.status(400).json({ error: 'This email is already in use.' });
+      }
 
-    if (!emailRegex.test(email)) {
-      return res.status(400).render('signup', { error: 'Please enter a valid email address.' });
-    }
+      // Validate password
+      const passwordError = validatePassword(password);
+      if (passwordError) {
+          return res.status(400).json({ error: passwordError });
+      }
 
-    // Check if email already exists
-    const existingUser = await User.findOne({ email });
-    if (existingUser) {
-      return res.status(400).render('signup', { error: 'This email is already in use.' });
-    }
+      // Generate verification token
+      const verificationToken = crypto.randomBytes(20).toString('hex');
 
-    const passwordError = validatePassword(password);
-    if (passwordError) {
-      return res.status(400).render('signup', { error: passwordError });
-    }
+      let userRole;
+      if (role) {
+        userRole = await Role.findOne({ RoleName: role }); // Fetch role based on provided RoleName
+      } else {
+        userRole = await Role.findOne({ RoleName: 'Developer' }); // Default to 'Developer' role
+      }
+      // Create new user
+      const user = new User({
+          firstName,
+          lastName,
+          email,
+          password_hash,
+        //   role,
+        role:userRole._id,
 
-    // Generate verification token
-    const verificationToken = crypto.randomBytes(20).toString('hex');
-    let userRole;
-        if (role) {
-          userRole = await Role.findOne({ RoleName: role }); // Fetch role based on provided RoleName
-        } else {
-          userRole = await Role.findOne({ RoleName: 'Developer' }); // Default to 'Developer' role
-        }
-    const user = new User({
-      firstName,
-      lastName,
-      email,
-      password_hash,
-      role:userRole._id,
-      phone_number,
-      image: imagePath,
-      verificationToken,
-      isVerified: false,
-    });
+          phone_number,
+          image: imagePath,
+          verificationToken, // Save the verification token
+          isVerified: false,
+      });
 
-    // Save the user to the database
-    await user.save();
+      // Save the user to the database
+      await user.save();
 
-    const verificationUrl = `http://${req.headers.host}/users/verify-email?token=${verificationToken}`;
-    const mailOptions = {
-      to: email, // Send the email to the user's provided email address
-      from: `LAVORO <${process.env.EMAIL_USER || 'no-reply@example.com'}>`, // Sender name and email
-      subject: 'Email Verification',
-      text: `Please verify your email by clicking the following link: ${verificationUrl}`,
-    };
+      // Send verification email
+      const verificationUrl = `http://localhost:5173/verify-email?token=${verificationToken}`;
+      const mailOptions = {
+          to: email,
+          from: `LAVORO <${process.env.EMAIL_USER || 'no-reply@example.com'}>`,
+          subject: 'Email Verification',
+          text: `Please verify your email by clicking the following link: ${verificationUrl}`,
+      };
 
-    await transporter.sendMail(mailOptions);
+      await transporter.sendMail(mailOptions);
 
-    res.redirect('/users/signup');
+      res.status(201).json({ message: 'User registered successfully. Please check your email for verification.' });
   } catch (error) {
-    console.error('Error during signup:', error); // Log the error for debugging
-    res.status(500).render('signup', { error: 'An error occurred during signup. Please try again.' });
+      console.error('Error during signup:', error);
+      res.status(500).json({ error: 'An error occurred during signup. Please try again.' });
   }
 };
+
+
+
+
 
 
 const MAX_ATTEMPTS = 3; // Nombre max de tentatives
 const LOCK_TIME = 5 * 60 * 1000; // 5 minutes en millisecondes
 
-exports.signin = async (req, res) => {
-  try {
-    const { email, password } = req.body;
-    const user = await User.findOne({ email }).populate('role');
 
-    if (!user) {
-      console.log('User not found for email:', email); // Log if user is not found
-      return res.status(400).render('signin', { error: 'User not found.' });
-    }
+  exports.signin = async (req, res) => {
+    try {
+        const { email, password } = req.body;
+        console.log('Sign-in attempt for email:', email);
 
-    // Vérifier si le compte est verrouillé
+        // Find the user by email
+        const user = await User.findOne({ email });
+        if (!user) {
+            console.log('User not found for email:', email);
+            return res.status(400).json({ error: 'User not found.' });
+        }
+
+        console.log('User found:', user.email);
+
+           // Vérifier si le compte est verrouillé
     if (user.lockUntil && user.lockUntil > Date.now()) {
-      const remainingTime = Math.ceil((user.lockUntil - Date.now()) / 60000); // en minutes
-      return res.status(403).render('signin', { 
-        error: `Vous êtes bloqué jusqu'à ${new Date(user.lockUntil).toLocaleTimeString()}.`,
-        email 
-      });
-    }
-
-    console.log('User found:', user.email); // Log the found user
-  
-    // Check if the user is verified
-    if (!user.isVerified) {
-      console.log('User not verified:', email); // Log if user is not verified
-      return res.status(400).render('signin', { error: 'Please verify your email before signing in.', email });
-    }
-
-    // Vérifier le mot de passe
-    const isPasswordValid = await bcrypt.compare(password, user.password_hash);
-    if (!isPasswordValid) {
-      user.loginAttempts += 1;
-
-      if (user.loginAttempts >= MAX_ATTEMPTS) {
-        user.lockUntil = Date.now() + LOCK_TIME;
-
-        // Envoyer un e-mail à l'utilisateur
-        const emailSubject = 'Votre compte est verrouillé';
-        const emailText = `  Hello ${user.firstName},
-  
-        Your account has been locked for 5 minutes due to multiple failed login attempts.
-       Please try again later
-  
-        Best regards,  
-        The Lavoro Team`;
-        await sendEmail(user.email, emailSubject, emailText);
+        const remainingTime = Math.ceil((user.lockUntil - Date.now()) / 60000); // en minutes
+        return res.status(403).render('signin', { 
+          error: `Vous êtes bloqué jusqu'à ${new Date(user.lockUntil).toLocaleTimeString()}.`,
+          email 
+        });
       }
 
-      await user.save();
-      return res.status(400).render('signin', { error: 'Mot de passe invalide.', email });
-    }
+        // Check if the user is verified
+        if (!user.isVerified) {
+            console.log('User not verified:', email);
+            return res.status(400).json({ error: 'Please verify your email before signing in.' });
+        }
 
-    // Réinitialiser les tentatives après une connexion réussie
+        // Compare the password
+        const isPasswordValid = await bcrypt.compare(password, user.password_hash);
+        if (!isPasswordValid) {
+            user.loginAttempts += 1;
+      
+            if (user.loginAttempts >= MAX_ATTEMPTS) {
+              user.lockUntil = Date.now() + LOCK_TIME;
+      
+              // Envoyer un e-mail à l'utilisateur
+              const emailSubject = 'Votre compte est verrouillé';
+              const emailText = `  Hello ${user.firstName},
+        
+              Your account has been locked for 5 minutes due to multiple failed login attempts.
+             Please try again later
+        
+              Best regards,  
+              The Lavoro Team`;
+              await sendEmail(user.email, emailSubject, emailText);
+            }
+      
+            await user.save();
+            return res.status(400).render('signin', { error: 'Mot de passe invalide.', email });
+          }
+
+            // Réinitialiser les tentatives après une connexion réussie
     user.loginAttempts = 0;
     user.lockUntil = null;
     user.last_activity = Date.now();
     await user.save();
 
-    req.session.user = user;
-
-    console.log('Session created for user:', user.email); // Log session creation
-    await AccountActivityLog.create({
-      userId: user._id,
-      action: 'User Logged In',
-    });
 
 
 
-    if (user.role.RoleName === 'Admin') {
-      return res.redirect('/admin/dashboard');
-    } else {
-      return res.redirect('/home');
+        console.log('Sign-in successful for email:', email);
+
+        user.last_activity = Date.now();
+        await user.save();
+
+        // Set the user session
+        req.session.user = user;
+        
+        
+        console.log('Session created for user:', req.session.user);
+        await AccountActivityLog.create({
+            userId: user._id,
+            action: 'User Logged In',
+          });
+      
+    
+        res.status(200).json(user); 
+        
+
+
+        // if (user.role.RoleName === 'Admin') {
+        //     return res.redirect('/admin/dashboard');
+        //   } else {
+        //     return res.redirect('/home');
+        //   }// Return user data
+
+
+
+
+    } catch (error) {
+        console.error('Error during sign-in:', error);
+        res.status(500).json({ error: 'An error occurred during sign-in. Please try again.' });
     }
-  } catch (error) {
-    console.error('Erreur lors de la connexion:', error);
-    res.status(500).render('signin', { error: 'Erreur interne, veuillez réessayer.', email });
+};
+
+exports.verifyEmail = async (req, res) => {
+    try {
+        const { token } = req.query;
+        console.log('Verification token received:', token);
+  
+        const user = await User.findOne({ verificationToken: token });
+  
+        if (!user) {
+            console.log('User not found for token:', token);
+            return res.status(400).json({ error: 'Invalid or expired token.' });
+        }
+  
+        if (user.isVerified) {
+            console.log('User is already verified:', user.email);
+            return res.status(200).json({ message: 'Email is already verified.' });
+        }
+  
+        // Only delete the token *after* a successful response
+        user.isVerified = true;
+        await user.save();
+        
+        console.log('User verified successfully:', user.email);
+        res.status(200).json({ message: 'Email verified successfully!' });
+  
+        // Remove the token AFTER responding
+        user.verificationToken = undefined;
+        await user.save();
+    } catch (error) {
+        console.error('Error verifying email:', error);
+        res.status(500).json({ error: 'An error occurred while verifying your email. Please try again.' });
+    }
+  };
+  
+
+exports.getUserInfo = (req, res) => {
+  if (req.session.user) {
+      console.log('Session en cours : ', req.session.user.email); // Log session data
+      res.json(req.session.user); // Send user info stored in session
+  } else {
+      res.status(401).json({ error: 'Not authenticated' });
   }
 };
+
 
 
 exports.checkmail =  async (req, res) => {
@@ -221,50 +295,32 @@ exports.checkmail =  async (req, res) => {
 
 
 exports.logout = async (req, res) => {
-    try {
-      // Update the user's last_activity field
+  try {
+      // Update the user's last_activity field (if session exists)
       if (req.session.user) {
-        await User.findByIdAndUpdate(req.session.user._id, { last_activity: Date.now() });
+          await User.findByIdAndUpdate(req.session.user._id, { last_activity: Date.now() });
       }
-  
+
       // Destroy the session
       req.session.destroy((err) => {
-        if (err) {
-          console.error('Error destroying session:', err);
-          return res.status(500).json({ message: 'Error logging out', error: err.message });
-        }
-  
-        // Redirect to the sign-in page
-        res.redirect('/users/signin');
+          if (err) {
+              console.error('Error destroying session:', err);
+              return res.status(500).json({ message: 'Error logging out', error: err.message });
+          }
+
+          // Clear the session cookie after destroying the session
+          res.clearCookie('connect.sid'); // Clears the session cookie
+
+          // Send a success response
+          res.status(200).json({ message: 'Logged out successfully' });
       });
-    } catch (error) {
+  } catch (error) {
       console.error('Error updating last_activity:', error);
       res.status(500).json({ message: 'Error logging out', error: error.message });
-    }
   }
+};
 
 
-
-exports.verifyEmail = async (req, res) => {
-    try {
-      const { token } = req.query;
-  
-      const user = await User.findOne({ verificationToken: token });
-  
-      if (!user) {
-        return res.status(400).render('signin', { error: 'Invalid or expired token.' });
-      }
-  
-      user.isVerified = true;
-      user.verificationToken = undefined; // Clear the token after verification
-      await user.save();
-  
-      res.redirect(`/users/signin?email=${user.email}`);
-    } catch (error) {
-      console.error('Error verifying email:', error); // Log the error for debugging
-      res.status(500).render('signin', { error: 'An error occurred while verifying your email. Please try again.' });
-    }
-  };
 
 
  exports.redirectIfAuthenticated= async (req, res, next) =>{
@@ -277,9 +333,17 @@ exports.verifyEmail = async (req, res) => {
 
 
 
-  //reset password
- 
-  exports.resetPassword = async (req, res) => {
+
+exports.redirectIfNotAuthenticated = (req, res, next) => {
+    if (!req.session.user) {
+        console.log('User not authenticated. Redirecting to sign-in.');
+        return res.redirect('/signin'); // Redirect to sign-in page if not authenticated
+    }
+    next(); // Proceed if the user is authenticated
+};
+
+
+exports.resetPassword = async (req, res) => {
     const token = req.query.token || req.body.token;
     const { newPassword, confirmPassword } = req.body;
   
@@ -380,3 +444,5 @@ exports.forgotPassword = async (req, res) => {
     res.status(500).json({ error: 'An error occurred while sending the email.' });
   }
 };
+
+

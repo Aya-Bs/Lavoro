@@ -4,24 +4,40 @@ const userController = require('../controllers/userController');
 const upload = require('../middleware/upload'); // Import the upload middleware
 const setDefaultRole = require('../middleware/setDefaultRole');
 
+// router.post('/signup', upload.single('image'), userController.signup);
 
-// Signup route with file upload
 router.post('/signup', setDefaultRole, upload.single('image'), userController.signup);
 
+router.get('/verify-email', userController.verifyEmail);
+
 router.post('/signin', userController.signin);
+
+  router.get('/check-email', userController.checkmail);
+
+  router.post('/logout', userController.logout);
+
+
+router.get('/me', userController.getUserInfo); // Route to get user info from session
+
 
 
 
 router.get('/signin', userController.redirectIfAuthenticated, (req, res) => {
-  res.render('signin');
+  res.render('signin'); // Render sign-up page
 });
 
 router.get('/signup', userController.redirectIfAuthenticated, (req, res) => {
-  res.render('signup');
+  res.render('signup'); // Render sign-up page
 });
 
-router.get('/check-email', userController.checkmail);
-router.post('/logout', userController.logout);
+
+router.get('/home', userController.redirectIfNotAuthenticated, (req, res) => {
+  res.render('home'); 
+});
+
+
+
+
 router.get('/verify-email', userController.verifyEmail);
 router.post('/request-reset', userController.forgotPassword);
 
@@ -36,5 +52,9 @@ router.get('/resetpassword', (req, res) => {
 });
 
 router.post('/resetpassword', userController.resetPassword);
+
+
+
+
 
 module.exports = router;
