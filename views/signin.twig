@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -8,22 +9,57 @@
 <body>
     <h1>Sign In</h1>
 
+    <!-- Alertes pour les messages de succès ou d'erreur -->
+    {% if successMessage %}
+    <script>
+        alert("{{ successMessage }}");
+    </script>
+    {% endif %}
+
+    {% if errorMessage %}
+    <script>
+        alert("{{ errorMessage }}");
+    </script>
+    {% endif %}
+
+    <!-- Affichage des erreurs et messages -->
+    {% if error %}
+    <p style="color: red;">{{ error }}</p>
+    {% endif %}
+
     {% if message %}
     <p style="color: green;">{{ message }}</p>
     {% endif %}
 
+    <!-- Formulaire de connexion -->
     <form action="/users/signin" method="POST">
-        <!-- Email -->
         <label for="email">Email:</label>
-    <input type="email" id="email" name="email" value="{{ email }}" required><br>
+        <input type="email" id="email" name="email" value="{{ email }}" required><br>
+
         <label for="password">Password:</label>
         <input type="password" id="password" name="password" required><br>
 
-        <!-- Submit Button -->
         <button type="submit">Sign In</button>
     </form>
 
-    <!-- Link to Signup Page -->
+    <!-- Formulaire pour "Mot de passe oublié" -->
+    <form id="forgotPasswordForm" action="/users/request-reset" method="POST">
+        <input type="hidden" name="email" id="hiddenEmail">
+        <button type="button" onclick="sendForgotPassword()">Forgot Password?</button>
+    </form>
+
+    <!-- Lien pour s'inscrire -->
     <p>Don't have an account? <a href="/users/signup">Sign Up</a></p>
+
+    <script>
+        function sendForgotPassword() {
+            // Récupérer l'email du champ principal
+            const email = document.getElementById('email').value;
+            document.getElementById('hiddenEmail').value = email;
+
+            // Soumettre le formulaire caché
+            document.getElementById('forgotPasswordForm').submit();
+        }
+    </script>
 </body>
 </html>
