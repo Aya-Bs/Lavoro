@@ -206,7 +206,7 @@ exports.signin = async (req, res) => {
   }
 };
 
-
+  
 exports.checkmail =  async (req, res) => {
     const { email } = req.query;
 
