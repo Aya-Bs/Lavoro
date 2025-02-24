@@ -22,6 +22,7 @@ function Home() {
         }
     };
 
+
     fetchUserInfo();
 }, [navigate]);
 
@@ -35,6 +36,11 @@ function Home() {
             console.error("Logout failed:", err);
         }
     };
+
+    const handleProfileClick = () => {
+        navigate('/profile'); // Navigate to Profile page
+    };
+
 
     if (!userInfo) {
         return <p>Loading...</p>;
@@ -55,7 +61,7 @@ function Home() {
 
             <div className="home-buttons">
                 <a className="home-btn-primary" onClick={handleLogout}>Log Out</a>
-                <a className="home-btn-primary home-btn-outline">Profile</a>
+                <a className="home-btn-primary home-btn-outline" onClick={handleProfileClick}>Profile</a>
             </div>
         </div>
     </div>

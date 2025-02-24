@@ -19,6 +19,8 @@ function SignUp() {
     const [showRequirements, setShowRequirements] = useState(false);
     const [passwordSuggestions, setPasswordSuggestions] = useState([]);
     const [showPassword, setShowPassword] = useState(false); // State to toggle password visibility
+    const [showAlert, setShowAlert] = useState(false);
+    const [alertMessage, setAlertMessage] = useState("");
 
     const [fieldErrors, setFieldErrors] = useState({
         firstNameError: "",
@@ -181,10 +183,52 @@ function SignUp() {
             await axios.post("http://localhost:3000/users/signup", formData, {
                 headers: { "Content-Type": "multipart/form-data" },
             });
-            alert("User registered successfully. Please check your email for verification.");
+            setAlertMessage("User registered successfully. Please check your email for verification.");
+            setShowAlert(true);
         } catch (err) {
             setError(err.response?.data?.error || "An error occurred during signup.");
         }
+    };
+
+    const CustomAlert = ({ message, onClose }) => {
+        return (
+            <div style={{
+                position: "fixed",
+                top: 0,
+                left: 0,
+                width: "100%",
+                height: "100%",
+                backgroundColor: "rgba(0, 0, 0, 0.5)",
+                display: "flex",
+                justifyContent: "center",
+                alignItems: "center",
+                zIndex: 1000,
+            }}>
+                <div style={{
+                    backgroundColor: "#fff",
+                    padding: "20px",
+                    borderRadius: "10px",
+                    boxShadow: "0px 4px 8px rgba(0, 0, 0, 0.1)",
+                    textAlign: "center",
+                }}>
+                    <p>{message}</p>
+                    <button
+                        onClick={onClose}
+                        style={{
+                            width: "100%",
+                            padding: "10px",
+                            marginTop: "10px",
+                            backgroundColor: "#FFC300",
+                            border: "none",
+                            borderRadius: "5px",
+                            cursor: "pointer",
+                        }}
+                    >
+                        OK
+                    </button>
+                </div>
+            </div>
+        );
     };
 
     return (
@@ -263,6 +307,13 @@ function SignUp() {
 
                 <button type="submit">Sign Up</button>
             </form>
+
+            {showAlert && (
+                <CustomAlert
+                    message={alertMessage}
+                    onClose={() => setShowAlert(false)}
+                />
+            )}
         </div>
     );
 }

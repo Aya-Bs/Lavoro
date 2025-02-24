@@ -8,6 +8,8 @@ import VerifyEmail from "./user/verifymail";
 import ForgotPassword from "./user/ForgetPassword";
 import ResetPassword from "./user/resetPassword";
 import './styles.css'; // Assuming this is where your styles are located
+import Profile from "./profile/profile";
+import UpdateProfile from "./profile/updateProfile";
 
 function App() {
   return (
@@ -21,6 +23,9 @@ function App() {
 
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/resetpassword" element={<ResetPassword />} />
+
+          <Route path="/profile" element={<Profile />} />
+          <Route path="/update-profile" element={<UpdateProfile />} />
 
           <Route
             path="/auth/*"
