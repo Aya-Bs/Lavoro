@@ -154,13 +154,14 @@ const LOCK_TIME = 5 * 60 * 1000; // 5 minutes en millisecondes
         console.log('User found:', user.email);
 
            // Vérifier si le compte est verrouillé
+    // Vérifier si le compte est verrouillé
     if (user.lockUntil && user.lockUntil > Date.now()) {
-        const remainingTime = Math.ceil((user.lockUntil - Date.now()) / 60000); // en minutes
-        return res.status(403).render('signin', { 
-          error: `Vous êtes bloqué jusqu'à ${new Date(user.lockUntil).toLocaleTimeString()}.`,
-          email 
-        });
-      }
+      const remainingTime = Math.ceil((user.lockUntil - Date.now()) / 60000); // en minutes
+      return res.status(403).json({ 
+          error: `Votre compte est bloqué pour ${remainingTime} minutes. Il sera réactivé à ${new Date(user.lockUntil).toLocaleTimeString()}.`,
+          lockMessage: `Votre compte est verrouillé jusqu'à ${new Date(user.lockUntil).toLocaleTimeString()}.`
+      });
+  }
 
         // Check if the user is verified
         if (!user.isVerified) {

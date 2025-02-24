@@ -31,67 +31,66 @@ function SignIn() {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+    const handleSubmit = async (e) => {
+        e.preventDefault();
 
-    try {
-      const response = await axios.post('http://localhost:3000/users/signin', formData, {
-        headers: { 'Content-Type': 'application/json' },
-        withCredentials: true, // Inclure les cookies
-      });
+        try {
+            const response = await axios.post('http://localhost:3000/users/signin', formData, {
+                headers: { 'Content-Type': 'application/json' },
+                withCredentials: true, // Make sure to include cookies
+            });
 
-      setAlertMessage('Sign-in successful!');
-      setShowAlert(true);
-      navigate('/home'); // Rediriger vers la page d'accueil après la connexion
-    } catch (err) {
-      setError(err.response?.data?.error || 'An error occurred during sign-in.');
-    }
-  };
+            alert('Sign-in successful!');
+            navigate('/home'); // Redirect to home page after login
+        } catch (err) {
+            setError(err.response?.data?.error || 'An error occurred during sign-in.');
+        }
+    };
 
-  const handleForgotPassword = () => {
-    navigate('/forgot-password', { state: { email: formData.email } }); // Passer l'email à la page ForgotPassword
-  };
-
-  const CustomAlert = ({ message, onClose }) => {
-    return (
-      <div style={{
-        position: "fixed",
-        top: 0,
-        left: 0,
-        width: "100%",
-        height: "100%",
-        backgroundColor: "rgba(0, 0, 0, 0.5)",
-        display: "flex",
-        justifyContent: "center",
-        alignItems: "center",
-        zIndex: 1000,
-      }}>
-        <div style={{
-          backgroundColor: "#fff",
-          padding: "20px",
-          borderRadius: "10px",
-          boxShadow: "0px 4px 8px rgba(0, 0, 0, 0.1)",
-          textAlign: "center",
-        }}>
-          <p>{message}</p>
-          <button
-            onClick={onClose}
-            style={{
-              width: "100%",
-              padding: "10px",
-              marginTop: "10px",
-              backgroundColor: "#FFC300",
-              border: "none",
-              borderRadius: "5px",
-              cursor: "pointer",
-            }}
-          >
-            OK
-          </button>
-        </div>
-      </div>
-    );
-  };
+      // Fonction pour gérer le clic sur "Forgot your password?"
+      const handleForgotPassword = () => {
+        navigate('/forgot-password', { state: { email: formData.email } }); // Passer l'email à la page ForgotPassword
+    };
+    const CustomAlert = ({ message, onClose }) => {
+        return (
+          <div style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            width: "100%",
+            height: "100%",
+            backgroundColor: "rgba(0, 0, 0, 0.5)",
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            zIndex: 1000,
+          }}>
+            <div style={{
+              backgroundColor: "#fff",
+              padding: "20px",
+              borderRadius: "10px",
+              boxShadow: "0px 4px 8px rgba(0, 0, 0, 0.1)",
+              textAlign: "center",
+            }}>
+              <p>{message}</p>
+              <button
+                onClick={onClose}
+                style={{
+                  width: "100%",
+                  padding: "10px",
+                  marginTop: "10px",
+                  backgroundColor: "#FFC300",
+                  border: "none",
+                  borderRadius: "5px",
+                  cursor: "pointer",
+                }}
+              >
+                OK
+              </button>
+            </div>
+          </div>
+        );
+      };
 
   return (
     <div className="form-container sign-in-container">
