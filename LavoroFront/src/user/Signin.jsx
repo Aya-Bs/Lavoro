@@ -31,20 +31,24 @@ function SignIn() {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-
+    
         try {
             const response = await axios.post('http://localhost:3000/users/signin', formData, {
                 headers: { 'Content-Type': 'application/json' },
-                withCredentials: true, // Make sure to include cookies
+                withCredentials: true,
             });
-
+    
             alert('Sign-in successful!');
-            navigate('/home'); // Redirect to home page after login
+            navigate('/home');
         } catch (err) {
-            setError(err.response?.data?.error || 'An error occurred during sign-in.');
+            if (err.response?.status === 403 && err.response?.data?.lockMessage) {
+                setError(err.response.data.lockMessage);
+            } else {
+                setError(err.response?.data?.error || 'An error occurred during sign-in.');
+            }
         }
     };
-
+    
       // Fonction pour gérer le clic sur "Forgot your password?"
       const handleForgotPassword = () => {
         navigate('/forgot-password', { state: { email: formData.email } }); // Passer l'email à la page ForgotPassword

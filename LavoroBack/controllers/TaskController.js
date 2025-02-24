@@ -3,6 +3,9 @@ const Task = require('../models/Task');
 const TaskHistory = require('../models/TaskHistory');
 
 
+
+const userId = new mongoose.Types.ObjectId("67bc483610f120a6f51e3eb2"); // Remplace par l'ID réel de l'utilisateur
+
 exports.seedTasks = async () => {
     try {
         await Task.deleteMany(); // Supprime toutes les tâches existantes pour éviter les doublons
@@ -13,7 +16,7 @@ exports.seedTasks = async () => {
                 title: 'Créer une API REST',
                 description: 'Développer une API REST pour gérer les utilisateurs.',
                 project_id: new mongoose.Types.ObjectId(),
-                assigned_to: new mongoose.Types.ObjectId(),
+                assigned_to: userId, // Assignation au user Sarra Sahli
                 status: 'Not Started',
                 priority: 'High',
                 deadline: new Date('2024-03-15'),
@@ -26,7 +29,7 @@ exports.seedTasks = async () => {
                 title: 'Développer une interface utilisateur',
                 description: 'Créer une interface utilisateur en Angular.',
                 project_id: new mongoose.Types.ObjectId(),
-                assigned_to: new mongoose.Types.ObjectId(),
+                assigned_to: userId, // Assignation au user Sarra Sahli
                 status: 'In Progress',
                 priority: 'Medium',
                 deadline: new Date('2024-04-01'),
@@ -37,7 +40,7 @@ exports.seedTasks = async () => {
         ];
 
         await Task.insertMany(tasks);
-        console.log('Tâches insérées avec succès !');
+        console.log('Tâches insérées avec succès et assignées à Sarra Sahli !');
         mongoose.connection.close();
     } catch (error) {
         console.error('Erreur lors de l’insertion des tâches :', error);
@@ -86,4 +89,26 @@ exports.seedTaskHistory = async () => {
         console.error('Erreur lors de l’insertion de l’historique :', error);
     }
 };
+
+
+// Fonction pour récupérer les tâches assignées à un utilisateur spécifique
+exports.getTasksByUser = async (req, res) => {
+    try {
+        const userId = req.params.userId;
+
+        // Vérifier si l'ID utilisateur est valide
+        if (!ObjectId.isValid(userId)) {
+            return res.status(400).json({ error: 'Invalid userId format' });
+        }
+
+        // Rechercher les tâches assignées à l'utilisateur
+        const tasks = await Task.find({ assignedTo: userId });
+
+        res.status(200).json(tasks);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error', message: error.message });
+    }
+};
+
+
 
