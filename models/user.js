@@ -28,8 +28,14 @@ const userSchema = new mongoose.Schema({
   verificationToken: {type : String},
 
   isVerified: { type: Boolean, default: false },
-  resetPasswordToken: { type: String },  // Assurez-vous que ce champ est bien utilisé partout
-  resetPasswordExpires: { type: Date },  // Pareil ici
+
+  resetPasswordToken: { type: String }, 
+  
+  resetPasswordExpires: { type: Date },  
+  
+  twoFASecret: {type : String},
+  
+  isTwoFAEnabled: { type: Boolean, default: false }, 
 });
 
 const User = mongoose.models.User || mongoose.model('User', userSchema);
