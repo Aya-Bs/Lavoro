@@ -145,7 +145,7 @@ const LOCK_TIME = 5 * 60 * 1000; // 5 minutes en millisecondes
         console.log('Sign-in attempt for email:', email);
 
         // Find the user by email
-        const user = await User.findOne({ email });
+        const user = await User.findOne({ email }).populate('role');
         if (!user) {
             console.log('User not found for email:', email);
             return res.status(400).json({ error: 'User not found.' });

@@ -7,11 +7,16 @@ import Home from "./Home";
 import VerifyEmail from "./user/verifymail";
 import ForgotPassword from "./user/ForgetPassword";
 import ResetPassword from "./user/resetPassword";
-import './styles.css'; // Assuming this is where your styles are located
+import './styles.css'; 
 import Profile from "./profile/profile";
 import UpdateProfile from "./profile/updateProfile";
+
+import AdminDashboard from "./admin/AdminDashboard"; 
+import UserActivityLog from "./admin/accountLog";
+
 import TasksPage from "./user/ActivitiesPage";
 import ActivitiesPage from "./user/ActivitiesPage";
+
 
 function App() {
   return (
@@ -19,6 +24,8 @@ function App() {
       <BrowserRouter>
         <Routes>
           <Route path="/home" element={<Home />} />
+          <Route path="/admin-dashboard" element={<AdminDashboard />} />
+          <Route path="/user-activity/:userId" element={<UserActivityLog />} />
           <Route path="/verify-email" element={<VerifyEmail />} />
           <Route path="/signin" element={<SignIn />} />
           <Route path="/signup" element={<SignUp />} />

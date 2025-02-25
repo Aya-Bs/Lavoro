@@ -78,16 +78,17 @@ exports.updateProfile = async (req, res) => {
     } else {
       return res.status(404).json({ message: 'User not found' });
     }
+    await AccountActivityLog.create({
+               userId: updatedUser._id,
+               action: 'User Updated Profile',
+             });
 
     console.log("session user:", req.session.user);
     req.session.user = updatedUser;
 
     // Mettre à jour la session avec les nouvelles informations
 
-    // await AccountActivityLog.create({
-    //         userId: updatedUser._id,
-    //         action: 'User Updated Profile',
-    //       });
+    // 
 
     res.status(200).json({ message: 'Profil mis à jour avec succès' });
   } catch (error) {
