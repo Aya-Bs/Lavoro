@@ -11,8 +11,9 @@ const Notification = new Schema(
         is_read: { type: Boolean, default: false },
         created_at: { type: Date, default: Date.now },
         read_at: { type: Date },
-        triggered_by: { type: String, required: true },
-        updated_at: { type: Date, default: Date.now }
+        triggered_by: { type: mongoose.Schema.Types.ObjectId, ref: 'user', required: true },
+        updated_at: { type: Date, default: Date.now },
+        status: { type: String, enum: ['pending', 'approved', 'rejected'], default: 'pending' },
       });
     
 

@@ -31,21 +31,27 @@ function SignIn() {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-
-        try {
-            const response = await axios.post('http://localhost:3000/users/signin', formData, {
-                headers: { 'Content-Type': 'application/json' },
-                withCredentials: true, // Make sure to include cookies
-            });
-
-            alert('Sign-in successful!');
-            navigate('/home'); // Redirect to home page after login
-        } catch (err) {
-            setError(err.response?.data?.error || 'An error occurred during sign-in.');
-        }
-    };
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+  
+    try {
+      const response = await axios.post('http://localhost:3000/users/signin', formData, {
+        headers: { 'Content-Type': 'application/json' },
+        withCredentials: true, // Make sure to include cookies
+      });
+  
+      // Check the user's role in the response
+      if (response.data.role && response.data.role.RoleName === 'Admin') {
+        navigate('/admin-dashboard'); // Redirect to admin dashboard for admins
+      } else {
+        navigate('/home'); // Redirect to home page for regular users
+      }
+  
+      alert('Sign-in successful!');
+    } catch (err) {
+      setError(err.response?.data?.error || 'An error occurred during sign-in.');
+    }
+  };
 
       // Fonction pour gérer le clic sur "Forgot your password?"
       const handleForgotPassword = () => {
