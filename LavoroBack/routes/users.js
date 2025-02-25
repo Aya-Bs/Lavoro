@@ -3,6 +3,7 @@ const router = express.Router();
 const userController = require('../controllers/userController');
 const upload = require('../middleware/upload'); // Import the upload middleware
 const setDefaultRole = require('../middleware/setDefaultRole');
+const Task = require('../models/Task');
 
 // router.post('/signup', upload.single('image'), userController.signup);
 
@@ -53,7 +54,21 @@ router.get('/resetpassword', (req, res) => {
 
 router.post('/resetpassword', userController.resetPassword);
 
+router.get('/mytasks', async (req, res) => {
+  try {
+      const userId = req.session.user._id; // Get the logged-in user's ID
+      console.log("Fetching tasks for user ID:", userId); // Debugging
 
+      // Fetch tasks assigned to the user
+      const tasks = await Task.find({ assigned_to: userId });
+      console.log("Tasks found:", tasks); // Debugging
+
+      res.status(200).json(tasks); // Return the tasks
+  } catch (error) {
+      console.error("Error fetching tasks:", error);
+      res.status(500).json({ error: "An error occurred while fetching tasks." });
+  }
+});
 
 
 

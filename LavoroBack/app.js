@@ -81,7 +81,7 @@ app.use('/users', usersRouter);
 app.use('/auth',authRouter);
 app.use('/admin',adminRouter);
 app.set('io', io);
-app.set('/task',taskRouter);
+app.set('/tasks',taskRouter);
 
 
 app.use('/profiles', profileRouter);

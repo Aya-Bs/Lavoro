@@ -21,5 +21,4 @@ router.post('/seed-task-history', async (req, res) => {
     }
 });
 
-
 module.exports = router;

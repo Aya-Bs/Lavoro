@@ -7,24 +7,23 @@ function Home() {
     const navigate = useNavigate(); // Hook for redirecting to a different page
 
     useEffect(() => {
-    const fetchUserInfo = async () => {
-        try {
-            const response = await axios.get('http://localhost:3000/users/me', { withCredentials: true });
-            if (response.data) {
-                setUserInfo(response.data); // Set the user info if authenticated
-            } else {
-                // Redirect to login page if user is not authenticated
+        const fetchUserInfo = async () => {
+            try {
+                const response = await axios.get('http://localhost:3000/users/me', { withCredentials: true });
+                if (response.data) {
+                    setUserInfo(response.data); // Set the user info if authenticated
+                } else {
+                    // Redirect to login page if user is not authenticated
+                    navigate('/auth');
+                }
+            } catch (err) {
+                // If there's an error (e.g., user is not authenticated), redirect to sign-in page
                 navigate('/auth');
             }
-        } catch (err) {
-            // If there's an error (e.g., user is not authenticated), redirect to sign-in page
-            navigate('/auth');
-        }
-    };
+        };
 
-
-    fetchUserInfo();
-}, [navigate]);
+        fetchUserInfo();
+    }, [navigate]);
 
     const handleLogout = async () => {
         try {
@@ -41,31 +40,35 @@ function Home() {
         navigate('/profile'); // Navigate to Profile page
     };
 
+    const handleViewActivities = () => {
+        navigate('/activities'); // Navigate to Activities page
+    };
 
     if (!userInfo) {
         return <p>Loading...</p>;
     }
 
     return (
-<div className="home-container">
-    <h1 className="home-title">Welcome to LAVORO</h1>
-    <div className="home-grid">
-        <div className="home-profile">
-            <img src={`http://localhost:3000${userInfo.image}`} alt="Profile" />
-        </div>
-        <div className="home-user-info">
-            <h3>First Name: <span>{userInfo.firstName}</span></h3>
-            <h3>Last Name: <span>{userInfo.lastName}</span></h3>
-            <h3>Email: <span>{userInfo.email}</span></h3>
-            <h3>Phone number: <span>{userInfo.phone_number}</span></h3>
+        <div className="home-container">
+            <h1 className="home-title">Welcome to LAVORO</h1>
+            <div className="home-grid">
+                <div className="home-profile">
+                    <img src={`http://localhost:3000${userInfo.image}`} alt="Profile" />
+                </div>
+                <div className="home-user-info">
+                    <h3>First Name: <span>{userInfo.firstName}</span></h3>
+                    <h3>Last Name: <span>{userInfo.lastName}</span></h3>
+                    <h3>Email: <span>{userInfo.email}</span></h3>
+                    <h3>Phone number: <span>{userInfo.phone_number}</span></h3>
 
-            <div className="home-buttons">
-                <a className="home-btn-primary" onClick={handleLogout}>Log Out</a>
-                <a className="home-btn-primary home-btn-outline" onClick={handleProfileClick}>Profile</a>
+                    <div className="home-buttons">
+                        <a className="home-btn-primary" onClick={handleLogout}>Log Out</a>
+                        <a className="home-btn-primary home-btn-outline" onClick={handleProfileClick}>Profile</a>
+                        <a className="home-btn-primary home-btn-outline" onClick={handleViewActivities}>Voir activité</a>
+                    </div>
+                </div>
             </div>
         </div>
-    </div>
-</div>
     );
 }
 
