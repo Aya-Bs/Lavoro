@@ -10,6 +10,8 @@ import ResetPassword from "./user/resetPassword";
 import './styles.css'; // Assuming this is where your styles are located
 import Profile from "./profile/profile";
 import UpdateProfile from "./profile/updateProfile";
+import TasksPage from "./user/ActivitiesPage";
+import ActivitiesPage from "./user/ActivitiesPage";
 
 function App() {
   return (
@@ -27,6 +29,7 @@ function App() {
           <Route path="/profile" element={<Profile />} />
           <Route path="/update-profile" element={<UpdateProfile />} />
 
+          <Route path="/activities" element={<ActivitiesPage />} />
           <Route
             path="/auth/*"
             element={

@@ -5,7 +5,7 @@ const Tasks = new Schema({
     title: { type: String, required: true },
     description: { type: String }, // "text" n'existe pas en Mongoose, String est suffisant
     project_id: { type: mongoose.Schema.Types.UUID, required: true },
-    assigned_to: { type: mongoose.Schema.Types.UUID },
+    assigned_to: { type: Schema.Types.ObjectId, ref: 'User' },
     status: { type: String, enum: ['Not Started', 'In Progress', 'Done'], default: 'Not Started' },
     priority: { type: String, enum: ['Low', 'Medium', 'High'], default: 'Medium' },
     deadline: { type: Date },
