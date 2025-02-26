@@ -6,7 +6,7 @@ pipeline {
         stage('Install dependencies') {
             steps {
                 script {
-                    sh 'npm install' // Exécute la commande npm install
+                    sh ('npm install') // Exécute la commande npm install
                 }
             }
         }
@@ -15,7 +15,7 @@ pipeline {
         stage('Unit Test') {
             steps {
                 script {
-                    sh 'npm test' // Exécute la commande npm test
+                    sh ('npm test') // Exécute la commande npm test
                 }
             }
         }
@@ -24,7 +24,7 @@ pipeline {
         stage('Build application') {
             steps {
                 script {
-                    sh 'npm run build-dev' // Exécute la commande npm run build-dev
+                    sh ('npm run build-dev') // Exécute la commande npm run build-dev
                 }
             }
         }
