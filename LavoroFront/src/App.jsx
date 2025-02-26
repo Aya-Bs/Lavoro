@@ -6,7 +6,6 @@ import AuthContainer from './user/AuthContainer';
 import Home from "./Home";
 import VerifyEmail from "./user/verifymail";
 import ForgotPassword from "./user/ForgetPassword";
-import ResetPassword from "./user/resetPassword";
 import './styles.css'; 
 import Profile from "./profile/profile";
 import UpdateProfile from "./profile/updateProfile";
@@ -16,6 +15,7 @@ import UserActivityLog from "./admin/accountLog";
 
 import TasksPage from "./user/ActivitiesPage";
 import ActivitiesPage from "./user/ActivitiesPage";
+import ResetPassword from "./user/ResetPassword";
 
 
 function App() {
