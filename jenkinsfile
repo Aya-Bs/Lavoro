@@ -51,7 +51,23 @@ pipeline {
                 }
             }
         }
-    }
 
-  
+        // Stage 4: SonarQube Analysis
+        stage('SonarQube Analysis') {
+            steps {
+                script {
+                    try {
+                        def scannerHome = tool 'scanner'
+                        withSonarQubeEnv {
+                            sh "${scannerHome}/bin/sonar-scanner"
+                        }
+                    } catch (error) {
+                        echo "Error during SonarQube analysis: ${error}"
+                        currentBuild.result = 'FAILURE'
+                        error("SonarQube analysis failed")
+                    }
+                }
+            }
+        }
+    }
 }
