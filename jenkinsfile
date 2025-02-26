@@ -69,12 +69,14 @@ pipeline {
                 }
             }
         }
-        stage('Building images (node and mongo)') {
-               steps{
-                        script {
-                                 sh('docker-compose build')
-                       }
-            }
 
-    }
-}
+        // Stage 5: Building images (node and mongo)
+        stage('Building images (node and mongo)') {
+            steps {
+                script {
+                    sh 'docker-compose build'
+                }
+            }
+        }
+    } // Fin du bloc stages
+} // Fin du pipeline
