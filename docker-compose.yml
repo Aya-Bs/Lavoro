@@ -10,16 +10,7 @@ services:
       NODE_ENV: production
     depends_on:
       - db
-
-  frontend:
-    build: ./frontend
-    container_name: frontend
-    restart: always
-    ports:
-      - "3000:80"  # Exposer le port 80 du conteneur sur le port 3000 de l'hôte
-    depends_on:
-      - backend
-
+      
   db:
     image: mongo:4.2
     container_name: db

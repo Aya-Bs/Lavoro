@@ -74,7 +74,7 @@ pipeline {
         stage('Building images (node and mongo)') {
             steps {
                 script {
-                    sh 'cd LavoroBack && docker-compose build'
+                    sh 'docker-compose build'
                 }
             }
         }
