@@ -1,30 +1,32 @@
 pipeline {
-    agent any // Exécute le pipeline sur n'importe quel agent disponible
+    agent any 
 
     stages {
-        // Étape 1 : Installation des dépendances
+        // Étape 1 : Installation des dépendances pour le back et le front
         stage('Install dependencies') {
             steps {
                 script {
-                    sh ('npm install') // Exécute la commande npm install
+                    sh 'cd LavoroBack && npm install'  //  Installe les dépendances du backend
+                    sh 'cd LavoroFront && npm install' //  Installe les dépendances du frontend
                 }
             }
         }
 
-        // Étape 2 : Exécution des tests unitaires
+        // Étape 2 : Exécution des tests unitaires (Back uniquement si nécessaire)
         stage('Unit Test') {
             steps {
                 script {
-                    sh ('cd LavoroBack && npm test') // Exécute la commande npm test
+                    sh 'cd LavoroBack && npm test'
                 }
             }
         }
 
-        // Étape 3 : Construction de l'application
+        // Étape 3 : Construction de l'application (Front et Back)
         stage('Build application') {
             steps {
                 script {
-                    sh ('npm run build-dev') // Exécute la commande npm run build-dev
+                    sh 'cd LavoroBack && npm run build-dev'  //  Build du backend
+                    sh 'cd LavoroFront && npm run build'     // Build du frontend (ajustez selon votre script)
                 }
             }
         }
