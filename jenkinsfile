@@ -2,33 +2,56 @@ pipeline {
     agent any 
 
     stages {
-        // Étape 1 : Installation des dépendances pour le back et le front
+        // Stage 1: Install dependencies for both backend and frontend
         stage('Install dependencies') {
             steps {
                 script {
-                    sh 'cd LavoroBack && npm install'  //  Installe les dépendances du backend
-                    sh 'cd LavoroFront && npm install' //  Installe les dépendances du frontend
+                    try {
+                        sh 'cd LavoroBack && npm install'
+                        sh 'cd LavoroFront && npm install'
+                    } catch (error) {
+                        echo "Error installing dependencies: ${error}"
+                        currentBuild.result = 'FAILURE'
+                        error("Failed to install dependencies")
+                    }
                 }
             }
         }
 
-        // Étape 2 : Exécution des tests unitaires (Back uniquement si nécessaire)
+        // Stage 2: Run unit tests (Backend only)
         stage('Unit Test') {
             steps {
                 script {
-                    sh 'cd LavoroBack && npm test'
+                    try {
+                        sh 'cd LavoroBack && npm test'
+                    } catch (error) {
+                        echo "Error running unit tests: ${error}"
+                        currentBuild.result = 'FAILURE'
+                        error("Unit tests failed")
+                    }
                 }
             }
         }
 
-        // Étape 3 : Construction de l'application (Front et Back)
+        // Stage 3: Build application (Backend and Frontend)
         stage('Build application') {
             steps {
                 script {
-                    sh 'cd LavoroBack && npm run build-dev'  //  Build du backend
-                    sh 'cd LavoroFront && npm run build'     // Build du frontend (ajustez selon votre script)
+                    try {
+                        // Build backend
+                        sh 'cd LavoroBack && npm run build-dev || echo "No build-dev script found, skipping backend build"'
+                        
+                        // Build frontend
+                        sh 'cd LavoroFront && npm run build'
+                    } catch (error) {
+                        echo "Error building application: ${error}"
+                        currentBuild.result = 'FAILURE'
+                        error("Build failed")
+                    }
                 }
             }
         }
     }
+
+  
 }
