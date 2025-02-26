@@ -1,0 +1,33 @@
+version: '3.8'
+services:
+  backend:
+    build: ./backend
+    container_name: backend
+    restart: always
+    ports:
+      - "5000:5000"
+    environment:
+      NODE_ENV: production
+    depends_on:
+      - db
+
+  frontend:
+    build: ./frontend
+    container_name: frontend
+    restart: always
+    ports:
+      - "3000:80"  # Exposer le port 80 du conteneur sur le port 3000 de l'hôte
+    depends_on:
+      - backend
+
+  db:
+    image: mongo:4.2
+    container_name: db
+    restart: always
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: example
+    ports:
+      - "27017:27017"
+    volumes:
+      - ./data/db:/data/db
