@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     environment {
-        registryCredentials = "nexus" // Identifiants pour Nexus
+        registryCredentials = "Nexus" // Identifiants pour Nexus
         registry = "192.168.33.10:8083" // Adresse du registre Docker (Nexus)
     }
 
