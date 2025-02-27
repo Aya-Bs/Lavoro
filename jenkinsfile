@@ -120,6 +120,27 @@ pipeline {
                 }
             }
         }
+
+        // Stage 7: Run application
+        stage('Run application') {
+            steps {
+                script {
+                    try {
+                        docker.withRegistry("http://${registry}", registryCredentials) {
+                            // Pull l'image Docker depuis Nexus
+                            sh "docker pull ${registry}/nodemongoapp:6.0"
+                            
+                            // Démarrer l'application avec docker-compose
+                            sh "docker-compose up -d"
+                        }
+                    } catch (Exception error) {
+                        echo "Error running application: ${error}"
+                        currentBuild.result = 'FAILURE'
+                        error("Failed to run application. Check the logs for more details.")
+                    }
+                }
+            }
+        }
     } // Fin du bloc stages
 
     // Gestion des échecs
