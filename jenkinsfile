@@ -3,7 +3,7 @@ pipeline {
 
     environment {
         registryCredentials = "Nexus" // Identifiants pour Nexus
-        registry = "192.168.33.10:8083" // Adresse du registre Docker (Nexus)
+        registry = "192.168.33.10:8081" // Adresse du registre Docker (Nexus)
     }
 
     stages {
