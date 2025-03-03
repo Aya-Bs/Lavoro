@@ -7,14 +7,35 @@ import Home from "./Home";
 import VerifyEmail from "./user/verifymail";
 import ForgotPassword from "./user/ForgetPassword";
 import ResetPassword from "./user/resetPassword";
-import './styles.css'; // Assuming this is where your styles are located
+import './styles.css'; 
+
+import Profile from "./profile/profile";
+import UpdateProfile from "./profile/updateProfile";
+
+import AdminDashboard from "./admin/AdminDashboard"; 
+import UserActivityLog from "./admin/accountLog";
+
+import TasksPage from "./user/ActivitiesPage";
+import ActivitiesPage from "./user/ActivitiesPage";
+import { GoogleOAuthProvider } from "@react-oauth/google";
+import RefreshHandler from "./user/RefreshHandler";
+import { useState } from "react";
+
 
 function App() {
+
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+
   return (
     <>
+    <GoogleOAuthProvider clientId="893053722717-a3eudc815ujr6ne3tf5q3dlrvkbmls6d.apps.googleusercontent.com">
       <BrowserRouter>
+      <RefreshHandler setIsAuthenticated={setIsAuthenticated} />
+
         <Routes>
           <Route path="/home" element={<Home />} />
+          <Route path="/admin-dashboard" element={<AdminDashboard />} />
+          <Route path="/user-activity/:userId" element={<UserActivityLog />} />
           <Route path="/verify-email" element={<VerifyEmail />} />
           <Route path="/signin" element={<SignIn />} />
           <Route path="/signup" element={<SignUp />} />
@@ -22,6 +43,10 @@ function App() {
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/resetpassword" element={<ResetPassword />} />
 
+          <Route path="/profile" element={<Profile />} />
+          <Route path="/update-profile" element={<UpdateProfile />} />
+
+          <Route path="/activities" element={<ActivitiesPage />} />
           <Route
             path="/auth/*"
             element={
@@ -35,6 +60,7 @@ function App() {
           <Route path="*" element={<Navigate to="/auth" />} />
         </Routes>
       </BrowserRouter>
+      </GoogleOAuthProvider>
     </>
   );
 }

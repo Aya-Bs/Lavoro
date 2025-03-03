@@ -27,7 +27,6 @@ mongo
   const usersRouter = require('./routes/users');
   const taskRouter=require('./routes/Task.js')
 const profileRouter = require('./routes/profile');
-const authRouter = require ('./routes/authRouter.js');
 
 // const homeRouter = require('./routes/home');
 const adminRouter = require('./routes/admin');
@@ -78,10 +77,9 @@ app.use(
 // Routes
 app.use('/users', usersRouter);
 // app.use('/', homeRouter);
-app.use('/auth',authRouter);
 app.use('/admin',adminRouter);
 app.set('io', io);
-app.set('/task',taskRouter);
+app.set('/tasks',taskRouter);
 
 
 app.use('/profiles', profileRouter);
