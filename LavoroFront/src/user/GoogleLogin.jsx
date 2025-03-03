@@ -82,12 +82,11 @@ function GoogleLogin() {
     });
 
     return (
-        <div className="social-container">
-            <a href="#" className="social" onClick={googleLogin}>
-                <i className="fab fa-google"></i>
+        <>
+            <a href="#" className="social google" onClick={googleLogin}>
+                <i className="fab fa-google" onClick={googleLogin}></i>
             </a>
 
-            {/* Modale Bootstrap */}
             <Modal show={showModal} onHide={() => setShowModal(false)}>
                 <Modal.Header closeButton className={`bg-${modalType} text-white`}>
                     <Modal.Title>
@@ -103,7 +102,7 @@ function GoogleLogin() {
                     </Button>
                 </Modal.Footer>
             </Modal>
-        </div>
+            </>
     );
 }
 

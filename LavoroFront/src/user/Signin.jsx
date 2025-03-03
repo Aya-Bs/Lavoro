@@ -63,7 +63,7 @@ function SignIn() {
                 });
 
                 // Show success alert
-                setAlertMessage('Sign-in successful!');
+                setAlertMessage('✅ Sign-in successful!');
                 setShowAlert(true);
 
                 // Redirect after 2 seconds
@@ -102,6 +102,7 @@ function SignIn() {
                 boxShadow: "0px 4px 8px rgba(0, 0, 0, 0.1)",
                 textAlign: "center",
                 zIndex: 1000,
+                color: "black",
             }}>
                 <p style={{ margin: "0 0 10px 0" }}>{message}</p>
                 <button
@@ -109,7 +110,7 @@ function SignIn() {
                     style={{
                         width: "100%",
                         padding: "8px",
-                        backgroundColor: "#FFC300",
+                        backgroundColor: "#5d68e2",
                         border: "none",
                         borderRadius: "5px",
                         cursor: "pointer",
@@ -120,48 +121,88 @@ function SignIn() {
             </div>
         );
     };
-
     return (
-        <div className="form-container sign-in-container">
-            <form onSubmit={handleSubmit}>
-                <h1>Sign in</h1>
-                <div className="social-container">
-                    <a href="#" className="social">
-                        <GoogleLogin />
-                    </a>
-                    <a href="#" className="social">
-                        <MicrosoftLogin />
-                    </a>
-                    <a href="#" className="social">
-                        <GitHubLogin />
-                    </a>
-                </div>
-                <span>or use your account</span>
-                <input type="email" name="email" placeholder="Email" value={formData.email} onChange={handleChange} required />
-                <div className="password-container">
-                    <input
-                        type={showPassword ? "text" : "password"}
-                        name="password"
-                        placeholder="Password"
-                        value={formData.password}
-                        onChange={handleChange}
-                        required
-                    />
-                    <span
-                        className="eye-icon"
-                        onClick={() => setShowPassword(!showPassword)}
-                    >
-                        {showPassword ? <FaEyeSlash /> : <FaEye />}
-                    </span>
-                </div>
-                {error && <p style={{ color: 'red' }}>{error}</p>}
-                <span onClick={handleForgotPassword} style={{ cursor: "pointer", color: "blue", textDecoration: "underline" }}>
-                    Forgot your password?
-                </span>
-                <button type="submit">Sign In</button>
-            </form>
+                <div className="form-container sign-in-container">
 
-            {showAlert && (
+                <form onSubmit={handleSubmit}>
+                <div className="logo-container">
+                <div className="logo"></div>
+            </div>
+                <h1>Sign In</h1>
+                <p className="welcome-text">Welcome back  !</p>
+
+                <div className="social-container">
+    <a >
+        <GitHubLogin />
+    </a>
+
+    {/* Gmail Login */}
+    <a href="#" >
+        <GoogleLogin />
+    </a>
+
+    {/* Microsoft Login */}
+    <a href="#" >
+        <MicrosoftLogin />
+    </a>
+</div>
+                
+                
+                    <div className="input-group">
+                        <label>
+                            Email<span className="required">*</span>
+                        </label>
+                        <input 
+                            type="email" 
+                            name="email" 
+                            placeholder="Email" 
+                            value={formData.email} onChange={handleChange} required
+                        />
+                    </div>
+                    
+                    <div className="input-group">
+                        <div className="password-label">
+                            <label>
+                                Password<span className="required">*</span>
+                            </label>
+                           
+                        </div>
+                        <div className="password-container">
+                            <input 
+                                type={showPassword ? "text" : "password"} 
+                                name="password" 
+                                placeholder="password" 
+                                value={formData.password} 
+                                onChange={handleChange} 
+                                required 
+                            />
+                            <span 
+                                className="eye-icon"
+                                onClick={() => setShowPassword(!showPassword)}
+                            >
+                                {showPassword ? <FaEyeSlash /> : <FaEye />}
+                            </span>
+                        </div>
+                    </div>
+                    
+                    <div className="remember-container">
+                    <span 
+                                className="forgot-password"
+                                onClick={handleForgotPassword} 
+                            >
+Forgot your password?                            </span>
+                    </div>
+                    
+                    {error && <p className="error">{error}</p>}
+                    
+                    <button type="submit" className="signin-btn">
+                        Sign in
+                    </button>
+                </form>
+                
+              
+            
+                {showAlert && (
                 <CustomAlert
                     message={alertMessage}
                     onClose={() => setShowAlert(false)}

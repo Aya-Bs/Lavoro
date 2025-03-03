@@ -8,6 +8,7 @@ import VerifyEmail from "./user/verifymail";
 import ForgotPassword from "./user/ForgetPassword";
 import ResetPassword from "./user/resetPassword";
 import './styles.css'; 
+
 import Profile from "./profile/profile";
 import UpdateProfile from "./profile/updateProfile";
 

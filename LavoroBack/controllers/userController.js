@@ -130,7 +130,8 @@ exports.signup = async (req, res) => {
       await transporter.sendMail(mailOptions);
 
 
-      res.status(201).json({ message: 'User registered successfully. Please check your email for verification.' });
+      res.status(201).json({ message: '✅ User registered successfully. Please check your email for verification.' });
+
   } catch (error) {
       console.error('Error during signup:', error);
       res.status(500).json({ error: 'An error occurred during signup. Please try again.' });
@@ -277,7 +278,8 @@ exports.verifyEmail = async (req, res) => {
         await user.save();
         
         console.log('User verified successfully:', user.email);
-        res.status(200).json({ message: 'Email verified successfully!' });
+        res.status(200).json({ message: ' ✅ Email verified successfully!' });
+
   
         // Remove the token AFTER responding
         user.verificationToken = undefined;

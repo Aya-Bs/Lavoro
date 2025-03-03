@@ -70,11 +70,9 @@ const MicrosoftLogin = () => {
 
     return (
         <>
-            <div className="social-container">
-                <a href="#" className="social" onClick={microsoftLogin}>
+                <a href="#" className="social microsoft" onClick={microsoftLogin}>
                     <i className="fab fa-microsoft"></i>
                 </a>
-            </div>
 
             {/* Modale Bootstrap */}
             <Modal show={showModal} onHide={() => setShowModal(false)}>

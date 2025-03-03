@@ -65,11 +65,9 @@ const GitHubLogin = () => {
 
   return (
     <>
-    <div className="social-container">
-      <a href="#" className="social" onClick={githHubLogin}>
+      <a href="#" className="social github" onClick={githHubLogin}>
         <i className="fab fa-github"></i> 
       </a>
-    </div>
 
     {/* Modale Bootstrap */}
     <Modal show={showModal} onHide={() => setShowModal(false)}>

@@ -253,7 +253,7 @@ function SignUp() {
                             width: "100%",
                             padding: "10px",
                             marginTop: "10px",
-                            backgroundColor: "#FFC300",
+                            backgroundColor: "#5d68e2",
                             border: "none",
                             borderRadius: "5px",
                             cursor: "pointer",
@@ -269,82 +269,145 @@ function SignUp() {
     return (
         <div className="form-container sign-up-container">
             <form onSubmit={handleSubmit}>
-                <h1>Create Account</h1>
-                <div className="social-container">
-                    <a href="#" className="social">
-                        <GoogleLogin />
-                    </a>
-                    <a href="#" className="social">
-                        <MicrosoftLogin />
-                    </a>
-                    <a href="#" className="social">
-                        <GitHubLogin />
-                    </a>
-                </div>
-                <span>or use your email for registration</span>
-                {error && <div className="alert alert-danger">{error}</div>}
+                <div className="logo-container">
+                <div className="logo"></div>
+            </div>
+            {error && <div className="alert alert-danger">{error}</div>}
 
-                <div className="mb-3 text-center">
-                    <div className="image-upload-container" onClick={() => fileInputRef.current.click()}>
-                        {imagePreview ? <img src={imagePreview} alt="Profile Preview" className="profile-image" /> : <FaCamera size={24} />}
+
+
+
+           
+<div className="mb-3 text-center">
+    <div className="image-upload-container" onClick={() => fileInputRef.current.click()}>
+        {imagePreview ? <img src={imagePreview} alt="Profile Preview" className="profile-image" /> : <FaCamera size={24} />}
+    </div>
+    <input type="file" ref={fileInputRef} accept="image/*" onChange={handleImageChange} style={{ display: "none" }} />
+</div>
+
+<div className="social-container">
+    <a >
+        <GitHubLogin />
+    </a>
+
+    {/* Gmail Login */}
+    <a href="#" >
+        <GoogleLogin />
+    </a>
+
+    {/* Microsoft Login */}
+    <a href="#" >
+        <MicrosoftLogin />
+    </a>
+</div>
+               
+                {/* First Name and Last Name in the same line */}
+                <div className="name-fields">
+                    <div className="input-group">
+                        <label>
+                            First Name<span className="required">*</span>
+                        </label>
+                        <input 
+                            type="text" 
+                            placeholder="First Name" 
+                            value={firstName} 
+                            onChange={handleFirstNameChange} 
+                            required 
+                        />
+                        {fieldErrors.firstNameError && <div className="error">{fieldErrors.firstNameError}</div>}
                     </div>
-                    <input type="file" ref={fileInputRef} accept="image/*" onChange={handleImageChange} style={{ display: "none" }} />
+                    <div className="input-group">
+                        <label>
+                            Last Name<span className="required">*</span>
+                        </label>
+                        <input 
+                            type="text" 
+                            placeholder="Last Name" 
+                            value={lastName} 
+                            onChange={handleLastNameChange} 
+                            required 
+                        />
+                        {fieldErrors.lastNameError && <div className="error">{fieldErrors.lastNameError}</div>}
+                    </div>
                 </div>
 
-                <input type="text" placeholder="First Name" value={firstName} onChange={handleFirstNameChange} required />
-                {fieldErrors.firstNameError && <div className="error">{fieldErrors.firstNameError}</div>}
-
-                <input type="text" placeholder="Last Name" value={lastName} onChange={handleLastNameChange} required />
-                {fieldErrors.lastNameError && <div className="error">{fieldErrors.lastNameError}</div>}
-
-                <input type="email" placeholder="Email" value={email} onChange={handleEmailChange} required />
-                {emailError && <div className="error">{emailError}</div>}
-                {emailAvailable === false && <div className="error">Email is already taken</div>}
-
-                <div className="password-container">
-                    <input
-                        type={showPassword ? "text" : "password"}
-                        placeholder="Password"
-                        value={password}
-                        onFocus={() => {
-                            setShowRequirements(true);
-                            generatePasswordSuggestions();
-                        }}
-                        onBlur={() => setTimeout(() => setShowRequirements(false), 200)}
-                        onChange={handlePasswordChange}
-                        required
-                    />
-                    <span
-                        className="eye-icon"
-                        onClick={() => setShowPassword(!showPassword)}
-                    >
-                        {showPassword ? <FaEyeSlash /> : <FaEye />}
-                    </span>
+                {/* Email and Phone Number in the same line */}
+                <div className="contact-fields">
+                    <div className="input-group">
+                        <label>
+                            Email<span className="required">*</span>
+                        </label>
+                        <input 
+                            type="email" 
+                            placeholder="Email" 
+                            value={email} 
+                            onChange={handleEmailChange} 
+                            required 
+                        />
+                        {emailError && <div className="error">{emailError}</div>}
+                        {emailAvailable === false && <div className="error">Email is already taken</div>}
+                    </div>
+                    <div className="input-group">
+                        <label>
+                            Phone Number<span className="required">*</span>
+                        </label>
+                        <input 
+                            type="text" 
+                            placeholder="Phone Number" 
+                            value={phoneNumber} 
+                            onChange={handlePhoneNumberChange} 
+                            required 
+                        />
+                        {fieldErrors.phoneError && <div className="error">{fieldErrors.phoneError}</div>}
+                    </div>
                 </div>
 
-                {showRequirements && (
-                    <div className="password-hints">
-                        {visibleRequirements.map((req, index) => (
-                            <div key={index} className="error">{req.text}</div>
-                        ))}
+                {/* Password Field */}
+                <div className="input-group">
+                    <label>
+                        Password<span className="required">*</span>
+                    </label>
+                    <div className="password-container">
+                        <input
+                            type={showPassword ? "text" : "password"}
+                            placeholder="Password"
+                            value={password}
+                            onFocus={() => {
+                                setShowRequirements(true);
+                                generatePasswordSuggestions();
+                            }}
+                            onBlur={() => setTimeout(() => setShowRequirements(false), 200)}
+                            onChange={handlePasswordChange}
+                            required
+                        />
+                        <span
+                            className="eye-icon"
+                            onClick={() => setShowPassword(!showPassword)}
+                        >
+                            {showPassword ? <FaEyeSlash /> : <FaEye />}
+                        </span>
                     </div>
-                )}
-                {showRequirements && (
-                    <div className="password-suggestions">
-                        {passwordSuggestions.map((suggestion, index) => (
-                            <span
-                                key={index}
-                                className="suggestion"
-                                onMouseDown={() => handlePasswordSuggestionClick(suggestion)}
-                            >
-                                {suggestion}
-                            </span>
-                        ))}
-                    </div>
-                )}
-
-                <input type="text" placeholder="Phone Number" value={phoneNumber} onChange={handlePhoneNumberChange} required />
-                {fieldErrors.phoneError && <div className="error">{fieldErrors.phoneError}</div>}
+                    {showRequirements && (
+                        <div className="password-hints">
+                            {visibleRequirements.map((req, index) => (
+                                <div key={index} className="error">{req.text}</div>
+                            ))}
+                        </div>
+                    )}
+                    {showRequirements && (
+                        <div className="password-suggestions">
+                            {passwordSuggestions.map((suggestion, index) => (
+                                <span
+                                    key={index}
+                                    className="suggestion"
+                                    onMouseDown={() => handlePasswordSuggestionClick(suggestion)}
+                                >
+                                    {suggestion}
+                                </span>
+                            ))}
+                        </div>
+                    )}
+                </div>
 
                 <Recaptcha
                     ref={recaptchaRef}
@@ -352,13 +415,19 @@ function SignUp() {
                     onExpired={handleRecaptchaExpired}
                 />
 
-                <button type="submit" disabled={!isRecaptchaVerified} style={{
-                    backgroundColor: !isRecaptchaVerified ? '#ccc' : '#FF4B2E',
-                    cursor: !isRecaptchaVerified ? 'not-allowed' : 'pointer',
-                    opacity: !isRecaptchaVerified ? 0.6 : 1
-                }}>
-                    Sign Up
-                </button>
+<br/>
+
+<button type="submit" disabled={!isRecaptchaVerified} style={{
+        backgroundColor: !isRecaptchaVerified ? '#ccc' : '#5d68e2',
+        cursor: !isRecaptchaVerified ? 'not-allowed' : 'pointer',
+        opacity: !isRecaptchaVerified ? 0.6 : 1
+    }}>
+        Sign Up
+    </button>
+
+<br/>
+
+  
             </form>
 
             {showAlert && (
@@ -368,6 +437,7 @@ function SignUp() {
                 />
             )}
         </div>
+
     );
 }
 
