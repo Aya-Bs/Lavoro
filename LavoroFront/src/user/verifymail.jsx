@@ -6,15 +6,15 @@ function VerifyEmail() {
   const [searchParams] = useSearchParams();
   const token = searchParams.get('token');
   const navigate = useNavigate();
-  const isRequestSent = useRef(false); // Utiliser useRef pour éviter les ré-exécutions
-  const [showAlert, setShowAlert] = useState(false); // État pour afficher l'alerte personnalisée
-  const [alertMessage, setAlertMessage] = useState(""); // Message de l'alerte
+  const isRequestSent = useRef(false);
+  const [showAlert, setShowAlert] = useState(false);
+  const [alertMessage, setAlertMessage] = useState("");
 
   useEffect(() => {
-    if (!token || isRequestSent.current) return; // Empêcher l'exécution en double
+    if (!token || isRequestSent.current) return;
 
     const verifyEmail = async () => {
-      isRequestSent.current = true; // Empêcher les appels API en double
+      isRequestSent.current = true;
       try {
         console.log('Verification token:', token);
         const response = await axios.get(`http://localhost:3000/users/verify-email?token=${token}`);
@@ -23,19 +23,26 @@ function VerifyEmail() {
         if (response.status === 200) {
           setAlertMessage('Email verified successfully!');
           setShowAlert(true);
-          navigate('/auth'); // Rediriger après la vérification réussie
+          setTimeout(() => {
+            setShowAlert(false);
+            navigate('/auth');
+          }, 2000);
         }
       } catch (error) {
         console.error('Error verifying email:', error);
         setAlertMessage(error.response?.data?.error || 'Failed to verify email. Please try again.');
         setShowAlert(true);
-        navigate('/signup');
+        setTimeout(() => {
+          setShowAlert(false);
+          navigate('/auth');
+        }, 2000);
       }
     };
 
     verifyEmail();
-  }, [token, navigate]); // useRef empêche les appels supplémentaires
+  }, [token, navigate]);
 
+    
   const CustomAlert = ({ message, onClose }) => {
     return (
       <div style={{
@@ -88,5 +95,6 @@ function VerifyEmail() {
     </>
   );
 }
+
 
 export default VerifyEmail;

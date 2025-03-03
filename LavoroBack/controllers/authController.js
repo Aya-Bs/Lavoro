@@ -1,76 +1,81 @@
-const axios = require("axios");
-const jwt = require("jsonwebtoken");
-const { oauth2client } = require("../utils/googleConfig");
-const UserModel = require("../models/OAuth");
+// controllers/authController.js
+const { OAuth2Client } = require('google-auth-library');
+const jwt = require('jsonwebtoken');
+const User = require('../models/user');
+const Role = require('../models/role');
 
-/* 
-  Controller for Google authentication.
-  - Retrieves the OAuth code sent by the frontend.
-  - Exchanges the code for a Google access token.
-  - Fetches user information from Google.
-  - Checks if the user already exists in the database.
-  - Creates a new user if they don't exist.
-  - Generates a JWT token for authentication.
-  - Returns the response with the token and user information.
-*/
 const googleLogin = async (req, res) => {
     try {
-        // Extract OAuth code from the query
         const { code } = req.query;
+
         if (!code) {
-            return res.status(400).json({ message: "Missing OAuth code" });
+            return res.status(400).json({ success: false, message: "Missing OAuth code" });
         }
 
-        // Exchange the code for a Google access token
-        const googleRes = await oauth2client.getToken(code);
-        oauth2client.setCredentials(googleRes.tokens);
-
-        // Fetch user information from Google
-        const userRes = await axios.get(
-            `https://www.googleapis.com/oauth2/v1/userinfo?alt=json&access_token=${googleRes.tokens.access_token}`
+        const oauth2Client = new OAuth2Client(
+            process.env.GOOGLE_CLIENT_ID,
+            process.env.GOOGLE_CLIENT_SECRET,
+            'postmessage'
         );
 
-        // Extract user data from the Google response
-        const { id: googleId, email, given_name: firstName, family_name: lastName, picture: image } = userRes.data;
+        const { tokens } = await oauth2Client.getToken(code);
+        oauth2Client.setCredentials(tokens);
 
-        // Check if the user already exists in the database
-        let user = await UserModel.findOne({ provider_id: googleId });
+        const userInfo = await oauth2Client.request({
+            url: 'https://www.googleapis.com/oauth2/v3/userinfo',
+        });
+
+        const { sub: googleId, email, given_name: firstName, family_name: lastName, picture: image, phone_number: phone_number, role} = userInfo.data;
+
+        let user = await User.findOne({ provider_id: googleId });
+
+
+              let userRole;
+              if (role) {
+                userRole = await Role.findOne({ RoleName: role }); // Fetch role based on provided RoleName
+              } else {
+                userRole = await Role.findOne({ RoleName: 'Developer' }); // Default to 'Developer' role
+              }
 
         if (!user) {
-            // If the user doesn't exist, create a new one
-            user = await UserModel.create({
-                provider_id: googleId, 
+            user = await User.create({
+                provider_id: googleId,
                 provider: 'Google',
-                firstName, 
-                lastName, 
-                email, 
-                image
+                firstName,
+                lastName,
+                email,
+                image,
+                phone_number,
+                role:userRole._id
             });
         }
 
-        // Generate a JWT token for authentication
-        const { _id } = user;
         const token = jwt.sign(
-            { _id, email }, // Payload for the token
-            process.env.JWT_SECRET, // Secret key for signing the token
-            { expiresIn: process.env.JWT_TIMEOUT } // Token expiration
+            { _id: user._id, email },
+            process.env.JWT_SECRET,
+            { expiresIn: '1h' }
         );
 
-        // Send the response with the token and user data
-        return res.status(200).json({
-            message: "Success",
+        res.status(200).json({
+            success: true,
+            message: "Welcome to Lavoro",
             token,
-            user
+            user: {
+                _id: user._id,
+                firstName,
+                lastName,
+                email,
+                image,
+                phone_number,
+            },
         });
-
     } catch (err) {
-        // Error handling
         console.error("Google Authentication Error:", err);
         res.status(500).json({
-            message: "Internal server error"
+            success: false,
+            message: "Internal server error",
         });
     }
 };
 
-// Export the controller for use in other files
 module.exports = { googleLogin };

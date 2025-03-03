@@ -4,49 +4,82 @@ import { useNavigate } from "react-router-dom";
 
 const Profile = () => {
   const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
   useEffect(() => {
     const fetchUserInfo = async () => {
       try {
-        const response = await axios.get("http://localhost:3000/users/me", { withCredentials: true });
+        const token = localStorage.getItem('token');
+        if (!token) {
+          throw new Error("No token found");
+        }
+
+        const response = await axios.get("http://localhost:3000/users/me", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+          withCredentials: true,
+        });
+
         if (response.data) {
           setUser(response.data);
         } else {
           navigate("/auth");
         }
       } catch (err) {
-        navigate("/auth");
+        if (err.response?.status === 401) {
+          localStorage.removeItem('token');
+          navigate("/auth");
+        } else {
+          console.error("Error fetching user info:", err);
+        }
+      } finally {
+        setLoading(false);
       }
     };
 
     fetchUserInfo();
   }, [navigate]);
 
-
   const handleDeleteAccount = async () => {
     try {
-      const response = await axios.post("http://localhost:3000/profiles/request-delete", {}, {
-        headers: { "Content-Type": "application/json" },
-        withCredentials: true,
-      });
-  
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error("No token found");
+      }
+
+      const response = await axios.post(
+        "http://localhost:3000/profiles/request-delete",
+        {},
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          withCredentials: true,
+        }
+      );
+
       if (response.status === 200) {
-        alert("Profile delete request successfully!");
+        alert("Profile delete request successful!");
         navigate("/profile");
       }
     } catch (err) {
-      if (err.response && err.response.status === 400) {
+      if (err.response?.status === 400) {
         alert("You already sent a deletion request.");
+      } else if (err.response?.status === 401) {
+        alert("Session expired. Please log in again.");
+        localStorage.removeItem('token');
+        navigate("/auth");
       } else {
-        console.error("Error delete request profile:", err);
-        alert("Failed to delete request profile.");
+        console.error("Error deleting profile:", err);
+        alert("Failed to delete profile.");
       }
     }
   };
 
-
-  if (!user) {
+  if (loading) {
     return <p>Loading...</p>;
   }
 
@@ -91,14 +124,16 @@ const Profile = () => {
             Update Profile
           </button>
           
-          <form  method="POST" onSubmit={(e) => {
-            e.preventDefault();
-            if (window.confirm("Are you sure you want to request account deletion?")) {
-              handleDeleteAccount();
-            }
-          }}>
-            <button type="submit" style={{ width: "100%", padding: "10px", border: "none", backgroundColor: "#dc3545", color: "white", borderRadius: "5px", cursor: "pointer" }}>Delete Request</button>
-          </form>
+          <button
+            onClick={() => {
+              if (window.confirm("Are you sure you want to request account deletion?")) {
+                handleDeleteAccount();
+              }
+            }}
+            style={{ width: "100%", padding: "10px", border: "none", backgroundColor: "#dc3545", color: "white", borderRadius: "5px", cursor: "pointer" }}
+          >
+            Delete Request
+          </button>
           
           <button 
             onClick={() => navigate("/home")} 

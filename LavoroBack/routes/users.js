@@ -3,9 +3,12 @@ const router = express.Router();
 const userController = require('../controllers/userController');
 const upload = require('../middleware/upload'); // Import the upload middleware
 const setDefaultRole = require('../middleware/setDefaultRole');
-const Task = require('../models/Task');
+const { googleLogin } = require('../controllers/authController');
+const { MicrosoftLogin } = require('../controllers/MicrosoftController');
+const { GitHubLogin, getData } = require('../controllers/GitHubController');
 
-// router.post('/signup', upload.single('image'), userController.signup);
+
+router.post('/signup', upload.single('image'), userController.signup);
 
 router.post('/signup', setDefaultRole, upload.single('image'), userController.signup);
 
@@ -22,20 +25,30 @@ router.get('/me', userController.getUserInfo); // Route to get user info from se
 
 
 
+// router.get('/signin', userController.redirectIfAuthenticated, (req, res) => {
+//   res.render('signin'); // Render sign-up page
+// });
+
+// router.get('/signup', userController.redirectIfAuthenticated, (req, res) => {
+//   res.render('signup'); // Render sign-up page
+// });
+
+
+// router.get('/home', userController.redirectIfNotAuthenticated, (req, res) => {
+//   res.render('home'); 
+// });
 
 router.get('/signin', userController.redirectIfAuthenticated, (req, res) => {
-  res.render('signin'); // Render sign-up page
+  res.render('signin'); // Render sign-in page
 });
 
 router.get('/signup', userController.redirectIfAuthenticated, (req, res) => {
   res.render('signup'); // Render sign-up page
 });
 
-
 router.get('/home', userController.redirectIfNotAuthenticated, (req, res) => {
-  res.render('home'); 
+  res.render('home'); // Render home page
 });
-
 
 
 
@@ -54,22 +67,16 @@ router.get('/resetpassword', (req, res) => {
 
 router.post('/resetpassword', userController.resetPassword);
 
-router.get('/mytasks', async (req, res) => {
-  try {
-      const userId = req.session.user._id; // Get the logged-in user's ID
-      console.log("Fetching tasks for user ID:", userId); // Debugging
-
-      // Fetch tasks assigned to the user
-      const tasks = await Task.find({ assigned_to: userId });
-      console.log("Tasks found:", tasks); // Debugging
-
-      res.status(200).json(tasks); // Return the tasks
-  } catch (error) {
-      console.error("Error fetching tasks:", error);
-      res.status(500).json({ error: "An error occurred while fetching tasks." });
-  }
-});
 
 
+
+
+
+
+router.get("/google", googleLogin);
+router.post('/login', MicrosoftLogin);
+/*router.get('/get-user', getUser);*/
+router.post('/github', GitHubLogin);
+router.get('/getData', getData);
 
 module.exports = router;

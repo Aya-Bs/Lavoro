@@ -1,9 +1,12 @@
-import React, { useState, useRef } from 'react';
-import { FaCamera, FaEye, FaEyeSlash } from 'react-icons/fa'; // Import eye icons
+import React, { useEffect,useState, useRef } from 'react';
+import { FaCamera, FaEye, FaEyeSlash } from 'react-icons/fa';
+import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
-
-// Import validation functions
+import GoogleLogin from './GoogleLogin';
 import { validatePhoneNumber, validateFirstName, validateLastName, validateEmail } from './validate';
+import MicrosoftLogin from './MicrosoftLogin';
+import GitHubLogin from './GitHubLogin';
+import Recaptcha from './Recaptcha';
 
 function SignUp() {
     const [firstName, setFirst] = useState("");
@@ -18,10 +21,9 @@ function SignUp() {
     const [error, setError] = useState("");
     const [showRequirements, setShowRequirements] = useState(false);
     const [passwordSuggestions, setPasswordSuggestions] = useState([]);
-    const [showPassword, setShowPassword] = useState(false); // State to toggle password visibility
+    const [showPassword, setShowPassword] = useState(false);
     const [showAlert, setShowAlert] = useState(false);
     const [alertMessage, setAlertMessage] = useState("");
-
     const [fieldErrors, setFieldErrors] = useState({
         firstNameError: "",
         lastNameError: "",
@@ -29,6 +31,40 @@ function SignUp() {
     });
 
     const fileInputRef = useRef(null);
+    const [isRecaptchaVerified, setIsRecaptchaVerified] = useState(false);
+    const recaptchaRef = useRef(null);
+    
+    const navigate = useNavigate();
+
+    useEffect(() => {
+        const checkAuthentication = async () => {
+            try {
+                const token = localStorage.getItem('token');
+                if (token) {
+                    const response = await axios.get('http://localhost:3000/users/me', {
+                        headers: { Authorization: `Bearer ${token}` },
+                        withCredentials: true,
+                    });
+                    if (response.data) {
+                        navigate('/home'); // Redirect to home if already authenticated
+                    }
+                }
+            } catch (err) {
+                console.error('Error checking authentication:', err);
+            }
+        };
+
+        checkAuthentication();
+    }, [navigate]);
+
+
+    const handleRecaptchaChange = (value) => {
+        setIsRecaptchaVerified(!!value);
+    };
+
+    const handleRecaptchaExpired = () => {
+        setIsRecaptchaVerified(false);
+    };
 
     const passwordRequirements = [
         { text: "At least 8 characters", regex: /.{8,}/ },
@@ -46,25 +82,18 @@ function SignUp() {
         const numberChars = "0123456789";
         const specialChars = "!@#$%^&*()";
 
-        // Ensure at least one character from each category
         const randomUppercase = uppercaseChars[Math.floor(Math.random() * uppercaseChars.length)];
         const randomLowercase = lowercaseChars[Math.floor(Math.random() * lowercaseChars.length)];
         const randomNumber = numberChars[Math.floor(Math.random() * numberChars.length)];
         const randomSpecial = specialChars[Math.floor(Math.random() * specialChars.length)];
 
-        // Combine all characters
         const allChars = uppercaseChars + lowercaseChars + numberChars + specialChars;
-
-        // Generate the remaining characters
         let remainingChars = "";
         for (let i = 0; i < 4; i++) {
             remainingChars += allChars[Math.floor(Math.random() * allChars.length)];
         }
 
-        // Combine all parts
         let suggestedPassword = randomUppercase + randomLowercase + randomNumber + randomSpecial + remainingChars;
-
-        // Shuffle the password to avoid predictable patterns
         suggestedPassword = suggestedPassword
             .split('')
             .sort(() => Math.random() - 0.5)
@@ -135,21 +164,19 @@ function SignUp() {
         const value = e.target.value;
         setEmail(value);
 
-        // Validate email before checking availability
         const validationError = validateEmail(value);
         setEmailError(validationError);
 
         if (!validationError) {
             checkEmailAvailability(value);
         } else {
-            setEmailAvailable(null); // Reset availability if email is invalid
+            setEmailAvailable(null);
         }
     };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
 
-        // Validate email before submission
         const emailValidationError = validateEmail(email);
         setEmailError(emailValidationError);
 
@@ -180,13 +207,21 @@ function SignUp() {
         if (image) formData.append("image", image);
 
         try {
-            await axios.post("http://localhost:3000/users/signup", formData, {
+            const response = await axios.post("http://localhost:3000/users/signup", formData, {
                 headers: { "Content-Type": "multipart/form-data" },
+                withCredentials: true,
             });
-            setAlertMessage("User registered successfully. Please check your email for verification.");
-            setShowAlert(true);
+
+
+            if (response.data.message) {
+                setAlertMessage(response.data.message);
+                setShowAlert(true);
+            } else {
+                throw new Error("No message received from server");
+            }
         } catch (err) {
-            setError(err.response?.data?.error || "An error occurred during signup.");
+            console.error("Signup Error:", err);
+            setError(err.response?.data?.error || "An error occurred during signup. Please try again.");
         }
     };
 
@@ -236,9 +271,15 @@ function SignUp() {
             <form onSubmit={handleSubmit}>
                 <h1>Create Account</h1>
                 <div className="social-container">
-                    <a href="#" className="social"><i className="fab fa-facebook-f"></i></a>
-                    <a href="#" className="social"><i className="fab fa-google-plus-g"></i></a>
-                    <a href="#" className="social"><i className="fab fa-linkedin-in"></i></a>
+                    <a href="#" className="social">
+                        <GoogleLogin />
+                    </a>
+                    <a href="#" className="social">
+                        <MicrosoftLogin />
+                    </a>
+                    <a href="#" className="social">
+                        <GitHubLogin />
+                    </a>
                 </div>
                 <span>or use your email for registration</span>
                 {error && <div className="alert alert-danger">{error}</div>}
@@ -262,7 +303,7 @@ function SignUp() {
 
                 <div className="password-container">
                     <input
-                        type={showPassword ? "text" : "password"} // Toggle between text and password
+                        type={showPassword ? "text" : "password"}
                         placeholder="Password"
                         value={password}
                         onFocus={() => {
@@ -275,9 +316,9 @@ function SignUp() {
                     />
                     <span
                         className="eye-icon"
-                        onClick={() => setShowPassword(!showPassword)} // Toggle password visibility
+                        onClick={() => setShowPassword(!showPassword)}
                     >
-                        {showPassword ? <FaEyeSlash /> : <FaEye />} {/* Toggle between eye and eye-slash icons */}
+                        {showPassword ? <FaEyeSlash /> : <FaEye />}
                     </span>
                 </div>
 
@@ -305,7 +346,19 @@ function SignUp() {
                 <input type="text" placeholder="Phone Number" value={phoneNumber} onChange={handlePhoneNumberChange} required />
                 {fieldErrors.phoneError && <div className="error">{fieldErrors.phoneError}</div>}
 
-                <button type="submit">Sign Up</button>
+                <Recaptcha
+                    ref={recaptchaRef}
+                    onChange={handleRecaptchaChange}
+                    onExpired={handleRecaptchaExpired}
+                />
+
+                <button type="submit" disabled={!isRecaptchaVerified} style={{
+                    backgroundColor: !isRecaptchaVerified ? '#ccc' : '#FF4B2E',
+                    cursor: !isRecaptchaVerified ? 'not-allowed' : 'pointer',
+                    opacity: !isRecaptchaVerified ? 0.6 : 1
+                }}>
+                    Sign Up
+                </button>
             </form>
 
             {showAlert && (

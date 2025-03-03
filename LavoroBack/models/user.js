@@ -4,11 +4,11 @@ const userSchema = new mongoose.Schema({
 
   firstName: { type: String, required: true },
 
-  lastName: { type: String, required: true },
+  lastName: { type: String},
 
   email: { type: String, required: true, unique: true },
 
-  password_hash: { type: String, required: true },
+  password_hash: { type: String,  },
 
   // role: { type: Number , required: false },
   role: { type: mongoose.Schema.Types.ObjectId, ref: 'role', default: null },
@@ -35,6 +35,16 @@ const userSchema = new mongoose.Schema({
 
   loginAttempts: { type: Number, default: 0 },
   lockUntil: { type: Date, default: null },
+
+  provider: {
+    type: String,
+   
+    enum: ["Google","Microsoft", "GitHub"], // Tu peux ajouter d'autres providers ici
+  },
+  provider_id: {
+    type: String,
+   
+  },
 
 });
 
