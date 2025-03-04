@@ -8,6 +8,7 @@ import VerifyEmail from "./user/verifymail";
 import ForgotPassword from "./user/ForgetPassword";
 import ResetPassword from "./user/resetPassword";
 import './styles.css'; 
+
 import Profile from "./profile/profile";
 import UpdateProfile from "./profile/updateProfile";
 
@@ -16,12 +17,21 @@ import UserActivityLog from "./admin/accountLog";
 
 import TasksPage from "./user/ActivitiesPage";
 import ActivitiesPage from "./user/ActivitiesPage";
+import { GoogleOAuthProvider } from "@react-oauth/google";
+import RefreshHandler from "./user/RefreshHandler";
+import { useState } from "react";
 
 
 function App() {
+
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+
   return (
     <>
+    <GoogleOAuthProvider clientId="893053722717-a3eudc815ujr6ne3tf5q3dlrvkbmls6d.apps.googleusercontent.com">
       <BrowserRouter>
+      <RefreshHandler setIsAuthenticated={setIsAuthenticated} />
+
         <Routes>
           <Route path="/home" element={<Home />} />
           <Route path="/admin-dashboard" element={<AdminDashboard />} />
@@ -50,6 +60,7 @@ function App() {
           <Route path="*" element={<Navigate to="/auth" />} />
         </Routes>
       </BrowserRouter>
+      </GoogleOAuthProvider>
     </>
   );
 }

@@ -1,145 +1,215 @@
 import React, { useState, useEffect } from 'react';
-import { FaEye, FaEyeSlash } from 'react-icons/fa'; // Import des icônes d'œil
+import { FaEye, FaEyeSlash } from 'react-icons/fa';
 import axios from 'axios';
-import { useNavigate } from 'react-router-dom'; // Import du hook useNavigate pour la redirection
+import { useNavigate } from 'react-router-dom';
+import GoogleLogin from './GoogleLogin';
+import GitHubLogin from './GitHubLogin';
+import MicrosoftLogin from './MicrosoftLogin';
 
 function SignIn() {
-  const [formData, setFormData] = useState({ email: '', password: '' });
-  const [error, setError] = useState(null);
-  const [showPassword, setShowPassword] = useState(false); // État pour basculer la visibilité du mot de passe
-  const [showAlert, setShowAlert] = useState(false); // État pour afficher l'alerte personnalisée
-  const [alertMessage, setAlertMessage] = useState(""); // Message de l'alerte
-  const navigate = useNavigate();
+    const [formData, setFormData] = useState({ email: '', password: '' });
+    const [error, setError] = useState(null);
+    const [showPassword, setShowPassword] = useState(false);
+    const [showAlert, setShowAlert] = useState(false);
+    const [alertMessage, setAlertMessage] = useState("");
+    const navigate = useNavigate();
 
-  useEffect(() => {
-    const checkAuthentication = async () => {
-      try {
-        const response = await axios.get('http://localhost:3000/users/me', { withCredentials: true });
-        if (response.data) {
-          // L'utilisateur est déjà connecté, rediriger vers la page d'accueil
-          navigate('/home');
+    useEffect(() => {
+        const checkAuthentication = async () => {
+            try {
+                const token = localStorage.getItem('token');
+                if (token) {
+                    const response = await axios.get('http://localhost:3000/users/me', {
+                        headers: { Authorization: `Bearer ${token}` },
+                        withCredentials: true,
+                    });
+                    if (response.data) {
+                        // Redirect to home or admin dashboard based on role
+                        if (response.data.role && response.data.role.RoleName === 'Admin') {
+                            navigate('/admin-dashboard');
+                        } else {
+                            navigate('/home');
+                        }
+                    }
+                }
+            } catch (err) {
+                console.error('Error checking authentication:', err);
+            }
+        };
+
+        checkAuthentication();
+    }, [navigate]);
+
+    const handleChange = (e) => {
+        setFormData({ ...formData, [e.target.name]: e.target.value });
+    };
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+
+        try {
+            const response = await axios.post('http://localhost:3000/users/signin', formData, {
+                headers: { 'Content-Type': 'application/json' },
+                withCredentials: true,
+            });
+
+            if (response.data.token) {
+                localStorage.setItem('token', response.data.token); // Store token in localStorage
+
+                // Fetch user info to check role
+                const userResponse = await axios.get('http://localhost:3000/users/me', {
+                    headers: { Authorization: `Bearer ${response.data.token}` },
+                    withCredentials: true,
+                });
+
+                // Show success alert
+                setAlertMessage('✅ Sign-in successful!');
+                setShowAlert(true);
+
+                // Redirect after 2 seconds
+                setTimeout(() => {
+                    setShowAlert(false); // Hide the alert
+                    if (userResponse.data.role && userResponse.data.role.RoleName === 'Admin') {
+                        navigate('/admin-dashboard'); // Redirect to admin dashboard
+                    } else {
+                        navigate('/home'); // Redirect to home
+                    }
+                }, 2000);
+            } else {
+                throw new Error('No token received');
+            }
+        } catch (err) {
+            console.error('Error during sign-in:', err.response?.data || err.message);
+            setError(err.response?.data?.error || 'An error occurred during sign-in.');
         }
-      } catch (err) {
-        // Non authentifié, rester sur la page de connexion
-      }
     };
 
-    checkAuthentication();
-  }, [navigate]);
-
-  const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-  
-    try {
-      const response = await axios.post('http://localhost:3000/users/signin', formData, {
-        headers: { 'Content-Type': 'application/json' },
-        withCredentials: true, // Make sure to include cookies
-      });
-  
-      // Check the user's role in the response
-      if (response.data.role && response.data.role.RoleName === 'Admin') {
-        navigate('/admin-dashboard'); // Redirect to admin dashboard for admins
-      } else {
-        navigate('/home'); // Redirect to home page for regular users
-      }
-  
-      alert('Sign-in successful!');
-    } catch (err) {
-      setError(err.response?.data?.error || 'An error occurred during sign-in.');
-    }
-  };
-
-      // Fonction pour gérer le clic sur "Forgot your password?"
-      const handleForgotPassword = () => {
-        navigate('/forgot-password', { state: { email: formData.email } }); // Passer l'email à la page ForgotPassword
+    const handleForgotPassword = () => {
+        navigate('/forgot-password', { state: { email: formData.email } });
     };
+
     const CustomAlert = ({ message, onClose }) => {
         return (
-          <div style={{
-            position: "fixed",
-            top: 0,
-            left: 0,
-            width: "100%",
-            height: "100%",
-            backgroundColor: "rgba(0, 0, 0, 0.5)",
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
-            zIndex: 1000,
-          }}>
             <div style={{
-              backgroundColor: "#fff",
-              padding: "20px",
-              borderRadius: "10px",
-              boxShadow: "0px 4px 8px rgba(0, 0, 0, 0.1)",
-              textAlign: "center",
+                position: "absolute", // Use absolute positioning
+                top: "20%", // Position near the fields
+                left: "50%",
+                transform: "translate(-50%, -50%)", // Center the alert
+                width: "400px", // Smaller width
+                backgroundColor: "#fff",
+                padding: "15px",
+                borderRadius: "10px",
+                boxShadow: "0px 4px 8px rgba(0, 0, 0, 0.1)",
+                textAlign: "center",
+                zIndex: 1000,
+                color: "black",
             }}>
-              <p>{message}</p>
-              <button
-                onClick={onClose}
-                style={{
-                  width: "100%",
-                  padding: "10px",
-                  marginTop: "10px",
-                  backgroundColor: "#FFC300",
-                  border: "none",
-                  borderRadius: "5px",
-                  cursor: "pointer",
-                }}
-              >
-                OK
-              </button>
+                <p style={{ margin: "0 0 10px 0" }}>{message}</p>
+                <button
+                    onClick={onClose}
+                    style={{
+                        width: "100%",
+                        padding: "8px",
+                        backgroundColor: "#5d68e2",
+                        border: "none",
+                        borderRadius: "5px",
+                        cursor: "pointer",
+                    }}
+                >
+                    OK
+                </button>
             </div>
-          </div>
         );
-      };
+    };
+    return (
+                <div className="form-container sign-in-container">
 
-  return (
-    <div className="form-container sign-in-container">
-      <form onSubmit={handleSubmit}>
-        <h1>Sign in</h1>
-        <div className="social-container">
-          <a href="#" className="social"><i className="fab fa-facebook-f"></i></a>
-          <a href="#" className="social"><i className="fab fa-google-plus-g"></i></a>
-          <a href="#" className="social"><i className="fab fa-linkedin-in"></i></a>
-        </div>
-        <span>or use your account</span>
-        <input type="email" name="email" placeholder="Email" value={formData.email} onChange={handleChange} required />
-        <div className="password-container">
-          <input
-            type={showPassword ? "text" : "password"} // Basculer entre texte et mot de passe
-            name="password"
-            placeholder="Password"
-            value={formData.password}
-            onChange={handleChange}
-            required
-          />
-          <span
-            className="eye-icon"
-            onClick={() => setShowPassword(!showPassword)} // Basculer la visibilité du mot de passe
-          >
-            {showPassword ? <FaEyeSlash /> : <FaEye />} {/* Basculer entre les icônes d'œil */}
-          </span>
-        </div>
-        {error && <p style={{ color: 'red' }}>{error}</p>}
-        <span onClick={handleForgotPassword} style={{ cursor: "pointer", color: "blue", textDecoration: "underline" }}>
-          Forgot your password?
-        </span>
-        <button type="submit">Sign In</button>
-      </form>
+                <form onSubmit={handleSubmit}>
+                <div className="logo-container">
+                <div className="logo"></div>
+            </div>
+                <h1>Sign In</h1>
+                <p className="welcome-text">Welcome back  !</p>
 
-      {showAlert && (
-        <CustomAlert
-          message={alertMessage}
-          onClose={() => setShowAlert(false)}
-        />
-      )}
-    </div>
-  );
+                <div className="social-container">
+    <a >
+        <GitHubLogin />
+    </a>
+
+    {/* Gmail Login */}
+    <a href="#" >
+        <GoogleLogin />
+    </a>
+
+    {/* Microsoft Login */}
+    <a href="#" >
+        <MicrosoftLogin />
+    </a>
+</div>
+                
+                
+                    <div className="input-group">
+                        <label>
+                            Email<span className="required">*</span>
+                        </label>
+                        <input 
+                            type="email" 
+                            name="email" 
+                            placeholder="Email" 
+                            value={formData.email} onChange={handleChange} required
+                        />
+                    </div>
+                    
+                    <div className="input-group">
+                        <div className="password-label">
+                            <label>
+                                Password<span className="required">*</span>
+                            </label>
+                           
+                        </div>
+                        <div className="password-container">
+                            <input 
+                                type={showPassword ? "text" : "password"} 
+                                name="password" 
+                                placeholder="password" 
+                                value={formData.password} 
+                                onChange={handleChange} 
+                                required 
+                            />
+                            <span 
+                                className="eye-icon"
+                                onClick={() => setShowPassword(!showPassword)}
+                            >
+                                {showPassword ? <FaEyeSlash /> : <FaEye />}
+                            </span>
+                        </div>
+                    </div>
+                    
+                    <div className="remember-container">
+                    <span 
+                                className="forgot-password"
+                                onClick={handleForgotPassword} 
+                            >
+Forgot your password?                            </span>
+                    </div>
+                    
+                    {error && <p className="error">{error}</p>}
+                    
+                    <button type="submit" className="signin-btn">
+                        Sign in
+                    </button>
+                </form>
+                
+              
+            
+                {showAlert && (
+                <CustomAlert
+                    message={alertMessage}
+                    onClose={() => setShowAlert(false)}
+                />
+            )}
+        </div>
+    );
 }
 
 export default SignIn;
