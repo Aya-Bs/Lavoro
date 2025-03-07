@@ -17,7 +17,7 @@ function Home() {
                 if (!token) {
                     console.warn('No token found in localStorage. Redirecting...');
                     setMessage('⚠️ No token found, redirecting...');
-                    setTimeout(() => navigate('/auth'), 2000);
+                    setTimeout(() => navigate('/signin'), 2000);
                     return;
                 }
 
@@ -34,12 +34,12 @@ function Home() {
                     setUserInfo(response.data);
                 } else {
                     setMessage('❌ No user data received. Redirecting...');
-                    setTimeout(() => navigate('/auth'), 2000);
+                    setTimeout(() => navigate('/signin'), 2000);
                 }
             } catch (err) {
                 console.error('Error fetching user info:', err);
                 setMessage('❌ Error fetching user info. Redirecting...');
-                setTimeout(() => navigate('/auth'), 2000);
+                setTimeout(() => navigate('/signin'), 2000);
             }
         };
 
@@ -52,7 +52,7 @@ function Home() {
 
         if (!token) {
             setMessage('No token found. Redirecting to signin...');
-            setTimeout(() => navigate('/auth'), 2000);
+            setTimeout(() => navigate('/signin'), 2000);
             return;
         }
 

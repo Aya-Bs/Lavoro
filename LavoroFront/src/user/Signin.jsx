@@ -14,6 +14,13 @@ function SignIn() {
     const [alertMessage, setAlertMessage] = useState("");
     const navigate = useNavigate();
 
+    const Errorstyle = {
+        color: "#ff6b6b",
+        fontSize: "12px",
+        marginTop: "5px",
+        width: "100%",
+        textAlign: "center",
+      }
     useEffect(() => {
         const checkAuthentication = async () => {
             try {
@@ -28,7 +35,7 @@ function SignIn() {
                         if (response.data.role && response.data.role.RoleName === 'Admin') {
                             navigate('/admin-dashboard');
                         } else {
-                            navigate('/home');
+                            navigate('/profile');
                         }
                     }
                 }
@@ -72,7 +79,7 @@ function SignIn() {
                     if (userResponse.data.role && userResponse.data.role.RoleName === 'Admin') {
                         navigate('/admin-dashboard'); // Redirect to admin dashboard
                     } else {
-                        navigate('/home'); // Redirect to home
+                        navigate('/profile'); // Redirect to home
                     }
                 }, 2000);
             } else {
@@ -121,88 +128,131 @@ function SignIn() {
             </div>
         );
     };
+
+    const back = {
+        backgroundColor: "#19191C ",
+    };
+
     return (
-                <div className="form-container sign-in-container">
-
-                <form onSubmit={handleSubmit}>
-                <div className="logo-container">
-                <div className="logo"></div>
+        <div style={back}>
+            <div className="row authentication authentication-cover-main mx-0">
+                <div className="col-xxl-6 col-xl-7">
+                    <div className="row justify-content-center align-items-center h-100">
+                        <div className="col-xxl-7 col-xl-9 col-lg-6 col-md-6 col-sm-8 col-12">
+                            <div className="card custom-card my-auto border">
+                                <div className="card-body p-5">
+                                    <p className="h5 mb-2 text-center">Sign In</p>
+                                    <p className="mb-4 text-muted op-7 fw-normal text-center">
+                                        Welcome back!
+                                    </p>
+                                    <div className="btn-list text-center mt-3">
+                                        <button className="btn btn-icon btn-wave btn-primary-light">
+                                           <GitHubLogin />
+                                        </button>
+                                        <button className="btn btn-icon btn-wave btn-primary1-light">
+                                      
+                                                <GoogleLogin />
+                                        </button>
+                                        <button className="btn btn-icon btn-wave btn-primary2-light">
+                                            <MicrosoftLogin />
+                                        </button>
+                                    </div>
+                    
+                                    <div className="text-center my-3 authentication-barrier">
+                                        <span>OR</span>
+                                    </div>
+                                    <form onSubmit={handleSubmit}>
+                                        <div className="row gy-3">
+                                            <div className="col-xl-12">
+                                                <label htmlFor="signin-username" className="form-label text-default">
+                                                    Email
+                                                </label>
+                                                <input
+                                                    type="email"
+                                                    className="form-control"
+                                                    id="signin-username"
+                                                    placeholder="Email"
+                                                    name="email"
+                                                    value={formData.email}
+                                                    onChange={handleChange}
+                                                    required
+                                                />
+                                            </div>
+                                            <div className="col-xl-12">
+                                                <label htmlFor="signin-password" className="form-label text-default d-block">
+                                                    Password
+                                                </label>
+                                                <div className="position-relative">
+                                                    <input
+                                                        type={showPassword ? "text" : "password"}
+                                                        className="form-control create-password-input"
+                                                        id="signin-password"
+                                                        placeholder="Password"
+                                                        name="password"
+                                                        value={formData.password}
+                                                        onChange={handleChange}
+                                                        required
+                                                    />
+                                                    <span
+                                                        className="show-password-button text-muted"
+                                                        onClick={() => setShowPassword(!showPassword)}
+                                                    >
+                                                        {showPassword ? <FaEyeSlash /> : <FaEye />}
+                                                    </span>
+                                                </div>
+                                                <div className="mt-2">
+                                                    <br />
+                                                    <label
+                                                        className="form-check-label text-muted fw-normal"
+                                                        htmlFor="defaultCheck1"
+                                                        onClick={handleForgotPassword}
+                                                        style={{ cursor: "pointer" }}
+                                                    >
+                                                        Forgot password?
+                                                    </label>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div className="d-grid mt-4">
+                                            <button type="submit" className="btn btn-primary">
+                                                Sign In
+                                            </button>
+                                        </div>
+                                        {error && <p className="error" style={Errorstyle}>{error}</p>}
+                                    </form>
+                                    <div className="text-center">
+                                        <p className="text-muted mt-3 mb-0">
+                                            Don't have an account?{" "}
+                                            <a href="/signup" className="text-primary">
+                                                Sign Up
+                                            </a>
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div className="col-xxl-6 col-xl-5 col-lg-12 d-xl-block d-none px-0">
+                    <div className="authentication-cover overflow-hidden">
+                        <div className="aunthentication-cover-content d-flex align-items-center justify-content-center">
+                            <div>
+                                <h3 className="text-fixed-white mb-1 fw-medium">Welcome Back!</h3>
+                                <h6 className="text-fixed-white mb-3 fw-medium">
+                                    Login to Your Account
+                                </h6>
+                                <p className="text-fixed-white mb-1 op-6">
+                                    Welcome to the Admin Dashboard. Please log in to securely manage
+                                    your administrative tools and oversee platform activities. Your
+                                    credentials ensure system integrity and functionality.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
-                <h1>Sign In</h1>
-                <p className="welcome-text">Welcome back  !</p>
 
-                <div className="social-container">
-    <a >
-        <GitHubLogin />
-    </a>
-
-    {/* Gmail Login */}
-    <a href="#" >
-        <GoogleLogin />
-    </a>
-
-    {/* Microsoft Login */}
-    <a href="#" >
-        <MicrosoftLogin />
-    </a>
-</div>
-                
-                
-                    <div className="input-group">
-                        <label>
-                            Email<span className="required">*</span>
-                        </label>
-                        <input 
-                            type="email" 
-                            name="email" 
-                            placeholder="Email" 
-                            value={formData.email} onChange={handleChange} required
-                        />
-                    </div>
-                    
-                    <div className="input-group">
-                        <div className="password-label">
-                            <label>
-                                Password<span className="required">*</span>
-                            </label>
-                           
-                        </div>
-                        <div className="password-container">
-                            <input 
-                                type={showPassword ? "text" : "password"} 
-                                name="password" 
-                                placeholder="password" 
-                                value={formData.password} 
-                                onChange={handleChange} 
-                                required 
-                            />
-                            <span 
-                                className="eye-icon"
-                                onClick={() => setShowPassword(!showPassword)}
-                            >
-                                {showPassword ? <FaEyeSlash /> : <FaEye />}
-                            </span>
-                        </div>
-                    </div>
-                    
-                    <div className="remember-container">
-                    <span 
-                                className="forgot-password"
-                                onClick={handleForgotPassword} 
-                            >
-Forgot your password?                            </span>
-                    </div>
-                    
-                    {error && <p className="error">{error}</p>}
-                    
-                    <button type="submit" className="signin-btn">
-                        Sign in
-                    </button>
-                </form>
-                
-              
-            
-                {showAlert && (
+            {showAlert && (
                 <CustomAlert
                     message={alertMessage}
                     onClose={() => setShowAlert(false)}

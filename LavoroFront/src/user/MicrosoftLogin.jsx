@@ -53,7 +53,7 @@ const MicrosoftLogin = () => {
             setTimeout(() => {
                 setShowModal(false);
                 // Rediriger vers la page d'accueil après la fermeture de la modale
-                navigate('/home');
+                navigate('/profile');
             }, 1000); // 1000 ms = 1 seconde
         } catch (error) {
             console.error('Error during Microsoft login:', error);
@@ -68,11 +68,20 @@ const MicrosoftLogin = () => {
         }
     };
 
+    const style ={
+        position: 'absolute',
+        top: "142px",
+        left: '254px',
+        transform: 'translate(-50%, -50%)',
+        
+    }
     return (
         <>
-                <a href="#" className="social microsoft" onClick={microsoftLogin}>
-                    <i className="fab fa-microsoft"></i>
+            <div className="social-container">
+                <a  onClick={microsoftLogin}>
+                    <i className="ri-microsoft-line " style={style}></i>
                 </a>
+            </div>
 
             {/* Modale Bootstrap */}
             <Modal show={showModal} onHide={() => setShowModal(false)}>
