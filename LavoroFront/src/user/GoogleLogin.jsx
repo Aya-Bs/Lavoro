@@ -36,7 +36,7 @@ function GoogleLogin() {
                     setTimeout(() => {
                         setShowModal(false);
                         // Rediriger vers la page d'accueil après la fermeture de la modale
-                        navigate("/home", { replace: true });
+                        navigate("/profile", { replace: true });
                     }, 1000); // 1000 ms = 1 seconde
                 } else {
                     // Afficher une modale d'erreur
@@ -81,12 +81,21 @@ function GoogleLogin() {
         flow: "auth-code",
     });
 
+    const style ={
+        position: 'absolute',
+        top: "142px",
+        left: '215px',
+        transform: 'translate(-50%, -50%)',
+        
+    }
+
     return (
-        <>
-            <a href="#" className="social google" onClick={googleLogin}>
-                <i className="fab fa-google" onClick={googleLogin}></i>
+        <div className="social-container">
+            <a href="#" className="social" onClick={googleLogin}>
+                <i className="ri-google-line" style={style}></i>
             </a>
 
+            {/* Modale Bootstrap */}
             <Modal show={showModal} onHide={() => setShowModal(false)}>
                 <Modal.Header closeButton className={`bg-${modalType} text-white`}>
                     <Modal.Title>
@@ -102,7 +111,7 @@ function GoogleLogin() {
                     </Button>
                 </Modal.Footer>
             </Modal>
-            </>
+        </div>
     );
 }
 
