@@ -6,6 +6,8 @@ const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
 const nodemailer = require('nodemailer');
+const speakeasy = require('speakeasy');
+
 
 const { validatePassword ,validateUserInput } = require('../middleware/validate'); // Import the validation function
 const transporter = require('../utils/emailConfig'); // Import the email transporter
@@ -195,6 +197,7 @@ const LOCK_TIME = 5 * 60 * 1000; // 5 minutes en millisecondes
               The Lavoro Team`;
               await sendEmail(user.email, emailSubject, emailText);
             }
+
       
             await user.save();
             return res.status(400).render('signin', { error: 'Mot de passe invalide.', email });
@@ -223,7 +226,10 @@ const LOCK_TIME = 5 * 60 * 1000; // 5 minutes en millisecondes
             userId: user._id,
             action: 'User Logged In',
           });
-      
+
+       if (user.twoFactorEnabled) {
+            return res.status(200).json({ requires2FA: true, userId: user._id });
+        }
     
         
         // Generate a token with 7-day expiration
@@ -241,19 +247,50 @@ const LOCK_TIME = 5 * 60 * 1000; // 5 minutes en millisecondes
         
 
 
-        // if (user.role.RoleName === 'Admin') {
-        //     return res.redirect('/admin/dashboard');
-        //   } else {
-        //     return res.redirect('/home');
-        //   }// Return user data
-
-
-
-
     } catch (error) {
         console.error('Error during sign-in:', error);
         res.status(500).json({ error: 'An error occurred during sign-in. Please try again.' });
     }
+};
+exports.verify2FALogin = async (req, res) => {
+  try {
+      const { userId, token } = req.body;
+
+      if (!userId || !token) {
+          return res.status(400).json({ error: 'User ID and token are required' });
+      }
+
+      const user = await User.findById(userId);
+
+      if (!user || !user.twoFactorSecret) {
+          return res.status(400).json({ error: '2FA not enabled for this user' });
+      }
+
+      // Verify the TOTP code
+      const verified = speakeasy.totp.verify({
+          secret: user.twoFactorSecret,
+          encoding: 'base32',
+          token,
+          window: 1, // Allow a 1-step window for time drift
+      });
+
+      if (verified) {
+          // Generate a token with 7-day expiration
+          const token = jwt.sign(
+              { _id: user._id }, // Payload
+              process.env.JWT_SECRET, // Secret key
+              { expiresIn: '7d' } // Expires in 7 days
+          );
+
+          // Return user data and token
+          res.status(200).json({ user, token });
+      } else {
+          res.status(400).json({ error: 'Invalid 2FA code' });
+      }
+  } catch (error) {
+      console.error('Error verifying 2FA:', error);
+      res.status(500).json({ message: error.message });
+  }
 };
 
 exports.verifyEmail = async (req, res) => {
@@ -305,7 +342,7 @@ exports.verifyEmail = async (req, res) => {
         console.log('Decoded token:', decoded); // Log the decoded token
 
         // Fetch user information using decoded._id (instead of decoded.userId)
-        const user = await User.findById(decoded._id).select('-password_hash');
+        const user = await User.findById(decoded._id).select('-password_hash').populate('role');
         if (!user) {
             console.log('User not found for ID:', decoded._id); // Log the missing user ID
             return res.status(404).json({ error: 'User not found' });

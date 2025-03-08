@@ -4,8 +4,8 @@ const Notification = require('../models/Notification');
 const AccountActivityLog = require('../models/accountActivityLog');
 const bcrypt = require('bcrypt');
 const fs = require('fs');
-
-
+const qrcode = require('qrcode');
+const speakeasy = require('speakeasy');
 
 
 // Fonction pour mettre à jour le profil de l'utilisateur
@@ -155,5 +155,109 @@ exports.requestDelete = async (req, res) => {
   } catch (error) {
       console.error(error);
       res.status(500).send("Internal Server Error");
+  }
+};
+
+
+
+exports.enable2FA = async (req, res) => {
+  try {
+    const userId = req.session.user._id;
+    const user = await User.findById(userId);
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Generate a TOTP secret
+    const secret = speakeasy.generateSecret({ length: 20 });
+    console.log('New Secret:', secret.base32);
+
+    // Save the secret to the user's record
+    user.twoFactorSecret = secret.base32;
+    await user.save();
+
+    // Generate a QR code URL
+    const otpauthUrl = secret.otpauth_url;
+
+    // Convert the URL to a QR code image
+    qrcode.toDataURL(otpauthUrl, (err, data_url) => {
+      if (err) {
+        return res.status(500).json({ error: 'Error generating QR code' });
+      }
+
+      // Return the QR code and secret to the frontend
+      res.json({ qrCodeUrl: data_url, secret: secret.base32 });
+    });
+  } catch (error) {
+    console.error('Error enabling 2FA:', error);
+    res.status(500).json({ message: error.message });
+  }
+};
+exports.verify2FA = async (req, res) => {
+  try {
+    console.log('Request Body:', req.body); // Log the request body
+    const userId = req.session.user._id;
+    const { token } = req.body;
+
+    if (!token) {
+      return res.status(400).json({ error: 'Token is required' });
+    }
+
+    const user = await User.findById(userId);
+
+    if (!user || !user.twoFactorSecret) {
+      return res.status(400).json({ error: '2FA not enabled for this user' });
+    }
+
+    // Log the secret and the current TOTP code
+    const currentToken = speakeasy.totp({
+      secret: user.twoFactorSecret,
+      encoding: 'base32',
+    });
+    console.log('Secret:', user.twoFactorSecret);
+    console.log('Current TOTP Code:', currentToken);
+    console.log('User Provided Token:', token);
+
+    // Verify the TOTP code
+    const verified = speakeasy.totp.verify({
+      secret: user.twoFactorSecret,
+      encoding: 'base32',
+      token,
+      window: 1, // Allow a 1-step window for time drift
+    });
+
+    console.log('Is Valid:', verified);
+
+    if (verified) {
+      user.twoFactorEnabled = true; // Enable 2FA for the user
+      await user.save();
+      res.json({ message: '2FA verification successful' });
+    } else {
+      res.status(400).json({ error: 'Invalid 2FA code' });
+    }
+  } catch (error) {
+    console.error('Error verifying 2FA:', error); // Log the full error
+    res.status(500).json({ message: error.message });
+  }
+};
+exports.disable2FA = async (req, res) => {
+  try {
+    const userId = req.session.user._id;
+    const user = await User.findById(userId);
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Disable 2FA
+    user.twoFactorSecret = null;
+    user.twoFactorEnabled = false;
+    await user.save();
+
+    res.json({ message: '2FA disabled successfully' });
+  } catch (error) {
+    console.error('Error disabling 2FA:', error);
+    res.status(500).json({ message: error.message });
   }
 };

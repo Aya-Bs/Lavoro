@@ -20,6 +20,7 @@ import ActivitiesPage from "./user/ActivitiesPage";
 import { GoogleOAuthProvider } from "@react-oauth/google";
 import RefreshHandler from "./user/RefreshHandler";
 import { useState } from "react";
+import AdminDashboardTwo from "./admin/AdminDashboard2";
 
 
 function App() {
@@ -33,7 +34,9 @@ function App() {
       <RefreshHandler setIsAuthenticated={setIsAuthenticated} />
 
         <Routes>
+        
           <Route path="/home" element={<Home />} />
+          <Route path="/admin" element={<AdminDashboardTwo />} />
           <Route path="/admin-dashboard" element={<AdminDashboard />} />
           <Route path="/user-activity/:userId" element={<UserActivityLog />} />
           <Route path="/verify-email" element={<VerifyEmail />} />
