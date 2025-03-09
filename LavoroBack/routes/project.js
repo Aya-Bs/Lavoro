@@ -12,7 +12,10 @@ router.get('/:id', projectController.getProjectById); // Add this route
 router.post('/:id/archive', projectController.archiveProject);
 router.post('/:id/unarchive', projectController.unarchiveProject);
 router.delete('/archived-projects/:id', projectController.deleteArchivedProject);
-
+//check if the user is a team manager
+router.get('/checkTeamManager/:id', projectController.checkTeamManager);
+//check team manager projects
+router.get('/checkTeamManagerProjects/:id', projectController.checkTeamManagerProjects);
 
 
 module.exports = router;

@@ -68,15 +68,13 @@ router.get('/resetpassword', (req, res) => {
 router.post('/resetpassword', userController.resetPassword);
 
 
-
-
-
-
-
 router.get("/google", googleLogin);
 router.post('/login', MicrosoftLogin);
 /*router.get('/get-user', getUser);*/
 router.post('/github', GitHubLogin);
 router.get('/getData', getData);
+
+router.get('/getTeamManager', userController.getTeamManager);
+
 
 module.exports = router;

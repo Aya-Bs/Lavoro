@@ -1,6 +1,8 @@
 const Project = require('../models/Project'); // Import the Project model
 const ProjectHistory = require('../models/ProjectHistory'); // Import the ProjectHistory model
 const Archive = require('../models/Archive'); // Import the Archive model
+const User = require('../models/user');
+const Role = require('../models/role');
 
 // Function to get all projects
 exports.getAllProjects = async (req, res) => {
@@ -263,5 +265,49 @@ exports.deleteArchivedProject = async (req, res) => {
     res.status(200).json({ message: 'Archived project deleted successfully', deletedProject });
   } catch (error) {
     res.status(500).json({ message: error.message });
+  }
+};
+
+// Fonction qui vérifie si un utilisateur est un Team Manager
+exports.checkTeamManager = async (id) => {
+  try {
+      const user = await User.findById(id);
+      if (!user) {
+          throw new Error('Utilisateur non trouvé');
+      }
+
+      const role = await Role.findById(user.role);
+      if (!role) {
+          throw new Error('Rôle non trouvé');
+      }
+
+      if (role.RoleName !== 'Team Manager') {
+          throw new Error('L\'utilisateur n\'est pas un Team Manager');
+      }
+
+      return user;
+  } catch (error) {
+      throw error;
+  }
+};
+
+
+// Fonction qui vérifie combien de projets un Team Manager a
+exports.checkTeamManagerProjects = async (req, res) => {
+  try {
+      const user = await this.checkTeamManager(req.params.id);
+      if (!user) {
+          return res.status(404).json({ message: 'Utilisateur non trouvé' });
+      }
+
+      const projects = await Project.find({ manager_id: req.params.id });
+
+      if (projects.length >= 3) {
+          return res.status(400).json({ message: 'Vous ne pouvez pas affecter plus de projets à ce Team Manager' });
+      } else {
+          return res.status(200).json({ message: 'Vous pouvez affecter des projets à ce Team Manager' });
+      }
+  } catch (error) {
+      return res.status(500).json({ message: error.message });
   }
 };

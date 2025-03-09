@@ -5,7 +5,7 @@ const Project = new Schema(
     name: { type: String, required: true },
     description: { type: String }, // Mongoose utilise String au lieu de "text"
     budget: { type: Number, default: 0 },
-    manager_id: { type: mongo.Schema.Types.UUID, required: true },
+    manager_id: { type: mongo.Schema.Types.ObjectId, required: true },
     team_id: { type: mongo.Schema.Types.UUID, required: true },
     start_date: { type: Date },
     end_date: { type: Date },
