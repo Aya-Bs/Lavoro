@@ -48,7 +48,7 @@ const GitHubLogin = () => {
   setTimeout(() => {
       setShowModal(false);
       // Rediriger vers la page d'accueil après la fermeture de la modale
-      navigate('/home');
+      navigate('/profile');
   }, 1000); // 1000 ms = 1 seconde
 } catch (error) {
   console.error('Error during Microsoft login:', error);
@@ -62,12 +62,20 @@ const GitHubLogin = () => {
   }, 1000); // 1000 ms = 1 seconde
 }
   };
-
+  const style ={
+    position: 'absolute',
+    top: "142px",
+    left: '176px',
+    transform: 'translate(-50%, -50%)',
+    
+}
   return (
     <>
-      <a href="#" className="social github" onClick={githHubLogin}>
-        <i className="fab fa-github"></i> 
+    <div className="social-container">
+      <a href="#" className="social" onClick={githHubLogin}>
+        <i className="ri-github-line" style={style}></i> 
       </a>
+    </div>
 
     {/* Modale Bootstrap */}
     <Modal show={showModal} onHide={() => setShowModal(false)}>
