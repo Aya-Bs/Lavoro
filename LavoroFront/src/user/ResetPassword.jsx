@@ -32,7 +32,7 @@ const ResetPassword = () => {
         setError('');
         // Rediriger vers la page de connexion après un délai
         setTimeout(() => {
-          navigate('/auth');
+          navigate('/signin');
         }, 1000); // Redirection après 1 seconde
       } else {
         setError(data.error || 'An error occurred while resetting your password.');
