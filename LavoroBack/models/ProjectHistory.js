@@ -1,5 +1,8 @@
 const mongo = require('mongoose');
 const Schema = mongo.Schema;
+
+const mongoose = require('mongoose');
+
 const ProjectHistory = new Schema(
 {
     project_id: { type: mongoose.Schema.Types.UUID, required: true },

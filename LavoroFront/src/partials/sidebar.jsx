@@ -70,6 +70,11 @@ Pages            </li>
                   Projects List
                   </Link>
                 </li>
+                <li className="slide">
+                  <Link to="/ProjectDash" className="side-menu__item">
+                  Project dashboard
+                            </Link>
+                </li>
               </ul>
             </li>
           </ul>

@@ -18,7 +18,7 @@ import Layout from "./partials/Layout";
 import Sales from "./project/Sales";
 import CreateProject from "./project/createProject";
 import ListPro from "./project/ProList";
-
+import ProjectDash from "./project/ProjectDash";
 
 import "../public/assets/css/icons.css";
 import "../public/assets/css/remixicon.css";
@@ -55,8 +55,8 @@ function App() {
               <Route path="/createPro" element ={<CreateProject />} />
               <Route path="/overviewPro" element={<ProjectOverview />} />
               <Route path="/ListPro" element={<ListPro />} />
-
-              
+              <Route path="/ProjectDash" element={<ProjectDash />} />
+ 
             </Route>
           </Routes>
         </BrowserRouter>

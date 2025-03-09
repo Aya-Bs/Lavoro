@@ -1,5 +1,7 @@
 const mongo = require('mongoose');
 const Schema = mongo.Schema;
+const mongoose = require('mongoose');
+
 const Project = new Schema(
 {
     name: { type: String, required: true },

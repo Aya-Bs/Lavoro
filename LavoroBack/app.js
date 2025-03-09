@@ -24,13 +24,13 @@ mongo
     console.log(err);
   });
 
-  const usersRouter = require('./routes/users');
-  const taskRouter=require('./routes/Task.js')
+const usersRouter = require('./routes/users');
+const taskRouter=require('./routes/Task')
 const profileRouter = require('./routes/profile');
 
 // const homeRouter = require('./routes/home');
 const adminRouter = require('./routes/admin');
-
+const projectRouter=require('./routes/project')
 
 
 const app = express();
@@ -79,8 +79,9 @@ app.use('/users', usersRouter);
 // app.use('/', homeRouter);
 app.use('/admin',adminRouter);
 app.set('io', io);
-app.set('/tasks',taskRouter);
+app.use('/tasks',taskRouter);
 
+app.use('/project',projectRouter);
 
 app.use('/profiles', profileRouter);
 
