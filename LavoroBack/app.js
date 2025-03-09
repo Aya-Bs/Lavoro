@@ -27,7 +27,7 @@ mongo
   const usersRouter = require('./routes/users');
   const taskRouter=require('./routes/Task.js')
 const profileRouter = require('./routes/profile');
-const authRouter = require ('./routes/authRouter.js');
+const project = require('./routes/project');
 
 // const homeRouter = require('./routes/home');
 const adminRouter = require('./routes/admin');
@@ -78,14 +78,31 @@ app.use(
 // Routes
 app.use('/users', usersRouter);
 // app.use('/', homeRouter);
-app.use('/auth',authRouter);
 app.use('/admin',adminRouter);
 app.set('io', io);
-app.set('/task',taskRouter);
+app.set('/tasks',taskRouter);
+app.use('/projects', project);
 
 
 app.use('/profiles', profileRouter);
 
+app.post("/translate", async (req, res) => {
+  const { text, targetLanguage } = req.body;
+
+  try {
+    const response = await axios.post("https://libretranslate.com/translate", {
+      q: text,
+      source: "auto",
+      target: targetLanguage,
+    });
+
+    const translatedText = response.data.translatedText;
+    res.json({ translatedText });
+  } catch (error) {
+    console.error("Error translating text:", error);
+    res.status(500).json({ error: "Translation failed" });
+  }
+});
 
 // Error handling
 app.use((req, res, next) => {

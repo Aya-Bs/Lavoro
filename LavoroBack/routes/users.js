@@ -3,8 +3,12 @@ const router = express.Router();
 const userController = require('../controllers/userController');
 const upload = require('../middleware/upload'); // Import the upload middleware
 const setDefaultRole = require('../middleware/setDefaultRole');
+const { googleLogin } = require('../controllers/authController');
+const { MicrosoftLogin } = require('../controllers/MicrosoftController');
+const { GitHubLogin, getData } = require('../controllers/GitHubController');
 
-// router.post('/signup', upload.single('image'), userController.signup);
+
+router.post('/signup', upload.single('image'), userController.signup);
 
 router.post('/signup', setDefaultRole, upload.single('image'), userController.signup);
 
@@ -21,20 +25,30 @@ router.get('/me', userController.getUserInfo); // Route to get user info from se
 
 
 
+// router.get('/signin', userController.redirectIfAuthenticated, (req, res) => {
+//   res.render('signin'); // Render sign-up page
+// });
+
+// router.get('/signup', userController.redirectIfAuthenticated, (req, res) => {
+//   res.render('signup'); // Render sign-up page
+// });
+
+
+// router.get('/home', userController.redirectIfNotAuthenticated, (req, res) => {
+//   res.render('home'); 
+// });
 
 router.get('/signin', userController.redirectIfAuthenticated, (req, res) => {
-  res.render('signin'); // Render sign-up page
+  res.render('signin'); // Render sign-in page
 });
 
 router.get('/signup', userController.redirectIfAuthenticated, (req, res) => {
   res.render('signup'); // Render sign-up page
 });
 
-
 router.get('/home', userController.redirectIfNotAuthenticated, (req, res) => {
-  res.render('home'); 
+  res.render('home'); // Render home page
 });
-
 
 
 
@@ -56,5 +70,13 @@ router.post('/resetpassword', userController.resetPassword);
 
 
 
+
+
+
+router.get("/google", googleLogin);
+router.post('/login', MicrosoftLogin);
+/*router.get('/get-user', getUser);*/
+router.post('/github', GitHubLogin);
+router.get('/getData', getData);
 
 module.exports = router;

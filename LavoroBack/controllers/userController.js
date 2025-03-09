@@ -50,6 +50,7 @@ exports.signup = async (req, res) => {
   try {
       const { firstName, lastName, email, password, role, phone_number } = req.body;
 
+
       // Validate user input
       const validationError = validateUserInput({ firstName, lastName, phoneNumber: phone_number, password });
       if (validationError) {
@@ -67,15 +68,19 @@ exports.signup = async (req, res) => {
           imagePath = generateAvatar(firstName, lastName);
       }
 
+      console.log("Image path:", imagePath);
+
       // Validate email format
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (!emailRegex.test(email)) {
+          console.log("Invalid email format:", email);
           return res.status(400).json({ error: 'Please enter a valid email address.' });
       }
 
       // Check if email already exists
       const existingUser = await User.findOne({ email });
       if (existingUser) {
+          console.log("Email already exists:", email);
           return res.status(400).json({ error: 'This email is already in use.' });
       }
 
@@ -90,19 +95,19 @@ exports.signup = async (req, res) => {
 
       let userRole;
       if (role) {
-        userRole = await Role.findOne({ RoleName: role }); // Fetch role based on provided RoleName
+          userRole = await Role.findOne({ RoleName: role }); // Fetch role based on provided RoleName
       } else {
-        userRole = await Role.findOne({ RoleName: 'Developer' }); // Default to 'Developer' role
+          userRole = await Role.findOne({ RoleName: 'Developer' }); // Default to 'Developer' role
       }
+
+
       // Create new user
       const user = new User({
           firstName,
           lastName,
           email,
           password_hash,
-        //   role,
-        role:userRole._id,
-
+          role: userRole._id,
           phone_number,
           image: imagePath,
           verificationToken, // Save the verification token
@@ -111,6 +116,7 @@ exports.signup = async (req, res) => {
 
       // Save the user to the database
       await user.save();
+
 
       // Send verification email
       const verificationUrl = `http://localhost:5173/verify-email?token=${verificationToken}`;
@@ -123,13 +129,13 @@ exports.signup = async (req, res) => {
 
       await transporter.sendMail(mailOptions);
 
-      res.status(201).json({ message: 'User registered successfully. Please check your email for verification.' });
+
+      res.status(201).json({ message: '✅ User registered successfully. Please check your email for verification.' });
   } catch (error) {
       console.error('Error during signup:', error);
       res.status(500).json({ error: 'An error occurred during signup. Please try again.' });
   }
 };
-
 
 
 
@@ -145,7 +151,7 @@ const LOCK_TIME = 5 * 60 * 1000; // 5 minutes en millisecondes
         console.log('Sign-in attempt for email:', email);
 
         // Find the user by email
-        const user = await User.findOne({ email });
+        const user = await User.findOne({ email }).populate('role');
         if (!user) {
             console.log('User not found for email:', email);
             return res.status(400).json({ error: 'User not found.' });
@@ -154,13 +160,14 @@ const LOCK_TIME = 5 * 60 * 1000; // 5 minutes en millisecondes
         console.log('User found:', user.email);
 
            // Vérifier si le compte est verrouillé
+    // Vérifier si le compte est verrouillé
     if (user.lockUntil && user.lockUntil > Date.now()) {
-        const remainingTime = Math.ceil((user.lockUntil - Date.now()) / 60000); // en minutes
-        return res.status(403).render('signin', { 
-          error: `Vous êtes bloqué jusqu'à ${new Date(user.lockUntil).toLocaleTimeString()}.`,
-          email 
-        });
-      }
+      const remainingTime = Math.ceil((user.lockUntil - Date.now()) / 60000); // en minutes
+      return res.status(403).json({ 
+          error: `Votre compte est bloqué pour ${remainingTime} minutes. Il sera réactivé à ${new Date(user.lockUntil).toLocaleTimeString()}.`,
+          lockMessage: `Votre compte est verrouillé jusqu'à ${new Date(user.lockUntil).toLocaleTimeString()}.`
+      });
+  }
 
         // Check if the user is verified
         if (!user.isVerified) {
@@ -217,7 +224,19 @@ const LOCK_TIME = 5 * 60 * 1000; // 5 minutes en millisecondes
           });
       
     
-        res.status(200).json(user); 
+        
+        // Generate a token with 7-day expiration
+        const token = jwt.sign(
+          { _id: user._id }, // Payload
+          process.env.JWT_SECRET, // Secret key
+          { expiresIn: '7d' } // Expires in 7 days
+      );
+
+      // Return user data and token
+      res.status(200).json({ 
+          user, 
+          token 
+      });
         
 
 
@@ -258,7 +277,7 @@ exports.verifyEmail = async (req, res) => {
         await user.save();
         
         console.log('User verified successfully:', user.email);
-        res.status(200).json({ message: 'Email verified successfully!' });
+        res.status(200).json({ message: ' ✅ Email verified successfully!' });
   
         // Remove the token AFTER responding
         user.verificationToken = undefined;
@@ -270,15 +289,32 @@ exports.verifyEmail = async (req, res) => {
   };
   
 
-exports.getUserInfo = (req, res) => {
-  if (req.session.user) {
-      console.log('Session en cours : ', req.session.user.email); // Log session data
-      res.json(req.session.user); // Send user info stored in session
-  } else {
-      res.status(401).json({ error: 'Not authenticated' });
-  }
-};
+  exports.getUserInfo = async (req, res) => {
+    try {
+        const authHeader = req.headers['authorization'];
+        const token = authHeader && authHeader.split(' ')[1];
 
+        if (!token) {
+            return res.status(401).json({ error: 'No token provided' });
+        }
+
+        // Verify the token
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        console.log('Decoded token:', decoded); // Log the decoded token
+
+        // Fetch user information using decoded._id (instead of decoded.userId)
+        const user = await User.findById(decoded._id).select('-password_hash');
+        if (!user) {
+            console.log('User not found for ID:', decoded._id); // Log the missing user ID
+            return res.status(404).json({ error: 'User not found' });
+        }
+
+        res.status(200).json(user);
+    } catch (err) {
+        console.error('Error in getUserInfo:', err);
+        res.status(401).json({ error: 'Invalid or expired token' });
+    }
+};
 
 
 exports.checkmail =  async (req, res) => {
@@ -322,26 +358,21 @@ exports.logout = async (req, res) => {
 
 
 
-
- exports.redirectIfAuthenticated= async (req, res, next) =>{
-    if (req.session.user) {
+exports.redirectIfAuthenticated = async (req, res, next) => {
+  if (req.session.user) {
       console.log('User already signed in. Redirecting to home.');
       return res.redirect('/home'); // Redirect to home if user is already authenticated
-    }
-    next();
   }
-
-
-
-
-exports.redirectIfNotAuthenticated = (req, res, next) => {
-    if (!req.session.user) {
-        console.log('User not authenticated. Redirecting to sign-in.');
-        return res.redirect('/signin'); // Redirect to sign-in page if not authenticated
-    }
-    next(); // Proceed if the user is authenticated
+  next();
 };
 
+exports.redirectIfNotAuthenticated = (req, res, next) => {
+  if (!req.session.user) {
+      console.log('User not authenticated. Redirecting to sign-in.');
+      return res.redirect('/signin'); // Redirect to sign-in page if not authenticated
+  }
+  next(); // Proceed if the user is authenticated
+};
 
 exports.resetPassword = async (req, res) => {
     const token = req.query.token || req.body.token;
