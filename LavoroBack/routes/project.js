@@ -1,6 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const { getProjectsByStatus } = require('../controllers/ProjectController'); // Importez la fonction du contrôleur
+const Project = require('../models/Project');
+const ProjectController = require('../controllers/ProjectController');
 
 
 router.get('/projetStatus', async (req, res) => {
@@ -13,5 +15,6 @@ router.get('/projetStatus', async (req, res) => {
         res.status(500).json({ message: 'Internal server error' });
     }
 });
+router.get('/projects', ProjectController.getAllProjects);
 
 module.exports = router;

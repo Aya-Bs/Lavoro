@@ -19,11 +19,11 @@ import Sales from "./project/Sales";
 import CreateProject from "./project/createProject";
 import ListPro from "./project/ProList";
 import ProjectDash from "./project/ProjectDash";
-
 import "../public/assets/css/icons.css";
 import "../public/assets/css/remixicon.css";
 import 'remixicon/fonts/remixicon.css';
 import ProjectOverview from "./project/ProjectOverview";
+import AllProject from "./project/AllProject";
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -56,6 +56,8 @@ function App() {
               <Route path="/overviewPro" element={<ProjectOverview />} />
               <Route path="/ListPro" element={<ListPro />} />
               <Route path="/ProjectDash" element={<ProjectDash />} />
+              <Route path="/AllProject" element={<AllProject />} />
+
  
             </Route>
           </Routes>

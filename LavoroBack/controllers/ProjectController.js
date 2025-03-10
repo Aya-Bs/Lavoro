@@ -49,9 +49,19 @@ exports.getProjectsByStatus = async () => {
         console.error('Error fetching projects by status:', err);
         throw err; // Propager l'erreur pour la gérer côté appelant
     }
+
+
 };
 
 
-
+exports.getAllProjects = async (req, res) => {
+    try {
+        const projects = await Project.find({}); // Récupère tous les projets
+        res.status(200).json(projects);
+    } catch (error) {
+        console.error('Error fetching projects:', error);
+        res.status(500).json({ message: 'Failed to fetch projects' });
+    }
+};
 
     
