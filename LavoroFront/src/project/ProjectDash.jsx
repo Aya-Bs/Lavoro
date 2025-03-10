@@ -1,5 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
+import PieChart from './PieChart'; // Importez le composant PieChart
+import LineChart from './ChartGraphique'; // Importez le composant LineChart
+
 
 export default function Sales() {
     const [projectsByStatus, setProjectsByStatus] = useState({});
@@ -7,6 +10,7 @@ export default function Sales() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [searchQuery, setSearchQuery] = useState(''); // État pour la recherche
+    const [sortBy, setSortBy] = useState('start_date'); // État pour le tri
 
     useEffect(() => {
         // Appeler l'API pour obtenir les projets par statut
@@ -39,11 +43,27 @@ export default function Sales() {
         project.name.toLowerCase().includes(searchQuery.toLowerCase())
     );
 
+    // Trier les projets en fonction de la clé sélectionnée
+    const sortedProjects = [...filteredProjects].sort((a, b) => {
+        if (sortBy === 'start_date') {
+            return new Date(a.start_date) - new Date(b.start_date); // Trier par date
+        } else if (sortBy === 'budget') {
+            return a.budget - b.budget; // Trier par budget
+        } else if (sortBy === 'status') {
+            return a.status.localeCompare(b.status); // Trier par statut
+        }
+        return 0;
+    });
+
     if (loading) return <p>Loading...</p>;
     if (error) return <p>{error}</p>;
 
     return (
+
+
+        
         <div>
+          
             {/* Première section */}
             <div className="card custom-card">
                 <div className="card-header justify-content-between">
@@ -132,12 +152,24 @@ export default function Sales() {
                         </div>
                         <div className="dropdown my-1">
                             <a href="javascript:void(0);" className="btn btn-primary btn-sm" data-bs-toggle="dropdown" aria-expanded="false">
-                                Sort By<i className="ri-arrow-down-s-line align-middle ms-1 d-inline-block"></i>
+                                Sort By <i className="ri-arrow-down-s-line align-middle ms-1 d-inline-block"></i>
                             </a>
                             <ul className="dropdown-menu" role="menu">
-                                <li><a className="dropdown-item" href="javascript:void(0);">New</a></li>
-                                <li><a className="dropdown-item" href="javascript:void(0);">Popular</a></li>
-                                <li><a className="dropdown-item" href="javascript:void(0);">Relevant</a></li>
+                                <li>
+                                    <a className="dropdown-item" href="javascript:void(0);" onClick={() => setSortBy('start_date')}>
+                                        Start Date
+                                    </a>
+                                </li>
+                                <li>
+                                    <a className="dropdown-item" href="javascript:void(0);" onClick={() => setSortBy('budget')}>
+                                        Budget
+                                    </a>
+                                </li>
+                                <li>
+                                    <a className="dropdown-item" href="javascript:void(0);" onClick={() => setSortBy('status')}>
+                                        Status
+                                    </a>
+                                </li>
                             </ul>
                         </div>
                     </div>
@@ -147,12 +179,10 @@ export default function Sales() {
                         <table className="table table-hover text-nowrap table-bordered">
                             <thead>
                                 <tr>
-                                    <th scope="col">S.No</th>
+                                    <th scope="col"></th>
                                     <th scope="col">Project Name</th>
                                     <th scope="col">Description</th>
                                     <th scope="col">Budget</th>
-                                    <th scope="col">Manager ID</th>
-                                    <th scope="col">Team ID</th>
                                     <th scope="col">Start Date</th>
                                     <th scope="col">End Date</th>
                                     <th scope="col">Status</th>
@@ -160,17 +190,17 @@ export default function Sales() {
                                     <th scope="col">AI Predicted Description</th>
                                     <th scope="col">Created At</th>
                                     <th scope="col">Updated At</th>
+                                    <th scope="col">Manager ID</th>
+                                    <th scope="col">Team ID</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                {filteredProjects.map((project, index) => (
+                                {sortedProjects.map((project, index) => (
                                     <tr key={project._id}>
                                         <td>{index + 1}</td>
                                         <td><span className="fw-medium">{project.name}</span></td>
                                         <td>{project.description || 'N/A'}</td>
                                         <td>{project.budget || 0}</td>
-                                        <td>{typeof project.manager_id === 'object' ? project.manager_id.value : project.manager_id}</td>
-                                        <td>{typeof project.team_id === 'object' ? project.team_id.name : project.team_id}</td>
                                         <td>{project.start_date ? new Date(project.start_date).toLocaleDateString() : 'N/A'}</td>
                                         <td>{project.end_date ? new Date(project.end_date).toLocaleDateString() : 'N/A'}</td>
                                         <td>
@@ -180,6 +210,8 @@ export default function Sales() {
                                         <td>{project.ai_predicted_description || 'N/A'}</td>
                                         <td>{new Date(project.created_at).toLocaleDateString()}</td>
                                         <td>{new Date(project.updated_at).toLocaleDateString()}</td>
+                                        <td>{typeof project.manager_id === 'object' ? project.manager_id.value : project.manager_id}</td>
+                                        <td>{typeof project.team_id === 'object' ? project.team_id.name : project.team_id}</td>
                                     </tr>
                                 ))}
                             </tbody>
@@ -187,6 +219,27 @@ export default function Sales() {
                     </div>
                 </div>
             </div>
+
+
+            <div className="card custom-card">
+                <div className="card-header">
+                    <div className="card-title">Nombre de projets par mois</div>
+                </div>
+                <div className="card-body">
+                    <LineChart projects={projects} />
+                </div>
+            </div>
+
+
+
+            <div className="card custom-card">
+                <div className="card-header">
+                    <div className="card-title"> Répartition des projets par statut</div>
+                </div>
+                <div className="card-body">
+                    <PieChart projects={projects} />
+                </div>
+            </div> 
         </div>
     );
 }
