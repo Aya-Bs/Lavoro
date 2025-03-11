@@ -9,7 +9,7 @@ import ResetPassword from "./user/resetPassword";
 import Profile from "./profile/profile";
 import UpdateProfile from "./profile/updateProfile";
 import AdminDashboard from "./admin/AdminDashboard";
-import UserActivityLog from "./admin/accountLog";
+
 import ActivitiesPage from "./user/ActivitiesPage";
 import { GoogleOAuthProvider } from "@react-oauth/google";
 import RefreshHandler from "./user/RefreshHandler";
@@ -26,6 +26,7 @@ import "../public/assets/css/remixicon.css";
 import 'remixicon/fonts/remixicon.css';
 import ProjectOverview from "./project/ProjectOverview";
 import Archieve from "./project/Archieve";
+import UserActivity from "./admin/UserActivity";
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -49,7 +50,7 @@ function App() {
             <Route element={<Layout />}>
               <Route path="/home" element={<Home />} />
               <Route path="/admin-dashboard" element={<AdminDashboard />} />
-              <Route path="/user-activity/:userId" element={<UserActivityLog />} />
+              <Route path="/user-activity/:userId" element={<UserActivity />} />
               <Route path="/profile" element={<Profile />} />
               <Route path="/update-profile" element={<UpdateProfile />} />
               <Route path="/activities" element={<ActivitiesPage />} />

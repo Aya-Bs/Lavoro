@@ -25,19 +25,6 @@ router.get('/me', userController.getUserInfo); // Route to get user info from se
 
 
 
-// router.get('/signin', userController.redirectIfAuthenticated, (req, res) => {
-//   res.render('signin'); // Render sign-up page
-// });
-
-// router.get('/signup', userController.redirectIfAuthenticated, (req, res) => {
-//   res.render('signup'); // Render sign-up page
-// });
-
-
-// router.get('/home', userController.redirectIfNotAuthenticated, (req, res) => {
-//   res.render('home'); 
-// });
-
 router.get('/signin', userController.redirectIfAuthenticated, (req, res) => {
   res.render('signin'); // Render sign-in page
 });
@@ -66,6 +53,7 @@ router.get('/resetpassword', (req, res) => {
 });
 
 router.post('/resetpassword', userController.resetPassword);
+router.post('/verify2FALogin', userController.verify2FALogin);
 
 
 

@@ -12,7 +12,12 @@ function SignIn() {
     const [showPassword, setShowPassword] = useState(false);
     const [showAlert, setShowAlert] = useState(false);
     const [alertMessage, setAlertMessage] = useState("");
+    const [requires2FA, setRequires2FA] = useState(false)
+    const [userId, setUserId] = useState(null)
+    const [twoFAToken, setTwoFAToken] = useState("")
+    const [show2FAPopup, setShow2FAPopup] = useState(false)
     const navigate = useNavigate();
+    
 
     const Errorstyle = {
         color: "#ff6b6b",
@@ -52,44 +57,93 @@ function SignIn() {
     };
 
     const handleSubmit = async (e) => {
-        e.preventDefault();
-
+        e.preventDefault()
+    
         try {
-            const response = await axios.post('http://localhost:3000/users/signin', formData, {
-                headers: { 'Content-Type': 'application/json' },
-                withCredentials: true,
-            });
-
-            if (response.data.token) {
-                localStorage.setItem('token', response.data.token); // Store token in localStorage
-
-                // Fetch user info to check role
-                const userResponse = await axios.get('http://localhost:3000/users/me', {
-                    headers: { Authorization: `Bearer ${response.data.token}` },
-                    withCredentials: true,
-                });
-
-                // Show success alert
-                setAlertMessage('✅ Sign-in successful!');
-                setShowAlert(true);
-
-                // Redirect after 2 seconds
-                setTimeout(() => {
-                    setShowAlert(false); // Hide the alert
-                    if (userResponse.data.role && userResponse.data.role.RoleName === 'Admin') {
-                        navigate('/admin-dashboard'); // Redirect to admin dashboard
-                    } else {
-                        navigate('/profile'); // Redirect to home
-                    }
-                }, 2000);
-            } else {
-                throw new Error('No token received');
-            }
+          const response = await axios.post("http://localhost:3000/users/signin", formData, {
+            headers: { "Content-Type": "application/json" },
+            withCredentials: true,
+          })
+    
+          if (response.data.requires2FA) {
+            setRequires2FA(true)
+            setUserId(response.data.userId)
+            setShow2FAPopup(true) // Show the 2FA popup
+          } else if (response.data.token) {
+            localStorage.setItem("token", response.data.token) // Store token in localStorage
+    
+            // Fetch user info to check role
+            const userResponse = await axios.get("http://localhost:3000/users/me", {
+              headers: { Authorization: `Bearer ${response.data.token}` },
+              withCredentials: true,
+            })
+    
+            // Show success alert
+            setAlertMessage("✅ Sign-in successful!")
+            setShowAlert(true)
+    
+            // Redirect after 2 seconds
+            setTimeout(() => {
+              setShowAlert(false) // Hide the alert
+              if (userResponse.data.role && userResponse.data.role.RoleName === "Admin") {
+                navigate("/admin-dashboard") // Redirect to admin dashboard
+              } else {
+                navigate("/profile") // Redirect to home
+              }
+            }, 2000)
+          } else {
+            throw new Error("No token received")
+          }
         } catch (err) {
-            console.error('Error during sign-in:', err.response?.data || err.message);
-            setError(err.response?.data?.error || 'An error occurred during sign-in.');
+          console.error("Error during sign-in:", err.response?.data || err.message)
+          setError(err.response?.data?.error || "An error occurred during sign-in.")
         }
-    };
+      }
+    
+      const handle2FASubmit = async (e) => {
+        e.preventDefault()
+    
+        try {
+          const response = await axios.post(
+            "http://localhost:3000/users/verify2FALogin",
+            { userId, token: twoFAToken },
+            {
+              headers: { "Content-Type": "application/json" },
+              withCredentials: true,
+            },
+          )
+    
+          if (response.data.token) {
+            localStorage.setItem("token", response.data.token) // Store token in localStorage
+    
+            // Fetch user info to check role
+            const userResponse = await axios.get("http://localhost:3000/users/me", {
+              headers: { Authorization: `Bearer ${response.data.token}` },
+              withCredentials: true,
+            })
+    
+            // Show success alert
+            setAlertMessage("✅ Sign-in successful!")
+            setShowAlert(true)
+    
+            // Redirect after 2 seconds
+            setTimeout(() => {
+              setShowAlert(false) // Hide the alert
+              setShow2FAPopup(false) // Close the 2FA popup
+              if (userResponse.data.role && userResponse.data.role.RoleName === "Admin") {
+                navigate("/admin-dashboard") // Redirect to admin dashboard
+              } else {
+                navigate("/profile") // Redirect to home
+              }
+            }, 2000)
+          } else {
+            throw new Error("No token received")
+          }
+        } catch (err) {
+          console.error("Error during 2FA verification:", err.response?.data || err.message)
+          setError(err.response?.data?.error || "An error occurred during 2FA verification.")
+        }
+      }
 
     const handleForgotPassword = () => {
         navigate('/forgot-password', { state: { email: formData.email } });
@@ -251,6 +305,36 @@ function SignIn() {
                     </div>
                 </div>
             </div>
+            {show2FAPopup && (
+        <div className="modal fade show" style={{ display: 'block', backgroundColor: 'rgba(0, 0, 0, 0.5)' }}>
+          <div className="modal-dialog modal-dialog-centered">
+            <div className="modal-content">
+              <div className="modal-header">
+                <h5 className="modal-title">Two-Factor Authentication</h5>
+                <button type="button" className="btn-close" onClick={() => setShow2FAPopup(false)}></button>
+              </div>
+              <div className="modal-body">
+                <p>Enter the 2FA code from your authenticator app:</p>
+                <input
+                  type="text"
+                  className="form-control"
+                  placeholder="2FA Code"
+                  value={twoFAToken}
+                  onChange={(e) => setTwoFAToken(e.target.value)}
+                />
+              </div>
+              <div className="modal-footer">
+                <button type="button" className="btn btn-secondary" onClick={() => setShow2FAPopup(false)}>
+                  Cancel
+                </button>
+                <button type="button" className="btn btn-primary" onClick={handle2FASubmit}>
+                  Verify
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
             
         </div>
