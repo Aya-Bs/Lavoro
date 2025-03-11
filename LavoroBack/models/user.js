@@ -9,10 +9,8 @@ const userSchema = new mongoose.Schema({
   email: { type: String, required: true, unique: true },
 
   password_hash: { type: String,  },
-
-  // role: { type: Number , required: false },
+ 
   role: { type: mongoose.Schema.Types.ObjectId, ref: 'role', default: null },
-
 
   image: { type: String },
 
@@ -46,7 +44,6 @@ const userSchema = new mongoose.Schema({
    
   },
   twoFactorSecret: { type: String }, 
- 
   twoFactorEnabled: { type: Boolean, default: false }, 
 
 });

@@ -8,7 +8,6 @@ const qrcode = require('qrcode');
 const speakeasy = require('speakeasy');
 
 
-
 // Fonction pour mettre à jour le profil de l'utilisateur
 exports.updateProfile = async (req, res) => {
   try {

@@ -18,32 +18,35 @@ import Layout from "./partials/Layout";
 import Sales from "./project/Sales";
 import CreateProject from "./project/createProject";
 import ListPro from "./project/ProList";
+<<<<<<< HEAD
 import ProjectHistory from "./project/ProjectHistory";
 
+=======
+import AdminDashboardTwo from "./admin/AdminDashboard2";
+>>>>>>> 82458ece5d7e6ce5d9226546b96ef45a447d77cd
 
 import "../public/assets/css/icons.css";
 import "../public/assets/css/remixicon.css";
 import 'remixicon/fonts/remixicon.css';
+
 import ProjectOverview from "./project/ProjectOverview";
+<<<<<<< HEAD
 import Archieve from "./project/Archieve";
 import UserActivity from "./admin/UserActivity";
+=======
+import AuthContainer from "./user/AuthContainer";
+>>>>>>> 82458ece5d7e6ce5d9226546b96ef45a447d77cd
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   return (
     <>
-      <GoogleOAuthProvider clientId="893053722717-a3eudc815ujr6ne3tf5q3dlrvkbmls6d.apps.googleusercontent.com">
-        <BrowserRouter>
-          <RefreshHandler setIsAuthenticated={setIsAuthenticated} />
-          <Routes>
-            {/* Routes without Layout */}
-            <Route path="/signin" element={<SignIn />} />
-            <Route path="/signup" element={<SignUp />} />
-            <Route path="/forgot-password" element={<ForgotPassword />} />
-            <Route path="/resetpassword" element={<ResetPassword />} />
-            <Route path="/verify-email" element={<VerifyEmail />} />
+    <GoogleOAuthProvider clientId="893053722717-a3eudc815ujr6ne3tf5q3dlrvkbmls6d.apps.googleusercontent.com">
+      <BrowserRouter>
+      <RefreshHandler setIsAuthenticated={setIsAuthenticated} />
 
+<<<<<<< HEAD
             <Route path="/" element={<Navigate to="/signin" />} />
             <Route path="*" element={<Navigate to="/signin" />} />
             {/* Routes with Layout */}
@@ -61,11 +64,37 @@ function App() {
               <Route path="/archieve" element={< Archieve />} />
               <Route path="/HistoryPro/:projectId" element={<ProjectHistory />} />
 
+=======
+        <Routes>
+          <Route path="/home" element={<Home />} />
+          <Route path="/admin-dashboard" element={<AdminDashboard />} />
+          <Route path="/admin" element={<AdminDashboardTwo />} />
+          <Route path="/user-activity/:userId" element={<UserActivityLog />} />
+          <Route path="/verify-email" element={<VerifyEmail />} />
+          <Route path="/signin" element={<SignIn />} />
+          <Route path="/signup" element={<SignUp />} />
+>>>>>>> 82458ece5d7e6ce5d9226546b96ef45a447d77cd
 
-              
-            </Route>
-          </Routes>
-        </BrowserRouter>
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/resetpassword" element={<ResetPassword />} />
+
+          <Route path="/profile" element={<Profile />} />
+          <Route path="/update-profile" element={<UpdateProfile />} />
+
+          <Route path="/activities" element={<ActivitiesPage />} />
+          <Route
+            path="/auth/*"
+            element={
+              <div className="App">
+                <AuthContainer />
+              </div>
+            }
+          />
+          <Route path="/" element={<Navigate to="/auth" />} />
+
+          <Route path="*" element={<Navigate to="/auth" />} />
+        </Routes>
+      </BrowserRouter>
       </GoogleOAuthProvider>
     </>
   );

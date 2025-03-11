@@ -55,10 +55,7 @@ router.get('/resetpassword', (req, res) => {
 router.post('/resetpassword', userController.resetPassword);
 router.post('/verify2FALogin', userController.verify2FALogin);
 
-
-
-
-
+router.post('/verify2FALogin', userController.verify2FALogin);
 
 
 router.get("/google", googleLogin);

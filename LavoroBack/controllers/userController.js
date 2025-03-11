@@ -202,6 +202,7 @@ exports.signin = async (req, res) => {
           return res.status(400).render('signin', { error: 'Mot de passe invalide.', email });
         }
 
+
   user.loginAttempts = 0;
   user.lockUntil = null;
   user.last_activity = Date.now();
@@ -248,6 +249,47 @@ exports.signin = async (req, res) => {
   } catch (error) {
       console.error('Error during sign-in:', error);
       res.status(500).json({ error: 'An error occurred during sign-in. Please try again.' });
+  }
+
+};
+exports.verify2FALogin = async (req, res) => {
+  try {
+      const { userId, token } = req.body;
+
+      if (!userId || !token) {
+          return res.status(400).json({ error: 'User ID and token are required' });
+      }
+
+      const user = await User.findById(userId);
+
+      if (!user || !user.twoFactorSecret) {
+          return res.status(400).json({ error: '2FA not enabled for this user' });
+      }
+
+      // Verify the TOTP code
+      const verified = speakeasy.totp.verify({
+          secret: user.twoFactorSecret,
+          encoding: 'base32',
+          token,
+          window: 1, // Allow a 1-step window for time drift
+      });
+
+      if (verified) {
+          // Generate a token with 7-day expiration
+          const token = jwt.sign(
+              { _id: user._id }, // Payload
+              process.env.JWT_SECRET, // Secret key
+              { expiresIn: '7d' } // Expires in 7 days
+          );
+
+          // Return user data and token
+          res.status(200).json({ user, token });
+      } else {
+          res.status(400).json({ error: 'Invalid 2FA code' });
+      }
+  } catch (error) {
+      console.error('Error verifying 2FA:', error);
+      res.status(500).json({ message: error.message });
   }
 };
 
