@@ -27,12 +27,11 @@ mongo
 const usersRouter = require('./routes/users');
 const taskRouter=require('./routes/Task')
 const profileRouter = require('./routes/profile');
-const project = require('./routes/project');
+const projectRouter = require('./routes/project');
 
 // const homeRouter = require('./routes/home');
 const adminRouter = require('./routes/admin');
 const projectRouter=require('./routes/project')
-
 
 const app = express();
 const socketIo = require('socket.io');
@@ -81,7 +80,6 @@ app.use('/users', usersRouter);
 app.use('/admin',adminRouter);
 app.set('io', io);
 app.set('/tasks',taskRouter);
-app.use('/projects', project);
 
 app.use('/project',projectRouter);
 

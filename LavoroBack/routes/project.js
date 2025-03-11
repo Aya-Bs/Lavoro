@@ -6,6 +6,11 @@ const Project = require('../models/Project');
 const ProjectController = require('../controllers/ProjectController');
 
 
+
+router.get('/archived-projects', ProjectController.getAllArchivedProjects);
+
+router.get('/', ProjectController.getAllProjects);
+
 router.get('/projetStatus', async (req, res) => {
     try {
         // Appeler la fonction du contrôleur
@@ -16,18 +21,22 @@ router.get('/projetStatus', async (req, res) => {
         res.status(500).json({ message: 'Internal server error' });
     }
 });
-router.get('/projects', ProjectController.getAllProjects);
+
+router.put('/:id', ProjectController.updateProject); // Add this route
+router.get('/:id/history', ProjectController.getProjectHistory); // Add this route
+router.get('/:id', ProjectController.getProjectById); // Add this route
+router.post('/:id/archive', ProjectController.archiveProject);
+router.post('/:id/unarchive', ProjectController.unarchiveProject);
+router.delete('/archived-projects/:id', ProjectController.deleteArchivedProject);
+router.get('/archived-projects/:id', ProjectController.getArchivedProjectById);
 
 
-router.get('/archived-projects', projectController.getAllArchivedProjects);
 
-router.get('/', projectController.getAllProjects);
-router.put('/:id', projectController.updateProject); 
-router.get('/:id/history', projectController.getProjectHistory); 
-router.get('/:id', projectController.getProjectById); 
-router.post('/:id/archive', projectController.archiveProject);
-router.post('/:id/unarchive', projectController.unarchiveProject);
-router.delete('/archived-projects/:id', projectController.deleteArchivedProject);
+
+
+
+
+
 
 module.exports = router;
 

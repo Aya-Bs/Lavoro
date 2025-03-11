@@ -3,7 +3,6 @@ import { useGoogleLogin } from "@react-oauth/google";
 import { googleAuth } from "./api";
 import { useNavigate } from "react-router-dom";
 import '@fortawesome/fontawesome-free/css/all.min.css';
-import '../App.css';
 import { Modal, Button } from "react-bootstrap"; // Import des composants Bootstrap
 
 function GoogleLogin() {

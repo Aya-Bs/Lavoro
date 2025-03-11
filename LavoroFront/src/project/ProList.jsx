@@ -8,7 +8,7 @@ export default function ProList() {
   const navigate = useNavigate(); // Initialize useNavigate
 
   useEffect(() => {
-    fetch('http://localhost:3000/projects') // Adjust the URL if your API is hosted elsewhere
+    fetch('http://localhost:3000/project') // Adjust the URL if your API is hosted elsewhere
       .then(response => response.json())
       .then(data => setProjects(data))
       .catch(error => console.error('Error fetching projects:', error));
@@ -16,36 +16,10 @@ export default function ProList() {
 
   // Function to handle the "View" button click
   const handleViewClick = (projectId) => {
-    navigate(`/HistoryPro/${projectId}`); // Navigate to the history page with the project ID
+    navigate(`/overviewPro/${projectId}`); // Navigate to the history page with the project ID
   };
 
 
-//   const handleArchiveClick = async (projectId) => {
-//   try {
-//     console.log(`Archiving project with ID: ${projectId}`); // Log the project ID
-
-//     const response = await fetch(`http://localhost:3000/projects/projects/${projectId}/archive`, {
-//       method: 'POST',
-//     });
-
-//     console.log('Response status:', response.status); // Log the response status
-
-//     if (!response.ok) {
-//       const errorData = await response.json(); // Parse the error response
-//       console.error('Error response:', errorData); // Log the error response
-//       throw new Error('Failed to archive project');
-//     }
-
-//     const data = await response.json();
-//     console.log('Project archived:', data); // Log the success response
-
-//     // Optionally, refresh the project list after archiving
-//     const updatedProjects = projects.filter(project => project._id !== projectId);
-//     setProjects(updatedProjects);
-//   } catch (error) {
-//     console.error('Error archiving project:', error); // Log the error
-//   }
-// };
 
 const handleArchiveClick = async (projectId, projectStatus) => {
   try {
@@ -62,7 +36,7 @@ const handleArchiveClick = async (projectId, projectStatus) => {
     }
 
     // Proceed with archiving if the status is "Completed" or "Not Started"
-    const response = await fetch(`http://localhost:3000/projects/${projectId}/archive`, {
+    const response = await fetch(`http://localhost:3000/project/${projectId}/archive`, {
       method: "POST",
     });
 

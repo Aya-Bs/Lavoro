@@ -15,6 +15,8 @@ const Archive = new Schema(
       enum: ['Not Started', 'In Progress', 'Completed', 'Archived'],
       default: 'Not Started',
     },
+    originalStatus: String, // Store the original status here
+
     ai_predicted_completion: { type: Date },
     ai_predicted_description: { type: String },
     created_at: { type: Date, default: Date.now },

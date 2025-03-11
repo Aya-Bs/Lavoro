@@ -1,4 +1,3 @@
-import "./App.css";
 import { Routes, BrowserRouter, Route, Navigate } from "react-router-dom";
 import SignUp from "./user/Signup";
 import SignIn from "./user/Signin";
@@ -30,6 +29,7 @@ import ProjectOverview from "./project/ProjectOverview";
 import AllProject from "./project/AllProject";
 import Archieve from "./project/Archieve";
 import UserActivity from "./admin/UserActivity";
+import ArchiveOverview from "./project/ArchiveOverview";
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -59,14 +59,15 @@ function App() {
               <Route path="/activities" element={<ActivitiesPage />} />
               <Route path="/sales" element={<Sales />} />
               <Route path="/createPro" element ={<CreateProject />} />
-              <Route path="/overviewPro" element={<ProjectOverview />} />
-              <Route path="/ListPro" element={<ListPro />} />
               <Route path="/ProjectDash" element={<ProjectDash />} />
               <Route path="/AllProject" element={<AllProject />} />
 
  
+              <Route path="/overviewPro/:id" element={<ProjectOverview />} />
+              <Route path="/overviewArchive/:id" element={<ArchiveOverview />} />
+
+              <Route path="/ListPro" element={<ListPro />} />
               <Route path="/archieve" element={< Archieve />} />
-              <Route path="/HistoryPro/:projectId" element={<ProjectHistory />} />
 
 
             </Route>

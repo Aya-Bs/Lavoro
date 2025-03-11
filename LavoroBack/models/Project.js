@@ -1,14 +1,12 @@
 const mongo = require('mongoose');
 const Schema = mongo.Schema;
-const mongoose = require('mongoose');
-
 const Project = new Schema(
 {
     name: { type: String, required: true },
     description: { type: String }, // Mongoose utilise String au lieu de "text"
     budget: { type: Number, default: 0 },
-    manager_id: { type: mongoose.Schema.Types.UUID, required: true },
-    team_id: { type: mongoose.Schema.Types.UUID, required: true },
+    manager_id: { type: mongo.Schema.Types.UUID, required: true },
+    team_id: { type: mongo.Schema.Types.UUID, required: true },
     start_date: { type: Date },
     end_date: { type: Date },
     status: { 
@@ -22,8 +20,9 @@ const Project = new Schema(
     updated_at: { type: Date, default: Date.now }
     
 });
-
 module.exports = mongo.model('project', Project);
+
+
 /*
 const mongo = require('mongoose');
 const Schema = mongo.Schema;
