@@ -37,9 +37,110 @@ exports.getAllProjects = async (req, res) => {
         const projects = await Project.find({}); // Récupère tous les projets
         res.status(200).json(projects);
     } catch (error) {
-        console.error('Error fetching projects:', error);
-        res.status(500).json({ message: 'Failed to fetch projects' });
+      console.error('Error archiving project:', error); // Log any errors
+      res.status(500).json({ message: error.message });
     }
+  };
+
+
+exports.getAllArchivedProjects = async (req, res) => {
+  try {
+    const archivedProjects = await Archive.find({});
+    if (!archivedProjects || archivedProjects.length === 0) {
+      return res.status(404).json({ message: 'No archived projects found' });
+    }
+    res.status(200).json(archivedProjects);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
 };
 
-    
+
+// exports.unarchiveProject = async (req, res) => {
+//   const { id } = req.params; // Project ID
+
+//   try {
+//     // Find the archived project
+//     const archivedProject = await Archive.findById(id);
+//     if (!archivedProject) {
+//       return res.status(404).json({ message: 'Archived project not found' });
+//     }
+
+//     // Create a new project in the Project collection
+//     const project = new Project(archivedProject.toObject());
+//     project.status = 'Completed'; // Update the status to "Completed"
+//     project.updated_at = new Date(); // Update the updated_at field
+//     await project.save();
+
+//     // Track the unarchive action in ProjectHistory
+//     const history = new ProjectHistory({
+//       project_id: project._id,
+//       change_type: 'Status Update',
+//       old_value: 'Archived',
+//       new_value: 'Completed',
+//       changed_at: new Date(),
+//     });
+//     await history.save();
+
+//     // Delete the project from the Archive collection
+//     await Archive.findByIdAndDelete(id);
+
+//     res.status(200).json({ message: 'Project unarchived successfully', project });
+//   } catch (error) {
+//     res.status(500).json({ message: error.message });
+//   }
+// };
+
+
+
+exports.unarchiveProject = async (req, res) => {
+  const { id } = req.params; // Project ID
+
+  try {
+    // Find the archived project
+    const archivedProject = await Archive.findById(id);
+    if (!archivedProject) {
+      return res.status(404).json({ message: 'Archived project not found' });
+    }
+
+    // Create a new project in the Project collection
+    const project = new Project(archivedProject.toObject());
+    project.status = 'Completed'; // Update the status to "Completed"
+    project.updated_at = new Date(); // Update the updated_at field
+    await project.save();
+
+    // Track the unarchive action in ProjectHistory
+    const history = new ProjectHistory({
+      project_id: project._id,
+      change_type: 'Status Update',
+      old_value: 'Archived', // The old value is "Archived"
+      new_value: 'Unarchived', // Set the new value to "Unarchived"
+      changed_at: new Date(),
+    });
+    await history.save();
+
+    // Delete the project from the Archive collection
+    await Archive.findByIdAndDelete(id);
+
+    res.status(200).json({ message: 'Project unarchived successfully', project });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+
+exports.deleteArchivedProject = async (req, res) => {
+  const { id } = req.params; // Project ID
+
+  try {
+    // Find and delete the archived project
+    const deletedProject = await Archive.findByIdAndDelete(id);
+    if (!deletedProject) {
+      return res.status(404).json({ message: 'Archived project not found' });
+    }
+
+    res.status(200).json({ message: 'Archived project deleted successfully', deletedProject });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
