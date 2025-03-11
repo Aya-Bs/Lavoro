@@ -10,6 +10,8 @@ import MicrosoftLogin from "./MicrosoftLogin"
 import GitHubLogin from "./GitHubLogin"
 import Recaptcha from "./Recaptcha"
 import Switcher from "../partials/switcher"
+import Swal from "sweetalert2";
+import "../../public/assets/libs/sweetalert2/sweetalert2.min.css";
 
 // Add these styles at the top of your component
 const cupStyles = {
@@ -272,50 +274,28 @@ function SignUp() {
       })
 
       if (response.data.message) {
-        setAlertMessage(response.data.message)
-        setShowAlert(true)
+        Swal.fire({
+          title: "Success!",
+          text: "User registered successfully! Please check your email for verification.",
+          icon: "success",
+          confirmButtonText: "OK",
+        })
       } else {
         throw new Error("No message received from server")
       }
     } catch (err) {
       console.error("Signup Error:", err)
       setError(err.response?.data?.error || "An error occurred during signup. Please try again.")
+      Swal.fire({
+        title: "Error!",
+        text: err.response?.data?.error || "An error occurred during signup. Please try again.",
+        icon: "error",
+        confirmButtonText: "OK",
+      });
     }
   }
 
-  const CustomAlert = ({ message, onClose }) => {
-    return (
-        <div style={{
-            position: "absolute", // Use absolute positioning
-            top: "20%", // Position near the fields
-            left: "50%",
-            transform: "translate(-50%, -50%)", // Center the alert
-            width: "400px", // Smaller width
-            backgroundColor: "#fff",
-            padding: "15px",
-            borderRadius: "10px",
-            boxShadow: "0px 4px 8px rgba(0, 0, 0, 0.1)",
-            textAlign: "center",
-            zIndex: 1000,
-            color: "black",
-        }}>
-            <p style={{ margin: "0 0 10px 0" }}>{message}</p>
-            <button
-                onClick={onClose}
-                style={{
-                    width: "100%",
-                    padding: "8px",
-                    backgroundColor: "#5d68e2",
-                    border: "none",
-                    borderRadius: "5px",
-                    cursor: "pointer",
-                }}
-            >
-                OK
-            </button>
-        </div>
-    );
-};
+ 
 
   const PasswordStrengthCup = ({ password, requirements }) => {
     // Find the first unmet requirement

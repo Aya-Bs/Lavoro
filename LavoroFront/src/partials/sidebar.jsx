@@ -74,6 +74,9 @@ Pages            </li>
                   <Link to="/ProjectDash" className="side-menu__item">
                   Project dashboard
                             </Link>
+                  <Link to="/archieve" className="side-menu__item">
+                  Projects Archieve 
+                  </Link>
                 </li>
               </ul>
             </li>
