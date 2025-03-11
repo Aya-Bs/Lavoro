@@ -31,7 +31,7 @@ const projectRouter = require('./routes/project');
 
 // const homeRouter = require('./routes/home');
 const adminRouter = require('./routes/admin');
-const projectRouter=require('./routes/project')
+
 
 const app = express();
 const socketIo = require('socket.io');
