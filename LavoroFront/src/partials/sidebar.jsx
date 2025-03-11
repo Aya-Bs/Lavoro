@@ -30,12 +30,25 @@ const Sidebar = () => {
               </button>
               <ul className="slide-menu child1" style={{ display: isDashboardOpen ? "block" : "none" }}>
                 
+<<<<<<< HEAD
+=======
+                
+                <li className="slide">
+                  <Link to="/sales" className="side-menu__item">
+                    Sales
+                  </Link>
+                </li>
+
+>>>>>>> 64fa7f4558e0bdf3db80f87a11b98f9080813356
                 <li className="slide">
                   <Link to="/profile" className="side-menu__item">
                     Profile
                   </Link>
                 </li>
+<<<<<<< HEAD
                 
+=======
+>>>>>>> 64fa7f4558e0bdf3db80f87a11b98f9080813356
               </ul>
             </li>
 
@@ -55,11 +68,14 @@ Pages            </li>
                 <span className="side-menu__label">Projects</span>
               </button>
               <ul className="slide-menu child1" style={{ display: isPagesOpen ? "block" : "none" }}>
+<<<<<<< HEAD
               <li className="slide">
                   <Link to="/overviewPro" className="side-menu__item">
                   Projects Overview
                   </Link>
                 </li>
+=======
+>>>>>>> 64fa7f4558e0bdf3db80f87a11b98f9080813356
                 <li className="slide">
                   <Link to="/createPro" className="side-menu__item">
                     Create Project
@@ -71,6 +87,12 @@ Pages            </li>
                   </Link>
                 </li>
                 <li className="slide">
+<<<<<<< HEAD
+=======
+                  <Link to="/ProjectDash" className="side-menu__item">
+                  Project dashboard
+                            </Link>
+>>>>>>> 64fa7f4558e0bdf3db80f87a11b98f9080813356
                   <Link to="/archieve" className="side-menu__item">
                   Projects Archieve 
                   </Link>

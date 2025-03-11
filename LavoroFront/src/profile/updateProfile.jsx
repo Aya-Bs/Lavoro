@@ -92,7 +92,10 @@ const UpdateProfile = () => {
     } catch (err) {
       if (err.response?.status === 400) {
         alert("You already sent a deletion request.");
+<<<<<<< HEAD
         window.location.reload();
+=======
+>>>>>>> 64fa7f4558e0bdf3db80f87a11b98f9080813356
       } else if (err.response?.status === 401) {
         alert("Session expired. Please log in again.");
         localStorage.removeItem('token');
@@ -221,7 +224,11 @@ const UpdateProfile = () => {
 
       if (response.status === 200) {
         alert("Profile updated successfully!");
+<<<<<<< HEAD
         window.location.reload();
+=======
+        navigate("/profile");
+>>>>>>> 64fa7f4558e0bdf3db80f87a11b98f9080813356
       }
     } catch (err) {
       if (err.response?.status === 401) {
@@ -242,6 +249,317 @@ const UpdateProfile = () => {
   }
 
   return (
+<<<<<<< HEAD
+=======
+    // <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100vh" }}>
+    //   <div style={{ width: "350px", padding: "20px", boxShadow: "0px 4px 8px rgba(0, 0, 0, 0.1)", borderRadius: "10px", textAlign: "center", backgroundColor: "#fff" }}>
+    //     <h2>Update Profile</h2>
+
+    //     {/* Profile Image Section */}
+    //     {profileImage ? (
+    //       <div style={{ position: "relative", width: "100px", height: "100px", margin: "0 auto 20px" }}>
+    //         <img
+    //           src={profileImage.startsWith("data:image") ? profileImage : `http://localhost:3000${profileImage}`}
+    //           alt="Profile"
+    //           style={{ width: "100%", height: "100%", borderRadius: "50%", objectFit: "cover" }}
+    //         />
+    //         <button
+    //           onClick={() => setShowModal(true)}
+    //           style={{
+    //             position: "absolute",
+    //             bottom: "5px",
+    //             left: "65px",
+    //             display: "flex",
+    //             alignItems: "center",
+    //             justifyContent: "center",
+    //             width: "30px",
+    //             height: "30px",
+    //             borderRadius: "50%",
+    //             boxShadow: "0px 2px 4px rgba(0, 0, 0, 0.1)",
+    //             border: "none",
+    //             backgroundColor: "#FFC300",
+    //             cursor: "pointer",
+    //             transition: "all 0.3s ease",
+    //             padding: 0,
+    //             boxSizing: "border-box",
+    //           }}
+    //         >
+    //           <svg
+    //             xmlns="http://www.w3.org/2000/svg"
+    //             style={{ width: "12px", height: "12px" }}
+    //             viewBox="0 0 20 20"
+    //             fill="currentColor"
+    //           >
+    //             <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
+    //           </svg>
+    //         </button>
+    //       </div>
+    //     ) : (
+    //       <p style={{ color: "#888", fontStyle: "italic" }}>Upload a profile image</p>
+    //     )}
+
+    //     {/* Modal for Image Source Selection */}
+    //     {showModal && (
+    //       <div style={{
+    //         position: "fixed",
+    //         top: 0,
+    //         left: 0,
+    //         width: "100%",
+    //         height: "100%",
+    //         backgroundColor: "rgba(0, 0, 0, 0.5)",
+    //         display: "flex",
+    //         justifyContent: "center",
+    //         alignItems: "center",
+    //         zIndex: 1000,
+    //       }}>
+    //         <div style={{
+    //           backgroundColor: "#fff",
+    //           padding: "20px",
+    //           borderRadius: "10px",
+    //           boxShadow: "0px 4px 8px rgba(0, 0, 0, 0.1)",
+    //           textAlign: "center",
+    //         }}>
+    //           {showCameraInModal ? (
+    //             // Camera Section in Modal
+    //             <div>
+    //               <video ref={videoRef} width="200" height="200" autoPlay style={{ marginBottom: "10px" }}></video>
+    //               <canvas ref={canvasRef} style={{ display: "none" }}></canvas>
+    //               <button
+    //                 onClick={capturePhoto}
+    //                 style={{
+    //                   width: "100%",
+    //                   padding: "8px",
+    //                   marginBottom: "10px",
+    //                   backgroundColor: "#FFC300",
+    //                   border: "none",
+    //                   borderRadius: "5px",
+    //                   cursor: "pointer",
+    //                 }}
+    //               >
+    //                 Capture
+    //               </button>
+    //               <button
+    //                 onClick={() => setShowCameraInModal(false)}
+    //                 style={{
+    //                   width: "100%",
+    //                   padding: "8px",
+    //                   backgroundColor: "#ccc",
+    //                   border: "none",
+    //                   borderRadius: "5px",
+    //                   cursor: "pointer",
+    //                 }}
+    //               >
+    //                 Cancel
+    //               </button>
+    //             </div>
+    //           ) : (
+    //             // Image Source Selection Section
+    //             <>
+    //               <h3>Choose Image Source</h3>
+    //               <button
+    //                 onClick={() => {
+    //                   setShowCameraInModal(true);
+    //                   openCamera();
+    //                 }}
+    //                 style={{
+    //                   width: "100%",
+    //                   padding: "10px",
+    //                   marginBottom: "10px",
+    //                   backgroundColor: "#FFC300",
+    //                   border: "none",
+    //                   borderRadius: "5px",
+    //                   cursor: "pointer",
+    //                 }}
+    //               >
+    //                 Capture Image
+    //               </button>
+    //               <button
+    //                 onClick={() => {
+    //                   fileInputRef.current.click();
+    //                   setShowModal(false);
+    //                 }}
+    //                 style={{
+    //                   width: "100%",
+    //                   padding: "10px",
+    //                   backgroundColor: "#FFC300",
+    //                   border: "none",
+    //                   borderRadius: "5px",
+    //                   cursor: "pointer",
+    //                 }}
+    //               >
+    //                 Upload Image from PC
+    //               </button>
+    //               <button
+    //                 onClick={() => setShowModal(false)}
+    //                 style={{
+    //                   width: "100%",
+    //                   padding: "10px",
+    //                   marginTop: "10px",
+    //                   backgroundColor: "#ccc",
+    //                   border: "none",
+    //                   borderRadius: "5px",
+    //                   cursor: "pointer",
+    //                 }}
+    //               >
+    //                 Cancel
+    //               </button>
+    //             </>
+    //           )}
+    //         </div>
+    //       </div>
+    //     )}
+
+    //     {/* Crop Modal */}
+    //     {imageSrc && (
+    //       <div style={{
+    //         position: "fixed",
+    //         top: 0,
+    //         left: 0,
+    //         width: "100%",
+    //         height: "100%",
+    //         backgroundColor: "rgba(0, 0, 0, 0.5)",
+    //         display: "flex",
+    //         justifyContent: "center",
+    //         alignItems: "center",
+    //         zIndex: 1000,
+    //       }}>
+    //         <div style={{
+    //           backgroundColor: "#fff",
+    //           padding: "20px",
+    //           borderRadius: "10px",
+    //           boxShadow: "0px 4px 8px rgba(0, 0, 0, 0.1)",
+    //           textAlign: "center",
+    //         }}>
+    //           <ReactCrop
+    //             src={imageSrc}
+    //             crop={crop}
+    //             onChange={(newCrop) => setCrop(newCrop)}
+    //             onComplete={onCropComplete}
+    //           >
+    //             <img ref={imgRef} src={imageSrc} alt="Crop me" 
+    //             style={{ maxWidth: "100%", maxHeight: "400px", height: "auto", width: "auto" }} />
+    //           </ReactCrop>
+    //           <button
+    //             onClick={() => {
+    //               setProfileImage(croppedImage || imageSrc);
+    //               setImageSrc(null);
+    //               setCroppedImage(null);
+    //             }}
+    //             style={{
+    //               width: "100%",
+    //               padding: "10px",
+    //               marginTop: "10px",
+    //               backgroundColor: "#FFC300",
+    //               border: "none",
+    //               borderRadius: "5px",
+    //               cursor: "pointer",
+    //             }}
+    //             onLoad={(e) => {
+    //                 // Ensure the image is fully loaded before cropping
+    //                 if (imgRef.current) {
+    //                   const { naturalWidth, naturalHeight } = e.target;
+    //                   setCrop({
+    //                     ...crop,
+    //                     width: naturalWidth,
+    //                     height: naturalHeight,
+    //                   });
+    //                 }
+    //               }}
+    //           >
+    //             Save
+    //           </button>
+    //           <button
+    //             onClick={() => setImageSrc(null)}
+    //             style={{
+    //               width: "100%",
+    //               padding: "10px",
+    //               marginTop: "10px",
+    //               backgroundColor: "#ccc",
+    //               border: "none",
+    //               borderRadius: "5px",
+    //               cursor: "pointer",
+    //             }}
+    //           >
+    //             Cancel
+    //           </button>
+    //         </div>
+    //       </div>
+    //     )}
+
+    //     {/* Form Section */}
+    //     <form onSubmit={handleSubmit}>
+    //       <label>First Name:</label>
+    //       <input
+    //         type="text"
+    //         value={firstName}
+    //         onChange={(e) => setFirstName(e.target.value)}
+    //         required
+    //         style={{ width: "100%", padding: "8px", marginBottom: "10px" }}
+    //       />
+
+    //       <label>Last Name:</label>
+    //       <input
+    //         type="text"
+    //         value={lastName}
+    //         onChange={(e) => setLastName(e.target.value)}
+    //         required
+    //         style={{ width: "100%", padding: "8px", marginBottom: "10px" }}
+    //       />
+
+    //       <label>Phone Number:</label>
+    //       <input
+    //         type="tel"
+    //         value={phoneNumber}
+    //         onChange={(e) => setPhoneNumber(e.target.value)}
+    //         required
+    //         style={{ width: "100%", padding: "8px", marginBottom: "10px" }}
+    //       />
+
+    //       <label>Current Password:</label>
+    //       <input
+    //         type="password"
+    //         value={currentPassword}
+    //         onChange={(e) => setCurrentPassword(e.target.value)}
+    //         style={{ width: "100%", padding: "8px", marginBottom: "10px" }}
+    //       />
+
+    //       <label>New Password:</label>
+    //       <input
+    //         type="password"
+    //         value={newPassword}
+    //         onChange={(e) => setNewPassword(e.target.value)}
+    //         style={{ width: "100%", padding: "8px", marginBottom: "10px" }}
+    //       />
+
+    //       <label>Confirm New Password:</label>
+    //       <input
+    //         type="password"
+    //         value={confirmNewPassword}
+    //         onChange={(e) => setConfirmNewPassword(e.target.value)}
+    //         style={{ width: "100%", padding: "8px", marginBottom: "10px" }}
+    //       />
+
+    //       <input
+    //         type="file"
+    //         ref={fileInputRef}
+    //         style={{ display: "none" }}
+    //         accept="image/*"
+    //         onChange={previewImage}
+    //       />
+
+    //       <button type="submit" style={{ width: "100%", padding: "8px", marginBottom: "10px" }}>
+    //         Update
+    //       </button>
+    //     </form>
+
+    //     <button onClick={() => navigate("/profile")} style={{ width: "100%", padding: "8px" }}>
+    //       Cancel
+    //     </button>
+    //   </div>
+    // </div>
+
+
+>>>>>>> 64fa7f4558e0bdf3db80f87a11b98f9080813356
     <div className="row gap-3 justify-content-center">
    
         

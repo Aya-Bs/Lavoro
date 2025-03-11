@@ -8,7 +8,11 @@ export default function ProList() {
   const navigate = useNavigate(); // Initialize useNavigate
 
   useEffect(() => {
+<<<<<<< HEAD
     fetch('http://localhost:3000/projects') // Adjust the URL if your API is hosted elsewhere
+=======
+    fetch('http://localhost:3000/project') // Adjust the URL if your API is hosted elsewhere
+>>>>>>> 64fa7f4558e0bdf3db80f87a11b98f9080813356
       .then(response => response.json())
       .then(data => setProjects(data))
       .catch(error => console.error('Error fetching projects:', error));
@@ -16,6 +20,7 @@ export default function ProList() {
 
   // Function to handle the "View" button click
   const handleViewClick = (projectId) => {
+<<<<<<< HEAD
     navigate(`/HistoryPro/${projectId}`); // Navigate to the history page with the project ID
   };
 
@@ -46,6 +51,12 @@ export default function ProList() {
 //     console.error('Error archiving project:', error); // Log the error
 //   }
 // };
+=======
+    navigate(`/overviewPro/${projectId}`); // Navigate to the history page with the project ID
+  };
+
+
+>>>>>>> 64fa7f4558e0bdf3db80f87a11b98f9080813356
 
 const handleArchiveClick = async (projectId, projectStatus) => {
   try {
@@ -62,7 +73,11 @@ const handleArchiveClick = async (projectId, projectStatus) => {
     }
 
     // Proceed with archiving if the status is "Completed" or "Not Started"
+<<<<<<< HEAD
     const response = await fetch(`http://localhost:3000/projects/${projectId}/archive`, {
+=======
+    const response = await fetch(`http://localhost:3000/project/${projectId}/archive`, {
+>>>>>>> 64fa7f4558e0bdf3db80f87a11b98f9080813356
       method: "POST",
     });
 

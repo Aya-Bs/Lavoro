@@ -1,9 +1,77 @@
+<<<<<<< HEAD
 export default function ProjectOverview(){
     return (
         <>
   {/* include mainhead.html"*/}
   {/* dragula css*/}
   {/* <link rel="stylesheet" href="../assets/libs/dragula/dragula.min.css" /> */}
+=======
+import React, { useState, useEffect } from 'react';
+import { useParams } from 'react-router-dom';
+import Swal from 'sweetalert2';
+
+export default function ProjectOverview(){
+  const { id } = useParams(); // Get the project ID from the URL
+  const [project, setProject] = useState(null); // State for project details
+  const [history, setHistory] = useState([]); // State for project history
+  const [loading, setLoading] = useState(true); // State for loading status
+
+  // Fetch project details
+  const fetchProjectDetails = async () => {
+    try {
+      const response = await fetch(`http://localhost:3000/project/${id}`);
+      const data = await response.json();
+      if (response.ok) {
+        setProject(data); // Set project details
+      } else {
+        Swal.fire('Error!', data.message || 'Failed to fetch project details.', 'error');
+      }
+    } catch (error) {
+      console.error('Error fetching project details:', error);
+      Swal.fire('Error!', 'An error occurred while fetching project details.', 'error');
+    }
+  };
+
+  // Fetch project history
+  const fetchProjectHistory = async () => {
+    try {
+      const response = await fetch(`http://localhost:3000/project/${id}/history`);
+      const data = await response.json();
+      if (response.ok) {
+        setHistory(data); // Set project history
+      } else {
+        // Swal.fire('Error!', data.message || 'Failed to fetch project history.', 'error');
+      }
+    } catch (error) {
+      console.error('Error fetching project history:', error);
+      // Swal.fire('Error!', 'An error occurred while fetching project history.', 'error');
+    }
+  };
+
+  // Fetch data when the component mounts
+  useEffect(() => {
+    const fetchData = async () => {
+      await fetchProjectDetails();
+      await fetchProjectHistory();
+      setLoading(false); // Set loading to false after fetching data
+    };
+
+    fetchData();
+  }, [id]);
+
+  // Display loading state
+  if (loading) {
+    return <div>Loading...</div>;
+  }
+
+  // Display error if project is not found
+  if (!project) {
+    return <div>Project not found.</div>;
+  }
+
+    return (
+        <>
+>>>>>>> 64fa7f4558e0bdf3db80f87a11b98f9080813356
 
         <div className="d-flex align-items-center justify-content-between page-header-breadcrumb flex-wrap gap-2">
         <div>
@@ -43,6 +111,7 @@ export default function ProjectOverview(){
               <div className="card-header justify-content-between">
                 <div className="card-title">Project Details</div>
                 <div>
+<<<<<<< HEAD
                   <a
                     href="/createPro"
                     className="btn btn-sm btn-primary btn-wave"
@@ -58,6 +127,18 @@ export default function ProjectOverview(){
                     Share
                   </a>
                 </div>
+=======
+                <a href="/createPro" className="btn btn-sm btn-primary btn-wave">
+                  <i className="ri-trash-line align-middle me-1 fw-medium" />
+                  Delete
+                </a> 
+                <a href="javascript:void(0);" className="btn btn-sm btn-primary1 btn-wave">
+                  <i className="ri-archive-line align-middle fw-medium me-1" />
+                  Archieve
+                </a>
+              </div>
+
+>>>>>>> 64fa7f4558e0bdf3db80f87a11b98f9080813356
               </div>
               <div className="card-body">
                 <div className="d-flex align-items-center mb-4 gap-2 flex-wrap">
@@ -66,6 +147,7 @@ export default function ProjectOverview(){
                   </span>
                   <div>
                     <h6 className="fw-medium mb-2 task-title">
+<<<<<<< HEAD
                       Customer Feedback Dashboard Development
                     </h6>
                     <span className="badge bg-success-transparent">
@@ -119,15 +201,31 @@ export default function ProjectOverview(){
                       </ul>
                     </div>
                   </div>
+=======
+                    {project.name}                    </h6>
+                    <span className={`badge ${project.status === 'Completed' ? 'bg-success-transparent' : project.status === 'In Progress' ? 'bg-warning-transparent' : project.status === 'Not Started' ? 'bg-danger-transparent' : 'bg-info-transparent'}`}>
+                  {project.status}
+                </span>
+                    <span className="text-muted fs-12">
+                      <i className="ri-circle-fill text-success mx-2 fs-9" />
+                      Last Updated : {new Date(project.updated_at).toLocaleDateString()}
+                    </span>
+                  </div>
+
+>>>>>>> 64fa7f4558e0bdf3db80f87a11b98f9080813356
                 </div>
                 <div className="fs-15 fw-medium mb-2">
                   Project Description :
                 </div>
                 <p className="text-muted mb-4">
+<<<<<<< HEAD
                   The Customer Feedback Dashboard Development project aims to
                   create a comprehensive dashboard that aggregates and
                   visualizes customer feedback data. This will enable our team
                   to gain actionable insights and improve customer satisfaction.
+=======
+                {project.description}
+>>>>>>> 64fa7f4558e0bdf3db80f87a11b98f9080813356
                 </p>
                 <div className="d-flex gap-5 mb-4 flex-wrap">
                   <div className="d-flex align-items-center gap-2 me-3">
@@ -138,7 +236,11 @@ export default function ProjectOverview(){
                       <div className="fw-medium mb-0 task-title">
                         Start Date
                       </div>
+<<<<<<< HEAD
                       <span className="fs-12 text-muted">28 August, 2024</span>
+=======
+                      <span className="fs-12 text-muted">{new Date(project.start_date).toLocaleDateString()}</span>
+>>>>>>> 64fa7f4558e0bdf3db80f87a11b98f9080813356
                     </div>
                   </div>
                   <div className="d-flex align-items-center gap-2 me-3">
@@ -147,7 +249,11 @@ export default function ProjectOverview(){
                     </span>
                     <div>
                       <div className="fw-medium mb-0 task-title">End Date</div>
+<<<<<<< HEAD
                       <span className="fs-12 text-muted">30 Oct, 2024</span>
+=======
+                      <span className="fs-12 text-muted">{new Date(project.end_date).toLocaleDateString()}</span>
+>>>>>>> 64fa7f4558e0bdf3db80f87a11b98f9080813356
                     </div>
                   </div>
                   <div className="d-flex align-items-center gap-2">
@@ -266,6 +372,7 @@ export default function ProjectOverview(){
                   </span>
                 </div>
               </div>
+<<<<<<< HEAD
               <div className="card-footer">
                 <div className="d-flex align-items-center justify-content-between gap-2 flex-wrap">
                   <div className="d-flex gap-3 align-items-center">
@@ -854,6 +961,56 @@ export default function ProjectOverview(){
                   </li>
                 </ul>
               </div>
+=======
+              
+                 
+            </div>
+            <div className="card custom-card overflow-hidden">
+              
+            </div>
+          </div>
+          <div className="col-xxl-4">
+  <div className="card custom-card justify-content-between">
+    <div className="card-header pb-0">
+      <div className="card-title">Project History</div>
+    </div>
+    <div className="card-body">
+      <ul className="list-unstyled profile-timeline">
+        {history.length > 0 ? (
+          history.map((entry, index) => (
+            <li key={index}>
+              <div>
+                <span className="avatar avatar-sm shadow-sm bg-primary avatar-rounded profile-timeline-avatar">
+                  {entry.change_type.charAt(0)} {/* Display the first letter of the change type */}
+                </span>
+                <div className="mb-2 d-flex align-items-start gap-2">
+                  <div>
+                    <span className="fw-medium">{entry.change_type}</span>
+                  </div>
+                  <span className="ms-auto bg-light text-muted badge">
+                    {new Date(entry.changed_at).toLocaleDateString('en-GB', {
+                      day: 'numeric',
+                      month: 'short',
+                      year: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit',
+                    })}
+                  </span>
+                </div>
+                <p className="text-muted mb-0">
+                  Changed from <b>{entry.old_value}</b> to <b>{entry.new_value}</b>.
+                </p>
+              </div>
+            </li>
+          ))
+        ) : (
+          <li>
+            <div className="text-muted">No history available.</div>
+          </li>
+        )}
+      </ul>
+    </div>
+>>>>>>> 64fa7f4558e0bdf3db80f87a11b98f9080813356
               <div className="card-footer">
                 <div className="d-sm-flex align-items-center lh-1">
                   <div className="me-sm-2 mb-2 mb-sm-0 p-1 rounded-circle bg-primary-transparent d-inline-block">
@@ -900,6 +1057,7 @@ export default function ProjectOverview(){
                 </div>
               </div>
             </div>
+<<<<<<< HEAD
             <div className="card custom-card overflow-hidden">
               <div className="card-header justify-content-between">
                 <div className="card-title">Project Documents</div>
@@ -1049,6 +1207,10 @@ export default function ProjectOverview(){
             </div>
           </div>
         </div>
+=======
+          </div>
+          </div>
+>>>>>>> 64fa7f4558e0bdf3db80f87a11b98f9080813356
 
 </>
 

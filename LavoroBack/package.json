@@ -28,8 +28,13 @@
     "multer": "^1.4.5-lts.1",
     "nodemailer": "^6.10.0",
     "nodemon": "^3.1.9",
+<<<<<<< HEAD
+=======
+    "qrcode": "^1.5.4",
+>>>>>>> 64fa7f4558e0bdf3db80f87a11b98f9080813356
     "sequelize": "^6.37.5",
     "socket.io": "^4.8.1",
+    "speakeasy": "^2.0.0",
     "sqlite3": "^5.1.7",
     "twig": "^0.10.3",
     "uuid": "^11.0.5"

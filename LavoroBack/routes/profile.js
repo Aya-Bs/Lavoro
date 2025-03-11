@@ -35,6 +35,9 @@ router.get('/profile', async (req, res) => {
 
 // Request account deletion
 router.post('/request-delete', profileController.requestDelete);
+router.post('/enable-2fa', profileController.enable2FA);
+router.post('/verify-2fa', profileController.verify2FA);
+router.post('/disable-2fa', profileController.disable2FA);
 
 
 module.exports = router;

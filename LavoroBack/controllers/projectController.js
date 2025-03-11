@@ -4,6 +4,35 @@ const Archive = require('../models/Archive'); // Import the Archive model
 const User = require('../models/user');
 const Role = require('../models/role');
 
+// Fonction pour récupérer le nombre de projets par statut
+exports.getProjectsByStatus = async () => {
+    try {
+        // Agrégation MongoDB pour compter les projets par statut
+        const projectsByStatus = await Project.aggregate([
+            {
+                $group: {
+                    _id: "$status", // Grouper par statut
+                    count: { $sum: 1 } // Compter le nombre de projets dans chaque groupe
+                }
+            }
+        ]);
+
+        // Formater les résultats pour les rendre plus faciles à utiliser côté frontend
+        const formattedResults = projectsByStatus.reduce((acc, { _id, count }) => {
+            acc[_id] = count;
+            return acc;
+        }, {});
+
+        return formattedResults;
+    } catch (err) {
+        console.error('Error fetching projects by status:', err);
+        throw err; // Propager l'erreur pour la gérer côté appelant
+    }
+
+
+};
+
+
 // Function to get all projects
 exports.getAllProjects = async (req, res) => {
   try {
@@ -147,8 +176,11 @@ exports.getProjectById = async (req, res) => {
   
       console.log('Status change tracked in ProjectHistory:', history); // Log the history entry
   
-      // Create a new archive entry
-      const archive = new Archive(project.toObject());
+      // Create a new archive entry with the original status
+      const archive = new Archive({
+        ...project.toObject(), // Copy all project fields
+        originalStatus, // Store the original status
+      });
       await archive.save();
   
       console.log('Project archived successfully:', archive); // Log the archived project
@@ -308,6 +340,21 @@ exports.checkTeamManagerProjects = async (req, res) => {
           return res.status(200).json({ message: 'Vous pouvez affecter des projets à ce Team Manager' });
       }
   } catch (error) {
-      return res.status(500).json({ message: error.message });
+            return res.status(500).json({ message: error.message });
+        }
+      };
+
+exports.getArchivedProjectById = async (req, res) => {
+  const { id } = req.params; // Get the archive ID from the URL
+
+  try {
+    const archivedProject = await Archive.findById(id); // Fetch the archived project by ID
+    if (!archivedProject) {
+      return res.status(404).json({ message: 'Archived project not found' });
+    }
+
+    res.status(200).json(archivedProject); // Return the archived project details
+  } catch (error) {
+    res.status(500).json({ message: error.message });
   }
 };

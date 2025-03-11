@@ -53,6 +53,30 @@ const Profile = () => {
     return () => clearTimeout(timeout); // Nettoie le timeout si le composant est démonté
   }, [navigate]);
 
+  // Fonction pour récupérer les activités
+  const fetchActivities = async () => {
+    try {
+      const response = await axios.get('http://localhost:3000/users/mytasks', { withCredentials: true });
+      setTasks(response.data);
+    } catch (err) {
+      console.error("Error fetching tasks:", err);
+      if (err.response?.status === 404) {
+        alert("The tasks endpoint was not found. Please check the backend.");
+      } else {
+        alert("An error occurred while fetching tasks. Please try again later.");
+      }
+      navigate('/auth'); // Rediriger vers la page de connexion en cas d'erreur
+    }
+  };
+
+  // Charger les activités lorsque l'onglet est activé
+  useEffect(() => {
+    if (activeTab === "activities-tab-pane") {
+      fetchActivities();
+    }
+  }, [activeTab]);
+
+  // Handle account deletion request
   const handleDeleteAccount = async () => {
     try {
       const token = localStorage.getItem('token');
@@ -87,6 +111,86 @@ const Profile = () => {
         console.error("Error deleting profile:", err);
         alert("Failed to delete profile.");
       }
+    }
+  };
+
+  // Enable 2FA
+  const handleEnable2FA = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error("No token found");
+      }
+
+      const response = await axios.post(
+        "http://localhost:3000/profiles/enable-2fa",
+        {},
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+          withCredentials: true,
+        }
+      );
+
+      setQrCodeUrl(response.data.qrCodeUrl);
+      setShowQRCode(true);
+    } catch (err) {
+      console.error("Error enabling 2FA:", err);
+    }
+  };
+
+  const handleVerify2FA = async () => {
+    try {
+      const authToken = localStorage.getItem('token'); // JWT token for authentication
+      if (!authToken) {
+        throw new Error("No token found");
+      }
+
+      const userProvidedToken = token; // Use the TOTP code from the input field
+      console.log('Sending verify request with TOTP code:', userProvidedToken); // Log the TOTP code
+
+      const response = await axios.post(
+        "http://localhost:3000/profiles/verify-2fa",
+        { token: userProvidedToken }, // Send the TOTP code, not the JWT token
+        {
+          headers: {
+            Authorization: `Bearer ${authToken}`, // Use the JWT token for authentication
+          },
+          withCredentials: true,
+        }
+      );
+
+      console.log('Verify response:', response.data); // Log the response
+      setMessage(response.data.message);
+    } catch (err) {
+      console.error('Error verifying 2FA:', err); // Log the full error
+      setMessage(err.response?.data?.error || "Error verifying 2FA");
+    }
+  };
+
+  // Disable 2FA
+  const handleDisable2FA = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error("No token found");
+      }
+
+      const response = await axios.post(
+        "http://localhost:3000/profiles/disable-2fa",
+        {},
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+          withCredentials: true,
+        }
+      );
+
+      setMessage(response.data.message);
+    } catch (err) {
+      setMessage(err.response?.data?.error || "Error disabling 2FA");
     }
   };
 
@@ -126,13 +230,126 @@ const Profile = () => {
             <ProfileBanner />
             <div className="card-body pb-0 position-relative">
               <div className="row profile-content">
-                {showSidebar && (
-                  <div className="col-xl-3">
-                    <ProfileSidebar user={user} />
+                <div className="col-xl-3">
+                  <ProfileSidebar user={user} />
+                </div>
+                <div className="col-xl-9">
+                  <div className="card custom-card overflow-hidden border">
+                    <div className="card-body">
+                      <ul className="nav nav-tabs tab-style-6 mb-3 p-0" id="myTab" role="tablist">
+                        <li className="nav-item" role="presentation">
+                          <button
+                            className={`nav-link w-100 text-start ${activeTab === "profile-about-tab-pane" ? "active" : ""}`}
+                            id="profile-about-tab"
+                            onClick={() => setActiveTab("profile-about-tab-pane")}
+                            type="button"
+                            role="tab"
+                            aria-controls="profile-about-tab-pane"
+                            aria-selected={activeTab === "profile-about-tab-pane"}
+                          >
+                            About
+                          </button>
+                        </li>
+                        <li className="nav-item" role="presentation">
+                          <button
+                            className={`nav-link w-100 text-start ${activeTab === "edit-profile-tab-pane" ? "active" : ""}`}
+                            id="edit-profile-tab"
+                            onClick={() => setActiveTab("edit-profile-tab-pane")}
+                            type="button"
+                            role="tab"
+                            aria-controls="edit-profile-tab-pane"
+                            aria-selected={activeTab === "edit-profile-tab-pane"}
+                          >
+                            Edit Profile
+                          </button>
+                        </li>
+                        <li className="nav-item" role="presentation">
+                          <button
+                            className={`nav-link w-100 text-start ${activeTab === "activities-tab-pane" ? "active" : ""}`}
+                            id="activities-tab"
+                            onClick={() => setActiveTab("activities-tab-pane")}
+                            type="button"
+                            role="tab"
+                            aria-controls="activities-tab-pane"
+                            aria-selected={activeTab === "activities-tab-pane"}
+                          >
+                            See Activities
+                          </button>
+                        </li>
+                      </ul>
+                      <div className="tab-content" id="profile-tabs">
+                        <div
+                          className={`tab-pane p-0 border-0 ${activeTab === "profile-about-tab-pane" ? "show active" : ""}`}
+                          id="profile-about-tab-pane"
+                          role="tabpanel"
+                          aria-labelledby="profile-about-tab"
+                          tabIndex={0}
+                        >
+                          <AboutTab user={user} />
+                        </div>
+                        <div
+                          className={`tab-pane p-0 border-0 ${activeTab === "edit-profile-tab-pane" ? "show active" : ""}`}
+                          id="edit-profile-tab-pane"
+                          role="tabpanel"
+                          aria-labelledby="edit-profile-tab"
+                          tabIndex={0}
+                        >
+                          <UpdateProfile />
+                        </div>
+                        <div
+                          className={`tab-pane p-0 border-0 ${activeTab === "activities-tab-pane" ? "show active" : ""}`}
+                          id="activities-tab-pane"
+                          role="tabpanel"
+                          aria-labelledby="activities-tab"
+                          tabIndex={0}
+                        >
+                          <div className="container activities-container">
+                            <h1 className="text-center mb-4">Mes Activités</h1>
+                            <div className="table-responsive">
+                              <table className="table table-striped table-hover">
+                                <thead className="thead-dark">
+                                  <tr>
+                                    <th scope="col">Titre</th>
+                                    <th scope="col">Description</th>
+                                    <th scope="col">Statut</th>
+                                    <th scope="col">Priorité</th>
+                                    <th scope="col">Date de début</th>
+                                    <th scope="col">Date de fin</th>
+                                    <th scope="col">Durée estimée</th>
+                                    <th scope="col">Tags</th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  {tasks.map(task => (
+                                    <tr key={task._id}>
+                                      <td>{task.title}</td>
+                                      <td>{task.description}</td>
+                                      <td>
+                                        <span className={`badge ${task.status === 'Completed' ? 'bg-success' : task.status === 'In Progress' ? 'bg-warning' : 'bg-secondary'}`}>
+                                          {task.status}
+                                        </span>
+                                      </td>
+                                      <td>
+                                        <span className={`badge ${task.priority === 'High' ? 'bg-danger' : task.priority === 'Medium' ? 'bg-warning' : 'bg-success'}`}>
+                                          {task.priority}
+                                        </span>
+                                      </td>
+                                      <td>{new Date(task.start_date).toLocaleDateString()}</td>
+                                      <td>{new Date(task.deadline).toLocaleDateString()}</td>
+                                      <td>{task.estimated_duration} jours</td>
+                                      <td>
+                                        {task.tags && task.tags.join(', ')} {/* Affiche les tags séparés par une virgule */}
+                                      </td>
+                                    </tr>
+                                  ))}
+                                </tbody>
+                              </table>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                )}
-                <div className={showSidebar ? "col-xl-9" : "col-xl-12"}>
-                  <ProfileTabs activeTab={activeTab} setActiveTab={setActiveTab} user={user} />
                 </div>
               </div>
             </div>
@@ -169,6 +386,7 @@ const ProfileSidebar = ({ user }) => {
                   borderRadius: "50%",
                   objectFit: "cover",
                   marginBottom: "10px",
+                  marginBottom: "10px"
                 }}
               />
             ) : (
@@ -188,7 +406,6 @@ const ProfileSidebar = ({ user }) => {
           </p>
         </div>
       </div>
-
       <div className="p-3 pb-1 d-flex flex-wrap justify-content-between">
         <div className="fw-medium fs-15 text-primary1">Basic Info :</div>
       </div>
@@ -215,7 +432,7 @@ const ProfileSidebar = ({ user }) => {
           <li className="list-group-item pt-2 border-0">
             <div>
               <span className="fw-medium me-2">Phone :</span>
-              <span className="text-muted">+216 {user.phone_number}</span>
+              <span className="text-muted">+216  {user.phone_number}</span>
             </div>
           </li>
           <li className="list-group-item pt-2 border-0">

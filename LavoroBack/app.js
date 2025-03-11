@@ -24,22 +24,37 @@ mongo
     console.log(err);
   });
 
+<<<<<<< HEAD
   const usersRouter = require('./routes/users');
   const taskRouter=require('./routes/Task.js')
 const profileRouter = require('./routes/profile');
 const project = require('./routes/project');
+=======
+const usersRouter = require('./routes/users');
+const taskRouter=require('./routes/Task')
+const profileRouter = require('./routes/profile');
+const projectRouter = require('./routes/project');
+>>>>>>> 64fa7f4558e0bdf3db80f87a11b98f9080813356
 
 // const homeRouter = require('./routes/home');
 const adminRouter = require('./routes/admin');
-
 
 
 const app = express();
 const socketIo = require('socket.io');
 const server = http.createServer(app);
 
+<<<<<<< HEAD
+const app = express();
+const socketIo = require('socket.io');
+const server = http.createServer(app);
+
 const io = socketIo(server);
 
+=======
+const io = socketIo(server);
+
+>>>>>>> 64fa7f4558e0bdf3db80f87a11b98f9080813356
 app.use(cors({
   origin: 'http://localhost:5173', // Frontend URL
   credentials: true, // Allow cookies to be sent/received
@@ -81,8 +96,13 @@ app.use('/users', usersRouter);
 app.use('/admin',adminRouter);
 app.set('io', io);
 app.set('/tasks',taskRouter);
+<<<<<<< HEAD
 app.use('/projects', project);
 
+=======
+
+app.use('/project',projectRouter);
+>>>>>>> 64fa7f4558e0bdf3db80f87a11b98f9080813356
 
 app.use('/profiles', profileRouter);
 

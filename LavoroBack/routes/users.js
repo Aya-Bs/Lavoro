@@ -7,6 +7,8 @@ const { googleLogin } = require('../controllers/authController');
 const { MicrosoftLogin } = require('../controllers/MicrosoftController');
 const { GitHubLogin, getData } = require('../controllers/GitHubController');
 
+const TaskController = require('../controllers/TaskController');
+
 
 router.post('/signup', upload.single('image'), userController.signup);
 
@@ -66,6 +68,20 @@ router.get('/resetpassword', (req, res) => {
 });
 
 router.post('/resetpassword', userController.resetPassword);
+router.post('/verify2FALogin', userController.verify2FALogin);
+
+
+router.post('/seedtasks', async (req, res) => {
+    try {
+        await seedTasks();
+        res.status(200).json({ message: 'Tasks seeded successfully!' });
+    } catch (error) {
+        res.status(500).json({ error: 'Error seeding tasks' });
+    }
+});
+
+router.get('/tasks/:userId', TaskController.getTasksByUser);
+router.post('/verify2FALogin', userController.verify2FALogin);
 
 
 router.get("/google", googleLogin);

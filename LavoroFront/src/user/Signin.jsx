@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import React, { useState, useEffect } from 'react';
 import { FaEye, FaEyeSlash } from 'react-icons/fa';
 import axios from 'axios';
@@ -5,6 +6,17 @@ import { useNavigate } from 'react-router-dom';
 import GoogleLogin from './GoogleLogin';
 import GitHubLogin from './GitHubLogin';
 import MicrosoftLogin from './MicrosoftLogin';
+=======
+"use client"
+
+import { useState, useEffect } from "react"
+import { FaEye, FaEyeSlash } from "react-icons/fa"
+import axios from "axios"
+import { useNavigate } from "react-router-dom"
+import GoogleLogin from "./GoogleLogin"
+import GitHubLogin from "./GitHubLogin"
+import MicrosoftLogin from "./MicrosoftLogin"
+>>>>>>> 64fa7f4558e0bdf3db80f87a11b98f9080813356
 
 function SignIn() {
     const [formData, setFormData] = useState({ email: '', password: '' });
@@ -12,7 +24,16 @@ function SignIn() {
     const [showPassword, setShowPassword] = useState(false);
     const [showAlert, setShowAlert] = useState(false);
     const [alertMessage, setAlertMessage] = useState("");
+<<<<<<< HEAD
     const navigate = useNavigate();
+=======
+    const [requires2FA, setRequires2FA] = useState(false)
+    const [userId, setUserId] = useState(null)
+    const [twoFAToken, setTwoFAToken] = useState("")
+    const [show2FAPopup, setShow2FAPopup] = useState(false)
+    const navigate = useNavigate();
+    
+>>>>>>> 64fa7f4558e0bdf3db80f87a11b98f9080813356
 
     const Errorstyle = {
         color: "#ff6b6b",
@@ -52,6 +73,7 @@ function SignIn() {
     };
 
     const handleSubmit = async (e) => {
+<<<<<<< HEAD
         e.preventDefault();
 
         try {
@@ -134,6 +156,189 @@ function SignIn() {
     };
 
     return (
+=======
+        e.preventDefault()
+    
+        try {
+          const response = await axios.post("http://localhost:3000/users/signin", formData, {
+            headers: { "Content-Type": "application/json" },
+            withCredentials: true,
+          })
+    
+          if (response.data.requires2FA) {
+            setRequires2FA(true)
+            setUserId(response.data.userId)
+            setShow2FAPopup(true) // Show the 2FA popup
+          } else if (response.data.token) {
+            localStorage.setItem("token", response.data.token) // Store token in localStorage
+    
+            // Fetch user info to check role
+            const userResponse = await axios.get("http://localhost:3000/users/me", {
+              headers: { Authorization: `Bearer ${response.data.token}` },
+              withCredentials: true,
+            })
+    
+            // Show success alert
+            setAlertMessage("✅ Sign-in successful!")
+            setShowAlert(true)
+    
+            // Redirect after 2 seconds
+            setTimeout(() => {
+              setShowAlert(false) // Hide the alert
+              if (userResponse.data.role && userResponse.data.role.RoleName === "Admin") {
+                navigate("/admin-dashboard") // Redirect to admin dashboard
+              } else {
+                navigate("/profile") // Redirect to home
+              }
+            }, 2000)
+          } else {
+            throw new Error("No token received")
+          }
+        } catch (err) {
+          console.error("Error during sign-in:", err.response?.data || err.message)
+          setError(err.response?.data?.error || "An error occurred during sign-in.")
+        }
+      }
+    
+      const handle2FASubmit = async (e) => {
+        e.preventDefault()
+    
+        try {
+          const response = await axios.post(
+            "http://localhost:3000/users/verify2FALogin",
+            { userId, token: twoFAToken },
+            {
+              headers: { "Content-Type": "application/json" },
+              withCredentials: true,
+            },
+          )
+    
+          if (response.data.token) {
+            localStorage.setItem("token", response.data.token) // Store token in localStorage
+    
+            // Fetch user info to check role
+            const userResponse = await axios.get("http://localhost:3000/users/me", {
+              headers: { Authorization: `Bearer ${response.data.token}` },
+              withCredentials: true,
+            })
+    
+            // Show success alert
+            setAlertMessage("✅ Sign-in successful!")
+            setShowAlert(true)
+    
+            // Redirect after 2 seconds
+            setTimeout(() => {
+              setShowAlert(false) // Hide the alert
+              setShow2FAPopup(false) // Close the 2FA popup
+              if (userResponse.data.role && userResponse.data.role.RoleName === "Admin") {
+                navigate("/admin-dashboard") // Redirect to admin dashboard
+              } else {
+                navigate("/profile") // Redirect to home
+              }
+            }, 2000)
+          } else {
+            throw new Error("No token received")
+          }
+        } catch (err) {
+          console.error("Error during 2FA verification:", err.response?.data || err.message)
+          setError(err.response?.data?.error || "An error occurred during 2FA verification.")
+        }
+      }
+      const handleForgotPassword = () => {
+        navigate("/forgot-password", { state: { email: formData.email } })
+      }
+    
+      const CustomAlert = ({ message, onClose }) => {
+        return (
+          <div
+            style={{
+              position: "absolute",
+              top: "20%",
+              left: "50%",
+              transform: "translate(-50%, -50%)",
+              width: "400px",
+              backgroundColor: "#fff",
+              padding: "15px",
+              borderRadius: "10px",
+              boxShadow: "0px 4px 8px rgba(0, 0, 0, 0.1)",
+              textAlign: "center",
+              zIndex: 1000,
+              color: "black",
+            }}
+          >
+            <p style={{ margin: "0 0 10px 0" }}>{message}</p>
+            <button
+              onClick={onClose}
+              style={{
+                width: "100%",
+                padding: "8px",
+                backgroundColor: "#5d68e2",
+                border: "none",
+                borderRadius: "5px",
+                cursor: "pointer",
+              }}
+            >
+              OK
+            </button>
+          </div>
+        )
+      }
+    
+      const popupStyles = {
+        position: "absolute",
+        top: "50%",
+        left: "50%",
+        transform: "translate(-50%, -50%)",
+        width: "400px",
+        backgroundColor: "#fff",
+        padding: "15px",
+        borderRadius: "10px",
+        boxShadow: "0px 4px 8px rgba(0, 0, 0, 0.1)",
+        textAlign: "center",
+        zIndex: 1000,
+        color: "black",
+      }
+    
+      const TwoFAPopup = () => (
+        <div style={popupStyles}>
+          <h2>2FA Verification</h2>
+          <p>Please enter your 2FA code</p>
+          <form onSubmit={handle2FASubmit}>
+            <div className="input-group">
+              <input
+                type="text"
+                name="twoFAToken"
+                placeholder="2FA Code"
+                value={twoFAToken}
+                onChange={(e) => setTwoFAToken(e.target.value)}
+                required
+              />
+            </div>
+            {error && <p className="error">{error}</p>}
+            <button
+              type="submit"
+              style={{
+                width: "100%",
+                padding: "8px",
+                backgroundColor: "#5d68e2",
+                border: "none",
+                borderRadius: "5px",
+                cursor: "pointer",
+                marginTop: "10px",
+              }}
+            >
+              Verify
+            </button>
+          </form>
+        </div>
+      )
+      const back = {
+        backgroundColor: "#19191C ",
+    };
+    
+    
+      return (
+>>>>>>> 64fa7f4558e0bdf3db80f87a11b98f9080813356
         <div style={back}>
             <div className="row authentication authentication-cover-main mx-0">
                 <div className="col-xxl-6 col-xl-7">
@@ -147,17 +352,28 @@ function SignIn() {
                                     </p>
                                     <div className="btn-list text-center mt-3">
                                         <button className="btn btn-icon btn-wave btn-primary-light">
+<<<<<<< HEAD
                                            <GitHubLogin />
                                         </button>
                                         <button className="btn btn-icon btn-wave btn-primary1-light">
                                       
                                                 <GoogleLogin />
+=======
+                                            <GitHubLogin />
+                                        </button>
+                                        <button className="btn btn-icon btn-wave btn-primary1-light">
+                                            <GoogleLogin />
+>>>>>>> 64fa7f4558e0bdf3db80f87a11b98f9080813356
                                         </button>
                                         <button className="btn btn-icon btn-wave btn-primary2-light">
                                             <MicrosoftLogin />
                                         </button>
                                     </div>
+<<<<<<< HEAD
                     
+=======
+    
+>>>>>>> 64fa7f4558e0bdf3db80f87a11b98f9080813356
                                     <div className="text-center my-3 authentication-barrier">
                                         <span>OR</span>
                                     </div>
@@ -250,11 +466,60 @@ function SignIn() {
                         </div>
                     </div>
                 </div>
+<<<<<<< HEAD
             </div>
 
             
         </div>
     );
 }
+=======
+                {show2FAPopup && (
+            <div className="modal fade show" style={{ display: 'block', backgroundColor: 'rgba(0, 0, 0, 0.5)' }}>
+              <div className="modal-dialog modal-dialog-centered">
+                <div className="modal-content">
+                  <div className="modal-header">
+                    <h5 className="modal-title">Two-Factor Authentication</h5>
+                    <button type="button" className="btn-close" onClick={() => setShow2FAPopup(false)}></button>
+                  </div>
+                  <div className="modal-body">
+                    <p>Enter the 2FA code from your authenticator app:</p>
+                    <input
+                      type="text"
+                      className="form-control"
+                      placeholder="2FA Code"
+                      value={twoFAToken}
+                      onChange={(e) => setTwoFAToken(e.target.value)}
+                    />
+                  </div>
+                  <div className="modal-footer">
+                    <button type="button" className="btn btn-secondary" onClick={() => setShow2FAPopup(false)}>
+                      Cancel
+                    </button>
+                    <button type="button" className="btn btn-primary" onClick={handle2FASubmit}>
+                      Verify
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+    
+                
+            </div>
+    
+            
+            {show2FAPopup }
+        </div>
+    );
+    
+    
+
+    }
+
+
+  
+
+>>>>>>> 64fa7f4558e0bdf3db80f87a11b98f9080813356
 
 export default SignIn;
