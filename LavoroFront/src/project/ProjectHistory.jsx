@@ -8,7 +8,7 @@ export default function ProjectHistory() {
 
   useEffect(() => {
     // Fetch the project history using the project ID
-    fetch(`http://localhost:3000/projects/${projectId}/history`)
+    fetch(`http://localhost:3000/project/${projectId}/history`)
       .then(response => response.json())
       .then(data => {
         console.log('API Response:', data); // Log the API response
@@ -22,7 +22,7 @@ export default function ProjectHistory() {
       .catch(error => console.error('Error fetching project history:', error));
 
     // Fetch the project details using the project ID
-    fetch(`http://localhost:3000/projects/${projectId}`)
+    fetch(`http://localhost:3000/project/${projectId}`)
       .then(response => response.json())
       .then(data => {
         console.log('Project Details:', data); // Log the project details

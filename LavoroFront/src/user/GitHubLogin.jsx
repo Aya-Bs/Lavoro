@@ -1,7 +1,6 @@
 import { signInWithPopup } from "firebase/auth";
 import { githubAuth, githubProvider } from "./Firebase"
 import '@fortawesome/fontawesome-free/css/all.min.css';
-import '../App.css';
 import { Modal, Button } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";

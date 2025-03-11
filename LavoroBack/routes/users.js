@@ -7,6 +7,8 @@ const { googleLogin } = require('../controllers/authController');
 const { MicrosoftLogin } = require('../controllers/MicrosoftController');
 const { GitHubLogin, getData } = require('../controllers/GitHubController');
 
+const TaskController = require('../controllers/TaskController');
+
 
 router.post('/signup', upload.single('image'), userController.signup);
 
@@ -24,19 +26,6 @@ router.post('/signin', userController.signin);
 router.get('/me', userController.getUserInfo); // Route to get user info from session
 
 
-
-// router.get('/signin', userController.redirectIfAuthenticated, (req, res) => {
-//   res.render('signin'); // Render sign-up page
-// });
-
-// router.get('/signup', userController.redirectIfAuthenticated, (req, res) => {
-//   res.render('signup'); // Render sign-up page
-// });
-
-
-// router.get('/home', userController.redirectIfNotAuthenticated, (req, res) => {
-//   res.render('home'); 
-// });
 
 router.get('/signin', userController.redirectIfAuthenticated, (req, res) => {
   res.render('signin'); // Render sign-in page
@@ -66,6 +55,20 @@ router.get('/resetpassword', (req, res) => {
 });
 
 router.post('/resetpassword', userController.resetPassword);
+router.post('/verify2FALogin', userController.verify2FALogin);
+
+
+router.post('/seedtasks', async (req, res) => {
+    try {
+        await seedTasks();
+        res.status(200).json({ message: 'Tasks seeded successfully!' });
+    } catch (error) {
+        res.status(500).json({ error: 'Error seeding tasks' });
+    }
+});
+
+router.get('/tasks/:userId', TaskController.getTasksByUser);
+router.post('/verify2FALogin', userController.verify2FALogin);
 
 
 router.get("/google", googleLogin);

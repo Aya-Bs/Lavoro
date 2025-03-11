@@ -3,6 +3,8 @@ import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import ReactCrop from "react-image-crop";
 import "react-image-crop/dist/ReactCrop.css";
+import Swal from "sweetalert2";
+
 
 
 const UpdateProfile = () => {
@@ -65,45 +67,77 @@ const UpdateProfile = () => {
     fetchUserInfo();
   }, [navigate]);
 
-
   const handleDeleteAccount = async () => {
     try {
       const token = localStorage.getItem('token');
       if (!token) {
         throw new Error("No token found");
       }
-
-      const response = await axios.post(
-        "http://localhost:3000/profiles/request-delete",
-        {},
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-          withCredentials: true,
+  
+      // Afficher une alerte de confirmation avant de supprimer
+      const result = await Swal.fire({
+        title: "Are you sure?",
+        text: "You won't be able to revert this!",
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonColor: "#3085d6",
+        cancelButtonColor: "#d33",
+        confirmButtonText: "Yes, delete it!",
+      });
+  
+      // Si l'utilisateur confirme la suppression
+      if (result.isConfirmed) {
+        const response = await axios.post(
+          "http://localhost:3000/profiles/request-delete",
+          {},
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+            withCredentials: true,
+          }
+        );
+  
+        if (response.status === 200) {
+          // Afficher une alerte de succès
+          await Swal.fire({
+            title: "Deleted!",
+            text: "Profile delete request successful!",
+            icon: "success",
+          });
+          window.location.reload();
         }
-      );
-
-      if (response.status === 200) {
-        alert("Profile delete request successful!");
-        navigate("/profile");
       }
     } catch (err) {
       if (err.response?.status === 400) {
-        alert("You already sent a deletion request.");
+        // Afficher une alerte d'erreur
+        await Swal.fire({
+          title: "Error",
+          text: "You already sent a deletion request.",
+          icon: "error",
+        });
         window.location.reload();
       } else if (err.response?.status === 401) {
-        alert("Session expired. Please log in again.");
+        // Afficher une alerte d'erreur
+        await Swal.fire({
+          title: "Session Expired",
+          text: "Please log in again.",
+          icon: "error",
+        });
         localStorage.removeItem('token');
         navigate("/auth");
       } else {
         console.error("Error deleting profile:", err);
-        alert("Failed to delete profile.");
+        // Afficher une alerte d'erreur
+        await Swal.fire({
+          title: "Error",
+          text: "Failed to delete profile.",
+          icon: "error",
+        });
       }
     }
   };
-
 
   // Open camera
   const openCamera = async () => {
@@ -183,7 +217,11 @@ const UpdateProfile = () => {
     setLoading(true);
 
     if (newPassword !== confirmNewPassword) {
-      alert("New password and confirm password do not match.");
+      await Swal.fire({
+        title: "Error",
+        text: "New password and confirm password do not match.",
+        icon: "error",
+      });
       setLoading(false);
       return;
     }
@@ -220,8 +258,15 @@ const UpdateProfile = () => {
       });
 
       if (response.status === 200) {
-        alert("Profile updated successfully!");
-        window.location.reload();
+        if (response.status === 200) {
+          // Afficher une alerte de succès
+          await Swal.fire({
+            title: "Updated!",
+            text: "Profile updated successfully!",
+            icon: "success",
+          });
+          window.location.reload();
+        }
       }
     } catch (err) {
       if (err.response?.status === 401) {
@@ -230,7 +275,12 @@ const UpdateProfile = () => {
         navigate("/auth");
       } else {
         console.error("Error updating profile:", err);
-        alert("Failed to update profile.");
+        await Swal.fire({
+          title: "Error",
+          text: "Failed updating profile !",
+          icon: "error",
+        });
+        window.location.reload();
       }
     } finally {
       setLoading(false);
@@ -370,10 +420,8 @@ const UpdateProfile = () => {
         </div>
         <div className="card-footer border-top-0">
           <div className="btn-list float-end">
-            <button className="btn btn-primary2 btn-wave" onClick={() => {
-              if (window.confirm("Are you sure you want to request account deletion?")) {
+            <button className="btn btn-primary2 btn-wave" id="alert-confirm" onClick={() => {
                 handleDeleteAccount();
-              }
             }}>Deactivate Account</button>
             <button className="btn btn-primary btn-wave" onClick={handleSubmit} disabled={loading}>
               {loading ? "Updating..." : "Save Changes"}
