@@ -3,10 +3,6 @@ import '../../public/assets/libs/flatpickr/flatpickr.min.css'
 import '../../public/assets/libs/apexcharts/apexcharts.min.js'
 import '../../public/assets/js/sales-dashboard.js'
 import '../../public/assets/js/custom.js'
-<<<<<<< HEAD
-
-export default function Sales(){
-=======
 import 'flatpickr/dist/flatpickr.min.css';
 import React, { useEffect } from 'react';
 import flatpickr from 'flatpickr';
@@ -381,7 +377,6 @@ export default function Sales() {
     lineGraph5.render();
   }, []);
 
->>>>>>> 64fa7f4558e0bdf3db80f87a11b98f9080813356
     return(
  
  
@@ -440,11 +435,7 @@ export default function Sales() {
                       </div>
                       <div className="lh-1">
                         <span className="avatar avatar-md avatar-rounded bg-primary">
-<<<<<<< HEAD
-                          <i className="ti ti-shopping-cart fs-5" />
-=======
                           <i className="ri-shopping-cart-line fs-5" />
->>>>>>> 64fa7f4558e0bdf3db80f87a11b98f9080813356
                         </span>
                       </div>
                     </div>
@@ -452,11 +443,7 @@ export default function Sales() {
                       Increased By{" "}
                       <span className="text-success">
                         2.56%
-<<<<<<< HEAD
-                        <i className="ti ti-arrow-narrow-up fs-16" />
-=======
                         <i className="ri-arrow-up-line fs-16" />
->>>>>>> 64fa7f4558e0bdf3db80f87a11b98f9080813356
                       </span>
                     </div>
                   </div>
@@ -474,11 +461,7 @@ export default function Sales() {
                       </div>
                       <div className="lh-1">
                         <span className="avatar avatar-md avatar-rounded bg-primary1">
-<<<<<<< HEAD
-                          <i className="ti ti-users fs-5" />
-=======
                           <i className="ri-user-line fs-5" />
->>>>>>> 64fa7f4558e0bdf3db80f87a11b98f9080813356
                         </span>
                       </div>
                     </div>
@@ -486,11 +469,7 @@ export default function Sales() {
                       Increased By{" "}
                       <span className="text-success">
                         0.34%
-<<<<<<< HEAD
-                        <i className="ti ti-arrow-narrow-up fs-16" />
-=======
                         <i className="ri-arrow-up-line fs-16" />
->>>>>>> 64fa7f4558e0bdf3db80f87a11b98f9080813356
                       </span>
                     </div>
                   </div>
@@ -508,23 +487,14 @@ export default function Sales() {
                       </div>
                       <div className="lh-1">
                         <span className="avatar avatar-md avatar-rounded bg-primary2">
-<<<<<<< HEAD
-                          <i className="ti ti-currency-dollar fs-5" />
-                        </span>
-=======
                         <i class="ri-exchange-dollar-line fs-30"></i>                        </span>
->>>>>>> 64fa7f4558e0bdf3db80f87a11b98f9080813356
                       </div>
                     </div>
                     <div className="text-muted fs-13">
                       Increased By{" "}
                       <span className="text-success">
                         7.66%
-<<<<<<< HEAD
-                        <i className="ti ti-arrow-narrow-up fs-16" />
-=======
                         <i className="ri-arrow-up-line fs-16" />
->>>>>>> 64fa7f4558e0bdf3db80f87a11b98f9080813356
                       </span>
                     </div>
                   </div>
@@ -542,11 +512,7 @@ export default function Sales() {
                       </div>
                       <div className="lh-1">
                         <span className="avatar avatar-md avatar-rounded bg-primary3">
-<<<<<<< HEAD
-                          <i className="ti ti-chart-bar fs-5" />
-=======
                           <i className="ri-bar-chart-2-line fs-5" />
->>>>>>> 64fa7f4558e0bdf3db80f87a11b98f9080813356
                         </span>
                       </div>
                     </div>
@@ -554,11 +520,7 @@ export default function Sales() {
                       Decreased By{" "}
                       <span className="text-danger">
                         0.74%
-<<<<<<< HEAD
-                        <i className="ti ti-arrow-narrow-down fs-16" />
-=======
                         <i className="ri-arrow-down-line fs-16" />
->>>>>>> 64fa7f4558e0bdf3db80f87a11b98f9080813356
                       </span>
                     </div>
                   </div>
@@ -627,11 +589,7 @@ export default function Sales() {
                         data-bs-toggle="dropdown"
                         aria-expanded="false"
                       >
-<<<<<<< HEAD
-                        <i className="fe fe-more-vertical" />
-=======
                         <i className="ri-more-2-line" />
->>>>>>> 64fa7f4558e0bdf3db80f87a11b98f9080813356
                       </a>
                       <ul className="dropdown-menu" role="menu">
                         <li className="border-bottom">
@@ -664,13 +622,8 @@ export default function Sales() {
                   <div className="card-body py-4 px-3">
                     <div className="d-flex gap-3 mb-3 flex-wrap">
                       <div className="avatar avatar-md bg-primary-transparent">
-<<<<<<< HEAD
-                        <i className="ti ti-trending-up fs-5" />
-                      </div>
-=======
                       <i className="ri-trending-up fs-5"></i>                    
                         </div>
->>>>>>> 64fa7f4558e0bdf3db80f87a11b98f9080813356
                       <div className="flex-fill d-flex align-items-start justify-content-between flex-wrap">
                         <div>
                           <span className="fs-11 mb-1 d-block fw-medium">

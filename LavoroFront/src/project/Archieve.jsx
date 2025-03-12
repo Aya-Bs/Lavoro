@@ -32,22 +32,12 @@ export default function Archieve() {
   };
 
   const handleViewClick = (projectId) => {
-<<<<<<< HEAD
-    navigate(`/HistoryPro/${projectId}`); // Navigate to the history page with the project ID
-  };
-
-  useEffect(() => {
-    const fetchArchivedProjects = async () => {
-      try {
-        const response = await fetch('http://localhost:3000/projects/archived-projects');
-=======
     navigate(`/overviewArchive/${projectId}`); // Navigate to the project overview
   };
   useEffect(() => {
     const fetchArchivedProjects = async () => {
       try {
-        const response = await fetch('http://localhost:3000/project/archived-projects');
->>>>>>> 64fa7f4558e0bdf3db80f87a11b98f9080813356
+        const response = await fetch('http://localhost:3000/projects/archived-projects');
         const data = await response.json();
         console.log('API Response:', data); // Debugging: Log the API response
         if (response.ok) {
@@ -67,11 +57,8 @@ export default function Archieve() {
 
   const handleUnarchive = async (projectId) => {
     try {
-<<<<<<< HEAD
-      const response = await fetch(`http://localhost:3000/projects/${projectId}/unarchive`, {
-=======
+
       const response = await fetch(`http://localhost:3000/project/${projectId}/unarchive`, {
->>>>>>> 64fa7f4558e0bdf3db80f87a11b98f9080813356
         method: 'POST',
       });
       const data = await response.json();
@@ -154,11 +141,8 @@ export default function Archieve() {
     if (result.isConfirmed) {
       try {
         // Call the backend API to delete the archived project
-<<<<<<< HEAD
-        const response = await fetch(`http://localhost:3000/projects/archived-projects/${projectId}`, {
-=======
+
         const response = await fetch(`http://localhost:3000/project/archived-projects/${projectId}`, {
->>>>>>> 64fa7f4558e0bdf3db80f87a11b98f9080813356
           method: 'DELETE',
         });
 
@@ -303,10 +287,6 @@ export default function Archieve() {
                           <h6 className="fs-14 mb-1 fw-medium">
                             <a>{project.name}</a>
                           </h6>
-<<<<<<< HEAD
-                          <div className="min-w-fit-content fw-normal mb-1 fs-13 fw-medium text-success">Completed </div>
-                          <div className="d-flex align-items-baseline gap-2 mb-1">
-=======
                           <div
   className={`min-w-fit-content fw-normal mb-1 fs-13 fw-medium ${
     project.originalStatus === 'Completed'
@@ -318,7 +298,6 @@ export default function Archieve() {
 >
   {project.originalStatus}
 </div>                          <div className="d-flex align-items-baseline gap-2 mb-1">
->>>>>>> 64fa7f4558e0bdf3db80f87a11b98f9080813356
                             <span className="badge bg-primary1-transparent ms-2">{project.budget} TND</span>
                           </div>
                         </div>

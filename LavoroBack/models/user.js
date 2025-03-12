@@ -9,10 +9,8 @@ const userSchema = new mongoose.Schema({
   email: { type: String, required: true, unique: true },
 
   password_hash: { type: String,  },
-
-  // role: { type: Number , required: false },
+ 
   role: { type: mongoose.Schema.Types.ObjectId, ref: 'role', default: null },
-
 
   image: { type: String },
 
@@ -30,8 +28,8 @@ const userSchema = new mongoose.Schema({
 
   isVerified: { type: Boolean, default: false },
 
-  resetPasswordToken: { type: String },  // Assurez-vous que ce champ est bien utilisé partout
-  resetPasswordExpires: { type: Date },  // Pareil ici
+  resetPasswordToken: { type: String },  
+  resetPasswordExpires: { type: Date },  
 
   loginAttempts: { type: Number, default: 0 },
   lockUntil: { type: Date, default: null },
@@ -39,7 +37,7 @@ const userSchema = new mongoose.Schema({
   provider: {
     type: String,
    
-    enum: ["Google","Microsoft", "GitHub"], // Tu peux ajouter d'autres providers ici
+    enum: ["Google","Microsoft", "GitHub"], 
   },
   provider_id: {
     type: String,

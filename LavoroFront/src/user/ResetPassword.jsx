@@ -8,11 +8,8 @@ const ResetPassword = () => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
-<<<<<<< HEAD
-=======
   const [showPassword, setShowPassword] = useState(false);
   const [firstName, setFirstName] = useState(''); // État pour stocker le firstName
->>>>>>> 64fa7f4558e0bdf3db80f87a11b98f9080813356
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
@@ -34,10 +31,7 @@ const ResetPassword = () => {
 
       if (response.ok) {
         setMessage('✅ Password successfully changed!');
-<<<<<<< HEAD
-=======
         setFirstName(data.firstName); // Stocker le firstName
->>>>>>> 64fa7f4558e0bdf3db80f87a11b98f9080813356
         setError('');
         // Rediriger vers la page de connexion après un délai
         setTimeout(() => {
@@ -52,32 +46,6 @@ const ResetPassword = () => {
     }
   };
 
-<<<<<<< HEAD
-  return (
-    <div>
-      <h1>Reset Password</h1>
-      {error && <p style={{ color: 'red' }}>{error}</p>}
-      {message && <p style={{ color: 'green' }}>{message}</p>}
-
-      <form onSubmit={handleSubmit}>
-        <input type="hidden" name="token" value={token} />
-        <label>New Password:</label>
-        <input
-          type="password"
-          value={newPassword}
-          onChange={(e) => setNewPassword(e.target.value)}
-          required
-        />
-        <label>Confirm Password:</label>
-        <input
-          type="password"
-          value={confirmPassword}
-          onChange={(e) => setConfirmPassword(e.target.value)}
-          required
-        />
-        <button type="submit">Reset Password</button>
-      </form>
-=======
   const togglePasswordVisibility = () => {
     setShowPassword(!showPassword);
   };
@@ -154,7 +122,6 @@ const ResetPassword = () => {
           </div>
         </div>
       </div>
->>>>>>> 64fa7f4558e0bdf3db80f87a11b98f9080813356
     </div>
   );
 };

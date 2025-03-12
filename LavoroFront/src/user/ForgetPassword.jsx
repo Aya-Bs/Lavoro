@@ -1,8 +1,4 @@
-<<<<<<< HEAD
-import { useState, useEffect } from 'react';
-=======
 import { useState } from 'react';
->>>>>>> 64fa7f4558e0bdf3db80f87a11b98f9080813356
 import { useLocation, useNavigate } from 'react-router-dom';
 
 const ForgotPassword = () => {
@@ -38,22 +34,6 @@ const ForgotPassword = () => {
   };
 
   return (
-<<<<<<< HEAD
-    <div>
-      <h1>Forgot Password</h1>
-      {error && <p style={{ color: 'red' }}>{error}</p>}
-
-      <form onSubmit={handleForgotPassword}>
-        <label>Email:</label>
-        <input
-          type="email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          required
-        />
-        <button type="submit">Reset Password</button>
-      </form>
-=======
     <div className="container-lg">
       <div className="row justify-content-center align-items-center authentication authentication-basic h-100">
         <div className="col-xxl-4 col-xl-5 col-lg-5 col-md-6 col-sm-8 col-12">
@@ -104,22 +84,17 @@ const ForgotPassword = () => {
           </div>
         </div>
       </div>
->>>>>>> 64fa7f4558e0bdf3db80f87a11b98f9080813356
 
       {/* Pop-up */}
       {showPopup && (
         <div style={popupStyle}>
           <p>✅ Check your email for the reset link!</p>
-<<<<<<< HEAD
-          <button onClick={() => navigate('/auth')}>OK</button> {/* Rediriger vers la page SignIn */}
-=======
           <button
             className="btn btn-primary"
             onClick={() => navigate('/auth')}
           >
             OK
           </button>
->>>>>>> 64fa7f4558e0bdf3db80f87a11b98f9080813356
         </div>
       )}
     </div>

@@ -2,10 +2,6 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import 'bootstrap/dist/css/bootstrap.min.css'; // Import Bootstrap first
-<<<<<<< HEAD
-import '../app.css'; // Import your custom CSS after
-=======
->>>>>>> 64fa7f4558e0bdf3db80f87a11b98f9080813356
 
 function ActivitiesPage() {
     const [tasks, setTasks] = useState([]);

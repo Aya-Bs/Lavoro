@@ -2,20 +2,24 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import UpdateProfile from "./updateProfile";
+import ProfileSecurity from "./profileSecurity";
 
 const Profile = () => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [qrCodeUrl, setQrCodeUrl] = useState('');
+  const [showQRCode, setShowQRCode] = useState(false);
+  const [token, setToken] = useState('');
+  const [message, setMessage] = useState('');
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("profile-about-tab-pane");
+  const [tasks, setTasks] = useState([]);
 
-  // Détermine si le ProfileSidebar doit être affiché
-  const showSidebar = activeTab !== "edit-profile-tab-pane";
-
+  // Fetch user info on component mount
   useEffect(() => {
     const timeout = setTimeout(() => {
       setLoading(false);
-    }, 5000); // 5 secondes de timeout
+    }, 5000);
 
     const fetchUserInfo = async () => {
       try {
@@ -43,14 +47,14 @@ const Profile = () => {
           navigate("/signin");
         }
       } finally {
-        clearTimeout(timeout); // Annule le timeout si la requête réussit
+        clearTimeout(timeout);
         setLoading(false);
       }
     };
 
     fetchUserInfo();
 
-    return () => clearTimeout(timeout); // Nettoie le timeout si le composant est démonté
+    return () => clearTimeout(timeout);
   }, [navigate]);
 
   // Fonction pour récupérer les activités
@@ -76,44 +80,8 @@ const Profile = () => {
     }
   }, [activeTab]);
 
-  // Handle account deletion request
-  const handleDeleteAccount = async () => {
-    try {
-      const token = localStorage.getItem('token');
-      if (!token) {
-        throw new Error("No token found");
-      }
-
-      const response = await axios.post(
-        "http://localhost:3000/profiles/request-delete",
-        {},
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-          withCredentials: true,
-        }
-      );
-
-      if (response.status === 200) {
-        alert("Profile delete request successful!");
-        navigate("/profile");
-      }
-    } catch (err) {
-      if (err.response?.status === 400) {
-        alert("You already sent a deletion request.");
-      } else if (err.response?.status === 401) {
-        alert("Session expired. Please log in again.");
-        localStorage.removeItem('token');
-        navigate("/signin");
-      } else {
-        console.error("Error deleting profile:", err);
-        alert("Failed to delete profile.");
-      }
-    }
-  };
-
+  
+  
   // Enable 2FA
   const handleEnable2FA = async () => {
     try {
@@ -230,10 +198,12 @@ const Profile = () => {
             <ProfileBanner />
             <div className="card-body pb-0 position-relative">
               <div className="row profile-content">
-                <div className="col-xl-3">
-                  <ProfileSidebar user={user} />
-                </div>
-                <div className="col-xl-9">
+                {activeTab !== "edit-profile-tab-pane" && (
+                  <div className="col-xl-3">
+                    <ProfileSidebar user={user} />
+                  </div>
+                )}
+                <div className={activeTab === "edit-profile-tab-pane" ? "col-xl-12" : "col-xl-9"}>
                   <div className="card custom-card overflow-hidden border">
                     <div className="card-body">
                       <ul className="nav nav-tabs tab-style-6 mb-3 p-0" id="myTab" role="tablist">
@@ -338,7 +308,7 @@ const Profile = () => {
                                       <td>{new Date(task.deadline).toLocaleDateString()}</td>
                                       <td>{task.estimated_duration} jours</td>
                                       <td>
-                                        {task.tags && task.tags.join(', ')} {/* Affiche les tags séparés par une virgule */}
+                                        {task.tags && task.tags.join(', ')}
                                       </td>
                                     </tr>
                                   ))}
@@ -385,7 +355,6 @@ const ProfileSidebar = ({ user }) => {
                   height: "100px",
                   borderRadius: "50%",
                   objectFit: "cover",
-                  marginBottom: "10px",
                   marginBottom: "10px"
                 }}
               />
@@ -448,68 +417,6 @@ const ProfileSidebar = ({ user }) => {
             </div>
           </li>
         </ul>
-      </div>
-    </div>
-  );
-};
-
-// ProfileTabs Component
-const ProfileTabs = ({ activeTab, setActiveTab, user }) => {
-  const handleTabClick = (tabId) => {
-    setActiveTab(tabId);
-  };
-
-  return (
-    <div className="card custom-card overflow-hidden border">
-      <div className="card-body">
-        <ul className="nav nav-tabs tab-style-6 mb-3 p-0" id="myTab" role="tablist">
-          <li className="nav-item" role="presentation">
-            <button
-              className={`nav-link w-100 text-start ${activeTab === "profile-about-tab-pane" ? "active" : ""}`}
-              id="profile-about-tab"
-              onClick={() => handleTabClick("profile-about-tab-pane")}
-              type="button"
-              role="tab"
-              aria-controls="profile-about-tab-pane"
-              aria-selected={activeTab === "profile-about-tab-pane"}
-            >
-              About
-            </button>
-          </li>
-          <li className="nav-item" role="presentation">
-            <button
-              className={`nav-link w-100 text-start ${activeTab === "edit-profile-tab-pane" ? "active" : ""}`}
-              id="edit-profile-tab"
-              onClick={() => handleTabClick("edit-profile-tab-pane")}
-              type="button"
-              role="tab"
-              aria-controls="edit-profile-tab-pane"
-              aria-selected={activeTab === "edit-profile-tab-pane"}
-            >
-              Edit Profile
-            </button>
-          </li>
-        </ul>
-        <div className="tab-content" id="profile-tabs">
-          <div
-            className={`tab-pane p-0 border-0 ${activeTab === "profile-about-tab-pane" ? "show active" : ""}`}
-            id="profile-about-tab-pane"
-            role="tabpanel"
-            aria-labelledby="profile-about-tab"
-            tabIndex={0}
-          >
-            <AboutTab user={user} />
-          </div>
-          <div
-            className={`tab-pane p-0 border-0 ${activeTab === "edit-profile-tab-pane" ? "show active" : ""}`}
-            id="edit-profile-tab-pane"
-            role="tabpanel"
-            aria-labelledby="edit-profile-tab"
-            tabIndex={0}
-          >
-            <UpdateProfile />
-          </div>
-        </div>
       </div>
     </div>
   );

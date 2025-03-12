@@ -3,16 +3,11 @@ import axios from 'axios';
 
 function UsersList({ onRoleUpdate, onViewActivity }) {
   const [users, setUsers] = useState([]);
-<<<<<<< HEAD
-  const [roles, setRoles] = useState([]);
-  const [error, setError] = useState(null);
-=======
   const [filteredUsers, setFilteredUsers] = useState([]); // For filtered results
   const [roles, setRoles] = useState([]);
   const [error, setError] = useState(null);
   const [selectedRole, setSelectedRole] = useState(''); // To track the selected role filter
   const [searchQuery, setSearchQuery] = useState(''); // To track the search query
->>>>>>> 64fa7f4558e0bdf3db80f87a11b98f9080813356
 
   // Fetch users and roles on component mount
   useEffect(() => {
@@ -22,10 +17,7 @@ function UsersList({ onRoleUpdate, onViewActivity }) {
           withCredentials: true, // Include cookies
         });
         setUsers(response.data.users);
-<<<<<<< HEAD
-=======
         setFilteredUsers(response.data.users); // Initialize filtered users
->>>>>>> 64fa7f4558e0bdf3db80f87a11b98f9080813356
         setRoles(response.data.roles);
       } catch (err) {
         setError('Failed to fetch data. Please try again.');
@@ -51,14 +43,11 @@ function UsersList({ onRoleUpdate, onViewActivity }) {
           user._id === userId ? { ...user, role: roles.find((role) => role._id === roleId) } : user
         )
       );
-<<<<<<< HEAD
-=======
       setFilteredUsers((prevUsers) =>
         prevUsers.map((user) =>
           user._id === userId ? { ...user, role: roles.find((role) => role._id === roleId) } : user
         )
       );
->>>>>>> 64fa7f4558e0bdf3db80f87a11b98f9080813356
 
       alert('Role updated successfully!');
     } catch (err) {
@@ -67,88 +56,6 @@ function UsersList({ onRoleUpdate, onViewActivity }) {
     }
   };
 
-<<<<<<< HEAD
-  return (
-    <div>
-      
-      {error && <p style={{ color: 'red' }}>{error}</p>}
-
-      <ul style={{ listStyle: 'none', padding: 0 }}>
-        {users.map((user) => (
-          <li
-            key={user._id}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              marginBottom: '10px',
-              padding: '10px',
-            }}
-          >
-            <img
-              src={user.image || 'https://via.placeholder.com/50'}
-              alt="Avatar"
-              style={{ width: '50px', height: '50px', borderRadius: '50%', marginRight: '10px' }}
-            />
-            <div style={{ flex: 1 }}>
-              <p>
-                <strong>Name:</strong> {user.firstName} {user.lastName}
-              </p>
-              <p>
-                <strong>Email:</strong> {user.email}
-              </p>
-              <p>
-                <strong>Role:</strong> {user.role?.RoleName}
-              </p>
-            </div>
-            <div>
-              <select
-                value={user.role?._id}
-                onChange={(e) => handleRoleUpdate(user._id, e.target.value)}
-                style={{
-                  padding: '5px',
-                  marginRight: '10px',
-                  borderRadius: '5px',
-                  border: '1px solid #ddd',
-                }}
-              >
-                {roles.map((role) => (
-                  <option key={role._id} value={role._id}>
-                    {role.RoleName}
-                  </option>
-                ))}
-              </select>
-              <button
-                onClick={() => handleRoleUpdate(user._id, user.role?._id)}
-                style={{
-                  padding: '5px 10px',
-                  backgroundColor: '#4CAF50',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '5px',
-                  cursor: 'pointer',
-                  marginRight: '10px',
-                }}
-              >
-                Update Role
-              </button>
-              <button
-                onClick={() => onViewActivity(user._id)}
-                style={{
-                  padding: '5px 10px',
-                  backgroundColor: '#2196F3',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '5px',
-                  cursor: 'pointer',
-                }}
-              >
-                View Activity
-              </button>
-            </div>
-          </li>
-        ))}
-      </ul>
-=======
   // Handle sending email to a user
   const handleSendEmail = (email) => {
     window.location.href = `mailto:${email}`;
@@ -408,7 +315,6 @@ function UsersList({ onRoleUpdate, onViewActivity }) {
           </div>
         </div>
       </div>
->>>>>>> 64fa7f4558e0bdf3db80f87a11b98f9080813356
     </div>
   );
 }

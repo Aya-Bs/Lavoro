@@ -3,10 +3,6 @@ import { signInWithPopup } from "firebase/auth";
 import { microsoftAuth, microsoftProvider } from "./Firebase";
 import { useNavigate } from "react-router-dom";
 import '@fortawesome/fontawesome-free/css/all.min.css';
-<<<<<<< HEAD
-import '../App.css';
-=======
->>>>>>> 64fa7f4558e0bdf3db80f87a11b98f9080813356
 import { Modal, Button } from "react-bootstrap"; // Import des composants Bootstrap
 
 const MicrosoftLogin = () => {
