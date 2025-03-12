@@ -1,9 +1,10 @@
 const express = require('express');
 const router = express.Router();
-
-const { getProjectsByStatus } = require('../controllers/ProjectController'); // Importez la fonction du contrôleur
+const ProjectController = require('../controllers/projectController');
+const projectController = require('../controllers/projectController'); // Importez le contrôleur
+const { getProjectsByStatus } = require('../controllers/projectController'); // Importez la fonction du contrôleur
 const Project = require('../models/Project');
-const ProjectController = require('../controllers/ProjectController');
+
 
 
 router.get('/projetStatus', async (req, res) => {
