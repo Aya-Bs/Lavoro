@@ -1,0 +1,118 @@
+pipeline {
+    agent any
+
+    environment {
+        registryCredentials = "Nexus" // Identifiants pour Nexus
+        registry = "192.168.50.4:8083" // Adresse du registre Docker (Nexus)
+    }
+
+    stages {
+        // Stage 1: Install dependencies for both backend and frontend
+        stage('Install dependencies') {
+            steps {
+                script {
+                    try {
+                        sh 'cd LavoroBack && npm install'
+                        sh 'cd LavoroFront && npm install'
+                    } catch (error) {
+                        echo "Error installing dependencies: ${error}"
+                        currentBuild.result = 'FAILURE'
+                        error("Failed to install dependencies")
+                    }
+                }
+            }
+        }
+
+        // Stage 2: Run unit tests (Backend only)
+        stage('Unit Test') {
+            steps {
+                script {
+                    try {
+                        sh 'cd LavoroBack && npm test'
+                    } catch (error) {
+                        echo "Error running unit tests: ${error}"
+                        currentBuild.result = 'FAILURE'
+                        error("Unit tests failed")
+                    }
+                }
+            }
+        }
+
+        // Stage 3: Build application (Backend and Frontend)
+        stage('Build application') {
+            steps {
+                script {
+                    try {
+                        // Build backend
+                        sh 'cd LavoroBack && npm run build-dev || echo "No build-dev script found, skipping backend build"'
+                        
+                        // Build frontend
+                        sh 'cd LavoroFront && npm run build'
+                    } catch (error) {
+                        echo "Error building application: ${error}"
+                        currentBuild.result = 'FAILURE'
+                        error("Build failed")
+                    }
+                }
+            }
+        }
+
+        // Stage 4: SonarQube Analysis
+        stage('SonarQube Analysis') {
+            steps {
+                script {
+                    try {
+                        def scannerHome = tool 'scanner' // Assurez-vous que le scanner SonarQube est configuré dans Jenkins
+                        withSonarQubeEnv {
+                            sh "${scannerHome}/bin/sonar-scanner"
+                        }
+                    } catch (error) {
+                        echo "Error during SonarQube analysis: ${error}"
+                        currentBuild.result = 'FAILURE'
+                        error("SonarQube analysis failed")
+                    }
+                }
+            }
+        }
+
+        // Stage 5: Building Docker images (node and mongo)
+        stage('Building Docker images') {
+            steps {
+                script {
+                    try {
+                        sh 'docker-compose build'
+                    } catch (error) {
+                        echo "Error building Docker images: ${error}"
+                        currentBuild.result = 'FAILURE'
+                        error("Docker build failed")
+                    }
+                }
+            }
+        }
+
+        // Stage 6: Deploy to Nexus
+        stage('Deploy to Nexus') {
+            steps {
+                script {
+                        docker.withRegistry("http://"+registry, registryCredentials) {
+                            sh "docker push $registry/nodemongoapp:5.0"
+                        }
+                   
+                }
+            }
+        }
+
+   
+    
+    } // Fin du bloc stages
+
+    // Gestion des échecs
+    post {
+        failure {
+            echo "Pipeline failed. Check the logs for more details."
+        }
+        success {
+            echo "Pipeline succeeded. Deployment completed."
+        }
+    }
+} // Fin du pipeline
