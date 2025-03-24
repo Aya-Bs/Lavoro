@@ -11,6 +11,8 @@ router.get('/getProjectById/:id', ProjectController.getProjectById);
 router.get('/getProjectByName', ProjectController.getProjectByName);
 router.put('/updateProjects/:id', ProjectController.updateProjects);
 router.delete('/deleteProject/:id', ProjectController.deleteProject);
+router.get('/countProject', ProjectController.getProjectCount);
+
 
 router.get('/archived-projects', ProjectController.getAllArchivedProjects);
 

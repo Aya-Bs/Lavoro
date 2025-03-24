@@ -73,6 +73,15 @@ exports.deleteProject = async (req, res) => {
       res.status(500).json({ error: error.message });
   }
 }
+// Fonction pour compter les projets
+exports.getProjectCount = async (req, res) => {
+    try {
+        const count = await Project.countDocuments(); // Compte les projets
+        res.status(200).json({ count });
+    } catch (error) {
+        res.status(500).json({ message: 'Erreur serveur', error });
+    }
+};
 
 
 // Fonction pour récupérer le nombre de projets par statut
