@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import Swal from 'sweetalert2';
 
 export default function ProjectOverview(){
@@ -7,7 +7,8 @@ export default function ProjectOverview(){
   const [project, setProject] = useState(null); // State for project details
   const [history, setHistory] = useState([]); // State for project history
   const [loading, setLoading] = useState(true); // State for loading status
-
+    const navigate = useNavigate();
+  
   // Fetch project details
   const fetchProjectDetails = async () => {
     try {
@@ -60,6 +61,48 @@ export default function ProjectOverview(){
   if (!project) {
     return <div>Project not found.</div>;
   }
+
+  const handleEditClick = (projectId) => {
+    navigate(`/updateProjects/${projectId}`); // Rediriger vers la page de mise à jour
+  };
+
+  const handleDeleteClick = async (projectId) => {
+    Swal.fire({
+      title: "Are you sure?",
+      text: "You won't be able to revert this!",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#d33",
+      cancelButtonColor: "#3085d6",
+      confirmButtonText: "Yes, delete it!",
+      cancelButtonText: "No, cancel!"
+    }).then(async (result) => {
+      if (result.isConfirmed) {
+        try {
+          const response = await fetch(`http://localhost:3000/project/deleteProject/${projectId}`, {
+            method: "DELETE",
+          });
+  
+          console.log("Response status:", response.status); // Log le statut de la réponse
+  
+          if (!response.ok) {
+            const errorData = await response.json().catch(() => null); // Gère les réponses non JSON
+            console.error("Error response:", errorData);
+            throw new Error("Failed to delete project");
+          }
+  
+          Swal.fire("Deleted!", "Your project has been deleted.", "success").then(() => {
+            setProject(null); // Met à jour l'état pour indiquer que le projet a été supprimé
+            Navigate('/listPro'); // Redirige vers la liste des projets
+          });
+  
+        } catch (error) {
+          console.error("Error deleting project:", error);
+          Swal.fire("Error!", "There was an issue deleting the project.", "error");
+        }
+      }
+    });
+  };
 
     return (
         <>
@@ -193,10 +236,15 @@ export default function ProjectOverview(){
               <div className="card-header justify-content-between">
                 <div className="card-title">Project Details</div>
                 <div>
-                <a href="/createPro" className="btn btn-sm btn-primary btn-wave">
-                  <i className="ri-trash-line align-middle me-1 fw-medium" />
-                  Delete
-                </a> 
+                <button
+                                className="btn btn-success btn-sm"
+                                onClick={() => handleEditClick(project._id)}
+                              >
+                                <i className="ri-pencil-line me-1"></i> Edit
+                              </button>
+                <button className="btn btn-danger btn-sm" onClick={() => handleDeleteClick(project._id)}>
+                  <i className="ri-delete-bin-6-line me-1"></i> Delete
+                              </button>
                 <a href="javascript:void(0);" className="btn btn-sm btn-primary1 btn-wave">
                   <i className="ri-archive-line align-middle fw-medium me-1" />
                   Archieve
