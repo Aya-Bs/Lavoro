@@ -2,12 +2,12 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useParams, useNavigate } from 'react-router-dom';
 import Swal from "sweetalert2";
-import { FaClipboardList, FaDollarSign, FaCalendarAlt, FaUser, FaTasks, FaClipboardCheck } from 'react-icons/fa';
+import { FaClipboardList, FaDollarSign, FaCalendarAlt, FaUser, FaTasks, FaClipboardCheck, FaSave, FaArrowLeft } from 'react-icons/fa';
 import 'bootstrap/dist/css/bootstrap.min.css';
 
 const UpdateProject = () => {
-  const { id } = useParams(); // Récupérer l'ID du projet depuis l'URL
-  const navigate = useNavigate(); // Remplacer useHistory par useNavigate
+  const { id } = useParams();
+  const navigate = useNavigate();
 
   const [project, setProject] = useState({
     name: '',
@@ -20,7 +20,6 @@ const UpdateProject = () => {
     endDate: '',
   });
 
-  // Charger les données du projet à mettre à jour
   useEffect(() => {
     const fetchProject = async () => {
       try {
@@ -79,7 +78,7 @@ const UpdateProject = () => {
           confirmButtonColor: "#3085d6",
           confirmButtonText: "OK"
         }).then(() => {
-          navigate(`/overviewPro/${id}`); // Redirection après confirmation
+          navigate(`/overviewPro/${id}`);
         });
       }
     } catch (error) {
@@ -94,110 +93,232 @@ const UpdateProject = () => {
     }
   };
 
-  
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setProject(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
 
   return (
-    <div className="container mt-5">
-      <div className="card shadow-lg border-0">
-        <div className="card-header bg-dark text-white text-center">
-          <h2 className="mb-0">Update Project</h2>
-        </div>
-        <div className="card-body">
-          <form onSubmit={handleSubmit}>
-            <div className="row">
-              <div className="col-md-6 mb-3">
-                <label className="form-label text-dark"><FaClipboardList className="me-2" /> Project Name</label>
-                <input
-                  type="text"
-                  value={project.name}
-                  onChange={(e) => setProject({ ...project, name: e.target.value })}
-                  className="form-control border-dark"
-                  required
-                />
-              </div>
-              <div className="col-md-6 mb-3">
-                <label className="form-label text-dark"><FaUser className="me-2" /> Team Manager</label>
-                <input
-                  type="text"
-                  value={project.teamManager}
-                  onChange={(e) => setProject({ ...project, teamManager: e.target.value })}
-                  className="form-control border-dark"
-                />
-              </div>
+    <div className="container py-5">
+      <div className="row justify-content-center">
+        <div className="col-lg-8">
+          <div className="card shadow-sm border-0 rounded-4 overflow-hidden">
+            <div className="card-header bg-gradient-dark text-white py-4">
+              <h2 className="h4 mb-0 text-center fw-bold">
+                <FaClipboardList className="me-2" />
+                Update Project
+              </h2>
             </div>
+            <div className="card-body p-5">
+              <form onSubmit={handleSubmit}>
+                <div className="row g-4">
+                  <div className="col-md-6">
+                    <div className="form-floating">
+                      <input
+                        type="text"
+                        name="name"
+                        value={project.name}
+                        onChange={handleChange}
+                        className="form-control rounded-3"
+                        id="projectName"
+                        placeholder="Project Name"
+                        required
+                      />
+                      <label htmlFor="projectName" className="text-muted">
+                        <FaClipboardList className="me-2" />
+                        Project Name
+                      </label>
+                    </div>
+                  </div>
 
-            <div className="mb-3">
-              <label className="form-label text-dark"><FaTasks className="me-2" /> Description</label>
-              <textarea
-                value={project.description}
-                onChange={(e) => setProject({ ...project, description: e.target.value })}
-                className="form-control border-dark"
-                rows="3"
-              />
+                  <div className="col-md-6">
+                    <div className="form-floating">
+                      <input
+                        type="text"
+                        name="teamManager"
+                        value={project.teamManager}
+                        onChange={handleChange}
+                        className="form-control rounded-3"
+                        id="teamManager"
+                        placeholder="Team Manager"
+                      />
+                      <label htmlFor="teamManager" className="text-muted">
+                        <FaUser className="me-2" />
+                        Team Manager
+                      </label>
+                    </div>
+                  </div>
+
+                  <div className="col-12">
+                    <div className="form-floating">
+                      <textarea
+                        name="description"
+                        value={project.description}
+                        onChange={handleChange}
+                        className="form-control rounded-3"
+                        id="description"
+                        placeholder="Description"
+                        style={{ height: '120px' }}
+                      />
+                      <label htmlFor="description" className="text-muted">
+                        <FaTasks className="me-2" />
+                        Project Description
+                      </label>
+                    </div>
+                  </div>
+
+                  <div className="col-md-4">
+                    <div className="form-floating">
+                      <input
+                        type="number"
+                        name="budget"
+                        value={project.budget}
+                        onChange={handleChange}
+                        className="form-control rounded-3"
+                        id="budget"
+                        placeholder="Budget"
+                      />
+                      <label htmlFor="budget" className="text-muted">
+                        <FaDollarSign className="me-2" />
+                        Budget ($)
+                      </label>
+                    </div>
+                  </div>
+
+                  <div className="col-md-4">
+                    <div className="form-floating">
+                      <select
+                        name="status"
+                        value={project.status}
+                        onChange={handleChange}
+                        className="form-control rounded-3"
+                        id="status"
+                      >
+                        <option value="Not Started">Not Started</option>
+                        <option value="In Progress">In Progress</option>
+                        <option value="Completed">Completed</option>
+                        <option value="Archived">Archived</option>
+                      </select>
+                      <label htmlFor="status" className="text-muted">
+                        <FaClipboardCheck className="me-2" />
+                        Status
+                      </label>
+                    </div>
+                  </div>
+
+                  <div className="col-md-4">
+                    <div className="form-floating">
+                      <select
+                        name="riskLevel"
+                        value={project.riskLevel}
+                        onChange={handleChange}
+                        className="form-control rounded-3"
+                        id="riskLevel"
+                      >
+                        <option value="Low">Low</option>
+                        <option value="Medium">Medium</option>
+                        <option value="High">High</option>
+                      </select>
+                      <label htmlFor="riskLevel" className="text-muted">
+                        <FaClipboardCheck className="me-2" />
+                        Risk Level
+                      </label>
+                    </div>
+                  </div>
+
+                  <div className="col-md-6">
+                    <div className="form-floating">
+                      <input
+                        type="date"
+                        name="startDate"
+                        value={project.startDate}
+                        onChange={handleChange}
+                        className="form-control rounded-3"
+                        id="startDate"
+                        required
+                      />
+                      <label htmlFor="startDate" className="text-muted">
+                        <FaCalendarAlt className="me-2" />
+                        Start Date
+                      </label>
+                    </div>
+                  </div>
+
+                  <div className="col-md-6">
+                    <div className="form-floating">
+                      <input
+                        type="date"
+                        name="endDate"
+                        value={project.endDate}
+                        onChange={handleChange}
+                        className="form-control rounded-3"
+                        id="endDate"
+                        required
+                      />
+                      <label htmlFor="endDate" className="text-muted">
+                        <FaCalendarAlt className="me-2" />
+                        End Date
+                      </label>
+                    </div>
+                  </div>
+
+                  <div className="col-12 mt-4 d-flex justify-content-between">
+                    <button
+                      type="button"
+                      onClick={() => navigate(-1)}
+                      className="btn btn-outline-secondary rounded-pill px-4 py-2 fw-bold"
+                      style={{
+                        transition: 'all 0.3s ease',
+                        borderWidth: '2px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        minWidth: '120px'
+                      }}
+                      onMouseEnter={(e) => {
+                        e.target.style.transform = 'translateX(-3px)';
+                        e.target.style.backgroundColor = 'rgba(108, 117, 125, 0.1)';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.target.style.transform = 'translateX(0)';
+                        e.target.style.backgroundColor = 'transparent';
+                      }}
+                    >
+                      <FaArrowLeft className="me-2" />
+                      Back
+                    </button>
+
+                    <button
+                      type="submit"
+                      className="btn btn-primary rounded-pill px-4 py-2 fw-bold"
+                      style={{
+                        background: 'linear-gradient(135deg, #3a7bd5, #00d2ff)',
+                        border: 'none',
+                        transition: 'all 0.3s ease',
+                        display: 'flex',
+                        alignItems: 'center',
+                        minWidth: '160px',
+                        justifyContent: 'center'
+                      }}
+                      onMouseEnter={(e) => {
+                        e.target.style.transform = 'translateY(-2px)';
+                        e.target.style.boxShadow = '0 6px 12px rgba(0, 0, 0, 0.15)';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.target.style.transform = 'translateY(0)';
+                        e.target.style.boxShadow = 'none';
+                      }}
+                    >
+                      <FaSave className="me-2" />
+                      Update Project
+                    </button>
+                  </div>
+                </div>
+              </form>
             </div>
-
-            <div className="row">
-              <div className="col-md-4 mb-3">
-                <label className="form-label text-dark"><FaDollarSign className="me-2" /> Budget</label>
-                <input
-                  type="number"
-                  value={project.budget}
-                  onChange={(e) => setProject({ ...project, budget: e.target.value })}
-                  className="form-control border-dark"
-                />
-              </div>
-              <div className="col-md-4 mb-3">
-                <label className="form-label text-dark"><FaClipboardCheck className="me-2" /> Status</label>
-                <select
-                  value={project.status}
-                  onChange={(e) => setProject({ ...project, status: e.target.value })}
-                  className="form-control border-dark"
-                >
-                  <option value="Not Started">Not Started</option>
-                  <option value="In Progress">In Progress</option>
-                  <option value="Completed">Completed</option>
-                  <option value="Archived">Archived</option>
-                </select>
-              </div>
-              <div className="col-md-4 mb-3">
-                <label className="form-label text-dark"><FaClipboardCheck className="me-2" /> Risk Level</label>
-                <select
-                  value={project.riskLevel}
-                  onChange={(e) => setProject({ ...project, riskLevel: e.target.value })}
-                  className="form-control border-dark"
-                >
-                  <option value="Low">Low</option>
-                  <option value="Medium">Medium</option>
-                  <option value="High">High</option>
-                </select>
-              </div>
-            </div>
-
-            <div className="row">
-              <div className="col-md-6 mb-3">
-                <label className="form-label text-dark"><FaCalendarAlt className="me-2" /> Start Date</label>
-                <input
-                  type="date"
-                  value={project.startDate}
-                  onChange={(e) => setProject({ ...project, startDate: e.target.value })}
-                  className="form-control border-dark"
-                  required
-                />
-              </div>
-              <div className="col-md-6 mb-3">
-                <label className="form-label text-dark"><FaCalendarAlt className="me-2" /> End Date</label>
-                <input
-                  type="date"
-                  value={project.endDate}
-                  onChange={(e) => setProject({ ...project, endDate: e.target.value })}
-                  className="form-control border-dark"
-                  required
-                />
-              </div>
-            </div>
-
-            <button type="submit" className="btn btn-primary w-100 text-white">Update Project</button>
-          </form>
+          </div>
         </div>
       </div>
     </div>

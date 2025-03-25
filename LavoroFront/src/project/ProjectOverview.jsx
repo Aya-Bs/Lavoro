@@ -7,6 +7,8 @@ export default function ProjectOverview(){
   const [project, setProject] = useState(null); // State for project details
   const [history, setHistory] = useState([]); // State for project history
   const [loading, setLoading] = useState(true); // State for loading status
+  const [totalProject, setTotalProject] = useState(0);
+
     const navigate = useNavigate();
   
   // Fetch project details
@@ -41,8 +43,12 @@ export default function ProjectOverview(){
     }
   };
 
+  
+
   // Fetch data when the component mounts
   useEffect(() => {
+
+
     const fetchData = async () => {
       await fetchProjectDetails();
       await fetchProjectHistory();
@@ -93,7 +99,7 @@ export default function ProjectOverview(){
   
           Swal.fire("Deleted!", "Your project has been deleted.", "success").then(() => {
             setProject(null); // Met à jour l'état pour indiquer que le projet a été supprimé
-            Navigate('/listPro'); // Redirige vers la liste des projets
+            navigate('/listPro'); // Redirige vers la liste des projets
           });
   
         } catch (error) {
@@ -182,11 +188,11 @@ export default function ProjectOverview(){
                         <span className="text-muted d-block mb-1 text-nowrap">
                           Budget
                         </span>
-                        <h4 className="fw-medium mb-0">50.0 DT</h4>
+                        <h4 className="fw-medium mb-0">{project.budget} DT</h4>
                       </div>
                       <div className="lh-1">
                         <span className="avatar avatar-md avatar-rounded bg-primary2">
-                        <i class="ri-exchange-dollar-line fs-30"></i>                        </span>
+                        <i class="ri-exchange-dollar-line fs-30"></i></span>
                       </div>
                     </div>
                     <div className="text-muted fs-13">
@@ -200,32 +206,7 @@ export default function ProjectOverview(){
                 </div>
                 
               </div>
-              <div className="col-xxl-3 col-xl-6">
-                <div className="card custom-card overflow-hidden main-content-card">
-                  <div className="card-body">
-                    <div className="d-flex align-items-start justify-content-between mb-2 gap-1 flex-xxl-nowrap flex-wrap">
-                      <div>
-                        <span className="text-muted d-block mb-1 text-nowrap">
-                          Estimated Duration
-                        </span>
-                        <h4 className="fw-medium mb-0">350 Jours</h4>
-                      </div>
-                      <div className="lh-1">
-                        <span className="avatar avatar-md avatar-rounded bg-primary3">
-                          <i className="ri-bar-chart-2-line fs-5" />
-                        </span>
-                      </div>
-                    </div>
-                    <div className="text-muted fs-13">
-                      Decreased By{" "}
-                      <span className="text-danger">
-                        0.74%
-                        <i className="ri-arrow-down-line fs-16" />
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </div>
+             
               </div>
               </div>
               </div>
@@ -303,10 +284,12 @@ export default function ProjectOverview(){
                     </span>
                     <div>
                       <span className="d-block fs-14 fw-medium">
-                        Amith Catzem
+                      {project.teamManager}
                       </span>
                       <span className="fs-12 text-muted">Project Manager</span>
                     </div>
+
+
                   </div>
                 </div>
                 <div className="mb-4">

@@ -7,7 +7,6 @@ import * as yup from "yup";
 import { FaRobot, FaDollarSign, FaCalendarAlt, FaUser, FaTasks, FaClipboardList } from 'react-icons/fa';
 import 'bootstrap/dist/css/bootstrap.min.css';
 
-// 🎯 Schéma de validation avec Yup
 const schema = yup.object().shape({
   name: yup.string().min(3, "Project name must be at least 3 characters").required("Project name is required"),
   description: yup.string().min(10, "Description must be at least 10 characters").required("Description is required"),
@@ -22,7 +21,6 @@ const schema = yup.object().shape({
 const CreateProject = () => {
   const [isIARemoved, setIsIARemoved] = useState(false);
 
-  // 🌟 useForm pour gérer les erreurs et soumissions
   const { register, handleSubmit, formState: { errors }, reset } = useForm({
     resolver: yupResolver(schema),
   });
@@ -39,7 +37,7 @@ const CreateProject = () => {
 
       if (response.status === 201) {
         Swal.fire("Success!", "Project created successfully!", "success");
-        reset(); // Réinitialiser le formulaire
+        reset();
         setIsIARemoved(true);
       }
     } catch (error) {
@@ -48,82 +46,229 @@ const CreateProject = () => {
   };
 
   return (
-    <div className="container mt-5">
-      <div className="card shadow-lg border-0">
-        <div className="card-header bg-dark text-white text-center">
-          <h2 className="mb-0">Create a New Project</h2>
-        </div>
-        <div className="card-body">
-          <form onSubmit={handleSubmit(onSubmit)}>
-            <div className="row">
-              <div className="col-md-6 mb-3">
-                <label className="form-label text-dark"><FaClipboardList className="me-2" /> Project Name</label>
-                <input {...register("name")} className="form-control border-dark" />
-                <p className="text-danger">{errors.name?.message}</p>
-              </div>
-              <div className="col-md-6 mb-3">
-                <label className="form-label text-dark"><FaUser className="me-2" /> Team Manager</label>
-                <input {...register("teamManager")} className="form-control border-dark" />
-                <p className="text-danger">{errors.teamManager?.message}</p>
-              </div>
+    <div className="container py-5">
+      <div className="row justify-content-center">
+        <div className="col-lg-8">
+          <div className="card shadow-sm border-0 rounded-4 overflow-hidden">
+            <div className="card-header bg-gradient-primary text-white py-4">
+              <h2 className="h4 mb-0 text-center fw-bold">
+                <FaClipboardList className="me-2" />
+                Create a New Project
+              </h2>
             </div>
-
-            <div className="mb-3">
-              <label className="form-label text-dark"><FaTasks className="me-2" /> Description</label>
-              <textarea {...register("description")} className="form-control border-dark" rows="3" />
-              <p className="text-danger">{errors.description?.message}</p>
+            <div className="card-body p-5">
+              <form onSubmit={handleSubmit(onSubmit)}>
+                <div className="row g-4">
+                  <div className="col-md-6">
+                    <div className="form-floating">
+                      <input 
+                        {...register("name")} 
+                        className={`form-control rounded-3 ${errors.name ? 'is-invalid' : ''}`}
+                        placeholder="Project Name"
+                        id="projectName"
+                      />
+                      <label htmlFor="projectName" className="text-muted">
+                        <FaClipboardList className="me-2" />
+                        Project Name
+                      </label>
+                      {errors.name && (
+                        <div className="invalid-feedback d-block">
+                          {errors.name.message}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  
+                  <div className="col-md-6">
+                    <div className="form-floating">
+                      <input 
+                        {...register("teamManager")} 
+                        className={`form-control rounded-3 ${errors.teamManager ? 'is-invalid' : ''}`}
+                        placeholder="Team Manager"
+                        id="teamManager"
+                      />
+                      <label htmlFor="teamManager" className="text-muted">
+                        <FaUser className="me-2" />
+                        Team Manager
+                      </label>
+                      {errors.teamManager && (
+                        <div className="invalid-feedback d-block">
+                          {errors.teamManager.message}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  
+                  <div className="col-12">
+                    <div className="form-floating">
+                      <textarea 
+                        {...register("description")} 
+                        className={`form-control rounded-3 ${errors.description ? 'is-invalid' : ''}`}
+                        placeholder="Description"
+                        id="description"
+                        style={{ height: '120px' }}
+                      />
+                      <label htmlFor="description" className="text-muted">
+                        <FaTasks className="me-2" />
+                        Project Description
+                      </label>
+                      {errors.description && (
+                        <div className="invalid-feedback d-block">
+                          {errors.description.message}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  
+                  <div className="col-md-4">
+                    <div className="form-floating">
+                      <input 
+                        type="number" 
+                        {...register("budget")} 
+                        className={`form-control rounded-3 ${errors.budget ? 'is-invalid' : ''}`}
+                        placeholder="Budget"
+                        id="budget"
+                      />
+                      <label htmlFor="budget" className="text-muted">
+                        <FaDollarSign className="me-2" />
+                        Budget ($)
+                      </label>
+                      {errors.budget && (
+                        <div className="invalid-feedback d-block">
+                          {errors.budget.message}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  
+                  <div className="col-md-4">
+                    <div className="form-floating">
+                      <select 
+                        {...register("status")} 
+                        className="form-control rounded-3"
+                        id="status"
+                      >
+                        <option value="Not Started">Not Started</option>
+                        <option value="In Progress">In Progress</option>
+                        <option value="Completed">Completed</option>
+                        <option value="Archived">Archived</option>
+                      </select>
+                      <label htmlFor="status" className="text-muted">
+                        <FaClipboardList className="me-2" />
+                        Status
+                      </label>
+                    </div>
+                  </div>
+                  
+                  <div className="col-md-4">
+                    <div className="form-floating">
+                      <select 
+                        {...register("riskLevel")} 
+                        className="form-control rounded-3"
+                        id="riskLevel"
+                      >
+                        <option value="Low">Low</option>
+                        <option value="Medium">Medium</option>
+                        <option value="High">High</option>
+                      </select>
+                      <label htmlFor="riskLevel" className="text-muted">
+                        <FaClipboardList className="me-2" />
+                        Risk Level
+                      </label>
+                    </div>
+                  </div>
+                  
+                  <div className="col-md-6">
+                    <div className="form-floating">
+                      <input 
+                        type="date" 
+                        {...register("startDate")} 
+                        className={`form-control rounded-3 ${errors.startDate ? 'is-invalid' : ''}`}
+                        id="startDate"
+                      />
+                      <label htmlFor="startDate" className="text-muted">
+                        <FaCalendarAlt className="me-2" />
+                        Start Date
+                      </label>
+                      {errors.startDate && (
+                        <div className="invalid-feedback d-block">
+                          {errors.startDate.message}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  
+                  <div className="col-md-6">
+                    <div className="form-floating">
+                      <input 
+                        type="date" 
+                        {...register("endDate")} 
+                        className={`form-control rounded-3 ${errors.endDate ? 'is-invalid' : ''}`}
+                        id="endDate"
+                      />
+                      <label htmlFor="endDate" className="text-muted">
+                        <FaCalendarAlt className="me-2" />
+                        End Date
+                      </label>
+                      {errors.endDate && (
+                        <div className="invalid-feedback d-block">
+                          {errors.endDate.message}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  
+<div className="col-12 mt-4 d-flex flex-column gap-3">
+  <button 
+    type="submit" 
+    className="btn btn-primary rounded-pill py-3 fw-bold shadow-sm"
+    style={{
+      background: 'linear-gradient(135deg, #3a7bd5, #00d2ff)',
+      border: 'none',
+      letterSpacing: '0.5px',
+      transition: 'all 0.3s ease'
+    }}
+    onMouseEnter={(e) => {
+      e.target.style.transform = 'translateY(-2px)';
+      e.target.style.boxShadow = '0 6px 12px rgba(0, 0, 0, 0.15)';
+    }}
+    onMouseLeave={(e) => {
+      e.target.style.transform = 'translateY(0)';
+      e.target.style.boxShadow = '0 4px 8px rgba(0, 0, 0, 0.1)';
+    }}
+  >
+    <FaClipboardList className="me-2" />
+    Create Project
+  </button>
+  
+  {!isIARemoved && (
+    <button
+      type="button"
+      className="btn btn-outline-primary rounded-pill py-3 fw-bold"
+      style={{
+        letterSpacing: '0.5px',
+        transition: 'all 0.3s ease',
+        borderWidth: '2px'
+      }}
+      onClick={() => setIsIARemoved(true)}
+      onMouseEnter={(e) => {
+        e.target.style.transform = 'translateY(-2px)';
+        e.target.style.backgroundColor = 'rgba(58, 123, 213, 0.1)';
+      }}
+      onMouseLeave={(e) => {
+        e.target.style.transform = 'translateY(0)';
+        e.target.style.backgroundColor = 'transparent';
+      }}
+    >
+      <FaRobot className="me-2" /> 
+      Created with AI
+    </button>
+  )}
+</div>
+                </div>
+              </form>
             </div>
-
-            <div className="row">
-              <div className="col-md-4 mb-3">
-                <label className="form-label text-dark"><FaDollarSign className="me-2" /> Budget</label>
-                <input type="number" {...register("budget")} className="form-control border-dark" />
-                <p className="text-danger">{errors.budget?.message}</p>
-              </div>
-              <div className="col-md-4 mb-3">
-                <label className="form-label text-dark"><FaClipboardList className="me-2" /> Status</label>
-                <select {...register("status")} className="form-control border-dark">
-                  <option value="Not Started">Not Started</option>
-                  <option value="In Progress">In Progress</option>
-                  <option value="Completed">Completed</option>
-                  <option value="Archived">Archived</option>
-                </select>
-              </div>
-              <div className="col-md-4 mb-3">
-                <label className="form-label text-dark"><FaClipboardList className="me-2" /> Risk Level</label>
-                <select {...register("riskLevel")} className="form-control border-dark">
-                  <option value="Low">Low</option>
-                  <option value="Medium">Medium</option>
-                  <option value="High">High</option>
-                </select>
-              </div>
-            </div>
-
-            <div className="row">
-              <div className="col-md-6 mb-3">
-                <label className="form-label text-dark"><FaCalendarAlt className="me-2" /> Start Date</label>
-                <input type="date" {...register("startDate")} className="form-control border-dark" />
-                <p className="text-danger">{errors.startDate?.message}</p>
-              </div>
-              <div className="col-md-6 mb-3">
-                <label className="form-label text-dark"><FaCalendarAlt className="me-2" /> End Date</label>
-                <input type="date" {...register("endDate")} className="form-control border-dark" />
-                <p className="text-danger">{errors.endDate?.message}</p>
-              </div>
-            </div>
-
-            <button type="submit" className="btn btn-primary w-100 text-white">Create Project</button>
-
-            {!isIARemoved && (
-              <button
-                type="button"
-                className="btn btn-outline-secondary w-100 mt-3"
-                onClick={() => setIsIARemoved(true)}
-              >
-                <FaRobot className="me-2" /> Created with IA
-              </button>
-            )}
-          </form>
+          </div>
         </div>
       </div>
     </div>
