@@ -1,278 +1,576 @@
-import React, { useState } from 'react';
-import axios from 'axios';
-import Swal from "sweetalert2";
-import { useForm } from "react-hook-form";
-import { yupResolver } from "@hookform/resolvers/yup";
-import * as yup from "yup";
-import { FaRobot, FaDollarSign, FaCalendarAlt, FaUser, FaTasks, FaClipboardList } from 'react-icons/fa';
-import 'bootstrap/dist/css/bootstrap.min.css';
+import React, { useState, useEffect, useRef } from 'react';
+import flatpickr from 'flatpickr';
+import 'flatpickr/dist/flatpickr.min.css';
+import Choices from 'choices.js';
+import 'choices.js/public/assets/styles/choices.min.css';
+import Quill from 'quill';
+import 'quill/dist/quill.snow.css';
+import { FilePond, registerPlugin } from 'react-filepond';
+import FilePondPluginImagePreview from 'filepond-plugin-image-preview';
+import FilePondPluginImageExifOrientation from 'filepond-plugin-image-exif-orientation';
+import FilePondPluginFileValidateSize from 'filepond-plugin-file-validate-size';
+import FilePondPluginFileEncode from 'filepond-plugin-file-encode';
+import FilePondPluginImageEdit from 'filepond-plugin-image-edit';
+import FilePondPluginFileValidateType from 'filepond-plugin-file-validate-type';
+import FilePondPluginImageCrop from 'filepond-plugin-image-crop';
+import FilePondPluginImageResize from 'filepond-plugin-image-resize';
+import FilePondPluginImageTransform from 'filepond-plugin-image-transform';
+import 'filepond-plugin-image-preview/dist/filepond-plugin-image-preview.css';
+import 'filepond/dist/filepond.min.css';
+import axios from "axios";
+import { useNavigate } from "react-router-dom";
+import Swal from 'sweetalert2';
 
-const schema = yup.object().shape({
-  name: yup.string().min(3, "Project name must be at least 3 characters").required("Project name is required"),
-  description: yup.string().min(10, "Description must be at least 10 characters").required("Description is required"),
-  budget: yup.number().min(0, "Budget must be a positive number").required("Budget is required"),
-  teamManager: yup.string().required("Team manager is required"),
-  startDate: yup.date().required("Start date is required"),
-  endDate: yup.date()
-    .required("End date is required")
-    .min(yup.ref("startDate"), "End date cannot be before start date"),
-});
+// Register FilePond plugins
+registerPlugin(
+  FilePondPluginImagePreview,
+  FilePondPluginImageExifOrientation,
+  FilePondPluginFileValidateSize,
+  FilePondPluginFileEncode,
+  FilePondPluginImageEdit,
+  FilePondPluginFileValidateType,
+  FilePondPluginImageCrop,
+  FilePondPluginImageResize,
+  FilePondPluginImageTransform
+);
 
-const CreateProject = () => {
-  const [isIARemoved, setIsIARemoved] = useState(false);
-
-  const { register, handleSubmit, formState: { errors }, reset } = useForm({
-    resolver: yupResolver(schema),
+export default function CreateProject() {
+  const [searchTerm, setSearchTerm] = useState(""); // Terme de recherche
+  const [teamManagers, setTeamManagers] = useState([]); // Liste des Team Managers
+  const [selectedManager, setSelectedManager] = useState(null); // Team Manager sélectionné
+  const [message, setMessage] = useState(""); // Message dynamique
+  const [messageColor, setMessageColor] = useState("black"); // Couleur du message
+  const [loading, setLoading] = useState(true); // État de chargement
+  const [user, setUser] = useState(null); // Informations de l'utilisateur connecté
+  const navigate = useNavigate(); // Hook pour la navigation
+  const pondRef = useRef(null); // Ref for FilePond instance
+  const [projectData, setProjectData] = useState({
+    name: '',
+    description: '',
+    budget: 0,
+    client: '',
+    start_date: '',
+    end_date: '',
+    status: 'Not Started',
+    risk_level: 'Medium',
+    tags: ''
   });
+  
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setProjectData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
 
-  const onSubmit = async (data) => {
-    try {
-      const projectData = {
-        ...data,
-        start_date: new Date(data.startDate).toISOString(),
-        end_date: new Date(data.endDate).toISOString(),
-      };
+  const handleDateChange = (name, dateString) => {
+    setProjectData(prev => ({
+      ...prev,
+      [name]: dateString
+    }));
+  };
+  const validateProject = () => {
+    if (!projectData.name.trim()) {
+      setMessage({ text: 'Le nom du projet est requis', color: 'red' });
+      return false;
+    }
 
-      const response = await axios.post('http://localhost:3000/project/createProject', projectData);
-
-      if (response.status === 201) {
-        Swal.fire("Success!", "Project created successfully!", "success");
-        reset();
-        setIsIARemoved(true);
+    if (projectData.start_date && projectData.end_date) {
+      const start = new Date(projectData.start_date);
+      const end = new Date(projectData.end_date);
+      if (end < start) {
+        setMessage({ text: 'La date de fin ne peut pas être avant la date de début', color: 'red' });
+        return false;
       }
+    }
+
+    return true;
+  };
+
+  const handleCreateProject = async (e) => {
+    e.preventDefault();
+    if (!validateProject()) return;
+  
+    try {
+      setLoading(true);
+      
+      const dataToSend = {
+        ...projectData,
+        budget: Number(projectData.budget),
+        start_date: projectData.start_date ? new Date(projectData.start_date) : null,
+        end_date: projectData.end_date ? new Date(projectData.end_date) : null,
+        ...(selectedManager && { 
+          manager_id: selectedManager._id,
+          teamManager: `${selectedManager.firstName} ${selectedManager.lastName}`
+        })
+      };
+  
+      const token = localStorage.getItem('token');
+      const response = await axios.post(
+        'http://localhost:3000/project/createProject',
+        dataToSend,
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+  
+      // Afficher SweetAlert
+      await Swal.fire({
+        title: 'Succès!',
+        text: 'Project created successfully',
+        icon: 'success',
+        confirmButtonText: 'OK',
+        timer: 2000,
+        timerProgressBar: true
+      });
+  
+      // Redirection après l'alerte
+      navigate('/ListPro');
+      
     } catch (error) {
-      Swal.fire("Error!", "There was an issue creating the project.", "error");
+      console.error('Error:', error);
+      Swal.fire({
+        title: 'Erreur!',
+        text: error.response?.data?.message || 'Error creating project',
+        icon: 'error',
+        confirmButtonText: 'OK'
+      });
+    } finally {
+      setLoading(false);
     }
   };
 
-  return (
-    <div className="container py-5">
-      <div className="row justify-content-center">
-        <div className="col-lg-8">
-          <div className="card shadow-sm border-0 rounded-4 overflow-hidden">
-            <div className="card-header bg-gradient-primary text-white py-4">
-              <h2 className="h4 mb-0 text-center fw-bold">
-                <FaClipboardList className="me-2" />
-                Create a New Project
-              </h2>
-            </div>
-            <div className="card-body p-5">
-              <form onSubmit={handleSubmit(onSubmit)}>
-                <div className="row g-4">
-                  <div className="col-md-6">
-                    <div className="form-floating">
-                      <input 
-                        {...register("name")} 
-                        className={`form-control rounded-3 ${errors.name ? 'is-invalid' : ''}`}
-                        placeholder="Project Name"
-                        id="projectName"
-                      />
-                      <label htmlFor="projectName" className="text-muted">
-                        <FaClipboardList className="me-2" />
-                        Project Name
-                      </label>
-                      {errors.name && (
-                        <div className="invalid-feedback d-block">
-                          {errors.name.message}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                  
-                  <div className="col-md-6">
-                    <div className="form-floating">
-                      <input 
-                        {...register("teamManager")} 
-                        className={`form-control rounded-3 ${errors.teamManager ? 'is-invalid' : ''}`}
-                        placeholder="Team Manager"
-                        id="teamManager"
-                      />
-                      <label htmlFor="teamManager" className="text-muted">
-                        <FaUser className="me-2" />
-                        Team Manager
-                      </label>
-                      {errors.teamManager && (
-                        <div className="invalid-feedback d-block">
-                          {errors.teamManager.message}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                  
-                  <div className="col-12">
-                    <div className="form-floating">
-                      <textarea 
-                        {...register("description")} 
-                        className={`form-control rounded-3 ${errors.description ? 'is-invalid' : ''}`}
-                        placeholder="Description"
-                        id="description"
-                        style={{ height: '120px' }}
-                      />
-                      <label htmlFor="description" className="text-muted">
-                        <FaTasks className="me-2" />
-                        Project Description
-                      </label>
-                      {errors.description && (
-                        <div className="invalid-feedback d-block">
-                          {errors.description.message}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                  
-                  <div className="col-md-4">
-                    <div className="form-floating">
-                      <input 
-                        type="number" 
-                        {...register("budget")} 
-                        className={`form-control rounded-3 ${errors.budget ? 'is-invalid' : ''}`}
-                        placeholder="Budget"
-                        id="budget"
-                      />
-                      <label htmlFor="budget" className="text-muted">
-                        <FaDollarSign className="me-2" />
-                        Budget ($)
-                      </label>
-                      {errors.budget && (
-                        <div className="invalid-feedback d-block">
-                          {errors.budget.message}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                  
-                  <div className="col-md-4">
-                    <div className="form-floating">
-                      <select 
-                        {...register("status")} 
-                        className="form-control rounded-3"
-                        id="status"
-                      >
-                        <option value="Not Started">Not Started</option>
-                        <option value="In Progress">In Progress</option>
-                        <option value="Completed">Completed</option>
-                        <option value="Archived">Archived</option>
-                      </select>
-                      <label htmlFor="status" className="text-muted">
-                        <FaClipboardList className="me-2" />
-                        Status
-                      </label>
-                    </div>
-                  </div>
-                  
-                  <div className="col-md-4">
-                    <div className="form-floating">
-                      <select 
-                        {...register("riskLevel")} 
-                        className="form-control rounded-3"
-                        id="riskLevel"
-                      >
-                        <option value="Low">Low</option>
-                        <option value="Medium">Medium</option>
-                        <option value="High">High</option>
-                      </select>
-                      <label htmlFor="riskLevel" className="text-muted">
-                        <FaClipboardList className="me-2" />
-                        Risk Level
-                      </label>
-                    </div>
-                  </div>
-                  
-                  <div className="col-md-6">
-                    <div className="form-floating">
-                      <input 
-                        type="date" 
-                        {...register("startDate")} 
-                        className={`form-control rounded-3 ${errors.startDate ? 'is-invalid' : ''}`}
-                        id="startDate"
-                      />
-                      <label htmlFor="startDate" className="text-muted">
-                        <FaCalendarAlt className="me-2" />
-                        Start Date
-                      </label>
-                      {errors.startDate && (
-                        <div className="invalid-feedback d-block">
-                          {errors.startDate.message}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                  
-                  <div className="col-md-6">
-                    <div className="form-floating">
-                      <input 
-                        type="date" 
-                        {...register("endDate")} 
-                        className={`form-control rounded-3 ${errors.endDate ? 'is-invalid' : ''}`}
-                        id="endDate"
-                      />
-                      <label htmlFor="endDate" className="text-muted">
-                        <FaCalendarAlt className="me-2" />
-                        End Date
-                      </label>
-                      {errors.endDate && (
-                        <div className="invalid-feedback d-block">
-                          {errors.endDate.message}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                  
-<div className="col-12 mt-4 d-flex flex-column gap-3">
-  <button 
-    type="submit" 
-    className="btn btn-primary rounded-pill py-3 fw-bold shadow-sm"
-    style={{
-      background: 'linear-gradient(135deg, #3a7bd5, #00d2ff)',
-      border: 'none',
-      letterSpacing: '0.5px',
-      transition: 'all 0.3s ease'
-    }}
-    onMouseEnter={(e) => {
-      e.target.style.transform = 'translateY(-2px)';
-      e.target.style.boxShadow = '0 6px 12px rgba(0, 0, 0, 0.15)';
-    }}
-    onMouseLeave={(e) => {
-      e.target.style.transform = 'translateY(0)';
-      e.target.style.boxShadow = '0 4px 8px rgba(0, 0, 0, 0.1)';
-    }}
-  >
-    <FaClipboardList className="me-2" />
-    Create Project
-  </button>
+  // Fonction pour gérer les changements dans le champ de recherche
+  const handleInputChange = (e) => {
+    const value = e.target.value;
+    setSearchTerm(value);
+    setSelectedManager(null); // Réinitialiser la sélection
+    setMessage(""); // Réinitialiser le message
+
+    // Si le champ est vide, masquer la liste
+    if (value === "") {
+      setTeamManagers([]);
+    }
+  };
+
   
-  {!isIARemoved && (
-    <button
-      type="button"
-      className="btn btn-outline-primary rounded-pill py-3 fw-bold"
-      style={{
-        letterSpacing: '0.5px',
-        transition: 'all 0.3s ease',
-        borderWidth: '2px'
-      }}
-      onClick={() => setIsIARemoved(true)}
-      onMouseEnter={(e) => {
-        e.target.style.transform = 'translateY(-2px)';
-        e.target.style.backgroundColor = 'rgba(58, 123, 213, 0.1)';
-      }}
-      onMouseLeave={(e) => {
-        e.target.style.transform = 'translateY(0)';
-        e.target.style.backgroundColor = 'transparent';
-      }}
-    >
-      <FaRobot className="me-2" /> 
-      Created with AI
-    </button>
-  )}
-</div>
+  
+  
+
+  // Fonction pour sélectionner un Team Manager
+  const handleSelectManager = (manager) => {
+    setSelectedManager(manager);
+    setSearchTerm(`${manager.firstName} ${manager.lastName}`); // Mettre à jour le champ de texte avec le nom sélectionné
+    setTeamManagers([]); // Masquer la liste déroulante après la sélection
+  };
+
+  // Fonction pour rechercher les Team Managers
+  const searchTeamManagers = async (term) => {
+    try {
+      const response = await axios.get(`http://localhost:3000/users/getTeamManager?search=${term}`);
+      console.log("API Response:", response.data); // Log pour déboguer
+      const data = Array.isArray(response.data) ? response.data : [];
+      setTeamManagers(data);
+    } catch (error) {
+      console.error("Error fetching team managers:", error);
+      setTeamManagers([]); // Réinitialiser à un tableau vide en cas d'erreur
+    }
+  };
+
+  // Fonction pour vérifier si un Team Manager peut être affecté à un projet
+  const checkTeamManagerProjects = async (managerId) => {
+    try {
+      const response = await axios.get(`http://localhost:3000/project/checkTeamManagerProjects/${managerId}`);
+      setMessage(response.data.message);
+
+      // Définir la couleur du message en fonction de la disponibilité du Team Manager
+      if (response.data.message.includes("Vous pouvez affecter")) {
+        setMessageColor("#28a745"); // Message en vert si disponible
+      } else {
+        setMessageColor("#dc3545"); // Message en rouge si non disponible
+      }
+    } catch (error) {
+      console.error("Error checking team manager projects:", error);
+      setMessage("Une erreur s'est produite");
+      setMessageColor("#dc3545"); // Message en rouge en cas d'erreur
+    }
+  };
+
+  // Effet pour initialiser flatpickr, Choices, et Quill
+  useEffect(() => {
+    // Initialize flatpickr for date pickers
+    flatpickr("#startDate", {
+      enableTime: true,
+      dateFormat: "Y-m-d H:i",
+    });
+
+    flatpickr("#endDate", {
+      enableTime: true,
+      dateFormat: "Y-m-d H:i",
+    });
+
+    // Initialize Choices for multi-select
+    const assignedTeamMembers = document.querySelector('#assigned-team-members');
+    if (assignedTeamMembers) {
+      new Choices(assignedTeamMembers, {
+        allowHTML: true,
+        removeItemButton: true,
+      });
+    }
+
+    // Initialize Quill editor
+    const toolbarOptions = [
+      [{ 'header': [1, 2, 3, 4, 5, 6, false] }],
+      [{ 'font': [] }],
+      ['bold', 'italic', 'underline', 'strike'],
+      ['blockquote', 'code-block'],
+      [{ 'header': 1 }, { 'header': 2 }],
+      [{ 'list': 'ordered' }, { 'list': 'bullet' }],
+      [{ 'script': 'sub' }, { 'script': 'super' }],
+      [{ 'indent': '-1' }, { 'indent': '+1' }],
+      [{ 'direction': 'rtl' }],
+      [{ 'size': ['small', false, 'large', 'huge'] }],
+      [{ 'color': [] }, { 'background': [] }],
+      [{ 'align': [] }],
+      ['image', 'video'],
+      ['clean']
+    ];
+
+    // const quill = new Quill('#project-descriptioin-editor', {
+    //   modules: {
+    //     toolbar: toolbarOptions
+    //   },
+    //   theme: 'snow'
+    // });
+
+    // Initialize Choices for unique values input
+    const choicesTextUniqueValues = document.querySelector('#choices-text-unique-values');
+    if (choicesTextUniqueValues) {
+      new Choices(choicesTextUniqueValues, {
+        allowHTML: true,
+        paste: false,
+        duplicateItemsAllowed: false,
+        editItems: true,
+      });
+    }
+  }, []);
+
+  // Effet pour récupérer les informations de l'utilisateur
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      setLoading(false);
+    }, 5000); // 5 secondes de timeout
+
+    const fetchUserInfo = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        if (!token) {
+          throw new Error("No token found");
+        }
+
+        const response = await axios.get("http://localhost:3000/users/me", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+          withCredentials: true,
+        });
+
+        if (response.data) {
+          setUser(response.data);
+        } else {
+          navigate("/auth");
+        }
+      } catch (err) {
+        console.error("Error fetching user info:", err);
+        if (err.response?.status === 401) {
+          localStorage.removeItem("token");
+          navigate("/auth");
+        }
+      } finally {
+        clearTimeout(timeout); // Annule le timeout si la requête réussit
+        setLoading(false);
+      }
+    };
+
+    fetchUserInfo();
+
+    return () => clearTimeout(timeout); // Nettoie le timeout si le composant est démonté
+  }, [navigate]);
+
+  // Effet pour rechercher dynamiquement les Team Managers avec debounce
+  useEffect(() => {
+    const delayDebounceFn = setTimeout(() => {
+      if (searchTerm) {
+        searchTeamManagers(searchTerm);
+      } else {
+        setTeamManagers([]); // Réinitialiser la liste si le champ est vide
+      }
+    }, 300); // Délai de 300 ms
+
+    return () => clearTimeout(delayDebounceFn); // Nettoie le timeout si le composant est démonté ou si searchTerm change
+  }, [searchTerm]);
+
+  // Effet pour vérifier les projets du Team Manager sélectionné
+  useEffect(() => {
+    if (selectedManager) {
+      checkTeamManagerProjects(selectedManager._id);
+    }
+  }, [selectedManager]);
+
+  // Afficher un message de chargement si nécessaire
+  if (loading) {
+    return <div>Chargement en cours...</div>;
+  }
+
+  return (
+    <>
+      <div className="d-flex align-items-center justify-content-between page-header-breadcrumb flex-wrap gap-2">
+        <div>
+          <nav>
+            <ol className="breadcrumb mb-1">
+              <li className="breadcrumb-item">
+                <a href="#" onClick={(e) => e.preventDefault()}>
+                  Projects
+                </a>
+              </li>
+              <span className="mx-1">→</span>
+              <li className="breadcrumb-item active" aria-current="page">
+                Create Project
+              </li>
+            </ol>
+          </nav>
+          <h1 className="page-title fw-medium fs-18 mb-0">Create Project</h1>
+        </div>
+        <div className="btn-list">
+          <button className="btn btn-white btn-wave">
+            <i className="ri-filter-3-line align-middle me-1 lh-1" /> Filter
+          </button>
+          <button className="btn btn-primary btn-wave me-0">
+            <i className="ri-share-forward-line me-1" /> Share
+          </button>
+        </div>
+      </div>
+      <div className="row">
+        <div className="col-xl-12">
+          <div className="card custom-card">
+            <div className="card-header">
+              <div className="card-title">Create Project</div>
+            </div>
+            <div className="card-body">
+              <div className="row gy-3">
+                <div className="col-xl-4">
+                  <label htmlFor="input-label" className="form-label">
+                    Project Name :
+                  </label>
+                  <input
+            type="text"
+            className="form-control"
+            name="name"
+            value={projectData.name}
+            onChange={handleChange}
+            required
+          />
                 </div>
-              </form>
+                <div className="col-xl-4" style={{ position: "relative" }}>
+                  <label htmlFor="input-label11" className="form-label" style={{ color: "var(--text-color)" }}>
+                    Team Manager :
+                  </label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    id="input-label11"
+                    placeholder="Team Manager Name"
+                    value={searchTerm}
+                    onChange={handleInputChange} // Utiliser la fonction handleInputChange
+                    style={{
+                      backgroundColor: "var(--background-color)",
+                      color: "var(--text-color)",
+                    }}
+                  />
+
+                  {/* Liste déroulante des résultats de recherche */}
+                  {searchTerm && teamManagers.length > 0 && (
+                    <ul
+                      style={{
+                        position: "absolute",
+                        top: "100%",
+                        left: 0,
+                        right: 0,
+                        backgroundColor: "var(--background-color)",
+                        border: "1px solid var(--border-color)",
+                        borderRadius: "4px",
+                        boxShadow: "0 4px 8px rgba(96, 94, 94, 0.57)",
+                        zIndex: 1000,
+                        listStyle: "none",
+                        padding: 0,
+                        margin: 0,
+                        color: "var(--text-color)",
+                      }}
+                    >
+                      {teamManagers.map((manager) => (
+                        <li
+                          key={manager._id}
+                          onClick={() => handleSelectManager(manager)}
+                          style={{
+                            padding: "10px",
+                            cursor: "pointer",
+                            borderBottom: "1px solid var(--border-color)",
+                            transition: "background-color 0.2s",
+                            display: "flex",
+                            alignItems: "center",
+                          }}
+                          onMouseEnter={(e) => (e.target.style.backgroundColor = "var(--hover-background)")}
+                          onMouseLeave={(e) => (e.target.style.backgroundColor = "var(--background-color)")}
+                        >
+                          <img
+                            src={`http://localhost:3000${manager.image}` || "https://via.placeholder.com/30"}
+                            alt={`${manager.firstName} ${manager.lastName}`}
+                            style={{
+                              width: "30px",
+                              height: "30px",
+                              borderRadius: "50%",
+                              marginRight: "10px",
+                            }}
+                          />
+                          <span>
+                            {manager.firstName} {manager.lastName}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+
+                  {/* Message dynamique */}
+                  {selectedManager && (
+                    <div>
+                      <p style={{ color: messageColor }}>{message}</p>
+                    </div>
+                  )}
+                </div>
+                <div className="col-xl-4">
+                  <label htmlFor="input-label1" className="form-label">
+                    Client / Stakeholder :
+                  </label>
+                  <input
+            type="text"
+            className="form-control"
+            name="client"
+            value={projectData.client}
+            onChange={handleChange}
+          />
+                </div>
+                <div className="col-xl-12">
+                  <label className="form-label">Project Description :</label>
+                  <textarea
+            className="form-control"
+            name="description"
+            value={projectData.description}
+            onChange={handleChange}
+          />
+                </div>
+                <div className="col-xl-6">
+                  <label className="form-label">Start Date :</label>
+                  <div className="form-group">
+                    <div className="input-group">
+                      <div className="input-group-text text-muted">
+                        <i className="ri-calendar-line" />
+                      </div>
+                      <input
+                type="datetime-local"
+                className="form-control"
+                name="start_date"
+                value={projectData.start_date}
+                onChange={(e) => handleDateChange('start_date', e.target.value)}
+              />
+
+                    </div>
+                  </div>
+                </div>
+                <div className="col-xl-6">
+                  <label className="form-label">End Date :</label>
+                  <div className="form-group">
+                    <div className="input-group">
+                      <div className="input-group-text text-muted">
+                        <i className="ri-calendar-line" />
+                      </div>
+                      <input
+                type="datetime-local"
+                className="form-control"
+                name="end_date"
+                value={projectData.end_date}
+                onChange={(e) => handleDateChange('end_date', e.target.value)}
+              />
+                    </div>
+                  </div>
+                </div>
+                <div className="col-xl-6">
+                  <label className="form-label">Status :</label>
+                  <select
+                className="form-control"
+                name="status"
+                value={projectData.status}
+                onChange={handleChange}
+              >
+                <option value="Completed">Not Started</option>
+                <option value="Not Started">In Progress</option>
+                <option value="Completed">Completed</option>
+                <option value="In Progress">Archived</option>
+                
+              </select>
+                </div>
+                <div className="col-xl-6">
+                  <label className="form-label">Priority :</label>
+                  <select
+                className="form-control"
+                name="risk_level"
+                value={projectData.risk_level}
+                onChange={handleChange}
+              >
+                <option value="Low">High</option>
+                <option value="Medium">Low</option>
+                <option value="High">Medium</option>
+              </select>
+                </div>
+                <div className="col-xl-6">
+                       <label>Budget</label>
+                       <input
+                type="number"
+                className="form-control"
+                name="budget"
+                value={projectData.budget}
+                onChange={handleChange}
+                min="0"
+              />
+                </div>
+                
+                <div className="col-xl-6">
+                  <label className="form-label">Tags</label>
+                  <input
+                type="text"
+                className="form-control"
+                name="tags"
+                value={projectData.tags}
+                onChange={handleChange}
+                placeholder="Séparés par des virgules"
+              />
+                </div>
+               
+              </div>
+            </div>
+            <div className="card-footer">
+              <button className="btn btn-primary-light btn-wave ms-auto float-end"  onClick={handleCreateProject} disabled={loading}
+        >
+          {loading ? 'Création en cours...' : 'Create Project'}
+                
+              </button>
             </div>
           </div>
         </div>
       </div>
-    </div>
+    </>
   );
-};
-
-export default CreateProject;
+}

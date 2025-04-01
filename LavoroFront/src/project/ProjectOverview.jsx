@@ -284,7 +284,7 @@ export default function ProjectOverview(){
                     </span>
                     <div>
                       <span className="d-block fs-14 fw-medium">
-                      {project.teamManager}
+                      
                       </span>
                       <span className="fs-12 text-muted">Project Manager</span>
                     </div>
