@@ -7,72 +7,138 @@ const User = require('../models/user');
 
 
 
-// Create un projet
+
+
+// Créer un projet
 exports.createProject = async (req, res) => {
-  try {
-      const project = new Project(req.body);
-      await project.save();
-      res.status(201).json(project);
-  } catch (error) {
-      res.status(400).json({ error: error.message });
-  }
+    try {
+        const projectData = {
+            ...req.body,
+            // Gestion des dates si nécessaire
+            start_date: req.body.start_date ? new Date(req.body.start_date) : null,
+            end_date: req.body.end_date ? new Date(req.body.end_date) : null
+        };
+
+        const project = new Project(projectData);
+        await project.save();
+        res.status(201).json(project);
+    } catch (error) {
+        res.status(400).json({ 
+            message: "Erreur lors de la création du projet",
+            error: error.message 
+        });
+    }
+};
+
+// Récupérer tous les projets
+exports.getAllProjects = async (req, res) => {
+    try {
+        const projects = await Project.find().sort({ created_at: -1 });
+        res.status(200).json(projects);
+    } catch (error) {
+        res.status(500).json({ 
+            message: "Erreur lors de la récupération des projets",
+            error: error.message 
+        });
+    }
 };
 
 // Récupérer un projet par ID
 exports.getProjectById = async (req, res) => {
-  try {
-      const project = await Project.findById(req.params.id);
-      if (!project) return res.status(404).json({ message: "Projet non trouvé" });
-      res.status(200).json(project);
-  } catch (error) {
-      res.status(500).json({ error: error.message });
-  }
-};
-
-// Récupérer un projet par son nom
-exports.getProjectByName = async (req, res) => {
-  const searchQuery = req.query.search;
-
-  if (!searchQuery) {
-    return res.status(400).json({ message: "Le nom du projet est requis" });
-  }
-
-  try {
-    const project = await Project.find({ name: { $regex: searchQuery, $options: 'i' } });
-
-    if (project.length === 0) {
-      return res.status(404).json({ message: "Aucun projet trouvé avec ce nom" });
+    try {
+        const project = await Project.findById(req.params.id);
+        if (!project) {
+            return res.status(404).json({ message: "Projet non trouvé" });
+        }
+        res.status(200).json(project);
+    } catch (error) {
+        res.status(500).json({ 
+            message: "Erreur lors de la récupération du projet",
+            error: error.message 
+        });
     }
-
-    res.status(200).json(project);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
 };
-
-
 
 // Mettre à jour un projet
 exports.updateProjects = async (req, res) => {
+    try {
+        const updatedData = {
+            ...req.body,
+            updated_at: Date.now(),
+            // Mise à jour des dates si nécessaire
+            start_date: req.body.start_date ? new Date(req.body.start_date) : undefined,
+            end_date: req.body.end_date ? new Date(req.body.end_date) : undefined
+        };
+
+        const project = await Project.findByIdAndUpdate(
+            req.params.id,
+            updatedData,
+            { new: true, runValidators: true }
+        );
+
+        if (!project) {
+            return res.status(404).json({ message: "Projet non trouvé" });
+        }
+
+        res.status(200).json(project);
+    } catch (error) {
+        res.status(400).json({ 
+            message: "Erreur lors de la mise à jour du projet",
+            error: error.message 
+        });
+    }
+};
+// Récupérer un projet par son nom (exact match)
+exports.getProjectByName = async (req, res) => {
   try {
-      const project = await Project.findByIdAndUpdate(req.params.id, req.body, { new: true });
-      if (!project) return res.status(404).json({ message: "Projet non trouvé" });
-      res.status(200).json(project);
+      const { search } = req.query;
+      
+      if (!search || search.trim() === '') {
+          return res.status(400).json({
+              success: false,
+              message: 'Search term is required'
+          });
+      }
+
+      // Utilisation de la recherche full-text de MongoDB
+      const projects = await Project.find(
+          { $text: { $search: search } },
+          { score: { $meta: "textScore" } }
+      )
+      .sort({ score: { $meta: "textScore" } })
+      .limit(50);
+
+      res.status(200).json({
+          success: true,
+          count: projects.length,
+          data: projects
+      });
+
   } catch (error) {
-      res.status(500).json({ error: error.message });
+      console.error('Error searching projects:', error);
+      res.status(500).json({
+          success: false,
+          message: 'Server error while searching projects',
+          error: error.message
+      });
   }
 };
 
 // Supprimer un projet
 exports.deleteProject = async (req, res) => {
-  try {
-      const project = await Project.findByIdAndDelete(req.params.id);
-      if (!project) return res.status(404).json({ message: "Projet non trouvé" });
-      res.status(200).json({ message: "Projet supprimé avec succès" });
-  } catch (error) {
-      res.status(500).json({ error: error.message });
-  }
-}
+    try {
+        const project = await Project.findByIdAndDelete(req.params.id);
+        if (!project) {
+            return res.status(404).json({ message: "Projet non trouvé" });
+        }
+        res.status(200).json({ message: "Projet supprimé avec succès" });
+    } catch (error) {
+        res.status(500).json({ 
+            message: "Erreur lors de la suppression du projet",
+            error: error.message 
+        });
+    }
+};
 // Fonction pour compter les projets
 exports.getProjectCount = async (req, res) => {
     try {
@@ -82,6 +148,7 @@ exports.getProjectCount = async (req, res) => {
         res.status(500).json({ message: 'Erreur serveur', error });
     }
 };
+
 
 
 // Fonction pour récupérer le nombre de projets par statut
