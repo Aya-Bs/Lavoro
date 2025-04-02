@@ -3,7 +3,6 @@ import axios from 'axios';
 import PieChart from './PieChart'; // Importez le composant PieChart
 import LineChart from './ChartGraphique'; // Importez le composant LineChart
 
-
 export default function Sales() {
     const [projectsByStatus, setProjectsByStatus] = useState({});
     const [projects, setProjects] = useState([]); // Tous les projets
@@ -59,24 +58,20 @@ export default function Sales() {
     if (error) return <p>{error}</p>;
 
     return (
-
-
-        
         <div>
-          
             {/* Première section */}
             <div className="card custom-card">
                 <div className="card-header justify-content-between">
                     <div className="card-title">Project Statistics</div>
                     <div className="dropdown">
-                        <a aria-label="anchor" href="javascript:void(0);" className="btn btn-sm btn-light" data-bs-toggle="dropdown" aria-expanded="false">
+                        <a aria-label="anchor" href="#" className="btn btn-sm btn-light" data-bs-toggle="dropdown" aria-expanded="false">
                             Last Week <i className="ri-arrow-down-s-line align-middle ms-1 d-inline-block"></i>
                         </a>
                         <ul className="dropdown-menu">
-                            <li><a className="dropdown-item" href="javascript:void(0);">Today</a></li>
-                            <li><a className="dropdown-item" href="javascript:void(0);">Last Week</a></li>
-                            <li><a className="dropdown-item" href="javascript:void(0);">Last Month</a></li>
-                            <li><a className="dropdown-item" href="javascript:void(0);">Last Year</a></li>
+                            <li><a className="dropdown-item" href="#">Today</a></li>
+                            <li><a className="dropdown-item" href="#">Last Week</a></li>
+                            <li><a className="dropdown-item" href="#">Last Month</a></li>
+                            <li><a className="dropdown-item" href="#">Last Year</a></li>
                         </ul>
                     </div>
                 </div>
@@ -151,22 +146,22 @@ export default function Sales() {
                             />
                         </div>
                         <div className="dropdown my-1">
-                            <a href="javascript:void(0);" className="btn btn-primary btn-sm" data-bs-toggle="dropdown" aria-expanded="false">
+                            <a href="#" className="btn btn-primary btn-sm" data-bs-toggle="dropdown" aria-expanded="false">
                                 Sort By <i className="ri-arrow-down-s-line align-middle ms-1 d-inline-block"></i>
                             </a>
                             <ul className="dropdown-menu" role="menu">
                                 <li>
-                                    <a className="dropdown-item" href="javascript:void(0);" onClick={() => setSortBy('start_date')}>
+                                    <a className="dropdown-item" href="#" onClick={() => setSortBy('start_date')}>
                                         Start Date
                                     </a>
                                 </li>
                                 <li>
-                                    <a className="dropdown-item" href="javascript:void(0);" onClick={() => setSortBy('budget')}>
+                                    <a className="dropdown-item" href="#" onClick={() => setSortBy('budget')}>
                                         Budget
                                     </a>
                                 </li>
                                 <li>
-                                    <a className="dropdown-item" href="javascript:void(0);" onClick={() => setSortBy('status')}>
+                                    <a className="dropdown-item" href="#" onClick={() => setSortBy('status')}>
                                         Status
                                     </a>
                                 </li>
@@ -220,6 +215,79 @@ export default function Sales() {
                 </div>
             </div>
 
+            <div className="card custom-card main-dashboard-banner project-dashboard-banner overflow-hidden">
+                <div className="card-body p-4">
+                    <div className="row justify-content-between">
+                        <div className="col-xxl-8 col-xl-5 col-lg-5 col-md-5 col-sm-5">
+                            <h4 className="mb-1 fw-medium text-fixed-white">Manage Projects</h4>
+                            <p className="mb-3 text-fixed-white op-7">Manage projects effortlessly with our one-click solution, streamlining your workflow.</p>
+                            <a href="#" className="btn btn-sm btn-primary1">Manage Now<i className="ti ti-arrow-narrow-right"></i></a>
+                        </div>
+                        <div className="col-xxl-4 col-xl-7 col-lg-7 col-md-7 col-sm-7 d-sm-block d-none text-end my-auto">
+                            <img src="../assets/images/media/media-85.png" alt="" className="img-fluid" />
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div className="card custom-card overflow-hidden">
+                <div className="card-header justify-content-between">
+                    <div className="card-title">
+                        Team 
+                    </div>
+                    <a href="#" className="btn btn-sm btn-light">View All</a>
+                </div>
+                <div className="card-body p-0">
+                    <div className="table-responsive">
+                        <table className="table text-nowrap mb-0">
+                            <thead>
+                                <tr>
+                                    <th scope="col">Name</th>
+                                    <th scope="col">Works</th>
+                                    <th scope="col">Status</th>
+                                    <th scope="col">Tasks</th>
+                                    <th scope="col">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody className="top-selling">
+                                <tr>
+                                    <td>
+                                        <div className="d-flex">
+                                            <span className="avatar avatar-sm avatar-rounded">
+                                                <img src="../assets/images/faces/2.jpg" className="" alt="" />
+                                            </span>
+                                            <div className="flex-1 ms-2">
+                                                <span className="d-block fw-semibold">Richard Dom</span>
+                                                <a href="#" className="text-muted fs-12">Team Leader</a>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <span className="fw-medium">457</span>
+                                    </td>
+                                    <td>
+                                        <span className="badge bg-success-transparent">Online</span>
+                                    </td>
+                                    <td>
+                                        <span className="">564/ <span className="text-muted">1145</span></span>
+                                    </td>
+                                    <td>
+                                        <div className="btn-list">
+                                            <a href="#" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Assign" className="btn btn-icon btn-sm rounded-pill mb-0 btn-primary-light"><i className="ti ti-user-plus align-middle"></i></a>
+                                            <a href="#" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Mail" className="btn btn-icon btn-sm rounded-pill mb-0 btn-info-light"><i className="ti ti-at align-middle"></i></a>
+                                            <a href="#" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="View" className="btn btn-icon btn-sm rounded-pill mb-0 btn-primary2-light"><i className="ti ti-eye align-middle"></i></a>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {/* Répétez les lignes pour chaque membre de l'équipe */}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+
+
 
             <div className="card custom-card">
                 <div className="card-header">
@@ -229,8 +297,6 @@ export default function Sales() {
                     <LineChart projects={projects} />
                 </div>
             </div>
-
-
 
             <div className="card custom-card">
                 <div className="card-header">

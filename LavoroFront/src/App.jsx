@@ -24,7 +24,7 @@ import "../public/assets/css/remixicon.css";
 import 'remixicon/fonts/remixicon.css';
 import ProjectOverview from "./project/ProjectOverview";
 import AllProject from "./project/AllProject";
-
+import ProjectProgress from "./project/projetPorgress";
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
@@ -57,6 +57,8 @@ function App() {
               <Route path="/ListPro" element={<ListPro />} />
               <Route path="/ProjectDash" element={<ProjectDash />} />
               <Route path="/AllProject" element={<AllProject />} />
+              <Route path="/ProjectProgress" element={<ProjectProgress />} />
+              
 
  
             </Route>

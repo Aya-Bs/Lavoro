@@ -75,6 +75,11 @@ Pages            </li>
                   Project dashboard
                             </Link>
                 </li>
+                <li className="slide">
+                  <Link to="/ProjectProgress" className="side-menu__item">
+                  Project Progress
+                            </Link>
+                </li>
               </ul>
             </li>
           </ul>
