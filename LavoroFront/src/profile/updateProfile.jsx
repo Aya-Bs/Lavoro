@@ -3,6 +3,8 @@ import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import ReactCrop from "react-image-crop";
 import "react-image-crop/dist/ReactCrop.css";
+import Swal from "sweetalert2";
+
 
 
 const UpdateProfile = () => {
@@ -65,44 +67,77 @@ const UpdateProfile = () => {
     fetchUserInfo();
   }, [navigate]);
 
-
   const handleDeleteAccount = async () => {
     try {
       const token = localStorage.getItem('token');
       if (!token) {
         throw new Error("No token found");
       }
-
-      const response = await axios.post(
-        "http://localhost:3000/profiles/request-delete",
-        {},
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-          withCredentials: true,
+  
+      // Afficher une alerte de confirmation avant de supprimer
+      const result = await Swal.fire({
+        title: "Are you sure?",
+        text: "You won't be able to revert this!",
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonColor: "#3085d6",
+        cancelButtonColor: "#d33",
+        confirmButtonText: "Yes, delete it!",
+      });
+  
+      // Si l'utilisateur confirme la suppression
+      if (result.isConfirmed) {
+        const response = await axios.post(
+          "http://localhost:3000/profiles/request-delete",
+          {},
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+            withCredentials: true,
+          }
+        );
+  
+        if (response.status === 200) {
+          // Afficher une alerte de succès
+          await Swal.fire({
+            title: "Deleted!",
+            text: "Profile delete request successful!",
+            icon: "success",
+          });
+          window.location.reload();
         }
-      );
-
-      if (response.status === 200) {
-        alert("Profile delete request successful!");
-        navigate("/profile");
       }
     } catch (err) {
       if (err.response?.status === 400) {
-        alert("You already sent a deletion request.");
+        // Afficher une alerte d'erreur
+        await Swal.fire({
+          title: "Error",
+          text: "You already sent a deletion request.",
+          icon: "error",
+        });
+        window.location.reload();
       } else if (err.response?.status === 401) {
-        alert("Session expired. Please log in again.");
+        // Afficher une alerte d'erreur
+        await Swal.fire({
+          title: "Session Expired",
+          text: "Please log in again.",
+          icon: "error",
+        });
         localStorage.removeItem('token');
         navigate("/auth");
       } else {
         console.error("Error deleting profile:", err);
-        alert("Failed to delete profile.");
+        // Afficher une alerte d'erreur
+        await Swal.fire({
+          title: "Error",
+          text: "Failed to delete profile.",
+          icon: "error",
+        });
       }
     }
   };
-
 
   // Open camera
   const openCamera = async () => {
@@ -182,7 +217,11 @@ const UpdateProfile = () => {
     setLoading(true);
 
     if (newPassword !== confirmNewPassword) {
-      alert("New password and confirm password do not match.");
+      await Swal.fire({
+        title: "Error",
+        text: "New password and confirm password do not match.",
+        icon: "error",
+      });
       setLoading(false);
       return;
     }
@@ -219,8 +258,15 @@ const UpdateProfile = () => {
       });
 
       if (response.status === 200) {
-        alert("Profile updated successfully!");
-        navigate("/profile");
+        if (response.status === 200) {
+          // Afficher une alerte de succès
+          await Swal.fire({
+            title: "Updated!",
+            text: "Profile updated successfully!",
+            icon: "success",
+          });
+          window.location.reload();
+        }
       }
     } catch (err) {
       if (err.response?.status === 401) {
@@ -229,7 +275,12 @@ const UpdateProfile = () => {
         navigate("/auth");
       } else {
         console.error("Error updating profile:", err);
-        alert("Failed to update profile.");
+        await Swal.fire({
+          title: "Error",
+          text: "Failed updating profile !",
+          icon: "error",
+        });
+        window.location.reload();
       }
     } finally {
       setLoading(false);
@@ -241,314 +292,6 @@ const UpdateProfile = () => {
   }
 
   return (
-    // <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100vh" }}>
-    //   <div style={{ width: "350px", padding: "20px", boxShadow: "0px 4px 8px rgba(0, 0, 0, 0.1)", borderRadius: "10px", textAlign: "center", backgroundColor: "#fff" }}>
-    //     <h2>Update Profile</h2>
-
-    //     {/* Profile Image Section */}
-    //     {profileImage ? (
-    //       <div style={{ position: "relative", width: "100px", height: "100px", margin: "0 auto 20px" }}>
-    //         <img
-    //           src={profileImage.startsWith("data:image") ? profileImage : `http://localhost:3000${profileImage}`}
-    //           alt="Profile"
-    //           style={{ width: "100%", height: "100%", borderRadius: "50%", objectFit: "cover" }}
-    //         />
-    //         <button
-    //           onClick={() => setShowModal(true)}
-    //           style={{
-    //             position: "absolute",
-    //             bottom: "5px",
-    //             left: "65px",
-    //             display: "flex",
-    //             alignItems: "center",
-    //             justifyContent: "center",
-    //             width: "30px",
-    //             height: "30px",
-    //             borderRadius: "50%",
-    //             boxShadow: "0px 2px 4px rgba(0, 0, 0, 0.1)",
-    //             border: "none",
-    //             backgroundColor: "#FFC300",
-    //             cursor: "pointer",
-    //             transition: "all 0.3s ease",
-    //             padding: 0,
-    //             boxSizing: "border-box",
-    //           }}
-    //         >
-    //           <svg
-    //             xmlns="http://www.w3.org/2000/svg"
-    //             style={{ width: "12px", height: "12px" }}
-    //             viewBox="0 0 20 20"
-    //             fill="currentColor"
-    //           >
-    //             <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
-    //           </svg>
-    //         </button>
-    //       </div>
-    //     ) : (
-    //       <p style={{ color: "#888", fontStyle: "italic" }}>Upload a profile image</p>
-    //     )}
-
-    //     {/* Modal for Image Source Selection */}
-    //     {showModal && (
-    //       <div style={{
-    //         position: "fixed",
-    //         top: 0,
-    //         left: 0,
-    //         width: "100%",
-    //         height: "100%",
-    //         backgroundColor: "rgba(0, 0, 0, 0.5)",
-    //         display: "flex",
-    //         justifyContent: "center",
-    //         alignItems: "center",
-    //         zIndex: 1000,
-    //       }}>
-    //         <div style={{
-    //           backgroundColor: "#fff",
-    //           padding: "20px",
-    //           borderRadius: "10px",
-    //           boxShadow: "0px 4px 8px rgba(0, 0, 0, 0.1)",
-    //           textAlign: "center",
-    //         }}>
-    //           {showCameraInModal ? (
-    //             // Camera Section in Modal
-    //             <div>
-    //               <video ref={videoRef} width="200" height="200" autoPlay style={{ marginBottom: "10px" }}></video>
-    //               <canvas ref={canvasRef} style={{ display: "none" }}></canvas>
-    //               <button
-    //                 onClick={capturePhoto}
-    //                 style={{
-    //                   width: "100%",
-    //                   padding: "8px",
-    //                   marginBottom: "10px",
-    //                   backgroundColor: "#FFC300",
-    //                   border: "none",
-    //                   borderRadius: "5px",
-    //                   cursor: "pointer",
-    //                 }}
-    //               >
-    //                 Capture
-    //               </button>
-    //               <button
-    //                 onClick={() => setShowCameraInModal(false)}
-    //                 style={{
-    //                   width: "100%",
-    //                   padding: "8px",
-    //                   backgroundColor: "#ccc",
-    //                   border: "none",
-    //                   borderRadius: "5px",
-    //                   cursor: "pointer",
-    //                 }}
-    //               >
-    //                 Cancel
-    //               </button>
-    //             </div>
-    //           ) : (
-    //             // Image Source Selection Section
-    //             <>
-    //               <h3>Choose Image Source</h3>
-    //               <button
-    //                 onClick={() => {
-    //                   setShowCameraInModal(true);
-    //                   openCamera();
-    //                 }}
-    //                 style={{
-    //                   width: "100%",
-    //                   padding: "10px",
-    //                   marginBottom: "10px",
-    //                   backgroundColor: "#FFC300",
-    //                   border: "none",
-    //                   borderRadius: "5px",
-    //                   cursor: "pointer",
-    //                 }}
-    //               >
-    //                 Capture Image
-    //               </button>
-    //               <button
-    //                 onClick={() => {
-    //                   fileInputRef.current.click();
-    //                   setShowModal(false);
-    //                 }}
-    //                 style={{
-    //                   width: "100%",
-    //                   padding: "10px",
-    //                   backgroundColor: "#FFC300",
-    //                   border: "none",
-    //                   borderRadius: "5px",
-    //                   cursor: "pointer",
-    //                 }}
-    //               >
-    //                 Upload Image from PC
-    //               </button>
-    //               <button
-    //                 onClick={() => setShowModal(false)}
-    //                 style={{
-    //                   width: "100%",
-    //                   padding: "10px",
-    //                   marginTop: "10px",
-    //                   backgroundColor: "#ccc",
-    //                   border: "none",
-    //                   borderRadius: "5px",
-    //                   cursor: "pointer",
-    //                 }}
-    //               >
-    //                 Cancel
-    //               </button>
-    //             </>
-    //           )}
-    //         </div>
-    //       </div>
-    //     )}
-
-    //     {/* Crop Modal */}
-    //     {imageSrc && (
-    //       <div style={{
-    //         position: "fixed",
-    //         top: 0,
-    //         left: 0,
-    //         width: "100%",
-    //         height: "100%",
-    //         backgroundColor: "rgba(0, 0, 0, 0.5)",
-    //         display: "flex",
-    //         justifyContent: "center",
-    //         alignItems: "center",
-    //         zIndex: 1000,
-    //       }}>
-    //         <div style={{
-    //           backgroundColor: "#fff",
-    //           padding: "20px",
-    //           borderRadius: "10px",
-    //           boxShadow: "0px 4px 8px rgba(0, 0, 0, 0.1)",
-    //           textAlign: "center",
-    //         }}>
-    //           <ReactCrop
-    //             src={imageSrc}
-    //             crop={crop}
-    //             onChange={(newCrop) => setCrop(newCrop)}
-    //             onComplete={onCropComplete}
-    //           >
-    //             <img ref={imgRef} src={imageSrc} alt="Crop me" 
-    //             style={{ maxWidth: "100%", maxHeight: "400px", height: "auto", width: "auto" }} />
-    //           </ReactCrop>
-    //           <button
-    //             onClick={() => {
-    //               setProfileImage(croppedImage || imageSrc);
-    //               setImageSrc(null);
-    //               setCroppedImage(null);
-    //             }}
-    //             style={{
-    //               width: "100%",
-    //               padding: "10px",
-    //               marginTop: "10px",
-    //               backgroundColor: "#FFC300",
-    //               border: "none",
-    //               borderRadius: "5px",
-    //               cursor: "pointer",
-    //             }}
-    //             onLoad={(e) => {
-    //                 // Ensure the image is fully loaded before cropping
-    //                 if (imgRef.current) {
-    //                   const { naturalWidth, naturalHeight } = e.target;
-    //                   setCrop({
-    //                     ...crop,
-    //                     width: naturalWidth,
-    //                     height: naturalHeight,
-    //                   });
-    //                 }
-    //               }}
-    //           >
-    //             Save
-    //           </button>
-    //           <button
-    //             onClick={() => setImageSrc(null)}
-    //             style={{
-    //               width: "100%",
-    //               padding: "10px",
-    //               marginTop: "10px",
-    //               backgroundColor: "#ccc",
-    //               border: "none",
-    //               borderRadius: "5px",
-    //               cursor: "pointer",
-    //             }}
-    //           >
-    //             Cancel
-    //           </button>
-    //         </div>
-    //       </div>
-    //     )}
-
-    //     {/* Form Section */}
-    //     <form onSubmit={handleSubmit}>
-    //       <label>First Name:</label>
-    //       <input
-    //         type="text"
-    //         value={firstName}
-    //         onChange={(e) => setFirstName(e.target.value)}
-    //         required
-    //         style={{ width: "100%", padding: "8px", marginBottom: "10px" }}
-    //       />
-
-    //       <label>Last Name:</label>
-    //       <input
-    //         type="text"
-    //         value={lastName}
-    //         onChange={(e) => setLastName(e.target.value)}
-    //         required
-    //         style={{ width: "100%", padding: "8px", marginBottom: "10px" }}
-    //       />
-
-    //       <label>Phone Number:</label>
-    //       <input
-    //         type="tel"
-    //         value={phoneNumber}
-    //         onChange={(e) => setPhoneNumber(e.target.value)}
-    //         required
-    //         style={{ width: "100%", padding: "8px", marginBottom: "10px" }}
-    //       />
-
-    //       <label>Current Password:</label>
-    //       <input
-    //         type="password"
-    //         value={currentPassword}
-    //         onChange={(e) => setCurrentPassword(e.target.value)}
-    //         style={{ width: "100%", padding: "8px", marginBottom: "10px" }}
-    //       />
-
-    //       <label>New Password:</label>
-    //       <input
-    //         type="password"
-    //         value={newPassword}
-    //         onChange={(e) => setNewPassword(e.target.value)}
-    //         style={{ width: "100%", padding: "8px", marginBottom: "10px" }}
-    //       />
-
-    //       <label>Confirm New Password:</label>
-    //       <input
-    //         type="password"
-    //         value={confirmNewPassword}
-    //         onChange={(e) => setConfirmNewPassword(e.target.value)}
-    //         style={{ width: "100%", padding: "8px", marginBottom: "10px" }}
-    //       />
-
-    //       <input
-    //         type="file"
-    //         ref={fileInputRef}
-    //         style={{ display: "none" }}
-    //         accept="image/*"
-    //         onChange={previewImage}
-    //       />
-
-    //       <button type="submit" style={{ width: "100%", padding: "8px", marginBottom: "10px" }}>
-    //         Update
-    //       </button>
-    //     </form>
-
-    //     <button onClick={() => navigate("/profile")} style={{ width: "100%", padding: "8px" }}>
-    //       Cancel
-    //     </button>
-    //   </div>
-    // </div>
-
-
     <div className="row gap-3 justify-content-center">
    
         
@@ -677,10 +420,8 @@ const UpdateProfile = () => {
         </div>
         <div className="card-footer border-top-0">
           <div className="btn-list float-end">
-            <button className="btn btn-primary2 btn-wave" onClick={() => {
-              if (window.confirm("Are you sure you want to request account deletion?")) {
+            <button className="btn btn-primary2 btn-wave" id="alert-confirm" onClick={() => {
                 handleDeleteAccount();
-              }
             }}>Deactivate Account</button>
             <button className="btn btn-primary btn-wave" onClick={handleSubmit} disabled={loading}>
               {loading ? "Updating..." : "Save Changes"}

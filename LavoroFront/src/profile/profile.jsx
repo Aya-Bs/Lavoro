@@ -2,18 +2,24 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import UpdateProfile from "./updateProfile";
+import ProfileSecurity from "./profileSecurity";
 
 const Profile = () => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [qrCodeUrl, setQrCodeUrl] = useState('');
+  const [showQRCode, setShowQRCode] = useState(false);
+  const [token, setToken] = useState('');
+  const [message, setMessage] = useState('');
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("profile-about-tab-pane");
-  const [tasks, setTasks] = useState([]); // État pour stocker les activités
+  const [tasks, setTasks] = useState([]);
 
+  // Fetch user info on component mount
   useEffect(() => {
     const timeout = setTimeout(() => {
       setLoading(false);
-    }, 5000); // 5 secondes de timeout
+    }, 5000);
 
     const fetchUserInfo = async () => {
       try {
@@ -41,14 +47,14 @@ const Profile = () => {
           navigate("/signin");
         }
       } finally {
-        clearTimeout(timeout); // Annule le timeout si la requête réussit
+        clearTimeout(timeout);
         setLoading(false);
       }
     };
 
     fetchUserInfo();
 
-    return () => clearTimeout(timeout); // Nettoie le timeout si le composant est démonté
+    return () => clearTimeout(timeout);
   }, [navigate]);
 
   // Fonction pour récupérer les activités
@@ -74,7 +80,10 @@ const Profile = () => {
     }
   }, [activeTab]);
 
-  const handleDeleteAccount = async () => {
+  
+  
+  // Enable 2FA
+  const handleEnable2FA = async () => {
     try {
       const token = localStorage.getItem('token');
       if (!token) {
@@ -82,32 +91,74 @@ const Profile = () => {
       }
 
       const response = await axios.post(
-        "http://localhost:3000/profiles/request-delete",
+        "http://localhost:3000/profiles/enable-2fa",
         {},
         {
           headers: {
             Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
           },
           withCredentials: true,
         }
       );
 
-      if (response.status === 200) {
-        alert("Profile delete request successful!");
-        navigate("/profile");
-      }
+      setQrCodeUrl(response.data.qrCodeUrl);
+      setShowQRCode(true);
     } catch (err) {
-      if (err.response?.status === 400) {
-        alert("You already sent a deletion request.");
-      } else if (err.response?.status === 401) {
-        alert("Session expired. Please log in again.");
-        localStorage.removeItem('token');
-        navigate("/signin");
-      } else {
-        console.error("Error deleting profile:", err);
-        alert("Failed to delete profile.");
+      console.error("Error enabling 2FA:", err);
+    }
+  };
+
+  const handleVerify2FA = async () => {
+    try {
+      const authToken = localStorage.getItem('token'); // JWT token for authentication
+      if (!authToken) {
+        throw new Error("No token found");
       }
+
+      const userProvidedToken = token; // Use the TOTP code from the input field
+      console.log('Sending verify request with TOTP code:', userProvidedToken); // Log the TOTP code
+
+      const response = await axios.post(
+        "http://localhost:3000/profiles/verify-2fa",
+        { token: userProvidedToken }, // Send the TOTP code, not the JWT token
+        {
+          headers: {
+            Authorization: `Bearer ${authToken}`, // Use the JWT token for authentication
+          },
+          withCredentials: true,
+        }
+      );
+
+      console.log('Verify response:', response.data); // Log the response
+      setMessage(response.data.message);
+    } catch (err) {
+      console.error('Error verifying 2FA:', err); // Log the full error
+      setMessage(err.response?.data?.error || "Error verifying 2FA");
+    }
+  };
+
+  // Disable 2FA
+  const handleDisable2FA = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error("No token found");
+      }
+
+      const response = await axios.post(
+        "http://localhost:3000/profiles/disable-2fa",
+        {},
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+          withCredentials: true,
+        }
+      );
+
+      setMessage(response.data.message);
+    } catch (err) {
+      setMessage(err.response?.data?.error || "Error disabling 2FA");
     }
   };
 
@@ -147,10 +198,12 @@ const Profile = () => {
             <ProfileBanner />
             <div className="card-body pb-0 position-relative">
               <div className="row profile-content">
-                <div className="col-xl-3">
-                  <ProfileSidebar user={user} />
-                </div>
-                <div className="col-xl-9">
+                {activeTab !== "edit-profile-tab-pane" && (
+                  <div className="col-xl-3">
+                    <ProfileSidebar user={user} />
+                  </div>
+                )}
+                <div className={activeTab === "edit-profile-tab-pane" ? "col-xl-12" : "col-xl-9"}>
                   <div className="card custom-card overflow-hidden border">
                     <div className="card-body">
                       <ul className="nav nav-tabs tab-style-6 mb-3 p-0" id="myTab" role="tablist">
@@ -255,7 +308,7 @@ const Profile = () => {
                                       <td>{new Date(task.deadline).toLocaleDateString()}</td>
                                       <td>{task.estimated_duration} jours</td>
                                       <td>
-                                        {task.tags && task.tags.join(', ')} {/* Affiche les tags séparés par une virgule */}
+                                        {task.tags && task.tags.join(', ')}
                                       </td>
                                     </tr>
                                   ))}

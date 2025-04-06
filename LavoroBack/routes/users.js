@@ -27,19 +27,6 @@ router.get('/me', userController.getUserInfo); // Route to get user info from se
 
 
 
-// router.get('/signin', userController.redirectIfAuthenticated, (req, res) => {
-//   res.render('signin'); // Render sign-up page
-// });
-
-// router.get('/signup', userController.redirectIfAuthenticated, (req, res) => {
-//   res.render('signup'); // Render sign-up page
-// });
-
-
-// router.get('/home', userController.redirectIfNotAuthenticated, (req, res) => {
-//   res.render('home'); 
-// });
-
 router.get('/signin', userController.redirectIfAuthenticated, (req, res) => {
   res.render('signin'); // Render sign-in page
 });
@@ -68,6 +55,7 @@ router.get('/resetpassword', (req, res) => {
 });
 
 router.post('/resetpassword', userController.resetPassword);
+router.post('/verify2FALogin', userController.verify2FALogin);
 
 
 router.post('/seedtasks', async (req, res) => {
@@ -80,6 +68,7 @@ router.post('/seedtasks', async (req, res) => {
 });
 
 router.get('/tasks/:userId', TaskController.getTasksByUser);
+router.post('/verify2FALogin', userController.verify2FALogin);
 
 
 router.get("/google", googleLogin);
@@ -87,5 +76,8 @@ router.post('/login', MicrosoftLogin);
 /*router.get('/get-user', getUser);*/
 router.post('/github', GitHubLogin);
 router.get('/getData', getData);
+
+router.get('/getTeamManager', userController.getTeamManager);
+
 
 module.exports = router;

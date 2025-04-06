@@ -3,7 +3,6 @@ import SignUp from './Signup';
 import SignIn from './Signin';
 import 'bootstrap/dist/css/bootstrap.min.css';
 
-
 function AuthContainer() {
     const containerRef = useRef(null);
     const [isRightPanelActive, setIsRightPanelActive] = useState(false);

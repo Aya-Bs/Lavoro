@@ -1,11 +1,16 @@
 const express = require('express');
 const mongoose = require('mongoose'); // Importez mongoose
 const router = express.Router();
-const ProjectHistory = require('../models/ProjectHistory'); // Importez le modèle ProjectHistory
+const { getProjectsByStatus } = require('../controllers/ProjectController'); // Importez la fonction du contrôleur
 const Project = require('../models/Project');
 const ProjectController = require('../controllers/ProjectController');
+const ProjectHistory = require('../models/ProjectHistory'); // Importez le modèle ProjectHistory
 
-// Routes pour les projets
+
+
+router.get('/archived-projects', ProjectController.getAllArchivedProjects);
+
+router.get('/', ProjectController.getAllProjects);
 router.get('/projetStatus', async (req, res) => {
     try {
         const projectsByStatus = await ProjectController.getProjectsByStatus();
@@ -15,8 +20,20 @@ router.get('/projetStatus', async (req, res) => {
         res.status(500).json({ message: 'Internal server error' });
     }
 });
-
 router.get('/projects', ProjectController.getAllProjects);
+
+router.put('/:id', ProjectController.updateProject); // Add this route
+router.get('/:id/history', ProjectController.getProjectHistory); // Add this route
+router.get('/:id', ProjectController.getProjectById); // Add this route
+router.post('/:id/archive', ProjectController.archiveProject);
+router.post('/:id/unarchive', ProjectController.unarchiveProject);
+router.delete('/archived-projects/:id', ProjectController.deleteArchivedProject);
+router.get('/archived-projects/:id', ProjectController.getArchivedProjectById);
+
+//check if the user is a team manager
+router.get('/checkTeamManager/:id', ProjectController.checkTeamManager);
+//check team manager projects
+router.get('/checkTeamManagerProjects/:id', ProjectController.checkTeamManagerProjects);
 
 router.get('/project-history/:projectId', async (req, res) => {
     try {
@@ -49,5 +66,7 @@ router.post('/add-project-history', async (req, res) => {
 router.get('/projects-with-progress', ProjectController.getProjectsWithProgress);
 
 router.get('/project/:id', ProjectController.getProjectById);
+
+
 
 module.exports = router;

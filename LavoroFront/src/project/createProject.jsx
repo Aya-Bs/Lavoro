@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import flatpickr from 'flatpickr';
 import 'flatpickr/dist/flatpickr.min.css';
 import Choices from 'choices.js';
@@ -17,6 +17,8 @@ import FilePondPluginImageResize from 'filepond-plugin-image-resize';
 import FilePondPluginImageTransform from 'filepond-plugin-image-transform';
 import 'filepond-plugin-image-preview/dist/filepond-plugin-image-preview.css';
 import 'filepond/dist/filepond.min.css';
+import axios from "axios";
+import { useNavigate } from "react-router-dom";
 
 // Register FilePond plugins
 registerPlugin(
@@ -32,8 +34,69 @@ registerPlugin(
 );
 
 export default function CreateProject() {
+  const [searchTerm, setSearchTerm] = useState(""); // Terme de recherche
+  const [teamManagers, setTeamManagers] = useState([]); // Liste des Team Managers
+  const [selectedManager, setSelectedManager] = useState(null); // Team Manager sélectionné
+  const [message, setMessage] = useState(""); // Message dynamique
+  const [messageColor, setMessageColor] = useState("black"); // Couleur du message
+  const [loading, setLoading] = useState(true); // État de chargement
+  const [user, setUser] = useState(null); // Informations de l'utilisateur connecté
+  const navigate = useNavigate(); // Hook pour la navigation
   const pondRef = useRef(null); // Ref for FilePond instance
 
+  // Fonction pour gérer les changements dans le champ de recherche
+  const handleInputChange = (e) => {
+    const value = e.target.value;
+    setSearchTerm(value);
+    setSelectedManager(null); // Réinitialiser la sélection
+    setMessage(""); // Réinitialiser le message
+
+    // Si le champ est vide, masquer la liste
+    if (value === "") {
+      setTeamManagers([]);
+    }
+  };
+
+  // Fonction pour sélectionner un Team Manager
+  const handleSelectManager = (manager) => {
+    setSelectedManager(manager);
+    setSearchTerm(`${manager.firstName} ${manager.lastName}`); // Mettre à jour le champ de texte avec le nom sélectionné
+    setTeamManagers([]); // Masquer la liste déroulante après la sélection
+  };
+
+  // Fonction pour rechercher les Team Managers
+  const searchTeamManagers = async (term) => {
+    try {
+      const response = await axios.get(`http://localhost:3000/users/getTeamManager?search=${term}`);
+      console.log("API Response:", response.data); // Log pour déboguer
+      const data = Array.isArray(response.data) ? response.data : [];
+      setTeamManagers(data);
+    } catch (error) {
+      console.error("Error fetching team managers:", error);
+      setTeamManagers([]); // Réinitialiser à un tableau vide en cas d'erreur
+    }
+  };
+
+  // Fonction pour vérifier si un Team Manager peut être affecté à un projet
+  const checkTeamManagerProjects = async (managerId) => {
+    try {
+      const response = await axios.get(`http://localhost:3000/project/checkTeamManagerProjects/${managerId}`);
+      setMessage(response.data.message);
+
+      // Définir la couleur du message en fonction de la disponibilité du Team Manager
+      if (response.data.message.includes("Vous pouvez affecter")) {
+        setMessageColor("#28a745"); // Message en vert si disponible
+      } else {
+        setMessageColor("#dc3545"); // Message en rouge si non disponible
+      }
+    } catch (error) {
+      console.error("Error checking team manager projects:", error);
+      setMessage("Une erreur s'est produite");
+      setMessageColor("#dc3545"); // Message en rouge en cas d'erreur
+    }
+  };
+
+  // Effet pour initialiser flatpickr, Choices, et Quill
   useEffect(() => {
     // Initialize flatpickr for date pickers
     flatpickr("#startDate", {
@@ -73,12 +136,12 @@ export default function CreateProject() {
       ['clean']
     ];
 
-    const quill = new Quill('#project-descriptioin-editor', {
-      modules: {
-        toolbar: toolbarOptions
-      },
-      theme: 'snow'
-    });
+    // const quill = new Quill('#project-descriptioin-editor', {
+    //   modules: {
+    //     toolbar: toolbarOptions
+    //   },
+    //   theme: 'snow'
+    // });
 
     // Initialize Choices for unique values input
     const choicesTextUniqueValues = document.querySelector('#choices-text-unique-values');
@@ -91,6 +154,73 @@ export default function CreateProject() {
       });
     }
   }, []);
+
+  // Effet pour récupérer les informations de l'utilisateur
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      setLoading(false);
+    }, 5000); // 5 secondes de timeout
+
+    const fetchUserInfo = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        if (!token) {
+          throw new Error("No token found");
+        }
+
+        const response = await axios.get("http://localhost:3000/users/me", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+          withCredentials: true,
+        });
+
+        if (response.data) {
+          setUser(response.data);
+        } else {
+          navigate("/auth");
+        }
+      } catch (err) {
+        console.error("Error fetching user info:", err);
+        if (err.response?.status === 401) {
+          localStorage.removeItem("token");
+          navigate("/auth");
+        }
+      } finally {
+        clearTimeout(timeout); // Annule le timeout si la requête réussit
+        setLoading(false);
+      }
+    };
+
+    fetchUserInfo();
+
+    return () => clearTimeout(timeout); // Nettoie le timeout si le composant est démonté
+  }, [navigate]);
+
+  // Effet pour rechercher dynamiquement les Team Managers avec debounce
+  useEffect(() => {
+    const delayDebounceFn = setTimeout(() => {
+      if (searchTerm) {
+        searchTeamManagers(searchTerm);
+      } else {
+        setTeamManagers([]); // Réinitialiser la liste si le champ est vide
+      }
+    }, 300); // Délai de 300 ms
+
+    return () => clearTimeout(delayDebounceFn); // Nettoie le timeout si le composant est démonté ou si searchTerm change
+  }, [searchTerm]);
+
+  // Effet pour vérifier les projets du Team Manager sélectionné
+  useEffect(() => {
+    if (selectedManager) {
+      checkTeamManagerProjects(selectedManager._id);
+    }
+  }, [selectedManager]);
+
+  // Afficher un message de chargement si nécessaire
+  if (loading) {
+    return <div>Chargement en cours...</div>;
+  }
 
   return (
     <>
@@ -139,16 +269,81 @@ export default function CreateProject() {
                     placeholder="Enter Project Name"
                   />
                 </div>
-                <div className="col-xl-4">
-                  <label htmlFor="input-label11" className="form-label">
-                    Project Manager :
+                <div className="col-xl-4" style={{ position: "relative" }}>
+                  <label htmlFor="input-label11" className="form-label" style={{ color: "var(--text-color)" }}>
+                    Team Manager :
                   </label>
                   <input
                     type="text"
                     className="form-control"
                     id="input-label11"
-                    placeholder="Project Manager Name"
+                    placeholder="Team Manager Name"
+                    value={searchTerm}
+                    onChange={handleInputChange} // Utiliser la fonction handleInputChange
+                    style={{
+                      backgroundColor: "var(--background-color)",
+                      color: "var(--text-color)",
+                    }}
                   />
+
+                  {/* Liste déroulante des résultats de recherche */}
+                  {searchTerm && teamManagers.length > 0 && (
+                    <ul
+                      style={{
+                        position: "absolute",
+                        top: "100%",
+                        left: 0,
+                        right: 0,
+                        backgroundColor: "var(--background-color)",
+                        border: "1px solid var(--border-color)",
+                        borderRadius: "4px",
+                        boxShadow: "0 4px 8px rgba(96, 94, 94, 0.57)",
+                        zIndex: 1000,
+                        listStyle: "none",
+                        padding: 0,
+                        margin: 0,
+                        color: "var(--text-color)",
+                      }}
+                    >
+                      {teamManagers.map((manager) => (
+                        <li
+                          key={manager._id}
+                          onClick={() => handleSelectManager(manager)}
+                          style={{
+                            padding: "10px",
+                            cursor: "pointer",
+                            borderBottom: "1px solid var(--border-color)",
+                            transition: "background-color 0.2s",
+                            display: "flex",
+                            alignItems: "center",
+                          }}
+                          onMouseEnter={(e) => (e.target.style.backgroundColor = "var(--hover-background)")}
+                          onMouseLeave={(e) => (e.target.style.backgroundColor = "var(--background-color)")}
+                        >
+                          <img
+                            src={`http://localhost:3000${manager.image}` || "https://via.placeholder.com/30"}
+                            alt={`${manager.firstName} ${manager.lastName}`}
+                            style={{
+                              width: "30px",
+                              height: "30px",
+                              borderRadius: "50%",
+                              marginRight: "10px",
+                            }}
+                          />
+                          <span>
+                            {manager.firstName} {manager.lastName}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+
+                  {/* Message dynamique */}
+                  {selectedManager && (
+                    <div>
+                      <p style={{ color: messageColor }}>{message}</p>
+                    </div>
+                  )}
                 </div>
                 <div className="col-xl-4">
                   <label htmlFor="input-label1" className="form-label">

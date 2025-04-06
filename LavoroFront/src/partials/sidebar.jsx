@@ -30,12 +30,18 @@ const Sidebar = () => {
               </button>
               <ul className="slide-menu child1" style={{ display: isDashboardOpen ? "block" : "none" }}>
                 
+                
+                <li className="slide">
+                  <Link to="/sales" className="side-menu__item">
+                    Sales
+                  </Link>
+                </li>
+
                 <li className="slide">
                   <Link to="/profile" className="side-menu__item">
                     Profile
                   </Link>
                 </li>
-                
               </ul>
             </li>
 
@@ -55,11 +61,6 @@ Pages            </li>
                 <span className="side-menu__label">Projects</span>
               </button>
               <ul className="slide-menu child1" style={{ display: isPagesOpen ? "block" : "none" }}>
-              <li className="slide">
-                  <Link to="/overviewPro" className="side-menu__item">
-                  Projects Overview
-                  </Link>
-                </li>
                 <li className="slide">
                   <Link to="/createPro" className="side-menu__item">
                     Create Project
@@ -74,6 +75,9 @@ Pages            </li>
                   <Link to="/ProjectDash" className="side-menu__item">
                   Project dashboard
                             </Link>
+                  <Link to="/archieve" className="side-menu__item">
+                  Projects Archieve 
+                  </Link>
                 </li>
                 <li className="slide">
                   <Link to="/ProjectProgress" className="side-menu__item">

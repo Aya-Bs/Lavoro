@@ -6,8 +6,39 @@ import Switcher from "./switcher";
 import { Search, Globe, ShoppingCart, Bell, Maximize, Minimize, Settings } from "lucide-react";
 import Pickr from '@simonwep/pickr';
 import '@simonwep/pickr/dist/themes/nano.min.css';
+import { useTranslation } from "react-i18next";
+import i18n from "./i18n"; // Adjust the path to your i18n.jsx file
 
 const Header = () => {
+
+  const translatePage = async (targetLanguage) => {
+    try {
+      // Get all text content from the page
+      const pageText = document.body.innerText;
+
+      // Send the text to the LibreTranslate API for translation
+      const response = await fetch("https://libretranslate.com/translate", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          q: pageText,
+          source: "auto",
+          target: targetLanguage,
+        }),
+      });
+
+      const data = await response.json();
+      const translatedText = data.translatedText;
+
+      // Update the page content with the translated text
+      document.body.innerText = translatedText;
+    } catch (error) {
+      console.error("Error translating page:", error);
+    }
+  };
+
 
   const [isFullScreen, setIsFullScreen] = useState(false);
   const [userInfo, setUserInfo] = useState(null);
@@ -36,6 +67,90 @@ const Header = () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, []);
+
+
+  // useEffect(() => {
+  //   // Load the Google Translate script dynamically
+  //   const script = document.createElement("script");
+  //   script.src = "//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit";
+  //   script.async = true;
+  //   document.body.appendChild(script);
+
+  //   // Initialize the Google Translate widget
+  //   window.googleTranslateElementInit = () => {
+  //     new window.google.translate.TranslateElement(
+  //       { pageLanguage: "en" },
+  //       "google_translate_element"
+  //     );
+  //   };
+
+  //   // Clean up the script when the component unmounts
+  //   return () => {
+  //     document.body.removeChild(script);
+  //     delete window.googleTranslateElementInit;
+  //   };
+  // }, []);
+
+  useEffect(() => {
+    // Load the Google Translate script dynamically
+    const script = document.createElement("script");
+    script.src = "//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit";
+    script.async = true;
+    document.body.appendChild(script);
+  
+    // Initialize the Google Translate widget
+    window.googleTranslateElementInit = () => {
+      new window.google.translate.TranslateElement(
+        { pageLanguage: "en" },
+        "google_translate_element"
+      );
+    };
+  
+    // Clean up the script when the component unmounts
+    return () => {
+      document.body.removeChild(script);
+      delete window.googleTranslateElementInit;
+    };
+  }, []);
+
+  const changeLanguage = (languageCode) => {
+    const googleTranslateElement = document.querySelector(".goog-te-combo");
+    if (googleTranslateElement) {
+      googleTranslateElement.value = languageCode;
+      googleTranslateElement.dispatchEvent(new Event("change"));
+    }
+  };
+  // Function to trigger language change
+  // const changeLanguage = (languageCode) => {
+  //   const googleTranslateElement = document.querySelector(".goog-te-combo");
+  //   if (googleTranslateElement) {
+  //     googleTranslateElement.value = languageCode;
+  //     googleTranslateElement.dispatchEvent(new Event("change"));
+  //   }
+  // };
+
+  // useEffect(() => {
+  //   // Load the Google Translate script dynamically
+  //   const script = document.createElement("script");
+  //   script.src = "//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit";
+  //   script.async = true;
+  //   document.body.appendChild(script);
+
+  //   // Initialize the Google Translate widget
+  //   window.googleTranslateElementInit = () => {
+  //     new window.google.translate.TranslateElement(
+  //       { pageLanguage: "en" },
+  //       "google_translate_element"
+  //     );
+  //   };
+
+  //   // Clean up the script when the component unmounts
+  //   return () => {
+  //     document.body.removeChild(script);
+  //     delete window.googleTranslateElementInit;
+  //   };
+  // }, []);
+
 
   useEffect(() => {
     const fetchUserInfo = async () => {
@@ -124,42 +239,7 @@ const Header = () => {
       {/* Start::header-content-left */}
       <div className="header-content-left">
         {/* Start::header-element */}
-        <div className="header-element">
-          <div className="horizontal-logo">
-            <a href="index.html" className="header-logo">
-              <img
-                src="../assets/images/brand-logos/desktop-logo.png"
-                alt="logo"
-                className="desktop-logo"
-              />
-              <img
-                src="../assets/images/brand-logos/toggle-dark.png"
-                alt="logo"
-                className="toggle-dark"
-              />
-              <img
-                src="../assets/images/brand-logos/desktop-dark.png"
-                alt="logo"
-                className="desktop-dark"
-              />
-              <img
-                src="../assets/images/brand-logos/toggle-logo.png"
-                alt="logo"
-                className="toggle-logo"
-              />
-              <img
-                src="../assets/images/brand-logos/toggle-white.png"
-                alt="logo"
-                className="toggle-white"
-              />
-              <img
-                src="../assets/images/brand-logos/desktop-white.png"
-                alt="logo"
-                className="desktop-white"
-              />
-            </a>
-          </div>
-        </div>
+       
         {/* End::header-element */}
         {/* Start::header-element */}
 
@@ -196,6 +276,11 @@ const Header = () => {
       {/* End::header-content-left */}
       {/* Start::header-content-right */}
       <ul className="header-content-right">
+
+      <li className="header-element" style={{ display: "none", alignItems: "center" }}>
+  <div id="google_translate_element"></div>
+</li>
+
         {/* Start::header-element */}
         <li className="header-element d-md-none d-block">
           <a
@@ -240,49 +325,53 @@ const Header = () => {
             data-popper-placement="none"
           >
             <li>
-              <a
-                className="dropdown-item d-flex align-items-center"
-                href="javascript:void(0);"
-              >
-                <div className="d-flex align-items-center justify-content-between">
-                  <div className="d-flex align-items-center">
-                    <span className="avatar avatar-rounded avatar-xs lh-1 me-2">
-                      <img src="../assets/images/flags/us_flag.jpg" alt="img" />
-                    </span>
-                    English
-                  </div>
-                </div>
-              </a>
+            <a
+  className="dropdown-item d-flex align-items-center"
+  href="javascript:void(0);"
+  onClick={() => changeLanguage("en")} // Trigger translation to English
+>
+  <div className="d-flex align-items-center justify-content-between">
+    <div className="d-flex align-items-center">
+      <span className="avatar avatar-rounded avatar-xs lh-1 me-2">
+        <img src="../assets/images/flags/us.jpeg" alt="img" />
+      </span>
+      English
+    </div>
+  </div>
+</a>
             </li>
             <li>
-              <a
-                className="dropdown-item d-flex align-items-center"
-                href="javascript:void(0);"
-              >
+            <a
+                    className="dropdown-item d-flex align-items-center"
+                    href="javascript:void(0);"
+                    onClick={() => changeLanguage("es")} // Translate to English
+                  >
                 <span className="avatar avatar-rounded avatar-xs lh-1 me-2">
-                  <img src="../assets/images/flags/spain_flag.jpg" alt="img" />
+                  <img src="../assets/images/flags/spain.jpeg" alt="img" />
                 </span>
                 español
               </a>
             </li>
             <li>
-              <a
-                className="dropdown-item d-flex align-items-center"
-                href="javascript:void(0);"
-              >
+            <a
+                    className="dropdown-item d-flex align-items-center"
+                    href="javascript:void(0);"
+                    onClick={() => changeLanguage("fr")} // Translate to English
+                  >
                 <span className="avatar avatar-rounded avatar-xs lh-1 me-2">
-                  <img src="../assets/images/flags/french_flag.jpg" alt="img" />
+                  <img src="../assets/images/flags/fr.png" alt="img" />
                 </span>
                 français
               </a>
             </li>
             <li>
-              <a
-                className="dropdown-item d-flex align-items-center"
-                href="javascript:void(0);"
-              >
+            <a
+                    className="dropdown-item d-flex align-items-center"
+                    href="javascript:void(0);"
+                    onClick={() => changeLanguage("ar")} // Translate to English
+                  >
                 <span className="avatar avatar-rounded avatar-xs lh-1 me-2">
-                  <img src="../assets/images/flags/uae_flag.jpg" alt="img" />
+                  <img src="../assets/images/flags/arabe.png" alt="img" />
                 </span>
                 عربي
               </a>
@@ -291,10 +380,11 @@ const Header = () => {
               <a
                 className="dropdown-item d-flex align-items-center"
                 href="javascript:void(0);"
+                onClick={() => changeLanguage("de")} 
               >
                 <span className="avatar avatar-rounded avatar-xs lh-1 me-2">
                   <img
-                    src="../assets/images/flags/germany_flag.jpg"
+                    src="../assets/images/flags/germany.jpeg"
                     alt="img"
                   />
                 </span>
@@ -305,9 +395,10 @@ const Header = () => {
               <a
                 className="dropdown-item d-flex align-items-center"
                 href="javascript:void(0);"
+                onClick={() => changeLanguage("zh-CN")} 
               >
                 <span className="avatar avatar-rounded avatar-xs lh-1 me-2">
-                  <img src="../assets/images/flags/china_flag.jpg" alt="img" />
+                  <img src="../assets/images/flags/china.jpeg" alt="img" />
                 </span>
                 中国人
               </a>
@@ -316,9 +407,10 @@ const Header = () => {
               <a
                 className="dropdown-item d-flex align-items-center"
                 href="javascript:void(0);"
+                onClick={() => changeLanguage("it")} 
               >
                 <span className="avatar avatar-rounded avatar-xs lh-1 me-2">
-                  <img src="../assets/images/flags/italy_flag.jpg" alt="img" />
+                  <img src="../assets/images/flags/italia.jpeg" alt="img" />
                 </span>
                 Italiano
               </a>
@@ -327,9 +419,10 @@ const Header = () => {
               <a
                 className="dropdown-item d-flex align-items-center"
                 href="javascript:void(0);"
+                onClick={() => changeLanguage("ru")} 
               >
                 <span className="avatar avatar-rounded avatar-xs lh-1 me-2">
-                  <img src="../assets/images/flags/russia_flag.jpg" alt="img" />
+                  <img src="../assets/images/flags/russia.webp" alt="img" />
                 </span>
                 Русский
               </a>
@@ -787,15 +880,6 @@ const Header = () => {
         <div
           className="sidebar-overlay"
           onClick={toggleSidebar}
-          style={{
-            position: "fixed",
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: "rgba(0, 0, 0, 0.3)",
-            zIndex: 999,
-          }}
         />
       )}
     </>
