@@ -6,10 +6,8 @@ const Project = require('../models/Project');
 const ProjectController = require('../controllers/ProjectController');
 const ProjectHistory = require('../models/ProjectHistory'); // Importez le modèle ProjectHistory
 
-
-
 router.get('/archived-projects', ProjectController.getAllArchivedProjects);
-
+router.get('/projects-with-progress', ProjectController.getProjectsWithProgress);
 router.get('/', ProjectController.getAllProjects);
 router.get('/projetStatus', async (req, res) => {
     try {
@@ -22,9 +20,10 @@ router.get('/projetStatus', async (req, res) => {
 });
 router.get('/projects', ProjectController.getAllProjects);
 
-router.put('/:id', ProjectController.updateProject); // Add this route
-router.get('/:id/history', ProjectController.getProjectHistory); // Add this route
-router.get('/:id', ProjectController.getProjectById); // Add this route
+// Routes avec paramètres dynamiques
+router.put('/:id', ProjectController.updateProject);
+router.get('/:id/history', ProjectController.getProjectHistory);
+router.get('/:id', ProjectController.getProjectById);
 router.post('/:id/archive', ProjectController.archiveProject);
 router.post('/:id/unarchive', ProjectController.unarchiveProject);
 router.delete('/archived-projects/:id', ProjectController.deleteArchivedProject);
@@ -62,11 +61,5 @@ router.post('/add-project-history', async (req, res) => {
         res.status(500).json({ message: 'Erreur serveur' });
     }
 });
-
-router.get('/projects-with-progress', ProjectController.getProjectsWithProgress);
-
-router.get('/project/:id', ProjectController.getProjectById);
-
-
 
 module.exports = router;
