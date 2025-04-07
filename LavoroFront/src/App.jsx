@@ -18,7 +18,6 @@ import Sales from "./project/Sales";
 import CreateProject from "./project/createProject";
 import ListPro from "./project/ProList";
 import ProjectDash from "./project/ProjectDash";
-import ProjectHistory from "./project/ProjectHistory";
 
 
 import "../public/assets/css/icons.css";
