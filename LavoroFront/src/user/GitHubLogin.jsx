@@ -47,7 +47,7 @@ const GitHubLogin = () => {
   setTimeout(() => {
       setShowModal(false);
       // Rediriger vers la page d'accueil après la fermeture de la modale
-      navigate('/profile');
+      navigate('/sales');
   }, 1000); // 1000 ms = 1 seconde
 } catch (error) {
   console.error('Error during Microsoft login:', error);

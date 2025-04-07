@@ -18,7 +18,7 @@ import FilePondPluginImageTransform from 'filepond-plugin-image-transform';
 import 'filepond-plugin-image-preview/dist/filepond-plugin-image-preview.css';
 import 'filepond/dist/filepond.min.css';
 import axios from "axios";
-import { useNavigate } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import Swal from 'sweetalert2';
 
 // Register FilePond plugins
@@ -34,16 +34,17 @@ registerPlugin(
   FilePondPluginImageTransform
 );
 
-export default function CreateProject() {
-  const [searchTerm, setSearchTerm] = useState(""); // Terme de recherche
-  const [teamManagers, setTeamManagers] = useState([]); // Liste des Team Managers
-  const [selectedManager, setSelectedManager] = useState(null); // Team Manager sélectionné
-  const [message, setMessage] = useState(""); // Message dynamique
-  const [messageColor, setMessageColor] = useState("black"); // Couleur du message
-  const [loading, setLoading] = useState(true); // État de chargement
-  const [user, setUser] = useState(null); // Informations de l'utilisateur connecté
-  const navigate = useNavigate(); // Hook pour la navigation
-  const pondRef = useRef(null); // Ref for FilePond instance
+export default function UpdateProject() {
+  const { id } = useParams();
+  const [searchTerm, setSearchTerm] = useState("");
+  const [teamManagers, setTeamManagers] = useState([]);
+  const [selectedManager, setSelectedManager] = useState(null);
+  const [message, setMessage] = useState("");
+  const [messageColor, setMessageColor] = useState("black");
+  const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState(null);
+  const navigate = useNavigate();
+  const pondRef = useRef(null);
   const [projectData, setProjectData] = useState({
     name: '',
     description: '',
@@ -55,7 +56,49 @@ export default function CreateProject() {
     risk_level: 'Medium',
     tags: ''
   });
-  
+
+  useEffect(() => {
+    const fetchProject = async () => {
+      try {
+        const response = await axios.get(`http://localhost:3000/project/getProjectById/${id}`);
+        const data = response.data;
+        setProjectData({
+          name: data.name,
+          description: data.description,
+          budget: data.budget,
+          client: data.client,
+          start_date: data.start_date ? data.start_date.split('T')[0] : '',
+          end_date: data.end_date ? data.end_date.split('T')[0] : '',
+          status: data.status,
+          risk_level: data.risk_level,
+          tags: data.tags
+        });
+        
+        if (data.teamManager) {
+          setSelectedManager({
+            _id: data.manager_id,
+            firstName: data.teamManager.split(' ')[0],
+            lastName: data.teamManager.split(' ')[1] || ''
+          });
+          setSearchTerm(data.teamManager);
+        }
+      } catch (error) {
+        console.error('Error fetching project:', error);
+        Swal.fire({
+          title: "Error!",
+          text: "Failed to fetch project data.",
+          icon: "error",
+          confirmButtonColor: "#d33",
+          confirmButtonText: "OK"
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProject();
+  }, [id]);
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setProjectData(prev => ({
@@ -70,9 +113,10 @@ export default function CreateProject() {
       [name]: dateString
     }));
   };
+
   const validateProject = () => {
     if (!projectData.name.trim()) {
-      setMessage({ text: 'Le nom du projet est requis', color: 'red' });
+      setMessage({ text: 'Project name is required', color: 'red' });
       return false;
     }
 
@@ -80,7 +124,7 @@ export default function CreateProject() {
       const start = new Date(projectData.start_date);
       const end = new Date(projectData.end_date);
       if (end < start) {
-        setMessage({ text: 'La date de fin ne peut pas être avant la date de début', color: 'red' });
+        setMessage({ text: 'End date cannot be before start date', color: 'red' });
         return false;
       }
     }
@@ -88,27 +132,27 @@ export default function CreateProject() {
     return true;
   };
 
-  const handleCreateProject = async (e) => {
+  const handleUpdateProject = async (e) => {
     e.preventDefault();
     if (!validateProject()) return;
-  
+
     try {
       setLoading(true);
       
       const dataToSend = {
         ...projectData,
         budget: Number(projectData.budget),
-        start_date: projectData.start_date ? new Date(projectData.start_date) : null,
-        end_date: projectData.end_date ? new Date(projectData.end_date) : null,
+        start_date: projectData.start_date ? new Date(projectData.start_date).toISOString() : null,
+        end_date: projectData.end_date ? new Date(projectData.end_date).toISOString() : null,
         ...(selectedManager && { 
           manager_id: selectedManager._id,
           teamManager: `${selectedManager.firstName} ${selectedManager.lastName}`
         })
       };
-  
+
       const token = localStorage.getItem('token');
-      const response = await axios.post(
-        'http://localhost:3000/project/createProject',
+      const response = await axios.put(
+        `http://localhost:3000/project/updateProjects/${id}`,
         dataToSend,
         {
           headers: {
@@ -117,25 +161,23 @@ export default function CreateProject() {
           }
         }
       );
-  
-      // Afficher SweetAlert
+
       await Swal.fire({
-        title: 'Succès!',
-        text: 'Project created successfully',
+        title: 'Success!',
+        text: 'Project updated successfully',
         icon: 'success',
         confirmButtonText: 'OK',
         timer: 2000,
         timerProgressBar: true
       });
-  
-      // Redirection après l'alerte
+
       navigate('/ListPro');
       
     } catch (error) {
       console.error('Error:', error);
       Swal.fire({
-        title: 'Erreur!',
-        text: error.response?.data?.message || 'Error creating project',
+        title: 'Error!',
+        text: error.response?.data?.message || 'Error updating project',
         icon: 'error',
         confirmButtonText: 'OK'
       });
@@ -144,65 +186,49 @@ export default function CreateProject() {
     }
   };
 
-  // Fonction pour gérer les changements dans le champ de recherche
+  // Fonctions pour la gestion du Team Manager (identiques à CreateProject)
   const handleInputChange = (e) => {
     const value = e.target.value;
     setSearchTerm(value);
-    setSelectedManager(null); // Réinitialiser la sélection
-    setMessage(""); // Réinitialiser le message
+    setSelectedManager(null);
+    setMessage("");
 
-    // Si le champ est vide, masquer la liste
     if (value === "") {
       setTeamManagers([]);
     }
   };
 
-  
-  
-  
-
-  // Fonction pour sélectionner un Team Manager
   const handleSelectManager = (manager) => {
     setSelectedManager(manager);
-    setSearchTerm(`${manager.firstName} ${manager.lastName}`); // Mettre à jour le champ de texte avec le nom sélectionné
-    setTeamManagers([]); // Masquer la liste déroulante après la sélection
+    setSearchTerm(`${manager.firstName} ${manager.lastName}`);
+    setTeamManagers([]);
   };
 
-  // Fonction pour rechercher les Team Managers
   const searchTeamManagers = async (term) => {
     try {
       const response = await axios.get(`http://localhost:3000/users/getTeamManager?search=${term}`);
-      console.log("API Response:", response.data); // Log pour déboguer
       const data = Array.isArray(response.data) ? response.data : [];
       setTeamManagers(data);
     } catch (error) {
       console.error("Error fetching team managers:", error);
-      setTeamManagers([]); // Réinitialiser à un tableau vide en cas d'erreur
+      setTeamManagers([]);
     }
   };
 
-  // Fonction pour vérifier si un Team Manager peut être affecté à un projet
   const checkTeamManagerProjects = async (managerId) => {
     try {
       const response = await axios.get(`http://localhost:3000/project/checkTeamManagerProjects/${managerId}`);
       setMessage(response.data.message);
-
-      // Définir la couleur du message en fonction de la disponibilité du Team Manager
-      if (response.data.message.includes("Vous pouvez affecter")) {
-        setMessageColor("#28a745"); // Message en vert si disponible
-      } else {
-        setMessageColor("#dc3545"); // Message en rouge si non disponible
-      }
+      setMessageColor(response.data.message.includes("Vous pouvez affecter") ? "#28a745" : "#dc3545");
     } catch (error) {
       console.error("Error checking team manager projects:", error);
-      setMessage("Une erreur s'est produite");
-      setMessageColor("#dc3545"); // Message en rouge en cas d'erreur
+      setMessage("An error occurred");
+      setMessageColor("#dc3545");
     }
   };
 
-  // Effet pour initialiser flatpickr, Choices, et Quill
+  // Initialisation des plugins (identique à CreateProject)
   useEffect(() => {
-    // Initialize flatpickr for date pickers
     flatpickr("#startDate", {
       enableTime: true,
       dateFormat: "Y-m-d H:i",
@@ -213,7 +239,6 @@ export default function CreateProject() {
       dateFormat: "Y-m-d H:i",
     });
 
-    // Initialize Choices for multi-select
     const assignedTeamMembers = document.querySelector('#assigned-team-members');
     if (assignedTeamMembers) {
       new Choices(assignedTeamMembers, {
@@ -222,32 +247,6 @@ export default function CreateProject() {
       });
     }
 
-    // Initialize Quill editor
-    const toolbarOptions = [
-      [{ 'header': [1, 2, 3, 4, 5, 6, false] }],
-      [{ 'font': [] }],
-      ['bold', 'italic', 'underline', 'strike'],
-      ['blockquote', 'code-block'],
-      [{ 'header': 1 }, { 'header': 2 }],
-      [{ 'list': 'ordered' }, { 'list': 'bullet' }],
-      [{ 'script': 'sub' }, { 'script': 'super' }],
-      [{ 'indent': '-1' }, { 'indent': '+1' }],
-      [{ 'direction': 'rtl' }],
-      [{ 'size': ['small', false, 'large', 'huge'] }],
-      [{ 'color': [] }, { 'background': [] }],
-      [{ 'align': [] }],
-      ['image', 'video'],
-      ['clean']
-    ];
-
-    // const quill = new Quill('#project-descriptioin-editor', {
-    //   modules: {
-    //     toolbar: toolbarOptions
-    //   },
-    //   theme: 'snow'
-    // });
-
-    // Initialize Choices for unique values input
     const choicesTextUniqueValues = document.querySelector('#choices-text-unique-values');
     if (choicesTextUniqueValues) {
       new Choices(choicesTextUniqueValues, {
@@ -259,71 +258,28 @@ export default function CreateProject() {
     }
   }, []);
 
-  // Effet pour récupérer les informations de l'utilisateur
-  useEffect(() => {
-    const timeout = setTimeout(() => {
-      setLoading(false);
-    }, 5000); // 5 secondes de timeout
-
-    const fetchUserInfo = async () => {
-      try {
-        const token = localStorage.getItem("token");
-        if (!token) {
-          throw new Error("No token found");
-        }
-
-        const response = await axios.get("http://localhost:3000/users/me", {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-          withCredentials: true,
-        });
-
-        if (response.data) {
-          setUser(response.data);
-        } else {
-          navigate("/auth");
-        }
-      } catch (err) {
-        console.error("Error fetching user info:", err);
-        if (err.response?.status === 401) {
-          localStorage.removeItem("token");
-          navigate("/auth");
-        }
-      } finally {
-        clearTimeout(timeout); // Annule le timeout si la requête réussit
-        setLoading(false);
-      }
-    };
-
-    fetchUserInfo();
-
-    return () => clearTimeout(timeout); // Nettoie le timeout si le composant est démonté
-  }, [navigate]);
-
-  // Effet pour rechercher dynamiquement les Team Managers avec debounce
+  // Effet pour rechercher les Team Managers
   useEffect(() => {
     const delayDebounceFn = setTimeout(() => {
       if (searchTerm) {
         searchTeamManagers(searchTerm);
       } else {
-        setTeamManagers([]); // Réinitialiser la liste si le champ est vide
+        setTeamManagers([]);
       }
-    }, 300); // Délai de 300 ms
+    }, 300);
 
-    return () => clearTimeout(delayDebounceFn); // Nettoie le timeout si le composant est démonté ou si searchTerm change
+    return () => clearTimeout(delayDebounceFn);
   }, [searchTerm]);
 
-  // Effet pour vérifier les projets du Team Manager sélectionné
+  // Effet pour vérifier les projets du Team Manager
   useEffect(() => {
     if (selectedManager) {
       checkTeamManagerProjects(selectedManager._id);
     }
   }, [selectedManager]);
 
-  // Afficher un message de chargement si nécessaire
   if (loading) {
-    return <div>Chargement en cours...</div>;
+    return <div>Loading...</div>;
   }
 
   return (
@@ -339,11 +295,11 @@ export default function CreateProject() {
               </li>
               <span className="mx-1">→</span>
               <li className="breadcrumb-item active" aria-current="page">
-                Create Project
+                Update Project
               </li>
             </ol>
           </nav>
-          <h1 className="page-title fw-medium fs-18 mb-0">Create Project</h1>
+          <h1 className="page-title fw-medium fs-18 mb-0">Update Project</h1>
         </div>
         <div className="btn-list">
           <button className="btn btn-white btn-wave">
@@ -358,7 +314,7 @@ export default function CreateProject() {
         <div className="col-xl-12">
           <div className="card custom-card">
             <div className="card-header">
-              <div className="card-title">Create Project</div>
+              <div className="card-title">Update Project</div>
             </div>
             <div className="card-body">
               <div className="row gy-3">
@@ -367,13 +323,13 @@ export default function CreateProject() {
                     Project Name :
                   </label>
                   <input
-            type="text"
-            className="form-control"
-            name="name"
-            value={projectData.name}
-            onChange={handleChange}
-            required
-          />
+                    type="text"
+                    className="form-control"
+                    name="name"
+                    value={projectData.name}
+                    onChange={handleChange}
+                    required
+                  />
                 </div>
                 <div className="col-xl-4" style={{ position: "relative" }}>
                   <label htmlFor="input-label11" className="form-label" style={{ color: "var(--text-color)" }}>
@@ -385,14 +341,13 @@ export default function CreateProject() {
                     id="input-label11"
                     placeholder="Team Manager Name"
                     value={searchTerm}
-                    onChange={handleInputChange} // Utiliser la fonction handleInputChange
+                    onChange={handleInputChange}
                     style={{
                       backgroundColor: "var(--background-color)",
                       color: "var(--text-color)",
                     }}
                   />
 
-                  {/* Liste déroulante des résultats de recherche */}
                   {searchTerm && teamManagers.length > 0 && (
                     <ul
                       style={{
@@ -444,7 +399,6 @@ export default function CreateProject() {
                     </ul>
                   )}
 
-                  {/* Message dynamique */}
                   {selectedManager && (
                     <div>
                       <p style={{ color: messageColor }}>{message}</p>
@@ -456,21 +410,21 @@ export default function CreateProject() {
                     Client / Stakeholder :
                   </label>
                   <input
-            type="text"
-            className="form-control"
-            name="client"
-            value={projectData.client}
-            onChange={handleChange}
-          />
+                    type="text"
+                    className="form-control"
+                    name="client"
+                    value={projectData.client}
+                    onChange={handleChange}
+                  />
                 </div>
                 <div className="col-xl-12">
                   <label className="form-label">Project Description :</label>
                   <textarea
-            className="form-control"
-            name="description"
-            value={projectData.description}
-            onChange={handleChange}
-          />
+                    className="form-control"
+                    name="description"
+                    value={projectData.description}
+                    onChange={handleChange}
+                  />
                 </div>
                 <div className="col-xl-6">
                   <label className="form-label">Start Date :</label>
@@ -480,13 +434,12 @@ export default function CreateProject() {
                         <i className="ri-calendar-line" />
                       </div>
                       <input
-                type="datetime-local"
-                className="form-control"
-                name="start_date"
-                value={projectData.start_date}
-                onChange={(e) => handleDateChange('start_date', e.target.value)}
-              />
-
+                        type="datetime-local"
+                        className="form-control"
+                        name="start_date"
+                        value={projectData.start_date}
+                        onChange={(e) => handleDateChange('start_date', e.target.value)}
+                      />
                     </div>
                   </div>
                 </div>
@@ -498,74 +451,73 @@ export default function CreateProject() {
                         <i className="ri-calendar-line" />
                       </div>
                       <input
-                type="datetime-local"
-                className="form-control"
-                name="end_date"
-                value={projectData.end_date}
-                onChange={(e) => handleDateChange('end_date', e.target.value)}
-              />
+                        type="datetime-local"
+                        className="form-control"
+                        name="end_date"
+                        value={projectData.end_date}
+                        onChange={(e) => handleDateChange('end_date', e.target.value)}
+                      />
                     </div>
                   </div>
                 </div>
                 <div className="col-xl-6">
                   <label className="form-label">Status :</label>
                   <select
-                className="form-control"
-                name="status"
-                value={projectData.status}
-                onChange={handleChange}
-              >
-                <option value="Completed">Not Started</option>
-                <option value="Not Started">In Progress</option>
-                <option value="Completed">Completed</option>
-                <option value="In Progress">Archived</option>
-                
-              </select>
+                    className="form-control"
+                    name="status"
+                    value={projectData.status}
+                    onChange={handleChange}
+                  >
+                    <option value="Not Started">Not Started</option>
+                    <option value="In Progress">In Progress</option>
+                    <option value="Completed">Completed</option>
+                    <option value="Archived">Archived</option>
+                  </select>
                 </div>
                 <div className="col-xl-6">
                   <label className="form-label">Priority :</label>
                   <select
-                className="form-control"
-                name="risk_level"
-                value={projectData.risk_level}
-                onChange={handleChange}
-              >
-                <option value="Low">High</option>
-                <option value="Medium">Low</option>
-                <option value="High">Medium</option>
-              </select>
+                    className="form-control"
+                    name="risk_level"
+                    value={projectData.risk_level}
+                    onChange={handleChange}
+                  >
+                    <option value="Low">Low</option>
+                    <option value="Medium">Medium</option>
+                    <option value="High">High</option>
+                  </select>
                 </div>
                 <div className="col-xl-6">
-                       <label>Budget</label>
-                       <input
-                type="number"
-                className="form-control"
-                name="budget"
-                value={projectData.budget}
-                onChange={handleChange}
-                min="0"
-              />
+                  <label>Budget</label>
+                  <input
+                    type="number"
+                    className="form-control"
+                    name="budget"
+                    value={projectData.budget}
+                    onChange={handleChange}
+                    min="0"
+                  />
                 </div>
-                
                 <div className="col-xl-6">
                   <label className="form-label">Tags</label>
                   <input
-                type="text"
-                className="form-control"
-                name="tags"
-                value={projectData.tags}
-                onChange={handleChange}
-                placeholder="Séparés par des virgules"
-              />
+                    type="text"
+                    className="form-control"
+                    name="tags"
+                    value={projectData.tags}
+                    onChange={handleChange}
+                    placeholder="Separated by commas"
+                  />
                 </div>
-               
               </div>
             </div>
             <div className="card-footer">
-              <button className="btn btn-primary-light btn-wave ms-auto float-end"  onClick={handleCreateProject} disabled={loading}
-        >
-          {loading ? 'Création en cours...' : 'Create Project'}
-                
+              <button 
+                className="btn btn-primary-light btn-wave ms-auto float-end" 
+                onClick={handleUpdateProject} 
+                disabled={loading}
+              >
+                {loading ? 'Updating...' : 'Update Project'}
               </button>
             </div>
           </div>

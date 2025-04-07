@@ -35,7 +35,7 @@ function GoogleLogin() {
                     setTimeout(() => {
                         setShowModal(false);
                         // Rediriger vers la page d'accueil après la fermeture de la modale
-                        navigate("/profile", { replace: true });
+                        navigate("/sales", { replace: true });
                     }, 1000); // 1000 ms = 1 seconde
                 } else {
                     // Afficher une modale d'erreur

@@ -244,6 +244,19 @@ const Profile = () => {
                             See Activities
                           </button>
                         </li>
+                        <li className="nav-item" role="presentation">
+                          <button
+                            className={`nav-link w-100 text-start ${activeTab === "security-tab-pane" ? "active" : ""}`}
+                            id="security-tab"
+                            onClick={() => setActiveTab("security-tab-pane")}
+                            type="button"
+                            role="tab"
+                            aria-controls="security-tab-pane"
+                            aria-selected={activeTab === "security-tab-pane"}
+                          >
+                            Security
+                          </button>
+                        </li>
                       </ul>
                       <div className="tab-content" id="profile-tabs">
                         <div
@@ -314,6 +327,25 @@ const Profile = () => {
                               </table>
                             </div>
                           </div>
+                        </div>
+                        <div
+                          className={`tab-pane p-0 border-0 ${activeTab === "security-tab-pane" ? "show active" : ""}`}
+                          id="security-tab-pane"
+                          role="tabpanel"
+                          aria-labelledby="security-tab"
+                          tabIndex={0}
+                        >
+                          <ProfileSecurity 
+                            user={user} 
+                            handleEnable2FA={handleEnable2FA} 
+                            handleVerify2FA={handleVerify2FA} 
+                            handleDisable2FA={handleDisable2FA} 
+                            qrCodeUrl={qrCodeUrl} 
+                            showQRCode={showQRCode} 
+                            token={token} 
+                            setToken={setToken} 
+                            message={message} 
+                          />
                         </div>
                       </div>
                     </div>
