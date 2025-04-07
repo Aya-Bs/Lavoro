@@ -358,26 +358,66 @@ exports.checkTeamManager = async (id) => {
 };
 
 
-// Fonction qui vérifie combien de projets un Team Manager a
 exports.checkTeamManagerProjects = async (req, res) => {
   try {
-      const user = await this.checkTeamManager(req.params.id);
-      if (!user) {
-          return res.status(404).json({ message: 'Utilisateur non trouvé' });
+    const user = await this.checkTeamManager(req.params.id);
+    if (!user) {
+      return res.status(404).json({ message: 'Utilisateur non trouvé' });
+    }
+
+    // 1. Récupérer tous les projets du Team Manager
+    const projects = await Project.find({ manager_id: req.params.id });
+
+    // 2. Calculer la charge de travail basée sur :
+    //    - Nombre de projets
+    //    - Statut des projets (en cours = plus de charge)
+    //    - Délais des projets (urgence = plus de charge)
+    const workloadScore = projects.reduce((score, project) => {
+      let projectScore = 0;
+
+      // Pondération par statut
+      if (project.status === 'In Progress') projectScore += 2;
+      else if (project.status === 'Not Started') projectScore += 1;
+      else if (project.status === 'Completed') projectScore += 0.5;
+
+      // Pondération par niveau de risque (urgence)
+      if (project.risk_level === 'High') projectScore += 2;
+      else if (project.risk_level === 'Medium') projectScore += 1;
+
+      // Pondération par retard (si end_date est dépassé)
+      if (project.end_date && new Date(project.end_date) < new Date()) {
+        projectScore += 3; // Pénalité pour retard
       }
 
-      const projects = await Project.find({ manager_id: req.params.id });
+      return score + projectScore;
+    }, 0);
 
-      if (projects.length >= 3) {
-          return res.status(400).json({ message: 'Vous ne pouvez pas affecter plus de projets à ce Team Manager' });
-      } else {
-          return res.status(200).json({ message: 'Vous pouvez affecter des projets à ce Team Manager' });
-      }
+    // 3. Définir des seuils de charge
+    const MAX_WORKLOAD = 10; // Seuil arbitraire (à ajuster)
+    const availableCapacity = MAX_WORKLOAD - workloadScore;
+
+    // 4. Retourner une réponse détaillée
+    if (availableCapacity <= 0) {
+      return res.status(400).json({ 
+        message: 'Maximum workload reached',
+        workloadScore,
+        maxWorkload: MAX_WORKLOAD,
+        suggestion: 'Réaffectez certains projets ou ajustez les délais.'
+      });
+    } else {
+      // return res.status(200).json({ 
+      //   message: 'Capacité disponible pour un nouveau projet',
+      //   workloadScore,
+      //   maxWorkload: MAX_WORKLOAD,
+      //   availableCapacity,
+      //   projectsCount: projects.length
+      // });
+      return res.status(200).json({message: 'Capacity available for a new project'});
+    }
   } catch (error) {
-      return res.status(500).json({ message: error.message });
+    return res.status(500).json({ message: error.message });
   }
 };
-
 
 
 

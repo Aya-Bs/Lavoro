@@ -186,17 +186,23 @@ export default function CreateProject() {
     try {
       const response = await axios.get(`http://localhost:3000/project/checkTeamManagerProjects/${managerId}`);
       setMessage(response.data.message);
+      console.log("API Response:", response.data); // Log pour déboguer
 
       // Définir la couleur du message en fonction de la disponibilité du Team Manager
-      if (response.data.message.includes("Vous pouvez affecter")) {
+      if (response===200) {
         setMessageColor("#28a745"); // Message en vert si disponible
-      } else {
-        setMessageColor("#dc3545"); // Message en rouge si non disponible
-      }
+      } 
+      
     } catch (error) {
-      console.error("Error checking team manager projects:", error);
-      setMessage("Une erreur s'est produite");
-      setMessageColor("#dc3545"); // Message en rouge en cas d'erreur
+      if (error.response && error.response.status === 400) {
+        // On affiche uniquement le message d'erreur 400
+        setMessage(error.response.data.message);
+        setMessageColor("#dc3545"); // Rouge pour les erreurs
+      } else {
+        console.error("Error checking team manager projects:", error);
+        // On n'affiche PAS de message pour les autres erreurs
+        setMessage("An error has occurred"); // Ou null si vous préférez
+      }
     }
   };
 
