@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom'; // Import useNavigate
 import Swal from 'sweetalert2';
 
 export default function ProjectOverview(){
@@ -7,17 +7,156 @@ export default function ProjectOverview(){
   const [project, setProject] = useState(null); // State for project details
   const [history, setHistory] = useState([]); // State for project history
   const [loading, setLoading] = useState(true); // State for loading status
-  const [totalProject, setTotalProject] = useState(0);
+  const [manager, setManager] = useState(null); // State for manager details
+  const [currentPage, setCurrentPage] = useState(1); // Current page
+  const [itemsPerPage] = useState(7); // Number of items per page
+  const navigate = useNavigate(); // Initialize the navigate function
 
-    const navigate = useNavigate();
-  
+
+  // Calculate the index of the first and last item on the current page
+const indexOfLastItem = currentPage * itemsPerPage;
+const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+const currentHistory = history.slice(indexOfFirstItem, indexOfLastItem);
+
+
+// Calculate the total number of pages
+const totalPages = Math.ceil(history.length / itemsPerPage);
+
+// Handle page change
+const handlePageChange = (pageNumber) => {
+  setCurrentPage(pageNumber);
+};
+
+
+const handleArchiveClick = async (projectId, projectStatus) => {
+  try {
+    // Check if the project status is "In Progress"
+    if (projectStatus === "In Progress") {
+      Swal.fire({
+        title: "Cannot Archive Project",
+        text: "The project is still in progress and cannot be archived.",
+        icon: "error",
+        confirmButtonColor: "#3085d6",
+        confirmButtonText: "OK",
+      });
+      return; // Exit the function
+    }
+
+    // Proceed with archiving if the status is "Completed" or "Not Started"
+    const response = await fetch(`http://localhost:3000/project/${projectId}/archive`, {
+      method: "POST",
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json(); // Parse the error response
+      console.error("Error response:", errorData); // Log the error response
+      throw new Error("Failed to archive project");
+    }
+
+    const data = await response.json();
+    console.log("Project archived:", data); // Log the success response
+
+    // Show success alert
+    Swal.fire({
+      title: "Project Archived",
+      text: "The project has been archived successfully.",
+      icon: "success",
+      confirmButtonColor: "#3085d6",
+      confirmButtonText: "OK",
+  }).then((result) => {
+    if (result.isConfirmed) {
+      // Redirect to the archive page after the user clicks "OK"
+      navigate('/listPro'); // Replace '/archive' with your actual archive page route
+    }
+  });
+
+  } catch (error) {
+    console.error("Error archiving project:", error); // Log the error
+    Swal.fire({
+      title: "Error",
+      text: "An error occurred while archiving the project.",
+      icon: "error",
+      confirmButtonColor: "#3085d6",
+      confirmButtonText: "OK",
+    });
+  }
+};
+
+const handleEditClick = (projectId) => {
+  navigate(`/updateProjects/${projectId}`);
+};
+
+const handleDelete = async (projectId) => {
+  // Use SweetAlert2 for confirmation
+  if (project.status === "In Progress") {
+    return Swal.fire({
+      title: "Action Not Allowed",
+      text: "Projects that are in progress cannot be deleted.",
+      icon: "warning",
+    });
+  }
+  const result = await Swal.fire({
+    title: "Are you sure?",
+    text: "You won't be able to revert this!",
+    icon: "warning",
+    showCancelButton: true,
+    confirmButtonColor: "#3085d6",
+    cancelButtonColor: "#d33",
+    confirmButtonText: "Yes, delete it!",
+  });
+
+  if (result.isConfirmed) {
+    try {
+      // Call the backend API to delete the project
+      const response = await fetch(`http://localhost:3000/project//deleteProject/${projectId}`, {
+        method: 'DELETE',
+      });
+
+      if (response.ok) {
+        // Show success message
+        Swal.fire({
+          title: "Deleted!",
+          text: "The project has been deleted successfully.",
+          icon: "success",
+          confirmButtonColor: "#3085d6",
+          confirmButtonText: "OK",
+        }).then((result) => {
+          if (result.isConfirmed) {
+            // Redirect to the projects list page after the user clicks "OK"
+            navigate('/listPro'); // Replace '/listPro' with your actual projects list page route
+          }
+        });
+      } else {
+        const errorData = await response.json();
+        Swal.fire("Error!", errorData.message || "Failed to delete the project.", "error");
+      }
+    } catch (error) {
+      console.error('Error deleting project:', error);
+      Swal.fire("Error!", "An error occurred while deleting the project.", "error");
+    }
+  }
+};
+
   // Fetch project details
   const fetchProjectDetails = async () => {
     try {
       const response = await fetch(`http://localhost:3000/project/${id}`);
+      
+      // Check if the response is JSON
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        throw new Error('Server did not return JSON');
+      }
+  
       const data = await response.json();
       if (response.ok) {
         setProject(data); // Set project details
+  
+        // Manager details are already included in the response
+        if (data.manager_id) {
+          console.log('Manager Data:', data.manager_id); // Log the manager object
+          setManager(data.manager_id); // Set manager details
+        }
       } else {
         Swal.fire('Error!', data.message || 'Failed to fetch project details.', 'error');
       }
@@ -26,6 +165,7 @@ export default function ProjectOverview(){
       Swal.fire('Error!', 'An error occurred while fetching project details.', 'error');
     }
   };
+
 
   // Fetch project history
   const fetchProjectHistory = async () => {
@@ -43,12 +183,8 @@ export default function ProjectOverview(){
     }
   };
 
-  
-
   // Fetch data when the component mounts
   useEffect(() => {
-
-
     const fetchData = async () => {
       await fetchProjectDetails();
       await fetchProjectHistory();
@@ -67,48 +203,6 @@ export default function ProjectOverview(){
   if (!project) {
     return <div>Project not found.</div>;
   }
-
-  const handleEditClick = (projectId) => {
-    navigate(`/updateProjects/${projectId}`); // Rediriger vers la page de mise à jour
-  };
-
-  const handleDeleteClick = async (projectId) => {
-    Swal.fire({
-      title: "Are you sure?",
-      text: "You won't be able to revert this!",
-      icon: "warning",
-      showCancelButton: true,
-      confirmButtonColor: "#d33",
-      cancelButtonColor: "#3085d6",
-      confirmButtonText: "Yes, delete it!",
-      cancelButtonText: "No, cancel!"
-    }).then(async (result) => {
-      if (result.isConfirmed) {
-        try {
-          const response = await fetch(`http://localhost:3000/project/deleteProject/${projectId}`, {
-            method: "DELETE",
-          });
-  
-          console.log("Response status:", response.status); // Log le statut de la réponse
-  
-          if (!response.ok) {
-            const errorData = await response.json().catch(() => null); // Gère les réponses non JSON
-            console.error("Error response:", errorData);
-            throw new Error("Failed to delete project");
-          }
-  
-          Swal.fire("Deleted!", "Your project has been deleted.", "success").then(() => {
-            setProject(null); // Met à jour l'état pour indiquer que le projet a été supprimé
-            navigate('/listPro'); // Redirige vers la liste des projets
-          });
-  
-        } catch (error) {
-          console.error("Error deleting project:", error);
-          Swal.fire("Error!", "There was an issue deleting the project.", "error");
-        }
-      }
-    });
-  };
 
     return (
         <>
@@ -152,85 +246,35 @@ export default function ProjectOverview(){
         {/* Page Header Close */}
         {/* Start::row-1 */}
         <div className="row">
-          <div className="col-xl-8">
-            <div className="row">
-              <div className="col-xxl-3 col-xl-6">
-                <div className="card custom-card overflow-hidden main-content-card">
-                  <div className="card-body">
-                    <div className="d-flex align-items-start justify-content-between mb-2 gap-1 flex-xxl-nowrap flex-wrap">
-                      <div>
-                        <span className="text-muted d-block mb-1 text-nowrap">
-                          Total Tasks
-                        </span>
-                        <h4 className="fw-medium mb-0">854</h4>
-                      </div>
-                      <div className="lh-1">
-                        <span className="avatar avatar-md avatar-rounded bg-primary">
-                          <i className="ri-shopping-cart-line fs-5" />
-                        </span>
-                      </div>
-                    </div>
-                    <div className="text-muted fs-13">
-                      Increased By{" "}
-                      <span className="text-success">
-                        2.56%
-                        <i className="ri-arrow-up-line fs-16" />
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div className="col-xxl-3 col-xl-6">
-                <div className="card custom-card overflow-hidden main-content-card">
-                  <div className="card-body">
-                    <div className="d-flex align-items-start justify-content-between mb-2 gap-1 flex-xxl-nowrap flex-wrap">
-                      <div>
-                        <span className="text-muted d-block mb-1 text-nowrap">
-                          Budget
-                        </span>
-                        <h4 className="fw-medium mb-0">{project.budget} DT</h4>
-                      </div>
-                      <div className="lh-1">
-                        <span className="avatar avatar-md avatar-rounded bg-primary2">
-                        <i class="ri-exchange-dollar-line fs-30"></i></span>
-                      </div>
-                    </div>
-                    <div className="text-muted fs-13">
-                      Increased By{" "}
-                      <span className="text-success">
-                        7.66%
-                        <i className="ri-arrow-up-line fs-16" />
-                      </span>
-                    </div>
-                  </div>
-                </div>
-                
-              </div>
-             
-              </div>
-              </div>
-              </div>
-              
-        <div className="row">
           <div className="col-xxl-8">
             <div className="card custom-card">
               <div className="card-header justify-content-between">
                 <div className="card-title">Project Details</div>
-                <div>
+                <div className="d-flex gap-1">
                 <button
-                                className="btn btn-success btn-sm"
-                                onClick={() => handleEditClick(project._id)}
-                              >
-                                <i className="ri-pencil-line me-1"></i> Edit
-                              </button>
-                <button className="btn btn-danger btn-sm" onClick={() => handleDeleteClick(project._id)}>
-                  <i className="ri-delete-bin-6-line me-1"></i> Delete
-                              </button>
-                <a href="javascript:void(0);" className="btn btn-sm btn-primary1 btn-wave">
-                  <i className="ri-archive-line align-middle fw-medium me-1" />
-                  Archieve
-                </a>
-              </div>
+                                  className="btn btn-success btn-sm"
+                                  onClick={() => handleEditClick(project._id)}
+                                >
+                                  <i className="ri-pencil-line me-1"></i> Edit
+                                </button>
+  <a
+    className="btn btn-sm btn-primary btn-wave"
+    onClick={() => handleDelete(project._id)}
+  >
+    {/* <i className="ri-delete-bin-line align-middle me-1 fw-medium" /> */}
+    Delete
+  </a>
+
+  <a
+    href="javascript:void(0);"
+    className="btn btn-sm btn-primary1 btn-wave"
+    onClick={() => handleArchiveClick(project._id, project.status)}
+  >
+    {/* <i className="ri-archive-line align-middle fw-medium me-1" /> */}
+    Archive
+  </a>
+</div>
+
 
               </div>
               <div className="card-body">
@@ -278,19 +322,37 @@ export default function ProjectOverview(){
                       <span className="fs-12 text-muted">{new Date(project.end_date).toLocaleDateString()}</span>
                     </div>
                   </div>
-                  <div className="d-flex align-items-center gap-2">
-                    <span className="avatar avatar-md p-1 avatar-rounded me-1 bg-primary-transparent">
-                      <img src="../assets/images/faces/11.jpg" alt="" />
+                  <div className="d-flex align-items-center gap-2 me-3">
+                    <span className="avatar avatar-md avatar-rounded me-1 bg-primary1-transparent">
+                      <i className="ri-money-dollar-circle-line fs-18 lh-1 align-middle" />
                     </span>
                     <div>
-                      <span className="d-block fs-14 fw-medium">
-                      
-                      </span>
-                      <span className="fs-12 text-muted">Project Manager</span>
+                      <div className="fw-medium mb-0 task-title">
+                        Budget                      
+                      </div>
+                      <span className="fs-12 text-muted">{project.budget} </span>
                     </div>
-
-
                   </div>
+
+
+    
+     <div className="d-flex align-items-center gap-2 me-3">
+                    <span className="avatar avatar-md avatar-rounded me-1 bg-primary2-transparent">
+                      <i className="ri-user-3-line fs-18 lh-1 align-middle" />
+
+                    </span>
+                      
+  <div>
+    <span className="d-block fs-14 fw-medium">
+    Project Manager
+    </span>
+    <span className="fs-12 text-muted">
+    {manager && manager.firstName && manager.lastName
+        ? `${manager.firstName} ${manager.lastName}`
+        : 'Manager not assigned'}
+       </span>
+  </div>
+</div>
                 </div>
                 <div className="mb-4">
                   <div className="row">
@@ -325,13 +387,13 @@ export default function ProjectOverview(){
                     </div>
                     <div className="col-xl-6">
                       <div className="d-flex align-items-center justify-content-between mb-2">
-                        <div className="fs-15 fw-medium">Sub Tasks :</div>
+                        <div className="fs-15 fw-medium">Risks :</div>
                         <a
                           href="javascript:void(0);"
                           className="btn btn-primary-light btn-wave btn-sm waves-effect waves-light"
                         >
-                          See More
-                        </a>
+                          {project.risk_level}
+                          </a>
                       </div>
                       <ul className="list-group">
                         <li className="list-group-item">
@@ -368,32 +430,15 @@ export default function ProjectOverview(){
                     </div>
                   </div>
                 </div>
-                <div className="fs-15 fw-medium mb-2">Skills :</div>
+                <div className="fs-15 fw-medium mb-2">Tags :</div>
                 <div className="d-flex gap-2 flex-wrap">
-                  <span className="badge bg-light text-default border">
-                    UI/UX Design
-                  </span>
-                  <span className="badge bg-light text-default border">
-                    Data Integration
-                  </span>
-                  <span className="badge bg-light text-default border">
-                    Data Visualization
-                  </span>
-                  <span className="badge bg-light text-default border">
-                    Front-End Development
-                  </span>
-                  <span className="badge bg-light text-default border">
-                    Authentication Systems
-                  </span>
-                  <span className="badge bg-light text-default border">
-                    Usability Testing
-                  </span>
-                  <span className="badge bg-light text-default border">
-                    Agile Methodology
-                  </span>
-                  <span className="badge bg-light text-default border">
-                    API Development
-                  </span>
+                {project.tags.split(',').map((tag, index) => (
+              <span key={index} className="badge bg-light text-default border">
+                {tag.trim()}
+              </span>
+            ))}       
+                  
+                  
                 </div>
               </div>
               
@@ -403,19 +448,20 @@ export default function ProjectOverview(){
               
             </div>
           </div>
-          <div className="col-xxl-4">
+     
+<div className="col-xxl-4">
   <div className="card custom-card justify-content-between">
     <div className="card-header pb-0">
       <div className="card-title">Project History</div>
     </div>
     <div className="card-body">
       <ul className="list-unstyled profile-timeline">
-        {history.length > 0 ? (
-          history.map((entry, index) => (
+        {currentHistory.length > 0 ? (
+          currentHistory.map((entry, index) => (
             <li key={index}>
               <div>
                 <span className="avatar avatar-sm shadow-sm bg-primary avatar-rounded profile-timeline-avatar">
-                  {entry.change_type.charAt(0)} {/* Display the first letter of the change type */}
+                  {entry.change_type.charAt(0)}
                 </span>
                 <div className="mb-2 d-flex align-items-start gap-2">
                   <div>
@@ -431,9 +477,15 @@ export default function ProjectOverview(){
                     })}
                   </span>
                 </div>
-                <p className="text-muted mb-0">
-                  Changed from <b>{entry.old_value}</b> to <b>{entry.new_value}</b>.
-                </p>
+                {entry.change_type === 'Project Created' ? (
+                  <p className="text-muted mb-0">
+                     <b>{entry.new_value}</b>
+                  </p>
+                ) : (
+                  <p className="text-muted mb-0">
+                    Changed from <b>{entry.old_value}</b> to <b>{entry.new_value}</b>.
+                  </p>
+                )}
               </div>
             </li>
           ))
@@ -444,55 +496,35 @@ export default function ProjectOverview(){
         )}
       </ul>
     </div>
-              <div className="card-footer">
-                <div className="d-sm-flex align-items-center lh-1">
-                  <div className="me-sm-2 mb-2 mb-sm-0 p-1 rounded-circle bg-primary-transparent d-inline-block">
-                    <img
-                      src="../assets/images/faces/5.jpg"
-                      alt=""
-                      className="avatar avatar-sm avatar-rounded"
-                    />
-                  </div>
-                  <div className="flex-fill">
-                    <div className="input-group flex-nowrap">
-                      <input
-                        type="text"
-                        className="form-control w-sm-50 border shadow-none"
-                        placeholder="Share your thoughts"
-                        aria-label="Recipient's username with two button addons"
-                      />
-                      <button
-                        className="btn btn-primary-light btn-wave waves-effect waves-light"
-                        type="button"
-                      >
-                        <i className="bi bi-emoji-smile" />
-                      </button>
-                      <button
-                        className="btn btn-primary-light btn-wave waves-effect waves-light"
-                        type="button"
-                      >
-                        <i className="bi bi-paperclip" />
-                      </button>
-                      <button
-                        className="btn btn-primary-light btn-wave waves-effect waves-light"
-                        type="button"
-                      >
-                        <i className="bi bi-camera" />
-                      </button>
-                      <button
-                        className="btn btn-primary btn-wave waves-effect waves-light text-nowrap"
-                        type="button"
-                      >
-                        Post
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-          </div>
 
+    <div className="card-footer">
+  <div className="d-flex justify-content-center align-items-center w-100">
+    <div className="d-flex align-items-center gap-2">
+      <button
+        className="btn btn-primary-light btn-wave waves-effect waves-light"
+        type="button"
+        onClick={() => handlePageChange(currentPage - 1)}
+        disabled={currentPage === 1}
+      >
+        <i className="ri-arrow-left-s-line"></i>
+      </button>
+      <span className="btn-primary-light mx-2">
+        {currentPage} / {totalPages}
+      </span>
+      <button
+        className="btn btn-primary-light btn-wave waves-effect waves-light"
+        type="button"
+        onClick={() => handlePageChange(currentPage + 1)}
+        disabled={currentPage === totalPages}
+      >
+        <i className="ri-arrow-right-s-line"></i>
+      </button>
+    </div>
+  </div>
+</div>
+  </div>
+</div>
+ </div>
 </>
 
     );
