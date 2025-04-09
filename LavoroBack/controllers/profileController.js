@@ -6,57 +6,67 @@ const bcrypt = require('bcrypt');
 const fs = require('fs');
 const qrcode = require('qrcode');
 const speakeasy = require('speakeasy');
+const jwt = require('jsonwebtoken');
 
 
 // Fonction pour mettre à jour le profil de l'utilisateur
 exports.updateProfile = async (req, res) => {
   try {
-    const userId = req.session.user._id;
-    let imagePath = req.session.user.image; 
-    const { currentPassword, newPassword, confirmNewPassword } = req.body;
+    // Extract token from Authorization header
+    const authHeader = req.headers['authorization'];
+    const token = authHeader && authHeader.split(' ')[1]; // Bearer <token>
 
-    // Si une nouvelle image est téléchargée, mettre à jour le chemin de l'image
-    if (req.file) {
-      imagePath = '/imagesUser/' + req.file.filename; 
+    if (!token) {
+      return res.status(401).json({ message: 'No token provided' });
     }
 
-    console.log("req.body:", req.body);
-    console.log("req.file:", req.file);
-    console.log("imagePath",req.session.user.image);
+    // Verify the token
+    let decoded;
+    try {
+      decoded = jwt.verify(token, process.env.JWT_SECRET);
+    } catch (err) {
+      return res.status(403).json({ message: 'Invalid or expired token' });
+    }
 
-          // Handle base64 image (sent as req.body.image)
-          if (req.body.image && req.body.image.startsWith("data:image")) {
-            const base64Data = req.body.image.replace(/^data:image\/png;base64,/, "");
-            const filename = `public/imagesUser/${Date.now()}-captured.png`;
-            fs.writeFileSync(filename, base64Data, "base64");
-            imagePath = filename.replace("public", "");
-          }
+    const userId = decoded._id; // Get user ID from token payload
+    
 
-          console.log("hello");
+    let imagePath = req.session.user?.image || ''; // Fallback if no session
+    const { currentPassword, newPassword, confirmNewPassword } = req.body;
+
+    // If a new image is uploaded, update the image path
+    if (req.file) {
+      imagePath = '/imagesUser/' + req.file.filename;
+    }
+
+    // Handle base64 image (if sent as req.body.image)
+    if (req.body.image && req.body.image.startsWith("data:image")) {
+      const base64Data = req.body.image.replace(/^data:image\/png;base64,/, "");
+      const filename = `public/imagesUser/${Date.now()}-captured.png`;
+      fs.writeFileSync(filename, base64Data, "base64");
+      imagePath = filename.replace("public", "");
+    }
+
     const user = await User.findById(userId);
     if (!user) {
       return res.status(404).json({ message: 'Utilisateur non trouvé' });
     }
 
     if (currentPassword && newPassword && confirmNewPassword) {
-      // Valider le mot de passe actuel
       const isPasswordValid = await bcrypt.compare(currentPassword, user.password_hash);
       if (!isPasswordValid) {
         return res.status(400).json({ message: 'Mot de passe actuel incorrect' });
       }
 
-      // Vérifier que les nouveaux mots de passe correspondent
       if (newPassword !== confirmNewPassword) {
         return res.status(400).json({ message: 'Les nouveaux mots de passe ne correspondent pas' });
       }
 
-      // Hacher le nouveau mot de passe
       const hashedPassword = await bcrypt.hash(newPassword, 10);
       user.password_hash = hashedPassword;
       await user.save();
     }
 
-    // Préparer l'objet de mise à jour
     const updateData = {
       image: imagePath,
       firstName: req.body.firstName,
@@ -64,31 +74,20 @@ exports.updateProfile = async (req, res) => {
       phone_number: req.body.phoneNumber,
     };
 
-    // Ajouter le mot de passe haché à l'objet de mise à jour uniquement si défini
     if (user.password_hash) {
       updateData.password_hash = user.password_hash;
     }
 
-    console.log("updateData:", updateData);
-    // Mettre à jour l'utilisateur dans la base de données
     const updatedUser = await User.findByIdAndUpdate(userId, updateData, { new: true });
 
-    if (updatedUser) {
-      req.session.user = updatedUser;
-    } else {
+    if (!updatedUser) {
       return res.status(404).json({ message: 'User not found' });
     }
+
     await AccountActivityLog.create({
-               userId: updatedUser._id,
-               action: 'User Updated Profile',
-             });
-
-    console.log("session user:", req.session.user);
-    req.session.user = updatedUser;
-
-    // Mettre à jour la session avec les nouvelles informations
-
-    // 
+      userId: updatedUser._id,
+      action: 'User Updated Profile',
+    });
 
     res.status(200).json({ message: 'Profil mis à jour avec succès' });
   } catch (error) {
