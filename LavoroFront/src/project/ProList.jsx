@@ -45,43 +45,6 @@ export default function ProList() {
   // Check if user is Team Manager
   const isTeamManager = userInfo?.role?.RoleName === 'Team Manager';
 
-  // Fetch projects function
-  // const fetchProjects = useCallback(async (searchQuery = '') => {
-  //   setLoading(true);
-  //   setError(null);
-  //   try {
-  //     let url = 'http://localhost:3000/project';
-  //     if (searchQuery.trim()) {
-  //       url = `http://localhost:3000/project/getProjectByName?search=${encodeURIComponent(searchQuery)}`;
-  //     }
-      
-  //     const response = await fetch(url);
-  //     if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-      
-  //     const data = await response.json();
-  //     setProjects(data);
-  //     setFilteredProjects(data);
-  //   } catch (err) {
-  //     console.error('Error fetching projects:', err);
-  //     setError(err.message);
-  //     Swal.fire({
-  //       title: "Error",
-  //       text: "Failed to load projects. Please try again later.",
-  //       icon: "error",
-  //       confirmButtonColor: "#3085d6",
-  //       confirmButtonText: "OK",
-  //     });
-  //   } finally {
-  //     setLoading(false);
-  //   }
-  // }, []);
-
-  // // Load projects on mount
-  // useEffect(() => {
-  //   fetchProjects();
-  // }, [fetchProjects]);
-
-
 
   const fetchProjects = useCallback(async (searchQuery = '') => {
     setLoading(true);
@@ -167,7 +130,13 @@ export default function ProList() {
 
 
   // Action handlers
-  const handleViewClick = (projectId) => navigate(`/overviewPro/${projectId}`);
+  const handleViewClick = (projectId) => {
+    navigate(`/overviewPro/${projectId}`, {
+      state: { isTeamManager } // Pass the current isTeamManager value
+    });
+  };
+  
+  
   const handleEditClick = (projectId) => navigate(`/updateProjects/${projectId}`);
 
   const handleArchiveClick = async (projectId, projectStatus) => {
