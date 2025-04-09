@@ -2,6 +2,7 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Swal from "sweetalert2";
 import "../../public/assets/libs/sweetalert2/sweetalert2.min.css";
+import axios from 'axios'; // Don't forget to import axios
 
 export default function ProList() {
   const [projects, setProjects] = useState([]);
@@ -9,46 +10,144 @@ export default function ProList() {
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [userInfo, setUserInfo] = useState(null);
   const navigate = useNavigate();
 
-  // Fonction pour récupérer les projets avec gestion d'erreur améliorée
+  // Fetch user info on component mount
+  useEffect(() => {
+    const fetchUserInfo = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        if (!token) {
+          navigate("/signin");
+          return;
+        }
+
+        const response = await axios.get("http://localhost:3000/users/me", {
+          headers: { Authorization: `Bearer ${token}` },
+          withCredentials: true,
+        });
+
+        if (response.data) {
+          setUserInfo(response.data);
+        } else {
+          navigate("/signin");
+        }
+      } catch (err) {
+        console.error("Error fetching user info:", err);
+        navigate("/signin");
+      }
+    };
+
+    fetchUserInfo();
+  }, [navigate]);
+
+  // Check if user is Team Manager
+  const isTeamManager = userInfo?.role?.RoleName === 'Team Manager';
+
+  // Fetch projects function
+  // const fetchProjects = useCallback(async (searchQuery = '') => {
+  //   setLoading(true);
+  //   setError(null);
+  //   try {
+  //     let url = 'http://localhost:3000/project';
+  //     if (searchQuery.trim()) {
+  //       url = `http://localhost:3000/project/getProjectByName?search=${encodeURIComponent(searchQuery)}`;
+  //     }
+      
+  //     const response = await fetch(url);
+  //     if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+      
+  //     const data = await response.json();
+  //     setProjects(data);
+  //     setFilteredProjects(data);
+  //   } catch (err) {
+  //     console.error('Error fetching projects:', err);
+  //     setError(err.message);
+  //     Swal.fire({
+  //       title: "Error",
+  //       text: "Failed to load projects. Please try again later.",
+  //       icon: "error",
+  //       confirmButtonColor: "#3085d6",
+  //       confirmButtonText: "OK",
+  //     });
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // }, []);
+
+  // // Load projects on mount
+  // useEffect(() => {
+  //   fetchProjects();
+  // }, [fetchProjects]);
+
+
+
   const fetchProjects = useCallback(async (searchQuery = '') => {
     setLoading(true);
     setError(null);
+    
     try {
+      // 1. Get the token from localStorage
+      const token = localStorage.getItem('token');
+      if (!token) {
+        navigate('/signin'); // Redirect if no token
+        return;
+      }
+  
+      // 2. Build the request URL
       let url = 'http://localhost:3000/project';
-      if (searchQuery.trim()) {
-        url = `http://localhost:3000/project/getProjectByName?search=${encodeURIComponent(searchQuery)}`;
-      }
+      const params = new URLSearchParams();
       
-      const response = await fetch(url);
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+      if (searchQuery.trim()) {
+        params.append('search', searchQuery);
       }
+  
+      // 3. Make the API request with authorization header
+      const response = await fetch(`${url}?${params.toString()}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+  
+      // 4. Handle response errors
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || 'Failed to fetch projects');
+      }
+  
+      // 5. Process the data
       const data = await response.json();
-      setProjects(data);
-      setFilteredProjects(data);
+      
+      // 6. Filter projects if user is Team Manager (optional client-side fallback)
+      const filteredData = isTeamManager 
+        ? data.filter(project => project.manager_id?._id === userInfo?._id)
+        : data;
+  
+      setProjects(filteredData);
+      setFilteredProjects(filteredData);
+      
     } catch (err) {
-      console.error('Error fetching projects:', err);
+      console.error('Project fetch error:', err);
       setError(err.message);
+      
       Swal.fire({
         title: "Error",
-        text: "Failed to load projects. Please try again later.",
+        text: err.message || "Failed to load projects",
         icon: "error",
         confirmButtonColor: "#3085d6",
-        confirmButtonText: "OK",
       });
     } finally {
       setLoading(false);
     }
-  }, []);
-
-  // Effet pour charger les projets initiaux
+  }, [navigate, isTeamManager, userInfo?._id]); // Add dependencies
+  
+  // Load projects on mount and when search term changes
   useEffect(() => {
     fetchProjects();
   }, [fetchProjects]);
 
-  // Recherche avec debounce
+  // Search with debounce
   useEffect(() => {
     const timer = setTimeout(() => {
       if (searchTerm.trim()) {
@@ -64,13 +163,12 @@ export default function ProList() {
     return () => clearTimeout(timer);
   }, [searchTerm, projects]);
 
-  const handleViewClick = (projectId) => {
-    navigate(`/overviewPro/${projectId}`);
-  };
 
-  const handleEditClick = (projectId) => {
-    navigate(`/updateProjects/${projectId}`);
-  };
+
+
+  // Action handlers
+  const handleViewClick = (projectId) => navigate(`/overviewPro/${projectId}`);
+  const handleEditClick = (projectId) => navigate(`/updateProjects/${projectId}`);
 
   const handleArchiveClick = async (projectId, projectStatus) => {
     if (projectStatus === "In Progress") {
@@ -99,7 +197,7 @@ export default function ProList() {
         confirmButtonText: "OK",
       });
 
-      // Mettre à jour les deux états
+      // Update both states
       setProjects(prev => prev.filter(p => p._id !== projectId));
       setFilteredProjects(prev => prev.filter(p => p._id !== projectId));
     } catch (error) {
@@ -115,7 +213,7 @@ export default function ProList() {
   };
 
   const handleDeleteClick = async (projectId) => {
-    Swal.fire({
+    const result = await Swal.fire({
       title: "Are you sure?",
       text: "You won't be able to revert this!",
       icon: "warning",
@@ -124,27 +222,24 @@ export default function ProList() {
       cancelButtonColor: "#3085d6",
       confirmButtonText: "Yes, delete it!",
       cancelButtonText: "No, cancel!"
-    }).then(async (result) => {
-      if (result.isConfirmed) {
-        try {
-          const response = await fetch(`http://localhost:3000/project/deleteProject/${projectId}`, {
-            method: "DELETE",
-          });
-  
-          if (!response.ok) throw new Error("Failed to delete project");
-  
-          Swal.fire("Deleted!", "Your project has been deleted.", "success");
-  
-          // Mettre à jour les deux états
-          setProjects(prev => prev.filter(p => p._id !== projectId));
-          setFilteredProjects(prev => prev.filter(p => p._id !== projectId));
-  
-        } catch (error) {
-          console.error("Error deleting project:", error);
-          Swal.fire("Error!", "There was an issue deleting the project.", "error");
-        }
-      }
     });
+
+    if (result.isConfirmed) {
+      try {
+        const response = await fetch(`http://localhost:3000/project/deleteProject/${projectId}`, {
+          method: "DELETE",
+        });
+
+        if (!response.ok) throw new Error("Failed to delete project");
+
+        Swal.fire("Deleted!", "Your project has been deleted.", "success");
+        setProjects(prev => prev.filter(p => p._id !== projectId));
+        setFilteredProjects(prev => prev.filter(p => p._id !== projectId));
+      } catch (error) {
+        console.error("Error deleting project:", error);
+        Swal.fire("Error!", "There was an issue deleting the project.", "error");
+      }
+    }
   };
 
   return (
@@ -166,7 +261,7 @@ export default function ProList() {
         </div>
       </div>
       
-      {/* Barre de recherche améliorée */}
+      {/* Search bar */}
       <div className="mb-3">
         <div className="input-group">
           <input
@@ -201,7 +296,7 @@ export default function ProList() {
         )}
       </div>
 
-      {/* Tableau des projets */}
+      {/* Projects table */}
       <div className="row">
         <div className="col-xl-12">
           <div className="card custom-card overflow-hidden">
@@ -219,13 +314,13 @@ export default function ProList() {
                   <table className="table text-nowrap">
                     <thead>
                       <tr>
-                        <th scope="col">Project Name</th>
-                        <th scope="col">Description</th>
-                        <th scope="col">Budget</th>
-                        <th scope="col">Start Date</th>
-                        <th scope="col">End Date</th>
-                        <th scope="col">Status</th>
-                        <th scope="col">Actions</th>
+                        <th>Project Name</th>
+                        <th>Description</th>
+                        <th>Budget</th>
+                        <th>Start Date</th>
+                        <th>End Date</th>
+                        <th>Status</th>
+                        <th>Actions</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -254,25 +349,31 @@ export default function ProList() {
                                 >
                                   <i className="ri-eye-line me-1"></i> View
                                 </button>
-                                <button
-                                  className="btn btn-warning btn-sm"
-                                  onClick={() => handleArchiveClick(project._id, project.status)}
-                                  disabled={project.status === "In Progress"}
-                                >
-                                  <i className="ri-archive-line me-1"></i> Archive
-                                </button>
-                                <button
-                                  className="btn btn-success btn-sm"
-                                  onClick={() => handleEditClick(project._id)}
-                                >
-                                  <i className="ri-pencil-line me-1"></i> Edit
-                                </button>
-                                <button 
-                                  className="btn btn-danger btn-sm" 
-                                  onClick={() => handleDeleteClick(project._id)}
-                                >
-                                  <i className="ri-delete-bin-6-line me-1"></i> Delete
-                                </button>
+                                
+                                {/* Only show these buttons if NOT Team Manager */}
+                                {!isTeamManager && (
+                                  <>
+                                    <button
+                                      className="btn btn-warning btn-sm"
+                                      onClick={() => handleArchiveClick(project._id, project.status)}
+                                      disabled={project.status === "In Progress"}
+                                    >
+                                      <i className="ri-archive-line me-1"></i> Archive
+                                    </button>
+                                    <button
+                                      className="btn btn-success btn-sm"
+                                      onClick={() => handleEditClick(project._id)}
+                                    >
+                                      <i className="ri-pencil-line me-1"></i> Edit
+                                    </button>
+                                    <button 
+                                      className="btn btn-danger btn-sm" 
+                                      onClick={() => handleDeleteClick(project._id)}
+                                    >
+                                      <i className="ri-delete-bin-6-line me-1"></i> Delete
+                                    </button>
+                                  </>
+                                )}
                               </div>
                             </td>
                           </tr>

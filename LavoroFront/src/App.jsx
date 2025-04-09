@@ -70,9 +70,6 @@ function App() {
               <Route path="/ListPro" element={<ListPro />} />
               <Route path="/archieve" element={< Archieve />} />
               <Route path="/updateProjects/:id" element={<UpdateProject />} />
-
-
-
             </Route>
         </Routes>
       </BrowserRouter>

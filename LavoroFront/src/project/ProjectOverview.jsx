@@ -336,7 +336,7 @@ const handleDelete = async (projectId) => {
                       
   <div>
     <span className="d-block fs-14 fw-medium">
-    Project Manager
+    Team Manager
     </span>
     <span className="fs-12 text-muted">
     {manager && manager.firstName && manager.lastName

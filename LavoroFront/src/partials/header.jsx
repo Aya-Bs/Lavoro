@@ -69,28 +69,6 @@ const Header = () => {
   }, []);
 
 
-  // useEffect(() => {
-  //   // Load the Google Translate script dynamically
-  //   const script = document.createElement("script");
-  //   script.src = "//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit";
-  //   script.async = true;
-  //   document.body.appendChild(script);
-
-  //   // Initialize the Google Translate widget
-  //   window.googleTranslateElementInit = () => {
-  //     new window.google.translate.TranslateElement(
-  //       { pageLanguage: "en" },
-  //       "google_translate_element"
-  //     );
-  //   };
-
-  //   // Clean up the script when the component unmounts
-  //   return () => {
-  //     document.body.removeChild(script);
-  //     delete window.googleTranslateElementInit;
-  //   };
-  // }, []);
-
   useEffect(() => {
     // Load the Google Translate script dynamically
     const script = document.createElement("script");
@@ -120,36 +98,6 @@ const Header = () => {
       googleTranslateElement.dispatchEvent(new Event("change"));
     }
   };
-  // Function to trigger language change
-  // const changeLanguage = (languageCode) => {
-  //   const googleTranslateElement = document.querySelector(".goog-te-combo");
-  //   if (googleTranslateElement) {
-  //     googleTranslateElement.value = languageCode;
-  //     googleTranslateElement.dispatchEvent(new Event("change"));
-  //   }
-  // };
-
-  // useEffect(() => {
-  //   // Load the Google Translate script dynamically
-  //   const script = document.createElement("script");
-  //   script.src = "//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit";
-  //   script.async = true;
-  //   document.body.appendChild(script);
-
-  //   // Initialize the Google Translate widget
-  //   window.googleTranslateElementInit = () => {
-  //     new window.google.translate.TranslateElement(
-  //       { pageLanguage: "en" },
-  //       "google_translate_element"
-  //     );
-  //   };
-
-  //   // Clean up the script when the component unmounts
-  //   return () => {
-  //     document.body.removeChild(script);
-  //     delete window.googleTranslateElementInit;
-  //   };
-  // }, []);
 
 
   useEffect(() => {
@@ -872,8 +820,8 @@ const Header = () => {
         className={`sidebar-wrapper ${isSidebarVisible ? "visible" : "hidden"}`}
         ref={sidebarRef}
       >
-        <Sidebar />
-      </div>
+<Sidebar userRole={userInfo?.role?.RoleName} />
+</div>
 
       {/* Overlay for closing the sidebar */}
       {isSidebarVisible && (

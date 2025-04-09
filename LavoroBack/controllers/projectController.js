@@ -5,6 +5,59 @@ const Archive = require('../models/Archive'); // Chemin vers votre modèle Archi
 const Role = require('../models/role');
 const User = require('../models/user');
 const ExcelJS = require('exceljs');
+const jwt = require('jsonwebtoken');
+
+
+
+// Helper function to get user from token
+const getUserFromToken = async (token) => {
+  if (!token) return null;
+  try {
+    const decoded = jwt.verify(token.replace('Bearer ', ''), process.env.JWT_SECRET);
+    return await User.findById(decoded._id).populate('role');
+  } catch (error) {
+    return null;
+  }
+};
+
+
+// Updated getAllProjects function
+exports.getAllProjects = async (req, res) => {
+  try {
+    // Get token from headers
+    const token = req.headers.authorization;
+    if (!token) {
+      return res.status(401).json({ message: 'Authentication required' });
+    }
+
+    // Verify token and get user
+    const decoded = jwt.verify(token.replace('Bearer ', ''), process.env.JWT_SECRET);
+    const user = await User.findById(decoded._id).populate('role');
+    
+    if (!user) {
+      return res.status(401).json({ message: 'User not found' });
+    }
+
+    // Build query based on role
+    let query = {};
+    if (user.role?.RoleName === 'Team Manager') {
+      query = { manager_id: user._id }; // Only show projects assigned to this manager
+    }
+
+    const projects = await Project.find(query)
+      .sort({ created_at: -1 })
+      .populate('manager_id', 'firstName lastName email');
+
+    res.status(200).json(projects);
+  } catch (error) {
+    console.error('Error fetching projects:', error);
+    res.status(500).json({ 
+      message: "Error fetching projects",
+      error: error.message 
+    });
+  }
+};
+
 
 
 
@@ -39,18 +92,6 @@ exports.createProject = async (req, res) => {
 };
 
 
-// Récupérer tous les projets
-exports.getAllProjects = async (req, res) => {
-    try {
-        const projects = await Project.find().sort({ created_at: -1 });
-        res.status(200).json(projects);
-    } catch (error) {
-        res.status(500).json({ 
-            message: "Erreur lors de la récupération des projets",
-            error: error.message 
-        });
-    }
-};
 
 
 
@@ -148,16 +189,6 @@ exports.getProjectsByStatus = async () => {
 
 };
 
-
-// Function to get all projects
-exports.getAllProjects = async (req, res) => {
-  try {
-    const projects = await Project.find({});
-    res.status(200).json(projects);
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-};
 
 
   exports.getProjectById = async (req, res) => {
