@@ -4,7 +4,7 @@ import '../../public/assets/libs/apexcharts/apexcharts.min.js'
 import '../../public/assets/js/sales-dashboard.js'
 import '../../public/assets/js/custom.js'
 import 'flatpickr/dist/flatpickr.min.css';
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import flatpickr from 'flatpickr';
 import 'flatpickr/dist/flatpickr.min.css';
 import ApexCharts from 'apexcharts';
@@ -12,9 +12,27 @@ import 'apexcharts/dist/apexcharts.css';
 import '../../public/assets/libs/flatpickr/flatpickr.min.css';
 import '../../public/assets/libs/apexcharts/apexcharts.min.js';
 import '../../public/assets/js/custom.js';
+import axios from 'axios';
 
 export default function Sales() {
+
+  const [projectCount, setProjectCount] = useState(0);
+
+
+
   useEffect(() => {
+
+    const fetchProjectCount = async () => {
+      try {
+        const response = await axios.get("http://localhost:3000/project/countProject");
+        setProjectCount(response.data.count);
+      } catch (error) {
+        console.error("Erreur lors de la récupération du nombre de projets :", error);
+      }
+    };
+
+    fetchProjectCount();
+
     // Initialize flatpickr for date pickers
     flatpickr("#daterange", {
       enableTime: true,
@@ -377,6 +395,12 @@ export default function Sales() {
     lineGraph5.render();
   }, []);
 
+
+  
+    
+  
+   
+
     return(
  
  
@@ -429,9 +453,9 @@ export default function Sales() {
                     <div className="d-flex align-items-start justify-content-between mb-2 gap-1 flex-xxl-nowrap flex-wrap">
                       <div>
                         <span className="text-muted d-block mb-1 text-nowrap">
-                          Total Products
+                          Total Projects
                         </span>
-                        <h4 className="fw-medium mb-0">854</h4>
+                        <h4 className="fw-medium mb-0">{projectCount}</h4>
                       </div>
                       <div className="lh-1">
                         <span className="avatar avatar-md avatar-rounded bg-primary">

@@ -24,7 +24,6 @@ mongo
     console.log(err);
   });
 
-
 const usersRouter = require('./routes/users');
 const taskRouter=require('./routes/Task')
 const profileRouter = require('./routes/profile');
@@ -40,7 +39,6 @@ const server = http.createServer(app);
 
 const io = socketIo(server);
 
-
 app.use(cors({
   origin: 'http://localhost:5173', // Frontend URL
   credentials: true, // Allow cookies to be sent/received
@@ -50,12 +48,14 @@ app.use(cors({
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'twig');
 
+
 // Middleware
 app.use(logger('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
+
 
 // Session configuration
 app.use(
@@ -82,7 +82,6 @@ app.use('/users', usersRouter);
 app.use('/admin',adminRouter);
 app.set('io', io);
 app.set('/tasks',taskRouter);
-
 
 app.use('/project',projectRouter);
 

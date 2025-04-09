@@ -6,8 +6,8 @@ const Archive = new Schema(
     name: { type: String, required: true },
     description: { type: String },
     budget: { type: Number, default: 0 },
-    manager_id: { type: mongo.Schema.Types.UUID, required: true }, // Use UUID
-    team_id: { type: mongo.Schema.Types.UUID, required: true }, // Use UUID
+    manager_id: { type: mongo.Schema.Types.ObjectId },
+    team_id: { type: mongo.Schema.Types.ObjectId },
     start_date: { type: Date },
     end_date: { type: Date },
     status: {
@@ -21,6 +21,7 @@ const Archive = new Schema(
     ai_predicted_description: { type: String },
     created_at: { type: Date, default: Date.now },
     updated_at: { type: Date, default: Date.now },
+
   }
 );
 

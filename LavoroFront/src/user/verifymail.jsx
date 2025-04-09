@@ -86,7 +86,7 @@ function VerifyEmail() {
 
   return (
     <>
-      
+      <div>Loading .......</div>
     </>
   );
 }

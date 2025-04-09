@@ -4,7 +4,7 @@ import SignIn from "./user/Signin";
 import Home from "./Home";
 import VerifyEmail from "./user/verifymail";
 import ForgotPassword from "./user/ForgetPassword";
-import ResetPassword from "./user/ResetPassword";
+import ResetPassword from "./user/resetPassword";
 import Profile from "./profile/profile";
 import UpdateProfile from "./profile/updateProfile";
 import AdminDashboard from "./admin/AdminDashboard";
@@ -21,6 +21,7 @@ import ProjectDash from "./project/ProjectDash";
 import ProjectHistory from "./project/ProjectHistory";
 
 
+
 import "../public/assets/css/icons.css";
 import "../public/assets/css/remixicon.css";
 import 'remixicon/fonts/remixicon.css';
@@ -30,6 +31,7 @@ import AllProject from "./project/AllProject";
 import Archieve from "./project/Archieve";
 import UserActivity from "./admin/UserActivity";
 import ArchiveOverview from "./project/ArchiveOverview";
+import UpdateProject from "./project/updateProject";
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -40,7 +42,7 @@ function App() {
       <BrowserRouter>
       <RefreshHandler setIsAuthenticated={setIsAuthenticated} />
       <Routes>
-      <Route path="/signin" element={<SignIn />} />
+            <Route path="/signin" element={<SignIn />} />
             <Route path="/signup" element={<SignUp />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/resetpassword" element={<ResetPassword />} />
@@ -48,6 +50,8 @@ function App() {
 
             <Route path="/" element={<Navigate to="/signin" />} />
             <Route path="*" element={<Navigate to="/signin" />} />
+
+            
             
             {/* Routes with Layout */}
             <Route element={<Layout />}>
@@ -62,12 +66,13 @@ function App() {
               <Route path="/ProjectDash" element={<ProjectDash />} />
               <Route path="/AllProject" element={<AllProject />} />
 
- 
               <Route path="/overviewPro/:id" element={<ProjectOverview />} />
               <Route path="/overviewArchive/:id" element={<ArchiveOverview />} />
 
               <Route path="/ListPro" element={<ListPro />} />
               <Route path="/archieve" element={< Archieve />} />
+              <Route path="/updateProjects/:id" element={<UpdateProject />} />
+
 
 
             </Route>

@@ -19,7 +19,7 @@ function ActivitiesPage() {
                 } else {
                     alert("An error occurred while fetching tasks. Please try again later.");
                 }
-                navigate('/auth'); // Redirect to login if there's an error
+                navigate('/signin'); // Redirect to login if there's an error
             }
         };
 

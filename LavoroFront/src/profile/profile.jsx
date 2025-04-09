@@ -69,7 +69,7 @@ const Profile = () => {
       } else {
         alert("An error occurred while fetching tasks. Please try again later.");
       }
-      navigate('/auth'); // Rediriger vers la page de connexion en cas d'erreur
+      navigate('/auth');
     }
   };
 
@@ -80,8 +80,6 @@ const Profile = () => {
     }
   }, [activeTab]);
 
-  
-  
   // Enable 2FA
   const handleEnable2FA = async () => {
     try {
@@ -110,29 +108,29 @@ const Profile = () => {
 
   const handleVerify2FA = async () => {
     try {
-      const authToken = localStorage.getItem('token'); // JWT token for authentication
+      const authToken = localStorage.getItem('token');
       if (!authToken) {
         throw new Error("No token found");
       }
 
-      const userProvidedToken = token; // Use the TOTP code from the input field
-      console.log('Sending verify request with TOTP code:', userProvidedToken); // Log the TOTP code
+      const userProvidedToken = token;
+      console.log('Sending verify request with TOTP code:', userProvidedToken);
 
       const response = await axios.post(
         "http://localhost:3000/profiles/verify-2fa",
-        { token: userProvidedToken }, // Send the TOTP code, not the JWT token
+        { token: userProvidedToken },
         {
           headers: {
-            Authorization: `Bearer ${authToken}`, // Use the JWT token for authentication
+            Authorization: `Bearer ${authToken}`,
           },
           withCredentials: true,
         }
       );
 
-      console.log('Verify response:', response.data); // Log the response
+      console.log('Verify response:', response.data);
       setMessage(response.data.message);
     } catch (err) {
-      console.error('Error verifying 2FA:', err); // Log the full error
+      console.error('Error verifying 2FA:', err);
       setMessage(err.response?.data?.error || "Error verifying 2FA");
     }
   };
@@ -246,6 +244,19 @@ const Profile = () => {
                             See Activities
                           </button>
                         </li>
+                        <li className="nav-item" role="presentation">
+                          <button
+                            className={`nav-link w-100 text-start ${activeTab === "security-tab-pane" ? "active" : ""}`}
+                            id="security-tab"
+                            onClick={() => setActiveTab("security-tab-pane")}
+                            type="button"
+                            role="tab"
+                            aria-controls="security-tab-pane"
+                            aria-selected={activeTab === "security-tab-pane"}
+                          >
+                            Security
+                          </button>
+                        </li>
                       </ul>
                       <div className="tab-content" id="profile-tabs">
                         <div
@@ -316,6 +327,25 @@ const Profile = () => {
                               </table>
                             </div>
                           </div>
+                        </div>
+                        <div
+                          className={`tab-pane p-0 border-0 ${activeTab === "security-tab-pane" ? "show active" : ""}`}
+                          id="security-tab-pane"
+                          role="tabpanel"
+                          aria-labelledby="security-tab"
+                          tabIndex={0}
+                        >
+                          <ProfileSecurity 
+                            user={user} 
+                            handleEnable2FA={handleEnable2FA} 
+                            handleVerify2FA={handleVerify2FA} 
+                            handleDisable2FA={handleDisable2FA} 
+                            qrCodeUrl={qrCodeUrl} 
+                            showQRCode={showQRCode} 
+                            token={token} 
+                            setToken={setToken} 
+                            message={message} 
+                          />
                         </div>
                       </div>
                     </div>

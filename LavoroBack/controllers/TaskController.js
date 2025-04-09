@@ -1,16 +1,13 @@
 const mongoose = require('mongoose');
 const Task = require('../models/Task');
 
-const TaskHistory = require('../models/TaskHistory');
-
 const ObjectId = mongoose.Types.ObjectId;
 
 exports.getTasksByUser = async (req, res) => {
     try {
         const userId = req.params.userId;
 
-
-     // Vérifier si l'ID utilisateur est valide
+        // Vérifier si l'ID utilisateur est valide
         if (!ObjectId.isValid(userId)) {
             return res.status(400).json({ error: 'Invalid userId format' });
         }
@@ -26,7 +23,6 @@ exports.getTasksByUser = async (req, res) => {
         res.status(500).json({ error: 'Internal Server Error', message: error.message });
     }
 };
-
 
 exports.seedTasks = async () => {
     try {
