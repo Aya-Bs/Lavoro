@@ -62,6 +62,7 @@ exports.createProject = async (req, res) => {
       status: req.body.status || 'Not Started',
       risk_level: req.body.risk_level || 'Medium',
       tags: req.body.tags,
+      actual_duration: req.body.actual_duration,
     });
 
     // Sauvegarder le projet dans la base de données
@@ -82,6 +83,35 @@ exports.createProject = async (req, res) => {
   } catch (error) {
     return res.status(500).json({ message: error.message });
   }
+};
+
+
+// Fonction pour calculer la durée entre start_date et end_date
+const calculateDuration = (start_date, end_date) => {
+  const start = new Date(start_date);
+  const end = new Date(end_date);
+  
+  const diffInMilliseconds = end - start;
+  
+  // Convertir la différence en jours
+  const diffInDays = Math.floor(diffInMilliseconds / (1000 * 60 * 60 * 24));
+  
+  return diffInDays; 
+};
+
+// Route pour gérer la requête et retourner la durée
+module.exports.calculateDuration = (req, res) => {
+  const { startDate, endDate } = req.query;
+
+  // Vérification si les paramètres startDate et endDate sont fournis
+  if (!startDate || !endDate) {
+    return res.status(400).json({ error: 'Les paramètres startDate et endDate sont requis.' });
+  }
+
+  const duration = calculateDuration(startDate, endDate);
+  
+  // Retourner la durée calculée
+  res.json({ duration });
 };
 
 
@@ -524,5 +554,165 @@ exports.checkTeamManagerProjects = async (req, res) => {
       }
   } catch (error) {
       return res.status(500).json({ message: error.message });
+  }
+};
+
+
+exports.updateProjects = async (req, res) => {
+  const { id } = req.params;
+  const updates = req.body;
+
+  try {
+    const project = await Project.findById(id);
+    if (!project) return res.status(404).json({ message: 'Project not found' });
+
+    console.log("Received updates:", updates); // Debug what's coming in
+
+    const changes = [];
+    for (const field in updates) {
+      // Better comparison that handles different types
+      const oldValue = project[field];
+      const newValue = updates[field];
+      
+      // Special handling for dates
+      if (field.includes('_date') && oldValue && newValue) {
+        const oldDate = new Date(oldValue).getTime();
+        const newDate = new Date(newValue).getTime();
+        if (oldDate !== newDate) {
+          changes.push({ field, oldValue, newValue });
+        }
+      } 
+      // Special handling for ObjectIds
+      else if ((field === 'manager_id' || field === 'team_id') && oldValue && newValue) {
+        if (!oldValue.equals(newValue)) {
+          changes.push({ field, oldValue, newValue });
+        }
+      }
+      // Default comparison
+      else if (JSON.stringify(oldValue) !== JSON.stringify(newValue)) {
+        changes.push({ field, oldValue, newValue });
+      }
+    }
+
+    console.log("Detected changes:", changes); // Debug before saving
+
+    for (const change of changes) {
+      const changeType = getChangeType(change.field);
+      console.log(`Field: ${change.field}, Type: ${changeType}`); // Debug change type
+      
+      const history = new ProjectHistory({
+        project_id: project._id,
+        change_type: changeType,
+        old_value: stringifyForHistory(change.oldValue),
+        new_value: stringifyForHistory(change.newValue),
+        changed_at: new Date(),
+      });
+      await history.save();
+    }
+
+    // Apply updates
+    for (const field in updates) {
+      project[field] = updates[field];
+    }
+    project.updated_at = new Date();
+    
+    await project.save();
+
+    res.status(200).json({ message: 'Project updated successfully', project });
+  } catch (error) {
+    console.error("Update error:", error);
+    res.status(500).json({ 
+      message: "Server error during update",
+      error: error.message,
+      stack: error.stack
+    });
+  }
+};
+
+// Helper to properly stringify values for history
+function stringifyForHistory(value) {
+  if (value instanceof Date) return value.toISOString();
+  if (value instanceof mongoose.Types.ObjectId) return value.toString();
+  if (typeof value === 'object') return JSON.stringify(value);
+  return String(value);
+}
+
+// Improved change type detection
+function getChangeType(field) {
+  // Map all possible field names to their change types
+  const fieldMap = {
+    // Project fields
+    name: 'ProjectName Updated',
+    description: 'Description Update',
+    budget: 'Budget Update',
+    client: 'Client Updated',
+    
+    // Dates
+    start_date: 'Start Date Change',
+    end_date: 'Deadline Change',
+    
+    // Status/risk
+    status: 'Status Update',
+    risk_level: 'Risk Level Updated',
+    
+    // References
+    manager_id: 'Manager Changed',
+    team_id: 'Team Changed',
+    
+    // Other
+    tags: 'Tags Updated'
+  };
+
+  return fieldMap[field] || 'Other Update';
+}
+
+
+
+exports.exportArchivedProjects = async (req, res) => {
+  try {
+    console.log("🔍 Fetching archived projects...");
+    const archives = await Archive.find();
+    
+    if (!archives.length) {
+      return res.status(404).json({ message: 'No archived projects found.' });
+    }
+
+    console.log("✅ Archived projects found:", archives.length);
+
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet('Archived Projects');
+
+    worksheet.columns = [
+      { header: 'Name', key: 'name', width: 30 },
+      { header: 'Original Status', key: 'originalStatus', width: 20 },
+      { header: 'Budget (TND)', key: 'budget', width: 15 },
+      { header: 'Last Updated', key: 'updated_at', width: 20 }
+    ];
+
+    archives.forEach((archive) => {
+      console.log("📌 Adding row:", archive.name);
+      worksheet.addRow({
+        name: archive.name,
+        originalStatus: archive.originalStatus,
+        budget: archive.budget,
+        updated_at: archive.updated_at ? new Date(archive.updated_at).toLocaleDateString() : 'N/A',
+      });
+    });
+
+    res.setHeader(
+      'Content-Type',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    );
+    res.setHeader(
+      'Content-Disposition',
+      'attachment; filename=archived-projects.xlsx'
+    );
+
+    console.log("📤 Sending Excel file...");
+    await workbook.xlsx.write(res);
+    res.end();
+  } catch (err) {
+    console.error('❌ Excel export error:', err);
+    res.status(500).json({ message: 'Failed to export Excel file.', error: err.message });
   }
 };

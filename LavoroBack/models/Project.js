@@ -2,10 +2,12 @@ const mongo = require('mongoose');
 const Schema = mongo.Schema;
 
 const Project = new Schema({
-    name: { type: String, required: true , index: true },// index pour optimiser les recherches,
+    name: { type: String, required: true , index: true },
     description: { type: String },
     budget: { type: Number, default: 0 },
-    
+
+    manager_id: { type: mongo.Schema.Types.ObjectId, ref: 'user' }, 
+
     team_id: { type: mongo.Schema.Types.ObjectId },
     client: { type: String },
     start_date: { type: Date },
@@ -21,6 +23,13 @@ const Project = new Schema({
         default: 'Medium', 
     },
     tags: { type: String },
+    actual_duration: { type: Number, default: 0 }, 
+    estimated_duration: { type: Number, default: 0 }, 
+    completed_tasks_count: { type: Number, default: 0 }, 
+    total_tasks_count: { type: Number, default: 0 }, 
+    performance_score: { type: Number, default: 0 }, 
+    tasks_in_progress_count: { type: Number, default: 0 }, 
+    tasks_not_started_count: { type: Number, default: 0 }, 
     ai_predicted_completion: { type: Date },
     ai_predicted_description: { type: String },
     created_at: { type: Date, default: Date.now },
