@@ -9,9 +9,9 @@ export default function ProList() {
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
   const navigate = useNavigate();
 
-  // Fonction pour récupérer les projets avec gestion d'erreur améliorée
   const fetchProjects = useCallback(async (searchQuery = '') => {
     setLoading(true);
     setError(null);
@@ -43,12 +43,10 @@ export default function ProList() {
     }
   }, []);
 
-  // Effet pour charger les projets initiaux
   useEffect(() => {
     fetchProjects();
   }, [fetchProjects]);
 
-  // Recherche avec debounce
   useEffect(() => {
     const timer = setTimeout(() => {
       if (searchTerm.trim()) {
@@ -63,6 +61,25 @@ export default function ProList() {
 
     return () => clearTimeout(timer);
   }, [searchTerm, projects]);
+
+  const handleSort = (key) => {
+    let direction = 'asc';
+    if (sortConfig.key === key && sortConfig.direction === 'asc') {
+      direction = 'desc';
+    }
+    setSortConfig({ key, direction });
+
+    const sortedProjects = [...filteredProjects].sort((a, b) => {
+      if (a[key] < b[key]) {
+        return direction === 'asc' ? -1 : 1;
+      }
+      if (a[key] > b[key]) {
+        return direction === 'asc' ? 1 : -1;
+      }
+      return 0;
+    });
+    setFilteredProjects(sortedProjects);
+  };
 
   const handleViewClick = (projectId) => {
     navigate(`/overviewPro/${projectId}`);
@@ -99,7 +116,6 @@ export default function ProList() {
         confirmButtonText: "OK",
       });
 
-      // Mettre à jour les deux états
       setProjects(prev => prev.filter(p => p._id !== projectId));
       setFilteredProjects(prev => prev.filter(p => p._id !== projectId));
     } catch (error) {
@@ -135,7 +151,6 @@ export default function ProList() {
   
           Swal.fire("Deleted!", "Your project has been deleted.", "success");
   
-          // Mettre à jour les deux états
           setProjects(prev => prev.filter(p => p._id !== projectId));
           setFilteredProjects(prev => prev.filter(p => p._id !== projectId));
   
@@ -148,130 +163,189 @@ export default function ProList() {
   };
 
   return (
-    <>
-      <div className="d-flex align-items-center justify-content-between page-header-breadcrumb flex-wrap gap-2">
-        <div>
-          <nav>
-            <ol className="breadcrumb mb-1">
-              <li className="breadcrumb-item">
-                <a href="#" onClick={(e) => e.preventDefault()}>Projects</a>
-              </li>
-              <span className="mx-1">→</span>
-              <li className="breadcrumb-item active" aria-current="page">
-                Projects List
-              </li>
-            </ol>
-          </nav>
-          <h1 className="page-title fw-medium fs-18 mb-0">Projects List</h1>
+    <div className="container-fluid">
+      <div className="page-header">
+        <div className="d-flex align-items-center justify-content-between flex-wrap gap-2">
+          <div>
+            <nav aria-label="breadcrumb">
+              <ol className="breadcrumb mb-2">
+                <li className="breadcrumb-item">
+                  <a href="#" onClick={(e) => e.preventDefault()}>Projects</a>
+                </li>
+                <li className="breadcrumb-item active" aria-current="page">
+                  Projects List
+                </li>
+              </ol>
+            </nav>
+            <h1 className="page-title">Projects List</h1>
+          </div>
+          <div className="btn-list">
+            <button 
+              className="btn btn-primary d-flex align-items-center gap-2"
+              onClick={() => navigate('/addProject')}
+            >
+              <i className="ri-add-line"></i> Add New Project
+            </button>
+          </div>
         </div>
       </div>
       
-      {/* Barre de recherche améliorée */}
-      <div className="mb-3">
-        <div className="input-group">
-          <input
-            type="text"
-            className="form-control"
-            placeholder="Search projects by name..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            disabled={loading}
-          />
-          <button 
-            className="btn btn-primary" 
-            onClick={() => fetchProjects(searchTerm)}
-            disabled={loading}
-          >
-            {loading ? (
-              <>
-                <span className="spinner-border spinner-border-sm me-1" role="status"></span>
-                Searching...
-              </>
-            ) : (
-              <>
-                <i className="ri-search-line me-1"></i> Search
-              </>
-            )}
-          </button>
-        </div>
-        {searchTerm && (
-          <small className="text-muted">
-            Showing {filteredProjects.length} results for "{searchTerm}"
-          </small>
-        )}
-      </div>
-
-      {/* Tableau des projets */}
       <div className="row">
-        <div className="col-xl-12">
-          <div className="card custom-card overflow-hidden">
-            <div className="card-body p-0">
+        <div className="col-12">
+          <div className="card">
+            <div className="card-header">
+              <div className="card-title">Project Management</div>
+              <div className="card-options">
+                <div className="input-group">
+                  <input
+                    type="text"
+                    className="form-control form-control-sm"
+                    placeholder="Search projects..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    disabled={loading}
+                  />
+                  <button 
+                    className="btn btn-sm btn-primary"
+                    onClick={() => fetchProjects(searchTerm)}
+                    disabled={loading}
+                  >
+                    {loading ? (
+                      <span className="spinner-border spinner-border-sm me-1" role="status"></span>
+                    ) : (
+                      <i className="ri-search-line"></i>
+                    )}
+                  </button>
+                </div>
+              </div>
+            </div>
+            
+            <div className="card-body">
               {loading && projects.length === 0 ? (
-                <div className="text-center p-5">
+                <div className="text-center py-5">
                   <div className="spinner-border text-primary" role="status">
                     <span className="visually-hidden">Loading...</span>
                   </div>
+                  <p className="mt-2">Loading projects...</p>
                 </div>
               ) : error ? (
-                <div className="alert alert-danger m-3">{error}</div>
+                <div className="alert alert-danger">{error}</div>
               ) : (
                 <div className="table-responsive">
-                  <table className="table text-nowrap">
-                    <thead>
+                  <table className="table table-hover table-bordered table-striped">
+                    <thead className="table-light">
                       <tr>
-                        <th scope="col">Project Name</th>
-                        <th scope="col">Description</th>
-                        <th scope="col">Budget</th>
-                        <th scope="col">Start Date</th>
-                        <th scope="col">End Date</th>
-                        <th scope="col">Status</th>
-                        <th scope="col">Actions</th>
+                        <th 
+                          onClick={() => handleSort('name')}
+                          className="cursor-pointer"
+                        >
+                          <div className="d-flex align-items-center justify-content-between">
+                            Name
+                            {sortConfig.key === 'name' && (
+                              <i className={`ri-arrow-${sortConfig.direction === 'asc' ? 'up' : 'down'}-line`}></i>
+                            )}
+                          </div>
+                        </th>
+                        <th>Description</th>
+                        <th 
+                          onClick={() => handleSort('budget')}
+                          className="cursor-pointer text-end"
+                        >
+                          <div className="d-flex align-items-center justify-content-between">
+                            Budget
+                            {sortConfig.key === 'budget' && (
+                              <i className={`ri-arrow-${sortConfig.direction === 'asc' ? 'up' : 'down'}-line`}></i>
+                            )}
+                          </div>
+                        </th>
+                        <th 
+                          onClick={() => handleSort('start_date')}
+                          className="cursor-pointer"
+                        >
+                          <div className="d-flex align-items-center justify-content-between">
+                            Start Date
+                            {sortConfig.key === 'start_date' && (
+                              <i className={`ri-arrow-${sortConfig.direction === 'asc' ? 'up' : 'down'}-line`}></i>
+                            )}
+                          </div>
+                        </th>
+                        <th 
+                          onClick={() => handleSort('end_date')}
+                          className="cursor-pointer"
+                        >
+                          <div className="d-flex align-items-center justify-content-between">
+                            End Date
+                            {sortConfig.key === 'end_date' && (
+                              <i className={`ri-arrow-${sortConfig.direction === 'asc' ? 'up' : 'down'}-line`}></i>
+                            )}
+                          </div>
+                        </th>
+                        <th 
+                          onClick={() => handleSort('status')}
+                          className="cursor-pointer"
+                        >
+                          <div className="d-flex align-items-center justify-content-between">
+                            Status
+                            {sortConfig.key === 'status' && (
+                              <i className={`ri-arrow-${sortConfig.direction === 'asc' ? 'up' : 'down'}-line`}></i>
+                            )}
+                          </div>
+                        </th>
+                        <th>Actions</th>
                       </tr>
                     </thead>
                     <tbody>
                       {filteredProjects.length > 0 ? (
                         filteredProjects.map((project) => (
                           <tr key={project._id}>
-                            <td>{project.name}</td>
-                            <td>{project.description || '-'}</td>
-                            <td>{project.budget ? `${project.budget} DT` : '-'}</td>
+                            <td className="fw-semibold">{project.name}</td>
+                            <td>
+                              <div className="text-truncate" style={{maxWidth: '200px'}} title={project.description}>
+                                {project.description || '-'}
+                              </div>
+                            </td>
+                            <td className="text-end">{project.budget ? `${project.budget.toLocaleString()} DT` : '-'}</td>
                             <td>{project.start_date ? new Date(project.start_date).toLocaleDateString() : '-'}</td>
                             <td>{project.end_date ? new Date(project.end_date).toLocaleDateString() : '-'}</td>
                             <td>
                               <span className={`badge ${
-                                project.status === 'Completed' ? 'bg-success-transparent' :
-                                project.status === 'In Progress' ? 'bg-warning-transparent' :
-                                project.status === 'Not Started' ? 'bg-danger-transparent' : 'bg-info-transparent'
+                                project.status === 'Completed' ? 'bg-success' :
+                                project.status === 'In Progress' ? 'bg-warning' :
+                                project.status === 'Not Started' ? 'bg-danger' : 'bg-info'
                               }`}>
                                 {project.status}
                               </span>
                             </td>
                             <td>
-                              <div className="d-flex gap-2 flex-wrap">
+                              <div className="d-flex gap-1">
                                 <button
-                                  className="btn btn-primary btn-sm"
+                                  className="btn btn-sm btn-icon btn-info"
                                   onClick={() => handleViewClick(project._id)}
+                                  title="View"
                                 >
-                                  <i className="ri-eye-line me-1"></i> View
+                                  <i className="ri-eye-line"></i>
                                 </button>
                                 <button
-                                  className="btn btn-warning btn-sm"
+                                  className="btn btn-sm btn-icon btn-warning"
+                                  onClick={() => handleEditClick(project._id)}
+                                  title="Edit"
+                                >
+                                  <i className="ri-pencil-line"></i>
+                                </button>
+                                <button
+                                  className="btn btn-sm btn-icon btn-secondary"
                                   onClick={() => handleArchiveClick(project._id, project.status)}
                                   disabled={project.status === "In Progress"}
+                                  title={project.status === "In Progress" ? "Cannot archive in-progress projects" : "Archive"}
                                 >
-                                  <i className="ri-archive-line me-1"></i> Archive
-                                </button>
-                                <button
-                                  className="btn btn-success btn-sm"
-                                  onClick={() => handleEditClick(project._id)}
-                                >
-                                  <i className="ri-pencil-line me-1"></i> Edit
+                                  <i className="ri-archive-line"></i>
                                 </button>
                                 <button 
-                                  className="btn btn-danger btn-sm" 
+                                  className="btn btn-sm btn-icon btn-danger" 
                                   onClick={() => handleDeleteClick(project._id)}
+                                  title="Delete"
                                 >
-                                  <i className="ri-delete-bin-6-line me-1"></i> Delete
+                                  <i className="ri-delete-bin-line"></i>
                                 </button>
                               </div>
                             </td>
@@ -280,7 +354,20 @@ export default function ProList() {
                       ) : (
                         <tr>
                           <td colSpan="7" className="text-center py-4">
-                            {searchTerm ? 'No projects found matching your search' : 'No projects available'}
+                            <div className="d-flex flex-column align-items-center">
+                              <i className="ri-search-line fs-3 text-muted mb-2"></i>
+                              {searchTerm ? (
+                                <>
+                                  <h5>No projects found</h5>
+                                  <p className="text-muted">No projects match your search criteria</p>
+                                </>
+                              ) : (
+                                <>
+                                  <h5>No projects available</h5>
+                                  <p className="text-muted">Click "Add New Project" to get started</p>
+                                </>
+                              )}
+                            </div>
                           </td>
                         </tr>
                       )}
@@ -289,9 +376,25 @@ export default function ProList() {
                 </div>
               )}
             </div>
+            
+            {filteredProjects.length > 0 && (
+              <div className="card-footer d-flex justify-content-between align-items-center">
+                <div className="text-muted">
+                  Showing <span className="fw-bold">{filteredProjects.length}</span> projects
+                </div>
+                <div className="d-flex gap-2">
+                  <button className="btn btn-sm btn-outline-secondary" disabled>
+                    <i className="ri-arrow-left-line"></i> Previous
+                  </button>
+                  <button className="btn btn-sm btn-outline-secondary" disabled>
+                    Next <i className="ri-arrow-right-line"></i>
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>
-    </>
+    </div>
   );
 }
