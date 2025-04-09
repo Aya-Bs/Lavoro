@@ -4,31 +4,87 @@ const ProjectHistory = require('../models/ProjectHistory'); // Chemin vers votre
 const Archive = require('../models/Archive'); // Chemin vers votre modèle Archive
 const Role = require('../models/role');
 const User = require('../models/user');
+const nodemailer = require('nodemailer');
+const sendEmail = require('../utils/email');
+const transporter = require('../utils/emailConfig'); // Import the email transporter
 
+
+// Define the sendProjectAssignmentEmail function
+const sendProjectAssignmentEmail = async (email, projectDetails) => {
+  const mailOptions = {
+    from: `LAVORO <${process.env.EMAIL_USER || 'no-reply@example.com'}>`,
+    to: email,
+    subject: `🚀 New Project Assigned: ${projectDetails.name} 🗂️`,
+    text: `
+      Hello 👋,
+
+      A new project has been assigned to you! 🎉
+
+      Here are the project details:
+      - 📌 Title:  ${projectDetails.name}
+      - 📝 Description: ${projectDetails.description}
+      - 💰 Budget: ${projectDetails.budget}
+      - 🏢 Client: ${projectDetails.client}
+      - 📅 Start Date: ${projectDetails.start_date}
+      - 🗓️ End Date: ${projectDetails.end_date}
+      - ⚠️ Risk Level: ${projectDetails.risk_level}
+
+      Please take a moment to review the details. ✔️
+
+      Best regards,  
+      The Project Management Team 💼
+    `,
+  };
+
+  try {
+    await transporter.sendMail(mailOptions);
+    console.log('Email sent successfully! 🎉');
+  } catch (error) {
+    console.error('Error sending email: 😞', error);
+  }
+};
 
 
 
 
 // Créer un projet
+// Route pour créer un projet
 exports.createProject = async (req, res) => {
-    try {
-        const projectData = {
-            ...req.body,
-            // Gestion des dates si nécessaire
-            start_date: req.body.start_date ? new Date(req.body.start_date) : null,
-            end_date: req.body.end_date ? new Date(req.body.end_date) : null
-        };
+  try {
+    const newProject = new Project({
+      name: req.body.name,
+      description: req.body.description,
+      budget: req.body.budget || 0,
+      team_id: req.body.team_id,
+      client: req.body.client,
+      start_date: req.body.start_date,
+      end_date: req.body.end_date,
+      status: req.body.status || 'Not Started',
+      risk_level: req.body.risk_level || 'Medium',
+      tags: req.body.tags,
+    });
 
-        const project = new Project(projectData);
-        await project.save();
-        res.status(201).json(project);
-    } catch (error) {
-        res.status(400).json({ 
-            message: "Erreur lors de la création du projet",
-            error: error.message 
-        });
+    // Sauvegarder le projet dans la base de données
+    await newProject.save();
+
+    // Récupérer l'utilisateur (manager) associé au projet
+    const manager = await User.findById(req.body.manager_id);  // Assurez-vous que `manager_id` est envoyé dans la requête
+
+    // Vérifier si le manager existe
+    if (!manager) {
+      return res.status(404).json({ message: 'Manager non trouvé' });
     }
+
+    // Appeler la fonction d'envoi d'email
+    await sendProjectAssignmentEmail(manager.email, newProject);
+
+    return res.status(201).json({ message: 'Projet créé avec succès et email envoyé', project: newProject });
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
 };
+
+
 
 // Récupérer tous les projets
 exports.getAllProjects = async (req, res) => {

@@ -5,8 +5,7 @@ const Project = new Schema({
     name: { type: String, required: true , index: true },// index pour optimiser les recherches,
     description: { type: String },
     budget: { type: Number, default: 0 },
-    //manager_id: { type: mongo.Schema.Types.ObjectId },
-    //teamManager: { type: String },
+    
     team_id: { type: mongo.Schema.Types.ObjectId },
     client: { type: String },
     start_date: { type: Date },
