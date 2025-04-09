@@ -57,30 +57,40 @@ const Profile = () => {
     return () => clearTimeout(timeout);
   }, [navigate]);
 
-  // Fonction pour récupérer les activités
+  // // Fonction pour récupérer les activités
   const fetchActivities = async () => {
     try {
-      const response = await axios.get('http://localhost:3000/users/mytasks', { withCredentials: true });
-      setTasks(response.data);
-    } catch (err) {
-      console.error("Error fetching tasks:", err);
-      if (err.response?.status === 404) {
-        alert("The tasks endpoint was not found. Please check the backend.");
-      } else {
-        alert("An error occurred while fetching tasks. Please try again later.");
+      const token = localStorage.getItem('token');
+      if (!token) {
+        console.error("No token found");
+        navigate('/auth');
+        return;
       }
-      navigate('/auth'); // Rediriger vers la page de connexion en cas d'erreur
+
+      const response = await axios.get('http://localhost:3000/tasks/my-tasks', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        withCredentials: true
+      });
+
+      console.log("Tasks response:", response.data); // Ajoutez ce log pour debug
+      setTasks(response.data);
+      
+    } catch (err) {
+      console.error("Full error:", err);
+      console.error("Error response:", err.response?.data); // Debug détaillé
+      
+      if (err.response?.status === 401) {
+        localStorage.removeItem('token');
+        navigate('/auth');
+      } else {
+        alert(`Error: ${err.response?.data?.message || err.message}`);
+      }
+      setTasks([]);
     }
   };
-
-  // Charger les activités lorsque l'onglet est activé
-  useEffect(() => {
-    if (activeTab === "activities-tab-pane") {
-      fetchActivities();
-    }
-  }, [activeTab]);
-
-  
   
   // Enable 2FA
   const handleEnable2FA = async () => {
@@ -237,7 +247,10 @@ const Profile = () => {
                           <button
                             className={`nav-link w-100 text-start ${activeTab === "activities-tab-pane" ? "active" : ""}`}
                             id="activities-tab"
-                            onClick={() => setActiveTab("activities-tab-pane")}
+                            onClick={() => {
+                              setActiveTab("activities-tab-pane");
+                              fetchActivities();
+                            }}
                             type="button"
                             role="tab"
                             aria-controls="activities-tab-pane"

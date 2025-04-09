@@ -1,7 +1,9 @@
 const express = require('express');
 const router = express.Router();
-const { seedTasks, seedTaskHistory } = require('../controllers/TaskController');
+const { seedTasks, seedTaskHistory, getTasksByUser } = require('../controllers/TaskController');
+const auth = require('../middleware/authenticatedToken');
 
+const taskController = require('../controllers/TaskController');
 
 router.post('/seedtasks', async (req, res) => {
     try {
@@ -20,5 +22,9 @@ router.post('/seed-task-history', async (req, res) => {
         res.status(500).json({ error: 'Error seeding task history' });
     }
 });
+
+router.get('/my-tasks', auth, taskController.getTasksByUser);
+
+router.get('/getTasksByUser/:userId', getTasksByUser);
 
 module.exports = router;
