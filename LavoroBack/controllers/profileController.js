@@ -10,17 +10,16 @@ const jwt = require('jsonwebtoken');
 
 
 // Fonction pour mettre à jour le profil de l'utilisateur
+// Fonction pour mettre à jour le profil de l'utilisateur
 exports.updateProfile = async (req, res) => {
   try {
-    // Extract token from Authorization header
     const authHeader = req.headers['authorization'];
-    const token = authHeader && authHeader.split(' ')[1]; // Bearer <token>
+    const token = authHeader && authHeader.split(' ')[1];
 
     if (!token) {
       return res.status(401).json({ message: 'No token provided' });
     }
 
-    // Verify the token
     let decoded;
     try {
       decoded = jwt.verify(token, process.env.JWT_SECRET);
@@ -28,30 +27,40 @@ exports.updateProfile = async (req, res) => {
       return res.status(403).json({ message: 'Invalid or expired token' });
     }
 
-    const userId = decoded._id; // Get user ID from token payload
-    
-
-    let imagePath = req.session.user?.image || ''; // Fallback if no session
-    const { currentPassword, newPassword, confirmNewPassword } = req.body;
-
-    // If a new image is uploaded, update the image path
-    if (req.file) {
-      imagePath = '/imagesUser/' + req.file.filename;
-    }
-
-    // Handle base64 image (if sent as req.body.image)
-    if (req.body.image && req.body.image.startsWith("data:image")) {
-      const base64Data = req.body.image.replace(/^data:image\/png;base64,/, "");
-      const filename = `public/imagesUser/${Date.now()}-captured.png`;
-      fs.writeFileSync(filename, base64Data, "base64");
-      imagePath = filename.replace("public", "");
-    }
-
+    const userId = decoded._id;
     const user = await User.findById(userId);
     if (!user) {
       return res.status(404).json({ message: 'Utilisateur non trouvé' });
     }
 
+    let imagePath = user.image; // Default to existing image
+
+    // Handle new file upload (from multer, if used)
+    if (req.file) {
+      imagePath = '/imagesUser/' + req.file.filename;
+    }
+
+    // Handle base64 image from FormData
+    if (req.body.image && req.body.image.startsWith("data:image")) {
+      const base64Data = req.body.image.replace(/^data:image\/png;base64,/, "");
+      const filename = `public/imagesUser/${Date.now()}-captured.png`;
+      try {
+        fs.writeFileSync(filename, base64Data, "base64");
+        imagePath = filename.replace("public", "");
+      } catch (err) {
+        console.error("Error writing image file:", err);
+        return res.status(500).json({ message: "Failed to save image" });
+      }
+    } else if (req.body.image === "") {
+      // Clear the image and delete the old file if it exists
+      if (user.image && fs.existsSync(`public/${user.image}`)) {
+        fs.unlinkSync(`public/${user.image}`);
+      }
+      imagePath = "";
+    }
+
+    // Handle password update
+    const { currentPassword, newPassword, confirmNewPassword } = req.body;
     if (currentPassword && newPassword && confirmNewPassword) {
       const isPasswordValid = await bcrypt.compare(currentPassword, user.password_hash);
       if (!isPasswordValid) {
@@ -64,15 +73,18 @@ exports.updateProfile = async (req, res) => {
 
       const hashedPassword = await bcrypt.hash(newPassword, 10);
       user.password_hash = hashedPassword;
-      await user.save();
     }
 
+    // Prepare update data
     const updateData = {
-      image: imagePath,
-      firstName: req.body.firstName,
-      lastName: req.body.lastName,
-      phone_number: req.body.phoneNumber,
+      firstName: req.body.firstName || user.firstName,
+      lastName: req.body.lastName || user.lastName,
+      phone_number: req.body.phoneNumber || user.phone_number,
     };
+
+    if (imagePath !== user.image) {
+      updateData.image = imagePath;
+    }
 
     if (user.password_hash) {
       updateData.password_hash = user.password_hash;
@@ -91,6 +103,7 @@ exports.updateProfile = async (req, res) => {
 
     res.status(200).json({ message: 'Profil mis à jour avec succès' });
   } catch (error) {
+    console.error("Backend error:", error);
     res.status(500).json({ message: error.message });
   }
 };
