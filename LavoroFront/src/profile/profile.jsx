@@ -389,7 +389,11 @@ const ProfileSidebar = ({ user }) => {
                 }}
               />
             ) : (
-              <p>No profile image uploaded.</p>
+
+          
+
+              <p></p>
+
             )}
           </span>
           <h5 className="fw-semibold mb-1">{user.firstName}</h5>

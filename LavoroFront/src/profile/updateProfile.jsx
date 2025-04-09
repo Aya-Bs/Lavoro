@@ -7,6 +7,8 @@ import Swal from "sweetalert2";
 
 
 
+
+
 const UpdateProfile = () => {
   const [user, setUser] = useState(null);
   const [firstName, setFirstName] = useState("");
@@ -29,7 +31,9 @@ const UpdateProfile = () => {
   const imgRef = useRef(null);
   const navigate = useNavigate();
 
+
   // Fetch user info on component mount
+
   useEffect(() => {
     const fetchUserInfo = async () => {
       try {
@@ -73,8 +77,10 @@ const UpdateProfile = () => {
       if (!token) {
         throw new Error("No token found");
       }
+
   
       // Afficher une alerte de confirmation avant de supprimer
+
       const result = await Swal.fire({
         title: "Are you sure?",
         text: "You won't be able to revert this!",
@@ -84,8 +90,10 @@ const UpdateProfile = () => {
         cancelButtonColor: "#d33",
         confirmButtonText: "Yes, delete it!",
       });
+
   
       // Si l'utilisateur confirme la suppression
+
       if (result.isConfirmed) {
         const response = await axios.post(
           "http://localhost:3000/profiles/request-delete",
@@ -98,9 +106,14 @@ const UpdateProfile = () => {
             withCredentials: true,
           }
         );
+
   
         if (response.status === 200) {
           // Afficher une alerte de succès
+
+
+        if (response.status === 200) {
+
           await Swal.fire({
             title: "Deleted!",
             text: "Profile delete request successful!",
@@ -111,7 +124,9 @@ const UpdateProfile = () => {
       }
     } catch (err) {
       if (err.response?.status === 400) {
+
         // Afficher une alerte d'erreur
+
         await Swal.fire({
           title: "Error",
           text: "You already sent a deletion request.",
@@ -119,7 +134,9 @@ const UpdateProfile = () => {
         });
         window.location.reload();
       } else if (err.response?.status === 401) {
+
         // Afficher une alerte d'erreur
+
         await Swal.fire({
           title: "Session Expired",
           text: "Please log in again.",
@@ -129,7 +146,9 @@ const UpdateProfile = () => {
         navigate("/auth");
       } else {
         console.error("Error deleting profile:", err);
+
         // Afficher une alerte d'erreur
+
         await Swal.fire({
           title: "Error",
           text: "Failed to delete profile.",
@@ -139,7 +158,9 @@ const UpdateProfile = () => {
     }
   };
 
+
   // Open camera
+
   const openCamera = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ video: true });
@@ -149,7 +170,9 @@ const UpdateProfile = () => {
     }
   };
 
+
   // Capture photo from camera
+
   const capturePhoto = () => {
     const video = videoRef.current;
     const canvas = canvasRef.current;
@@ -161,24 +184,37 @@ const UpdateProfile = () => {
 
     const imageData = canvas.toDataURL("image/png");
     setImageSrc(imageData);
+
     setShowCameraInModal(false); // Hide camera
     setShowModal(false); // Close modal
   };
 
   // Handle image upload from file input
+
+    setShowCameraInModal(false);
+    setShowModal(false);
+  };
+
+
   const previewImage = (event) => {
     const file = event.target.files[0];
     if (file) {
       const reader = new FileReader();
       reader.onload = (e) => {
         setImageSrc(e.target.result);
+
         setShowModal(false); // Close modal
+
+        setShowModal(false);
+
       };
       reader.readAsDataURL(file);
     }
   };
 
+
   // Handle crop completion
+
   const onCropComplete = (crop) => {
     if (imgRef.current && crop.width && crop.height) {
       const croppedImageUrl = getCroppedImg(imgRef.current, crop);
@@ -186,7 +222,9 @@ const UpdateProfile = () => {
     }
   };
 
+
   // Get cropped image
+
   const getCroppedImg = (image, crop) => {
     const canvas = document.createElement("canvas");
     const scaleX = image.naturalWidth / image.width;
@@ -211,7 +249,16 @@ const UpdateProfile = () => {
   };
 
 
+
   // Handle form submission
+  const saveCroppedImage = () => {
+    const newImage = croppedImage || imageSrc;
+    setProfileImage(newImage); // Set profileImage to the new cropped image
+    setImageSrc(null);
+    setCroppedImage(null);
+  };
+
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -241,11 +288,28 @@ const UpdateProfile = () => {
     formData.append("newPassword", newPassword);
     formData.append("confirmNewPassword", confirmNewPassword);
 
+
     if (croppedImage) {
       const blob = await fetch(croppedImage).then((res) => res.blob());
       formData.append("image", blob, "profile.png");
     } else if (profileImage) {
       formData.append("image", profileImage);
+
+    // Handle image cases with clear priority
+    if (croppedImage) {
+      const blob = await fetch(croppedImage).then((res) => res.blob());
+      formData.append("image", blob, "profile.png");
+    } else if (profileImage === "") {
+      formData.append("image", ""); // Explicitly send empty string for removal
+    } else if (profileImage) {
+      if (profileImage.startsWith("http")) {
+        const response = await fetch(profileImage);
+        const blob = await response.blob();
+        formData.append("image", blob, "existing_profile.png");
+      } else {
+        formData.append("image", profileImage);
+      }
+
     }
 
     try {
@@ -258,6 +322,7 @@ const UpdateProfile = () => {
       });
 
       if (response.status === 200) {
+
         if (response.status === 200) {
           // Afficher une alerte de succès
           await Swal.fire({
@@ -267,6 +332,14 @@ const UpdateProfile = () => {
           });
           window.location.reload();
         }
+
+        await Swal.fire({
+          title: "Updated!",
+          text: "Profile updated successfully!",
+          icon: "success",
+        });
+        window.location.reload();
+
       }
     } catch (err) {
       if (err.response?.status === 401) {
@@ -277,7 +350,11 @@ const UpdateProfile = () => {
         console.error("Error updating profile:", err);
         await Swal.fire({
           title: "Error",
+
           text: "Failed updating profile !",
+
+          text: "Failed updating profile!",
+
           icon: "error",
         });
         window.location.reload();
@@ -293,6 +370,7 @@ const UpdateProfile = () => {
 
   return (
     <div className="row gap-3 justify-content-center">
+
    
         
         <div className="p-3 border-bottom border-top border-block-end-dashed tab-content">
@@ -629,4 +707,7 @@ const UpdateProfile = () => {
   );
 };
 
-export default UpdateProfile; 
+}
+
+export default UpdateProfile;
+

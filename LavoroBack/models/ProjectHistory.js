@@ -7,6 +7,7 @@ const ProjectHistory = new Schema(
     changed_by: { type: mongo.Schema.Types.ObjectId }, // Use ObjectId for user ID as well
     change_type: {
       type: String,
+
         enum: [
           'Project Created',
           'Status Update',
@@ -25,10 +26,14 @@ const ProjectHistory = new Schema(
         required: true,
       }
     ,
-    old_value: { type: String, required: true },
+
+      enum: ['Status Update', 'Deadline Change', 'Description Update'],
+      required: true,
+  
+    old_value : { type: String, required: true },
     new_value: { type: String, required: true },
     changed_at: { type: Date, default: Date.now },
-  }
-);
+  
+});
 
 module.exports = mongo.model('ProjectHistory', ProjectHistory);
