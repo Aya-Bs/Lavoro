@@ -9,7 +9,7 @@ const speakeasy = require('speakeasy');
 const jwt = require('jsonwebtoken');
 
 
-
+// Fonction pour mettre à jour le profil de l'utilisateur
 // Fonction pour mettre à jour le profil de l'utilisateur
 exports.updateProfile = async (req, res) => {
   try {
@@ -32,10 +32,6 @@ exports.updateProfile = async (req, res) => {
     if (!user) {
       return res.status(404).json({ message: 'Utilisateur non trouvé' });
     }
-
-
-    if (currentPassword && newPassword && confirmNewPassword) {
-      // Valider le mot de passe actuel
 
     let imagePath = user.image; // Default to existing image
 
@@ -71,28 +67,9 @@ exports.updateProfile = async (req, res) => {
         return res.status(400).json({ message: 'Mot de passe actuel incorrect' });
       }
 
-      // Vérifier que les nouveaux mots de passe correspondent
-
       if (newPassword !== confirmNewPassword) {
         return res.status(400).json({ message: 'Les nouveaux mots de passe ne correspondent pas' });
       }
-
-
-      // Hacher le nouveau mot de passe
-      const hashedPassword = await bcrypt.hash(newPassword, 10);
-      user.password_hash = hashedPassword;
-      await user.save();
-    }
-
-    // Préparer l'objet de mise à jour
-    const updateData = {
-      image: imagePath,
-      firstName: req.body.firstName,
-      lastName: req.body.lastName,
-      phone_number: req.body.phoneNumber,
-    };
-
-    // Ajouter le mot de passe haché à l'objet de mise à jour uniquement si défini
 
       const hashedPassword = await bcrypt.hash(newPassword, 10);
       user.password_hash = hashedPassword;
@@ -109,35 +86,9 @@ exports.updateProfile = async (req, res) => {
       updateData.image = imagePath;
     }
 
-
     if (user.password_hash) {
       updateData.password_hash = user.password_hash;
     }
-
-
-    console.log("updateData:", updateData);
-    // Mettre à jour l'utilisateur dans la base de données
-    const updatedUser = await User.findByIdAndUpdate(userId, updateData, { new: true });
-
-    if (updatedUser) {
-      req.session.user = updatedUser;
-    } else {
-      return res.status(404).json({ message: 'User not found' });
-    }
-    await AccountActivityLog.create({
-               userId: updatedUser._id,
-               action: 'User Updated Profile',
-             });
-
-    console.log("session user:", req.session.user);
-    req.session.user = updatedUser;
-
-    // Mettre à jour la session avec les nouvelles informations
-
-    // 
-
-    res.status(200).json({ message: 'Profil mis à jour avec succès' });
-  } catch (error) {
 
     const updatedUser = await User.findByIdAndUpdate(userId, updateData, { new: true });
 
@@ -153,7 +104,6 @@ exports.updateProfile = async (req, res) => {
     res.status(200).json({ message: 'Profil mis à jour avec succès' });
   } catch (error) {
     console.error("Backend error:", error);
-
     res.status(500).json({ message: error.message });
   }
 };
