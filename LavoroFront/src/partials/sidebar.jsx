@@ -1,9 +1,16 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 
-const Sidebar = () => {
+const Sidebar = ({ userRole }) => {
   const [isDashboardOpen, setIsDashboardOpen] = useState(false);
   const [isPagesOpen, setIsPagesOpen] = useState(false);
+
+  const canAccessProjects = ['Admin', 'Project Manager', 'Team Manager'].includes(userRole);
+  const canCreateProjects = ['Admin', 'Project Manager'].includes(userRole);
+  const canSeeAllProjects = ['Admin', 'Project Manager'].includes(userRole);
+  const canSeeArchivedProjects = ['Admin', 'Project Manager'].includes(userRole);
+  const canSeeProjectDashboard = ['Admin', 'Project Manager', 'Team Manager'].includes(userRole);
+  const canSeeProjectHistory = ['Admin', 'Project Manager'].includes(userRole);
 
   return (
     <aside className="app-sidebar sticky" id="sidebar">
@@ -42,6 +49,12 @@ const Sidebar = () => {
                     Profile
                   </Link>
                 </li>
+                {userRole === 'Admin' && (
+                  <li>
+                    <Link to="/admin-dashboard">Admin Dashboard</Link>
+                  </li>
+                )}
+
               </ul>
             </li>
 

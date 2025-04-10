@@ -20,6 +20,8 @@ import 'filepond/dist/filepond.min.css';
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import Swal from 'sweetalert2';
+import CreateProjectWithAI from './CreateProjectWithAI';
+
 
 // Register FilePond plugins
 registerPlugin(
@@ -55,6 +57,14 @@ export default function CreateProject() {
     risk_level: 'Medium',
     tags: ''
   });
+  const handleCreateWithAI = () => {
+    setIsAiModalOpen(true); // Open AI creation modal
+  };
+
+  const handleCloseAiModal = () => {
+    setIsAiModalOpen(false); // Close AI creation modal
+  };
+
   
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -354,12 +364,14 @@ export default function CreateProject() {
           </button>
         </div>
       </div>
+     
       <div className="row">
         <div className="col-xl-12">
           <div className="card custom-card">
             <div className="card-header">
               <div className="card-title">Create Project</div>
             </div>
+            
             <div className="card-body">
               <div className="row gy-3">
                 <div className="col-xl-4">
@@ -562,6 +574,13 @@ export default function CreateProject() {
               </div>
             </div>
             <div className="card-footer">
+                {/* Add button for AI project creation */}
+       <button 
+      className="btn btn-info btn-wave"
+      onClick={() => navigate('/createProWithAi')}
+    >
+      <i className="ri-magic-line me-1"></i> AI Assistant
+    </button>
               <button className="btn btn-primary-light btn-wave ms-auto float-end"  onClick={handleCreateProject} disabled={loading}
         >
           {loading ? 'Création en cours...' : 'Create Project'}

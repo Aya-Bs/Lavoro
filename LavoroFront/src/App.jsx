@@ -30,6 +30,7 @@ import Archieve from "./project/Archieve";
 import UserActivity from "./admin/UserActivity";
 import ArchiveOverview from "./project/ArchiveOverview";
 import UpdateProject from "./project/updateProject";
+import CreateProjectWithAI from "./project/CreateProjectWithAI";
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -61,6 +62,7 @@ function App() {
               <Route path="/activities" element={<ActivitiesPage />} />
               <Route path="/sales" element={<Sales />} />
               <Route path="/createPro" element ={<CreateProject />} />
+              <Route path="/createProWithAi" element ={<CreateProjectWithAI />} />
               <Route path="/ProjectDash" element={<ProjectDash />} />
               <Route path="/AllProject" element={<AllProject />} />
 

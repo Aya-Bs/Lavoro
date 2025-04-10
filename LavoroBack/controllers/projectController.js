@@ -1,10 +1,11 @@
 const Project = require('../models/Project');
 const mongoose = require('mongoose');
-const ProjectHistory = require('../models/ProjectHistory'); // Chemin vers votre modèle ProjectHistory
-const Archive = require('../models/Archive'); // Chemin vers votre modèle Archive
+const ProjectHistory = require('../models/ProjectHistory'); 
+const Archive = require('../models/Archive'); 
 const Role = require('../models/role');
 const User = require('../models/user');
 const ExcelJS = require('exceljs');
+const { predictProjectFields } = require('../utils/predict'); // Import prediction function
 
 
 
@@ -537,6 +538,56 @@ exports.exportArchivedProjects = async (req, res) => {
   } catch (err) {
     console.error('❌ Excel export error:', err);
     res.status(500).json({ message: 'Failed to export Excel file.', error: err.message });
+  }
+};
+
+exports.createProjectWithAI = async (req, res) => {
+  const { name, description, client, manager_id } = req.body;
+
+  try {
+    // Get AI prediction
+    const prediction = await predictProjectFields(name, description);
+    
+    if (!prediction) {
+      return res.status(400).json({ error: "Failed to generate project predictions" });
+    }
+
+    // Calculate dates
+    const startDate = new Date();
+    const endDate = new Date();
+    endDate.setMonth(startDate.getMonth() + prediction.duration);
+
+    // Create project with predicted values
+    const newProject = new Project({
+      project_id: new mongoose.Types.ObjectId().toString(), 
+      name,
+      description,
+      budget: prediction.budget,
+      manager_id,
+      client,
+      start_date: startDate,
+      end_date: endDate,
+      total_tasks_count: prediction.task_count,
+      estimated_duration: prediction.duration,
+      team_member_count: prediction.team_member_count,
+      priority: prediction.priority,
+      risk_level: prediction.risk_level,
+      status: 'Not Started',
+      ai_predicted_completion: endDate,
+      ai_predicted_description: description,
+    });
+
+    // Save to database
+    await newProject.save();
+    res.status(201).json(newProject);
+
+  } catch (error) {
+    console.error("Error in createProjectWithAI:", error);
+    res.status(500).json({ 
+      error: "Internal server error", 
+      details: error.message,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
   }
 };
 
