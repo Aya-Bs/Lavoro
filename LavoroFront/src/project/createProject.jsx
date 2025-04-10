@@ -6,6 +6,22 @@ import flatpickr from 'flatpickr';
 import 'flatpickr/dist/flatpickr.min.css';
 import Choices from 'choices.js';
 import 'choices.js/public/assets/styles/choices.min.css';
+import Quill from 'quill';
+import 'quill/dist/quill.snow.css';
+import { FilePond, registerPlugin } from 'react-filepond';
+import FilePondPluginImagePreview from 'filepond-plugin-image-preview';
+import FilePondPluginImageExifOrientation from 'filepond-plugin-image-exif-orientation';
+import FilePondPluginFileValidateSize from 'filepond-plugin-file-validate-size';
+import FilePondPluginFileEncode from 'filepond-plugin-file-encode';
+import FilePondPluginImageEdit from 'filepond-plugin-image-edit';
+import FilePondPluginFileValidateType from 'filepond-plugin-file-validate-type';
+import FilePondPluginImageCrop from 'filepond-plugin-image-crop';
+import FilePondPluginImageResize from 'filepond-plugin-image-resize';
+import FilePondPluginImageTransform from 'filepond-plugin-image-transform';
+import 'filepond-plugin-image-preview/dist/filepond-plugin-image-preview.css';
+import 'filepond/dist/filepond.min.css';
+import CreateProjectWithAI from './CreateProjectWithAI';
+
 
 const CreateProject = () => {
   const [projectData, setProjectData] = useState({
@@ -253,13 +269,13 @@ const CreateProject = () => {
           </button>
         </div>
       </div>
-
       <div className="row">
         <div className="col-xl-12">
           <div className="card custom-card">
             <div className="card-header bg-transparent border-bottom">
               <div className="card-title">Project Details</div>
             </div>
+            
             <div className="card-body">
               <form onSubmit={handleSubmit}>
                 <div className="row gy-4">
@@ -472,9 +488,16 @@ const CreateProject = () => {
                       ref={tagsRef}
                     />
                   </div>
+                  
 
                   {/* Submit Button */}
                   <div className="col-12 mt-4">
+                  <button 
+                    className="btn btn-info btn-wave"
+                    onClick={() => navigate('/createProWithAi')}
+                  >
+                    <i className="ri-magic-line me-1"></i> AI Assistant
+                  </button>
                     <button
                       type="submit"
                       className="btn btn-primary btn-wave float-end"

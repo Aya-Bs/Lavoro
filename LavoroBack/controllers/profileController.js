@@ -279,9 +279,14 @@ exports.enable2FA = async (req, res) => {
       if (err) {
         return res.status(500).json({ error: 'Error generating QR code' });
       }
+      
 
       // Return the QR code and secret to the frontend
       res.json({ qrCodeUrl: data_url, secret: secret.base32 });
+    });
+    await AccountActivityLog.create({
+      userId: user._id,
+      action: 'User Enabled 2FA',
     });
   } catch (error) {
     console.error('Error enabling 2FA:', error);
@@ -347,6 +352,11 @@ exports.disable2FA = async (req, res) => {
     user.twoFactorSecret = null;
     user.twoFactorEnabled = false;
     await user.save();
+    await AccountActivityLog.create({
+              userId: user._id,
+              action: 'User Disabled 2FA',
+            });
+
 
     res.json({ message: '2FA disabled successfully' });
   } catch (error) {
@@ -354,3 +364,4 @@ exports.disable2FA = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+

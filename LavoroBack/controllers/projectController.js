@@ -1,9 +1,11 @@
 const Project = require('../models/Project');
 const mongoose = require('mongoose');
-const ProjectHistory = require('../models/ProjectHistory'); // Chemin vers votre modèle ProjectHistory
-const Archive = require('../models/Archive'); // Chemin vers votre modèle Archive
+const ProjectHistory = require('../models/ProjectHistory'); 
+const Archive = require('../models/Archive'); 
 const Role = require('../models/role');
 const User = require('../models/user');
+const ExcelJS = require('exceljs');
+const { predictProjectFields } = require('../utils/predict'); // Import prediction function
 const nodemailer = require('nodemailer');
 const sendEmail = require('../utils/email');
 const transporter = require('../utils/emailConfig'); // Import the email transporter
@@ -432,8 +434,163 @@ exports.getProjectById = async (req, res) => {
       res.status(500).json({ message: error.message });
     }
   };
+  exports.updateProject = async (req, res) => {
+    const { id } = req.params; // Project ID
+    const updates = req.body; // Updated fields
+  
+    try {
+      // Find the project
+      const project = await Project.findById(id);
+      if (!project) {
+        return res.status(404).json({ message: 'Project not found' });
+      }
+  
+      // Track changes
+      const changes = [];
+      for (const field in updates) {
+        if (project[field] !== updates[field]) {
+          changes.push({
+            field,
+            oldValue: project[field],
+            newValue: updates[field],
+          });
+        }
+      }
+  
+      // If there are changes, save them to ProjectHistory
+      if (changes.length > 0) {
+        for (const change of changes) {
+          const history = new ProjectHistory({
+            project_id: project._id, // Use project._id (ObjectId)
+            change_type: getChangeType(change.field),
+            old_value: change.oldValue,
+            new_value: change.newValue,
+            changed_at: new Date(),
+          });
+          await history.save();
+        }
+      }
+  
+      // Update the project
+      Object.assign(project, updates);
+      project.updated_at = new Date();
+      await project.save();
+  
+      res.status(200).json({ message: 'Project updated successfully', project });
+    } catch (error) {
+      res.status(500).json({ message: error.message });
+    }
+  };
+  
+// Helper function to determine the type of change
+function getChangeType(field) {
+  switch (field) {
+    case 'status':
+      return 'Status Update';
+    case 'end_date':
+      return 'Deadline Change';
+    case 'description':
+      return 'Description Update';
+    default:
+      return 'Other Update';
+  }
+}
 
 
+exports.getAllArchivedProjects = async (req, res) => {
+  try {
+    const archivedProjects = await Archive.find({});
+    if (!archivedProjects || archivedProjects.length === 0) {
+      return res.status(404).json({ message: 'No archived projects found' });
+    }
+    res.status(200).json(archivedProjects);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+exports.getProjectHistory = async (req, res) => {
+  const { id } = req.params; // Project ID
+
+  try {
+    // Find all history entries for the project
+    const history = await ProjectHistory.find({ project_id: id });
+    if (!history || history.length === 0) {
+      return res.status(404).json({ message: 'No history found for this project' });
+    }
+
+    res.status(200).json(history);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+
+// In your backend controller (e.g., projectController.js)
+exports.getProjectById = async (req, res) => {
+  const { id } = req.params; // Get the project ID from the URL
+
+  try {
+    const project = await Project.findById(id); // Fetch the project by ID
+    if (!project) {
+      return res.status(404).json({ message: 'Project not found' });
+    }
+
+    res.status(200).json(project); // Return the project details
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+exports.archiveProject = async (req, res) => {
+  const { id } = req.params; // Get the project ID from the URL
+
+  console.log(`Archiving project with ID: ${id}`); // Log the project ID
+
+  try {
+    // Find the project by ID
+    const project = await Project.findById(id);
+    if (!project) {
+      console.log('Project not found'); // Log if project is not found
+      return res.status(404).json({ message: 'Project not found' });
+    }
+
+    console.log('Project found:', project); // Log the project details
+
+    // Capture the original status before updating
+    const originalStatus = project.status;
+
+    // Update the project's status to "Archived"
+    project.status = 'Archived';
+    await project.save();
+
+    // Track the status change in ProjectHistory
+    const history = new ProjectHistory({
+      project_id: project._id, // Use project._id (ObjectId)
+      change_type: 'Status Update',
+      old_value: originalStatus, // Use the original status
+      new_value: 'Archived', // New status
+      changed_at: new Date(),
+    });
+    await history.save();
+
+    console.log('Status change tracked in ProjectHistory:', history); // Log the history entry
+
+    // Create a new archive entry
+    const archive = new Archive(project.toObject());
+    await archive.save();
+
+    console.log('Project archived successfully:', archive); // Log the archived project
+
+    // Delete the project from the projects collection
+    await Project.findByIdAndDelete(id);
+
+    console.log('Project deleted from projects collection'); // Log deletion
+
+    res.status(200).json({ message: 'Project archived successfully', archive });
+  } catch (error) {
+    console.error('Error archiving project:', error); // Log any errors
+    res.status(500).json({ message: error.message });
+  }
+};
 exports.getAllArchivedProjects = async (req, res) => {
   try {
     const archivedProjects = await Archive.find({});
@@ -763,3 +920,56 @@ exports.exportArchivedProjects = async (req, res) => {
     res.status(500).json({ message: 'Failed to export Excel file.', error: err.message });
   }
 };
+
+exports.createProjectWithAI = async (req, res) => {
+  const { name, description, client, manager_id } = req.body;
+
+  try {
+    // Get AI prediction
+    const prediction = await predictProjectFields(name, description);
+    
+    if (!prediction) {
+      return res.status(400).json({ error: "Failed to generate project predictions" });
+    }
+
+    // Calculate dates
+    const startDate = new Date();
+    const endDate = new Date();
+    endDate.setMonth(startDate.getMonth() + prediction.duration);
+
+    // Create project with predicted values
+    const newProject = new Project({
+      project_id: new mongoose.Types.ObjectId().toString(), 
+      name,
+      description,
+      budget: prediction.budget,
+      manager_id,
+      client,
+      start_date: startDate,
+      end_date: endDate,
+      total_tasks_count: prediction.task_count,
+      estimated_duration: prediction.duration,
+      team_member_count: prediction.team_member_count,
+      priority: prediction.priority,
+      risk_level: prediction.risk_level,
+      status: 'Not Started',
+      ai_predicted_completion: endDate,
+      ai_predicted_description: description,
+    });
+
+    // Save to database
+    await newProject.save();
+    res.status(201).json(newProject);
+
+  } catch (error) {
+    console.error("Error in createProjectWithAI:", error);
+    res.status(500).json({ 
+      error: "Internal server error", 
+      details: error.message,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
+  }
+};
+
+
+
