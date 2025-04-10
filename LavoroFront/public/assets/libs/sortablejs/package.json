@@ -52,5 +52,12 @@
 		"vue",
 		"mixin"
 	],
+<<<<<<< HEAD
 	"license": "MIT"
+=======
+	"license": "MIT",
+	"dependencies": {
+		"sortablejs": "file:"
+	}
+>>>>>>> lilia
 }

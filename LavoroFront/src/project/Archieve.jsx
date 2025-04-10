@@ -37,6 +37,7 @@ export default function Archieve() {
 
 
 
+
   const handleExportExcel = async () => {
     try {
       const response = await fetch('http://localhost:3000/project/export-archived', {
@@ -62,6 +63,7 @@ export default function Archieve() {
 
 
   
+
   useEffect(() => {
     const fetchArchivedProjects = async () => {
       try {
@@ -217,9 +219,18 @@ export default function Archieve() {
           <h1 className="page-title fw-medium fs-18 mb-0">Project Archive</h1>
         </div>
         <div className="btn-list">
+
         <button className="btn btn-white btn-wave" onClick={handleExportExcel}>
         <i className="ri-file-excel-2-line align-middle me-1 lh-1" /> Excel
 </button>
+
+
+          <button className="btn btn-white btn-wave">
+            <i className="ri-filter-3-line align-middle me-1 lh-1" /> Filter
+          </button>
+          <button className="btn btn-primary btn-wave me-0">
+            <i className="ri-share-forward-line me-1" /> Share
+          </button>
 
         </div>
       </div>

@@ -164,8 +164,6 @@ export default function ProList() {
           </nav>
           <h1 className="page-title fw-medium fs-18 mb-0">Projects List</h1>
         </div>
-<<<<<<< Updated upstream
-=======
         <div className="btn-list">
             <button 
               className="btn btn-primary d-flex align-items-center gap-2"
@@ -174,7 +172,6 @@ export default function ProList() {
               <i className="ri-add-line"></i> Add New Project
             </button>
           </div>
->>>>>>> Stashed changes
       </div>
       
       {/* Barre de recherche améliorée */}
@@ -258,31 +255,35 @@ export default function ProList() {
                               </span>
                             </td>
                             <td>
-                              <div className="d-flex gap-2 flex-wrap">
+                              <div className="d-flex gap-1">
                                 <button
-                                  className="btn btn-primary btn-sm"
+                                  className="btn btn-sm btn-icon btn-info"
                                   onClick={() => handleViewClick(project._id)}
+                                  title="View"
                                 >
-                                  <i className="ri-eye-line me-1"></i> View
+                                  <i className="ri-eye-line"></i>
                                 </button>
                                 <button
-                                  className="btn btn-warning btn-sm"
+                                  className="btn btn-sm btn-icon btn-warning"
+                                  onClick={() => handleEditClick(project._id)}
+                                  title="Edit"
+                                >
+                                  <i className="ri-pencil-line"></i>
+                                </button>
+                                <button
+                                  className="btn btn-sm btn-icon btn-secondary"
                                   onClick={() => handleArchiveClick(project._id, project.status)}
                                   disabled={project.status === "In Progress"}
+                                  title={project.status === "In Progress" ? "Cannot archive in-progress projects" : "Archive"}
                                 >
-                                  <i className="ri-archive-line me-1"></i> Archive
-                                </button>
-                                <button
-                                  className="btn btn-success btn-sm"
-                                  onClick={() => handleEditClick(project._id)}
-                                >
-                                  <i className="ri-pencil-line me-1"></i> Edit
+                                  <i className="ri-archive-line"></i>
                                 </button>
                                 <button 
-                                  className="btn btn-danger btn-sm" 
+                                  className="btn btn-sm btn-icon btn-danger" 
                                   onClick={() => handleDeleteClick(project._id)}
+                                  title="Delete"
                                 >
-                                  <i className="ri-delete-bin-6-line me-1"></i> Delete
+                                  <i className="ri-delete-bin-line"></i>
                                 </button>
                               </div>
                             </td>
@@ -300,8 +301,6 @@ export default function ProList() {
                 </div>
               )}
             </div>
-<<<<<<< Updated upstream
-=======
             {filteredProjects.length > 0 && (
               <div className="card-footer d-flex justify-content-between align-items-center">
                 <div className="text-muted">
@@ -317,7 +316,6 @@ export default function ProList() {
                 </div>
               </div>
             )}
->>>>>>> Stashed changes
           </div>
         </div>
       </div>

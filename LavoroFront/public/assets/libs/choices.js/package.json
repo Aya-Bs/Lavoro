@@ -108,6 +108,10 @@
     "webpack-hot-middleware": "^2.25.3"
   },
   "dependencies": {
+<<<<<<< HEAD
+=======
+    "choices.js": "file:",
+>>>>>>> lilia
     "deepmerge": "^4.2.2",
     "fuse.js": "^6.6.2",
     "redux": "^4.2.0"
