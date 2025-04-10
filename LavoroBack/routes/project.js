@@ -7,9 +7,7 @@ const Project = require('../models/Project');
 
 
 //const { getProjectsByStatus } = require('../controllers/ProjectController'); // Importez la fonction du contrôleur
-const Project = require('../models/Project');
 
-const ProjectController = require('../controllers/projectController');
 
 
 router.post('/createProject', ProjectController.createProject);

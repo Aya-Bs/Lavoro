@@ -20,9 +20,6 @@ import FilePondPluginImageResize from 'filepond-plugin-image-resize';
 import FilePondPluginImageTransform from 'filepond-plugin-image-transform';
 import 'filepond-plugin-image-preview/dist/filepond-plugin-image-preview.css';
 import 'filepond/dist/filepond.min.css';
-import axios from "axios";
-import { useNavigate } from "react-router-dom";
-import Swal from 'sweetalert2';
 import CreateProjectWithAI from './CreateProjectWithAI';
 
 
@@ -491,15 +488,16 @@ const CreateProject = () => {
                       ref={tagsRef}
                     />
                   </div>
+                  
+
+                  {/* Submit Button */}
+                  <div className="col-12 mt-4">
                   <button 
                     className="btn btn-info btn-wave"
                     onClick={() => navigate('/createProWithAi')}
                   >
                     <i className="ri-magic-line me-1"></i> AI Assistant
                   </button>
-
-                  {/* Submit Button */}
-                  <div className="col-12 mt-4">
                     <button
                       type="submit"
                       className="btn btn-primary btn-wave float-end"
