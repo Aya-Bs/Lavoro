@@ -61,6 +61,7 @@ export default function UpdateProject() {
     const fetchProject = async () => {
       try {
         const response = await axios.get(`http://localhost:3000/project/getProjectById/${id}`);
+        console.log("API Response:", response.data);
         const data = response.data;
         setProjectData({
           name: data.name,
@@ -73,12 +74,19 @@ export default function UpdateProject() {
           risk_level: data.risk_level,
           tags: data.tags
         });
+<<<<<<< Updated upstream
         
         if (data.teamManager) {
+=======
+    
+        // Gestion du manager
+        if (data.manager_id && data.teamManager) {
+>>>>>>> Stashed changes
           setSelectedManager({
-            _id: data.manager_id,
-            firstName: data.teamManager.split(' ')[0],
-            lastName: data.teamManager.split(' ')[1] || ''
+            _id: data.manager_id._id,
+            firstName: data.manager_id.firstName,
+            lastName: data.manager_id.lastName,
+            image: data.managerImage || ''
           });
           setSearchTerm(data.teamManager);
         }
@@ -107,6 +115,7 @@ export default function UpdateProject() {
     }));
   };
 
+<<<<<<< Updated upstream
   const handleDateChange = (name, dateString) => {
     setProjectData(prev => ({
       ...prev,
@@ -118,8 +127,76 @@ export default function UpdateProject() {
     if (!projectData.name.trim()) {
       setMessage({ text: 'Project name is required', color: 'red' });
       return false;
+=======
+  // Check team manager availability
+  const checkTeamManagerProjects = async (managerId) => {
+    try {
+      const response = await axios.get(`http://localhost:3000/project/checkTeamManagerProjects/${managerId}`);
+      setMessage(response.data.message);
+      console.log("API Response:", response.data); // Log pour déboguer
+
+      // Définir la couleur du message en fonction de la disponibilité du Team Manager
+      if (response.status===200) {
+        setMessageColor("#28a745"); // Message en vert si disponible
+      } 
+      
+    } catch (error) {
+      if (error.response && error.response.status === 400) {
+        // On affiche uniquement le message d'erreur 400
+        setMessage(error.response.data.message);
+        setMessageColor("#dc3545"); // Rouge pour les erreurs
+      } else {
+        console.error("Error checking team manager projects:", error);
+        // On n'affiche PAS de message pour les autres erreurs
+        setMessage("An error has occurred"); // Ou null si vous préférez
+      }
+>>>>>>> Stashed changes
     }
 
+<<<<<<< Updated upstream
+=======
+
+  // Handle team manager selection
+  const handleSelectManager = (manager) => {
+    setSelectedManager(manager);
+    setSearchTerm(`${manager.firstName} ${manager.lastName}`);
+    setTeamManagers([]);
+    checkTeamManagerProjects(manager._id);
+  };
+
+  // Date validation with 2 weeks minimum
+  const validateDates = (start, end) => {
+    const newErrors = { ...errors };
+    
+    if (start && end) {
+      const startDate = new Date(start);
+      const endDate = new Date(end);
+      const minEndDate = new Date(startDate);
+      minEndDate.setDate(minEndDate.getDate() + 14); // Ajoute 2 semaines
+
+      if (endDate < minEndDate) {
+        newErrors.end_date = 'End date must be at least 2 weeks after start date';
+      } else {
+        delete newErrors.end_date;
+      }
+    }
+    
+    setErrors(newErrors);
+  };
+
+  // Form validation
+  const validateForm = () => {
+    const newErrors = {};
+    
+    if (!projectData.name.trim()) newErrors.name = 'Project name is required';
+    if (!projectData.client.trim()) newErrors.client = 'Client is required';
+    if (!projectData.description.trim()) newErrors.description = 'Description is required';
+    if (!projectData.start_date) newErrors.start_date = 'Start date is required';
+    if (!projectData.end_date) newErrors.end_date = 'End date is required';
+    if (!projectData.budget) newErrors.budget = 'Budget is required';
+    
+    // Validation des 2 semaines
+>>>>>>> Stashed changes
     if (projectData.start_date && projectData.end_date) {
       const start = new Date(projectData.start_date);
       const end = new Date(projectData.end_date);

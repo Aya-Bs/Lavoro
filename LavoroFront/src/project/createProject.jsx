@@ -64,6 +64,7 @@ export default function CreateProject() {
     }));
   };
 
+<<<<<<< Updated upstream
   const handleDateChange = (name, dateString) => {
     setProjectData(prev => ({
       ...prev,
@@ -74,6 +75,30 @@ export default function CreateProject() {
     if (!projectData.name.trim()) {
       setMessage({ text: 'Le nom du projet est requis', color: 'red' });
       return false;
+=======
+  // Check team manager availability
+  const checkTeamManagerProjects = async (managerId) => {
+    try {
+      const response = await axios.get(`http://localhost:3000/project/checkTeamManagerProjects/${managerId}`);
+      setMessage(response.data.message);
+      console.log("API Response:", response.data); // Log pour déboguer
+
+      // Définir la couleur du message en fonction de la disponibilité du Team Manager
+      if (response.status===200) {
+        setMessageColor("#28a745"); // Message en vert si disponible
+      } 
+      
+    } catch (error) {
+      if (error.response && error.response.status === 400) {
+        // On affiche uniquement le message d'erreur 400
+        setMessage(error.response.data.message);
+        setMessageColor("#dc3545"); // Rouge pour les erreurs
+      } else {
+        console.error("Error checking team manager projects:", error);
+        // On n'affiche PAS de message pour les autres erreurs
+        setMessage("An error has occurred"); // Ou null si vous préférez
+      }
+>>>>>>> Stashed changes
     }
 
     if (projectData.start_date && projectData.end_date) {

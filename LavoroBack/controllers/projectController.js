@@ -10,6 +10,7 @@ const ExcelJS = require('exceljs');
 
 exports.createProject = async (req, res) => {
   try {
+<<<<<<< Updated upstream
     const projectData = {
       ...req.body,
       start_date: req.body.start_date ? new Date(req.body.start_date) : null,
@@ -28,6 +29,25 @@ exports.createProject = async (req, res) => {
     });
 
     await historyEntry.save();
+=======
+    const newProject = new Project({
+      name: req.body.name,
+      description: req.body.description,
+      budget: req.body.budget || 0,
+      manager_id: req.body.manager_id,
+      team_id: req.body.team_id,
+      client: req.body.client,
+      start_date: req.body.start_date,
+      end_date: req.body.end_date,
+      status: req.body.status || 'Not Started',
+      risk_level: req.body.risk_level || 'Medium',
+      tags: req.body.tags,
+    });
+
+    console.log("New project created:", req.body);
+    // Sauvegarder le projet dans la base de données
+    await newProject.save();
+>>>>>>> Stashed changes
 
     res.status(201).json(project);
   } catch (error) {
@@ -52,6 +72,55 @@ exports.getAllProjects = async (req, res) => {
     }
 };
 
+<<<<<<< Updated upstream
+=======
+// Récupérer un projet par ID
+// exports.getProjectById = async (req, res) => {
+//     try {
+//         const project = await Project.findById(req.params.id);
+//         if (!project) {
+//             return res.status(404).json({ message: "Projet non trouvé" });
+//         }
+//         res.status(200).json(project);
+//     } catch (error) {
+//         res.status(500).json({ 
+//             message: "Erreur lors de la récupération du projet",
+//             error: error.message 
+//         });
+//     }
+// };
+
+exports.getProjectById = async (req, res) => {
+  try {
+    const project = await Project.findById(req.params.id)
+      .populate({
+        path: 'manager_id',
+        select: 'firstName lastName image',
+        model: 'user' // Assurez-vous que c'est le bon nom de modèle
+      });
+
+    if (!project) {
+      return res.status(404).json({ message: "Projet non trouvé" });
+    }
+
+    // Créez un objet de réponse standardisé
+    const responseData = {
+      ...project._doc,
+      teamManager: project.manager_id 
+        ? `${project.manager_id.firstName} ${project.manager_id.lastName}`
+        : null,
+      managerImage: project.manager_id?.image || null
+    };
+
+    res.status(200).json(responseData);
+  } catch (error) {
+    res.status(500).json({ 
+      message: "Erreur lors de la récupération du projet",
+      error: error.message 
+    });
+  }
+};
+>>>>>>> Stashed changes
 
 
 
@@ -364,6 +433,10 @@ exports.checkTeamManagerProjects = async (req, res) => {
     if (!user) {
       return res.status(404).json({ message: 'Utilisateur non trouvé' });
     }
+<<<<<<< Updated upstream
+=======
+    console.log("User found:", req.params.id);
+>>>>>>> Stashed changes
 
     // 1. Récupérer tous les projets du Team Manager
     const projects = await Project.find({ manager_id: req.params.id });

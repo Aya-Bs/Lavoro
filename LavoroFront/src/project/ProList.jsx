@@ -164,6 +164,17 @@ export default function ProList() {
           </nav>
           <h1 className="page-title fw-medium fs-18 mb-0">Projects List</h1>
         </div>
+<<<<<<< Updated upstream
+=======
+        <div className="btn-list">
+            <button 
+              className="btn btn-primary d-flex align-items-center gap-2"
+              onClick={() => navigate('/createPro')}
+            >
+              <i className="ri-add-line"></i> Add New Project
+            </button>
+          </div>
+>>>>>>> Stashed changes
       </div>
       
       {/* Barre de recherche améliorée */}
@@ -289,6 +300,24 @@ export default function ProList() {
                 </div>
               )}
             </div>
+<<<<<<< Updated upstream
+=======
+            {filteredProjects.length > 0 && (
+              <div className="card-footer d-flex justify-content-between align-items-center">
+                <div className="text-muted">
+                  Showing <span className="fw-bold">{filteredProjects.length}</span> projects
+                </div>
+                <div className="d-flex gap-2">
+                  <button className="btn btn-sm btn-outline-secondary" disabled>
+                    <i className="ri-arrow-left-line"></i> Previous
+                  </button>
+                  <button className="btn btn-sm btn-outline-secondary" disabled>
+                    Next <i className="ri-arrow-right-line"></i>
+                  </button>
+                </div>
+              </div>
+            )}
+>>>>>>> Stashed changes
           </div>
         </div>
       </div>
