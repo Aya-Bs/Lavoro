@@ -3,7 +3,6 @@ import { signInWithPopup } from "firebase/auth";
 import { microsoftAuth, microsoftProvider } from "./Firebase";
 import { useNavigate } from "react-router-dom";
 import '@fortawesome/fontawesome-free/css/all.min.css';
-import '../App.css';
 import { Modal, Button } from "react-bootstrap"; // Import des composants Bootstrap
 
 const MicrosoftLogin = () => {
@@ -53,7 +52,7 @@ const MicrosoftLogin = () => {
             setTimeout(() => {
                 setShowModal(false);
                 // Rediriger vers la page d'accueil après la fermeture de la modale
-                navigate('/profile');
+                navigate('/sales');
             }, 1000); // 1000 ms = 1 seconde
         } catch (error) {
             console.error('Error during Microsoft login:', error);

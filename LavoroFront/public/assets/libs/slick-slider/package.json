@@ -4,11 +4,19 @@
     "description": "NPM package for Ken Wheeler's Slick-Carousel",
     "main": "slick/slick.js",
     "scripts": {
+<<<<<<< HEAD
       "test": "echo \"Error: no test specified\" && exit 1"
     },
     "repository": {
       "type": "git",
       "url": "git+https://github.com/solodev/slick-slider.git"
+=======
+        "test": "echo \"Error: no test specified\" && exit 1"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/solodev/slick-slider.git"
+>>>>>>> lilia
     },
     "keywords": [
         "carousel",
@@ -20,7 +28,17 @@
     "author": "solodev",
     "license": "ISC",
     "bugs": {
+<<<<<<< HEAD
       "url": "https://github.com/solodev/slick-slider/issues"
     },
     "homepage": "https://github.com/solodev/slick-slider#readme"
   }
+=======
+        "url": "https://github.com/solodev/slick-slider/issues"
+    },
+    "homepage": "https://github.com/solodev/slick-slider#readme",
+    "dependencies": {
+        "slick-slider": "file:"
+    }
+}
+>>>>>>> lilia

@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import 'bootstrap/dist/css/bootstrap.min.css'; // Import Bootstrap first
-import '../app.css'; // Import your custom CSS after
 
 function ActivitiesPage() {
     const [tasks, setTasks] = useState([]);
@@ -20,7 +19,7 @@ function ActivitiesPage() {
                 } else {
                     alert("An error occurred while fetching tasks. Please try again later.");
                 }
-                navigate('/auth'); // Redirect to login if there's an error
+                navigate('/signin'); // Redirect to login if there's an error
             }
         };
 

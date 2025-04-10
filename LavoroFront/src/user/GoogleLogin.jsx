@@ -3,7 +3,6 @@ import { useGoogleLogin } from "@react-oauth/google";
 import { googleAuth } from "./api";
 import { useNavigate } from "react-router-dom";
 import '@fortawesome/fontawesome-free/css/all.min.css';
-import '../App.css';
 import { Modal, Button } from "react-bootstrap"; // Import des composants Bootstrap
 
 function GoogleLogin() {
@@ -36,7 +35,7 @@ function GoogleLogin() {
                     setTimeout(() => {
                         setShowModal(false);
                         // Rediriger vers la page d'accueil après la fermeture de la modale
-                        navigate("/profile", { replace: true });
+                        navigate("/sales", { replace: true });
                     }, 1000); // 1000 ms = 1 seconde
                 } else {
                     // Afficher une modale d'erreur

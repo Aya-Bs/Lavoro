@@ -10,11 +10,9 @@ const { GitHubLogin, getData } = require('../controllers/GitHubController');
 const TaskController = require('../controllers/TaskController');
 
 
-router.post('/signup', upload.single('image'), userController.signup);
 
 router.post('/signup', setDefaultRole, upload.single('image'), userController.signup);
 
-router.get('/verify-email', userController.verifyEmail);
 
 router.post('/signin', userController.signin);
 
@@ -39,9 +37,11 @@ router.get('/home', userController.redirectIfNotAuthenticated, (req, res) => {
   res.render('home'); // Render home page
 });
 
-
-
 router.get('/verify-email', userController.verifyEmail);
+
+
+
+
 router.post('/request-reset', userController.forgotPassword);
 
 router.get('/resetpassword', (req, res) => {
@@ -55,7 +55,6 @@ router.get('/resetpassword', (req, res) => {
 });
 
 router.post('/resetpassword', userController.resetPassword);
-router.post('/verify2FALogin', userController.verify2FALogin);
 
 
 router.post('/seedtasks', async (req, res) => {
@@ -76,5 +75,8 @@ router.post('/login', MicrosoftLogin);
 /*router.get('/get-user', getUser);*/
 router.post('/github', GitHubLogin);
 router.get('/getData', getData);
+
+router.get('/getTeamManager', userController.getTeamManager);
+
 
 module.exports = router;

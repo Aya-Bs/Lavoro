@@ -1,5 +1,3 @@
-"use client"
-
 import { useEffect, useState, useRef } from "react"
 import { FaCamera, FaEye, FaEyeSlash } from "react-icons/fa"
 import { useNavigate } from "react-router-dom"
@@ -107,7 +105,7 @@ function SignUp() {
             withCredentials: true,
           })
           if (response.data) {
-            navigate("/profile") // Redirect to profile if already authenticated
+            navigate("/sales") // Redirect to profile if already authenticated
           }
         }
       } catch (err) {
@@ -545,16 +543,7 @@ function SignUp() {
         </div>
         <div className="col-xxl-6 col-xl-5 col-lg-12 d-xl-block d-none px-0">
           <div className="authentication-cover overflow-hidden">
-            <div className="authentication-cover-logo">
-              <a href="index.html">
-                <img
-                  src="../assets/images/brand-logos/desktop-white.png"
-                  alt=""
-                  className="authentication-brand desktop-white"
-                />
-                <Switcher />
-              </a>
-            </div>
+            
             <div className="aunthentication-cover-content d-flex align-items-center justify-content-center">
               <div>
                 <h3 className="text-fixed-white mb-1 fw-medium">Welcome!</h3>
@@ -575,4 +564,3 @@ function SignUp() {
 }
 
 export default SignUp
-

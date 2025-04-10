@@ -8,7 +8,7 @@ const AllProject = () => {
 
     useEffect(() => {
         // Appeler l'API pour récupérer les projets
-        axios.get('http://localhost:3000/project/projects')
+        axios.get('http://localhost:3000/project')
             .then(response => {
                 setProjects(response.data);
                 setLoading(false);

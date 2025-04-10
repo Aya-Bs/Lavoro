@@ -26,16 +26,22 @@ const Sidebar = () => {
               >
                 <i className="ri-arrow-down-s-line side-menu__angle"></i>
                 <i className="ri-home-line side-menu__icon"></i>
-                <span className="side-menu__label">Dashboards</span>
+                <span className="side-menu__label">Home</span>
               </button>
               <ul className="slide-menu child1" style={{ display: isDashboardOpen ? "block" : "none" }}>
                 
+                
+                <li className="slide">
+                  <Link to="/sales" className="side-menu__item">
+                    Dashboard
+                  </Link>
+                </li>
+
                 <li className="slide">
                   <Link to="/profile" className="side-menu__item">
                     Profile
                   </Link>
                 </li>
-                
               </ul>
             </li>
 
@@ -55,11 +61,6 @@ Pages            </li>
                 <span className="side-menu__label">Projects</span>
               </button>
               <ul className="slide-menu child1" style={{ display: isPagesOpen ? "block" : "none" }}>
-              <li className="slide">
-                  <Link to="/overviewPro" className="side-menu__item">
-                  Projects Overview
-                  </Link>
-                </li>
                 <li className="slide">
                   <Link to="/createPro" className="side-menu__item">
                     Create Project

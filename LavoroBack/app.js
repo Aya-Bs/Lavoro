@@ -27,11 +27,10 @@ mongo
 const usersRouter = require('./routes/users');
 const taskRouter=require('./routes/Task')
 const profileRouter = require('./routes/profile');
-const project = require('./routes/project');
+const projectRouter = require('./routes/project');
 
 // const homeRouter = require('./routes/home');
 const adminRouter = require('./routes/admin');
-const projectRouter=require('./routes/project')
 
 
 const app = express();
@@ -49,12 +48,14 @@ app.use(cors({
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'twig');
 
+
 // Middleware
 app.use(logger('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
+
 
 // Session configuration
 app.use(
@@ -81,7 +82,6 @@ app.use('/users', usersRouter);
 app.use('/admin',adminRouter);
 app.set('io', io);
 app.set('/tasks',taskRouter);
-app.use('/projects', project);
 
 app.use('/project',projectRouter);
 

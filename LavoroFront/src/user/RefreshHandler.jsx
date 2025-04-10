@@ -11,7 +11,7 @@ function RefreshHandler({ setIsAuthenticated }) {
         if (token) {
             setIsAuthenticated(true);
             if (location.pathname === '/' || location.pathname === '/signin') {
-                navigate('/profile', { replace: false });
+                navigate('/sales', { replace: false });
             }
         }
     }, [location, navigate, setIsAuthenticated]);

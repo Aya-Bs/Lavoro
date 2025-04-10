@@ -556,3 +556,29 @@ exports.verify2FALogin = async (req, res) => {
 };
 
 
+exports.getTeamManager = async (req, res) => {
+  try {
+    const searchTerm = req.query.search || "";
+
+    // Trouver l'ID du rôle "Team Manager"
+    const teamManagerRole = await Role.findOne({ RoleName: "Team Manager" });
+    if (!teamManagerRole) {
+      return res.status(404).json({ error: 'Role "Team Manager" not found' });
+    }
+
+    // Trouver les utilisateurs ayant ce rôle et correspondant au terme de recherche
+    const teamManagers = await User.find({
+      role: teamManagerRole._id,
+      $or: [
+        { firstName: { $regex: searchTerm, $options: "i" } }, // Recherche insensible à la casse
+        { lastName: { $regex: searchTerm, $options: "i" } },
+      ],
+    });
+
+
+    res.status(200).json(teamManagers);
+  } catch (error) {
+    console.error("Error fetching team managers:", error);
+    res.status(500).json({ error: "An error occurred while fetching team managers" });
+  }
+};

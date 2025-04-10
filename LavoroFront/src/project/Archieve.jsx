@@ -32,13 +32,42 @@ export default function Archieve() {
   };
 
   const handleViewClick = (projectId) => {
-    navigate(`/HistoryPro/${projectId}`); // Navigate to the history page with the project ID
+    navigate(`/overviewArchive/${projectId}`); // Navigate to the project overview
   };
+
+
+
+
+  const handleExportExcel = async () => {
+    try {
+      const response = await fetch('http://localhost:3000/project/export-archived', {
+        method: 'GET',
+      });
+  
+      if (!response.ok) throw new Error('Failed to download Excel file');
+  
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', 'archived-projects.xlsx');
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+    } catch (error) {
+      console.error('Download error:', error);
+      Swal.fire("Error!", "Could not download the Excel file.", "error");
+    }
+  };
+  
+
+
+  
 
   useEffect(() => {
     const fetchArchivedProjects = async () => {
       try {
-        const response = await fetch('http://localhost:3000/projects/archived-projects');
+        const response = await fetch('http://localhost:3000/project/archived-projects');
         const data = await response.json();
         console.log('API Response:', data); // Debugging: Log the API response
         if (response.ok) {
@@ -58,7 +87,7 @@ export default function Archieve() {
 
   const handleUnarchive = async (projectId) => {
     try {
-      const response = await fetch(`http://localhost:3000/projects/${projectId}/unarchive`, {
+      const response = await fetch(`http://localhost:3000/project/${projectId}/unarchive`, {
         method: 'POST',
       });
       const data = await response.json();
@@ -141,7 +170,7 @@ export default function Archieve() {
     if (result.isConfirmed) {
       try {
         // Call the backend API to delete the archived project
-        const response = await fetch(`http://localhost:3000/projects/archived-projects/${projectId}`, {
+        const response = await fetch(`http://localhost:3000/project/archived-projects/${projectId}`, {
           method: 'DELETE',
         });
 
@@ -190,12 +219,19 @@ export default function Archieve() {
           <h1 className="page-title fw-medium fs-18 mb-0">Project Archive</h1>
         </div>
         <div className="btn-list">
+
+        <button className="btn btn-white btn-wave" onClick={handleExportExcel}>
+        <i className="ri-file-excel-2-line align-middle me-1 lh-1" /> Excel
+</button>
+
+
           <button className="btn btn-white btn-wave">
             <i className="ri-filter-3-line align-middle me-1 lh-1" /> Filter
           </button>
           <button className="btn btn-primary btn-wave me-0">
             <i className="ri-share-forward-line me-1" /> Share
           </button>
+
         </div>
       </div>
       {/* Page Header Close */}
@@ -286,8 +322,17 @@ export default function Archieve() {
                           <h6 className="fs-14 mb-1 fw-medium">
                             <a>{project.name}</a>
                           </h6>
-                          <div className="min-w-fit-content fw-normal mb-1 fs-13 fw-medium text-success">Completed </div>
-                          <div className="d-flex align-items-baseline gap-2 mb-1">
+                          <div
+  className={`min-w-fit-content fw-normal mb-1 fs-13 fw-medium ${
+    project.originalStatus === 'Completed'
+      ? 'text-success' // Green for "Completed"
+      : project.originalStatus === 'Not Started'
+      ? 'text-warning' // Yellow for "Not Started"
+      : 'text-secondary' // Default color for other statuses
+  }`}
+>
+  {project.originalStatus}
+</div>                          <div className="d-flex align-items-baseline gap-2 mb-1">
                             <span className="badge bg-primary1-transparent ms-2">{project.budget} TND</span>
                           </div>
                         </div>

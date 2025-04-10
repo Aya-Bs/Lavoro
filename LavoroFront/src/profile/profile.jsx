@@ -4,23 +4,22 @@ import { useNavigate } from "react-router-dom";
 import UpdateProfile from "./updateProfile";
 import ProfileSecurity from "./profileSecurity";
 
-
 const Profile = () => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [qrCodeUrl, setQrCodeUrl] = useState(''); // To store the QR code URL
-  const [showQRCode, setShowQRCode] = useState(false); // To toggle QR code display
-  const [token, setToken] = useState(''); // To store the user's TOTP code
-  const [message, setMessage] = useState(''); // To display messages to the user
+  const [qrCodeUrl, setQrCodeUrl] = useState('');
+  const [showQRCode, setShowQRCode] = useState(false);
+  const [token, setToken] = useState('');
+  const [message, setMessage] = useState('');
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("profile-about-tab-pane");
-  const [tasks, setTasks] = useState([]); // État pour stocker les activités
+  const [tasks, setTasks] = useState([]);
 
   // Fetch user info on component mount
   useEffect(() => {
     const timeout = setTimeout(() => {
       setLoading(false);
-    }, 5000); // 5 secondes de timeout
+    }, 5000);
 
     const fetchUserInfo = async () => {
       try {
@@ -48,14 +47,14 @@ const Profile = () => {
           navigate("/signin");
         }
       } finally {
-        clearTimeout(timeout); // Annule le timeout si la requête réussit
+        clearTimeout(timeout);
         setLoading(false);
       }
     };
 
     fetchUserInfo();
 
-    return () => clearTimeout(timeout); // Nettoie le timeout si le composant est démonté
+    return () => clearTimeout(timeout);
   }, [navigate]);
 
   // Fonction pour récupérer les activités
@@ -70,7 +69,7 @@ const Profile = () => {
       } else {
         alert("An error occurred while fetching tasks. Please try again later.");
       }
-      navigate('/auth'); // Rediriger vers la page de connexion en cas d'erreur
+      navigate('/auth');
     }
   };
 
@@ -80,44 +79,6 @@ const Profile = () => {
       fetchActivities();
     }
   }, [activeTab]);
-
-  // Handle account deletion request
-  const handleDeleteAccount = async () => {
-    try {
-      const token = localStorage.getItem('token');
-      if (!token) {
-        throw new Error("No token found");
-      }
-
-      const response = await axios.post(
-        "http://localhost:3000/profiles/request-delete",
-        {},
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-          withCredentials: true,
-        }
-      );
-
-      if (response.status === 200) {
-        alert("Profile delete request successful!");
-        navigate("/profile");
-      }
-    } catch (err) {
-      if (err.response?.status === 400) {
-        alert("You already sent a deletion request.");
-      } else if (err.response?.status === 401) {
-        alert("Session expired. Please log in again.");
-        localStorage.removeItem('token');
-        navigate("/signin");
-      } else {
-        console.error("Error deleting profile:", err);
-        alert("Failed to delete profile.");
-      }
-    }
-  };
 
   // Enable 2FA
   const handleEnable2FA = async () => {
@@ -147,29 +108,29 @@ const Profile = () => {
 
   const handleVerify2FA = async () => {
     try {
-      const authToken = localStorage.getItem('token'); // JWT token for authentication
+      const authToken = localStorage.getItem('token');
       if (!authToken) {
         throw new Error("No token found");
       }
-  
-      const userProvidedToken = token; // Use the TOTP code from the input field
-      console.log('Sending verify request with TOTP code:', userProvidedToken); // Log the TOTP code
-  
+
+      const userProvidedToken = token;
+      console.log('Sending verify request with TOTP code:', userProvidedToken);
+
       const response = await axios.post(
         "http://localhost:3000/profiles/verify-2fa",
-        { token: userProvidedToken }, // Send the TOTP code, not the JWT token
+        { token: userProvidedToken },
         {
           headers: {
-            Authorization: `Bearer ${authToken}`, // Use the JWT token for authentication
+            Authorization: `Bearer ${authToken}`,
           },
           withCredentials: true,
         }
       );
-  
-      console.log('Verify response:', response.data); // Log the response
+
+      console.log('Verify response:', response.data);
       setMessage(response.data.message);
     } catch (err) {
-      console.error('Error verifying 2FA:', err); // Log the full error
+      console.error('Error verifying 2FA:', err);
       setMessage(err.response?.data?.error || "Error verifying 2FA");
     }
   };
@@ -235,10 +196,12 @@ const Profile = () => {
             <ProfileBanner />
             <div className="card-body pb-0 position-relative">
               <div className="row profile-content">
-                <div className="col-xl-3">
-                  <ProfileSidebar user={user} />
-                </div>
-                <div className="col-xl-9">
+                {activeTab !== "edit-profile-tab-pane" && (
+                  <div className="col-xl-3">
+                    <ProfileSidebar user={user} />
+                  </div>
+                )}
+                <div className={activeTab === "edit-profile-tab-pane" ? "col-xl-12" : "col-xl-9"}>
                   <div className="card custom-card overflow-hidden border">
                     <div className="card-body">
                       <ul className="nav nav-tabs tab-style-6 mb-3 p-0" id="myTab" role="tablist">
@@ -279,6 +242,19 @@ const Profile = () => {
                             aria-selected={activeTab === "activities-tab-pane"}
                           >
                             See Activities
+                          </button>
+                        </li>
+                        <li className="nav-item" role="presentation">
+                          <button
+                            className={`nav-link w-100 text-start ${activeTab === "security-tab-pane" ? "active" : ""}`}
+                            id="security-tab"
+                            onClick={() => setActiveTab("security-tab-pane")}
+                            type="button"
+                            role="tab"
+                            aria-controls="security-tab-pane"
+                            aria-selected={activeTab === "security-tab-pane"}
+                          >
+                            Security
                           </button>
                         </li>
                       </ul>
@@ -343,7 +319,7 @@ const Profile = () => {
                                       <td>{new Date(task.deadline).toLocaleDateString()}</td>
                                       <td>{task.estimated_duration} jours</td>
                                       <td>
-                                        {task.tags && task.tags.join(', ')} {/* Affiche les tags séparés par une virgule */}
+                                        {task.tags && task.tags.join(', ')}
                                       </td>
                                     </tr>
                                   ))}
@@ -351,6 +327,25 @@ const Profile = () => {
                               </table>
                             </div>
                           </div>
+                        </div>
+                        <div
+                          className={`tab-pane p-0 border-0 ${activeTab === "security-tab-pane" ? "show active" : ""}`}
+                          id="security-tab-pane"
+                          role="tabpanel"
+                          aria-labelledby="security-tab"
+                          tabIndex={0}
+                        >
+                          <ProfileSecurity 
+                            user={user} 
+                            handleEnable2FA={handleEnable2FA} 
+                            handleVerify2FA={handleVerify2FA} 
+                            handleDisable2FA={handleDisable2FA} 
+                            qrCodeUrl={qrCodeUrl} 
+                            showQRCode={showQRCode} 
+                            token={token} 
+                            setToken={setToken} 
+                            message={message} 
+                          />
                         </div>
                       </div>
                     </div>
