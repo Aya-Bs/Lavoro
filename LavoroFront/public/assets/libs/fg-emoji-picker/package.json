@@ -16,5 +16,12 @@
   "bugs": {
     "url": "https://github.com/woody180/vanilla-javascript-emoji-picker/issues"
   },
+<<<<<<< HEAD
   "homepage": "https://github.com/woody180/vanilla-javascript-emoji-picker#readme"
+=======
+  "homepage": "https://github.com/woody180/vanilla-javascript-emoji-picker#readme",
+  "dependencies": {
+    "fg-emoji-picker": "file:"
+  }
+>>>>>>> lilia
 }

@@ -83,6 +83,10 @@ const handleArchiveClick = async (projectId, projectStatus) => {
 };
 
 
+const handleEditClick = (projectId) => {
+  navigate(`/updateProjects/${projectId}`);
+};
+
 
 const handleDelete = async (projectId) => {
   // Use SweetAlert2 for confirmation
@@ -249,6 +253,14 @@ const handleDelete = async (projectId) => {
               <div className="card-header justify-content-between">
                 <div className="card-title">Project Details</div>
                 <div className="d-flex gap-1">
+
+                <button
+                                  className="btn btn-success btn-sm"
+                                  onClick={() => handleEditClick(project._id)}
+                                >
+                                  <i className="ri-pencil-line me-1"></i> Edit
+                                </button>
+
   <a
     className="btn btn-sm btn-primary btn-wave"
     onClick={() => handleDelete(project._id)}

@@ -33,14 +33,14 @@ const Sidebar = ({ userRole }) => {
               >
                 <i className="ri-arrow-down-s-line side-menu__angle"></i>
                 <i className="ri-home-line side-menu__icon"></i>
-                <span className="side-menu__label">Dashboards</span>
+                <span className="side-menu__label">Home</span>
               </button>
               <ul className="slide-menu child1" style={{ display: isDashboardOpen ? "block" : "none" }}>
                 
                 
                 <li className="slide">
                   <Link to="/sales" className="side-menu__item">
-                    Sales
+                    Dashboard
                   </Link>
                 </li>
 

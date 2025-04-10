@@ -1,5 +1,13 @@
 const express = require('express');
 const router = express.Router();
+const ProjectController = require('../controllers/projectController');
+const projectController = require('../controllers/projectController'); // Importez le contrôleur
+const { getProjectsByStatus } = require('../controllers/projectController'); // Importez la fonction du contrôleur
+const Project = require('../models/Project');
+
+
+//const { getProjectsByStatus } = require('../controllers/ProjectController'); // Importez la fonction du contrôleur
+const Project = require('../models/Project');
 
 const ProjectController = require('../controllers/projectController');
 
@@ -16,7 +24,9 @@ router.get('/countProject', ProjectController.getProjectCount);
 
 
 router.get('/archived-projects', ProjectController.getAllArchivedProjects);
+
 router.get('/export-archived', ProjectController.exportArchivedProjects);
+
 
 
 
@@ -33,7 +43,11 @@ router.get('/projetStatus', async (req, res) => {
     }
 });
 
+
 // router.put('/:id', ProjectController.updateProject); // Add this route
+
+router.put('/:id', ProjectController.updateProject); // Add this route
+
 router.get('/:id/history', ProjectController.getProjectHistory); // Add this route
 router.get('/:id', ProjectController.getProjectById); // Add this route
 router.post('/:id/archive', ProjectController.archiveProject);
