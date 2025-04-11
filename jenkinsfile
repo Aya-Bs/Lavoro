@@ -69,7 +69,7 @@ pipeline {
             steps {
                 script {
                     try {
-                        def scannerHome = tool 'scanner' // Assurez-vous que le scanner SonarQube est configuré dans Jenkins
+                        def scannerHome = tool 'Lavoro' // Assurez-vous que le scanner SonarQube est configuré dans Jenkins
                         withSonarQubeEnv {
                             sh "${scannerHome}/bin/sonar-scanner"
                         }
