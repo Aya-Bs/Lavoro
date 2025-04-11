@@ -82,7 +82,7 @@ app.use('/users', usersRouter);
 // app.use('/', homeRouter);
 app.use('/admin',adminRouter);
 app.set('io', io);
-app.set('/tasks',taskRouter);
+app.use('/tasks',taskRouter);
 
 app.use('/project',projectRouter);
 

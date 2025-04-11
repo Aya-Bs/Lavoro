@@ -30,6 +30,7 @@ import Archieve from "./project/Archieve";
 import UserActivity from "./admin/UserActivity";
 import ArchiveOverview from "./project/ArchiveOverview";
 import UpdateProject from "./project/updateProject";
+import ProjectProgress from "./project/projetPorgress";
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -70,6 +71,9 @@ function App() {
               <Route path="/ListPro" element={<ListPro />} />
               <Route path="/archieve" element={< Archieve />} />
               <Route path="/updateProjects/:id" element={<UpdateProject />} />
+
+              <Route path="/ProjectProgress" element={<ProjectProgress/>} />
+
             </Route>
         </Routes>
       </BrowserRouter>

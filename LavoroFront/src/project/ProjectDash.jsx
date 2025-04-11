@@ -26,7 +26,7 @@ export default function Sales() {
             });
 
         // Appeler l'API pour obtenir tous les projets
-        axios.get('http://localhost:3000/project')
+        axios.get('http://localhost:3000/project/dash')
             .then(response => {
                 setProjects(response.data);
                 setLoading(false);
