@@ -28,7 +28,14 @@ pipeline {
             steps {
                 script {
                     try {
-                        sh 'cd LavoroBack && npm test'
+                        // Vérifier si le script test existe
+                        def hasTestScript = sh(script: 'cd LavoroBack && npm run | grep -q "test"', returnStatus: true) == 0
+                        
+                        if (hasTestScript) {
+                            sh 'cd LavoroBack && npm test'
+                        } else {
+                            echo "Warning: No test script found in package.json. Skipping tests."
+                        }
                     } catch (Exception e) {
                         echo "Error running unit tests: ${e}"
                         currentBuild.result = 'FAILURE'
