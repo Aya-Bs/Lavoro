@@ -19,7 +19,7 @@ const ProjectHistory = new Schema(
           'Client Updated',
           'Risk Level Updated',
           'Tags Updated',
-          'ProjectName Updated',
+          'Project Name Updated',
           'Other Update' // Fallback for dynamic fields
         ],
         required: true,

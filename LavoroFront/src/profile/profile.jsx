@@ -377,17 +377,27 @@ const ProfileSidebar = ({ user }) => {
         <div className="text-center">
           <span className="avatar avatar-xxl avatar-rounded online mb-3">
             {user.image ? (
-              <img
-                src={`http://localhost:3000${user.image}`}
-                alt="Profile"
-                style={{
-                  width: "100px",
-                  height: "100px",
-                  borderRadius: "50%",
-                  objectFit: "cover",
-                  marginBottom: "10px"
-                }}
-              />
+            
+<img
+src={
+  user?.image
+    ? user.image.startsWith('http') || user.image.startsWith('https')
+      ? user.image // Use as-is if it's already a full URL
+      : `http://localhost:3000${user.image}` // Prepend server URL if relative
+    : "https://via.placeholder.com/100" // Fallback if no image
+}
+alt="Profile"
+style={{
+  width: "100px",
+  height: "100px",
+  borderRadius: "50%",
+  objectFit: "cover",
+  marginBottom: "10px"
+}}
+onError={(e) => {
+  e.target.src = "https://via.placeholder.com/100";
+}}
+/>
             ) : (
               <p>No profile image uploaded.</p>
             )}
@@ -562,3 +572,5 @@ const AboutTab = ({ user }) => {
 };
 
 export default Profile;
+
+

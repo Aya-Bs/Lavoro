@@ -484,6 +484,100 @@ exports.checkTeamManagerProjects = async (req, res) => {
 };
 
 
+// exports.updateProjects = async (req, res) => {
+//   const { id } = req.params;
+//   const updates = req.body;
+
+//   try {
+//     const project = await Project.findById(id);
+//     if (!project) return res.status(404).json({ message: 'Project not found' });
+
+//     console.log("Current project:", project);
+//     console.log("Received updates:", updates);
+
+//     const changes = [];
+    
+//     // Special handling for manager_id
+//     if (updates.manager_id && (!project.manager_id || !project.manager_id.equals(updates.manager_id))) {
+//       const oldManager = project.manager_id ? await User.findById(project.manager_id) : null;
+//       const newManager = await User.findById(updates.manager_id);
+      
+//       changes.push({
+//         field: 'manager_id',
+//         oldValue: oldManager ? `${oldManager.firstName} ${oldManager.lastName}` : 'None',
+//         newValue: newManager ? `${newManager.firstName} ${newManager.lastName}` : 'None',
+//         changeType: 'Manager Changed'
+//       });
+//     }
+
+//     // Handle other fields
+//     for (const field in updates) {
+//       if (field === 'manager_id') continue;
+      
+//       const oldValue = project[field];
+//       const newValue = updates[field];
+      
+//       // Skip if no actual change
+//       if (JSON.stringify(oldValue) === JSON.stringify(newValue)) continue;
+
+//       // Special handling for dates
+//       if (field.includes('_date')) {
+//         const oldDate = oldValue ? new Date(oldValue) : null;
+//         const newDate = newValue ? new Date(newValue) : null;
+        
+//         // Compare timestamps if both dates exist
+//         if ((oldDate && newDate && oldDate.getTime() !== newDate.getTime()) || 
+//             (!oldDate && newDate) || 
+//             (oldDate && !newDate)) {
+//           changes.push({
+//             field,
+//             oldValue: oldDate ? oldDate.toISOString() : 'None',
+//             newValue: newDate ? newDate.toISOString() : 'None',
+//             changeType: getChangeType(field)
+//           });
+//         }
+//       } 
+//       // Default comparison for other fields
+//       else {
+//         changes.push({
+//           field,
+//           oldValue: stringifyForHistory(oldValue),
+//           newValue: stringifyForHistory(newValue),
+//           changeType: getChangeType(field)
+//         });
+//       }
+//     }
+
+//     console.log("Detected changes:", changes);
+
+//     // Save history entries
+//     for (const change of changes) {
+//       const history = new ProjectHistory({
+//         project_id: project._id,
+//         change_type: change.changeType,
+//         old_value: change.oldValue,
+//         new_value: change.newValue,
+//         changed_at: new Date()
+//       });
+//       await history.save();
+//       console.log("Saved history entry:", history);
+//     }
+
+//     // Apply updates to project
+//     Object.assign(project, updates);
+//     project.updated_at = new Date();
+//     await project.save();
+
+//     res.status(200).json({ message: 'Project updated successfully', project, changes });
+//   } catch (error) {
+//     console.error("Update error:", error);
+//     res.status(500).json({ 
+//       message: "Server error during update",
+//       error: error.message,
+//       stack: error.stack
+//     });
+//   }
+// };
 
 
 exports.updateProjects = async (req, res) => {
@@ -494,59 +588,87 @@ exports.updateProjects = async (req, res) => {
     const project = await Project.findById(id);
     if (!project) return res.status(404).json({ message: 'Project not found' });
 
-    console.log("Received updates:", updates); // Debug what's coming in
+    console.log("Current project:", project);
+    console.log("Received updates:", updates);
 
     const changes = [];
+    
+    // Special handling for manager_id - this is the key fix
+    if (updates.hasOwnProperty('manager_id')) {
+      const oldManagerId = project.manager_id;
+      const newManagerId = updates.manager_id;
+      
+      // Check if manager actually changed
+      if ((!oldManagerId && newManagerId) || 
+          (oldManagerId && !newManagerId) || 
+          (oldManagerId && newManagerId && !oldManagerId.equals(newManagerId))) {
+        
+        const oldManager = oldManagerId ? await User.findById(oldManagerId) : null;
+        const newManager = newManagerId ? await User.findById(newManagerId) : null;
+        
+        changes.push({
+          field: 'manager_id',
+          oldValue: oldManager ? `${oldManager.firstName} ${oldManager.lastName}` : 'None',
+          newValue: newManager ? `${newManager.firstName} ${newManager.lastName}` : 'None',
+          changeType: 'Manager Changed' // Explicitly set the correct change type
+        });
+      }
+    }
+
+    // Rest of your existing code for other fields...
     for (const field in updates) {
-      // Better comparison that handles different types
+      if (field === 'manager_id') continue;
+      
       const oldValue = project[field];
       const newValue = updates[field];
       
-      // Special handling for dates
-      if (field.includes('_date') && oldValue && newValue) {
-        const oldDate = new Date(oldValue).getTime();
-        const newDate = new Date(newValue).getTime();
-        if (oldDate !== newDate) {
-          changes.push({ field, oldValue, newValue });
+      if (JSON.stringify(oldValue) === JSON.stringify(newValue)) continue;
+
+      if (field.includes('_date')) {
+        const oldDate = oldValue ? new Date(oldValue) : null;
+        const newDate = newValue ? new Date(newValue) : null;
+        
+        if ((oldDate && newDate && oldDate.getTime() !== newDate.getTime()) || 
+            (!oldDate && newDate) || 
+            (oldDate && !newDate)) {
+          changes.push({
+            field,
+            oldValue: oldDate ? oldDate.toISOString() : 'None',
+            newValue: newDate ? newDate.toISOString() : 'None',
+            changeType: getChangeType(field)
+          });
         }
-      } 
-      // Special handling for ObjectIds
-      else if ((field === 'manager_id' || field === 'team_id') && oldValue && newValue) {
-        if (!oldValue.equals(newValue)) {
-          changes.push({ field, oldValue, newValue });
-        }
-      }
-      // Default comparison
-      else if (JSON.stringify(oldValue) !== JSON.stringify(newValue)) {
-        changes.push({ field, oldValue, newValue });
+      } else {
+        changes.push({
+          field,
+          oldValue: stringifyForHistory(oldValue),
+          newValue: stringifyForHistory(newValue),
+          changeType: getChangeType(field)
+        });
       }
     }
 
-    console.log("Detected changes:", changes); // Debug before saving
+    console.log("Detected changes:", changes);
 
+    // Save history entries
     for (const change of changes) {
-      const changeType = getChangeType(change.field);
-      console.log(`Field: ${change.field}, Type: ${changeType}`); // Debug change type
-      
       const history = new ProjectHistory({
         project_id: project._id,
-        change_type: changeType,
-        old_value: stringifyForHistory(change.oldValue),
-        new_value: stringifyForHistory(change.newValue),
-        changed_at: new Date(),
+        change_type: change.changeType, // This will now be 'Manager Changed' when appropriate
+        old_value: change.oldValue,
+        new_value: change.newValue,
+        changed_at: new Date()
       });
       await history.save();
+      console.log("Saved history entry:", history);
     }
 
     // Apply updates
-    for (const field in updates) {
-      project[field] = updates[field];
-    }
+    Object.assign(project, updates);
     project.updated_at = new Date();
-    
     await project.save();
 
-    res.status(200).json({ message: 'Project updated successfully', project });
+    res.status(200).json({ message: 'Project updated successfully', project, changes });
   } catch (error) {
     console.error("Update error:", error);
     res.status(500).json({ 
@@ -559,6 +681,7 @@ exports.updateProjects = async (req, res) => {
 
 // Helper to properly stringify values for history
 function stringifyForHistory(value) {
+  if (value === null || value === undefined) return 'None';
   if (value instanceof Date) return value.toISOString();
   if (value instanceof mongoose.Types.ObjectId) return value.toString();
   if (typeof value === 'object') return JSON.stringify(value);
@@ -567,27 +690,17 @@ function stringifyForHistory(value) {
 
 // Improved change type detection
 function getChangeType(field) {
-  // Map all possible field names to their change types
   const fieldMap = {
-    // Project fields
-    name: 'ProjectName Updated',
+    name: 'Project Name Updated',
     description: 'Description Update',
     budget: 'Budget Update',
     client: 'Client Updated',
-    
-    // Dates
     start_date: 'Start Date Change',
     end_date: 'Deadline Change',
-    
-    // Status/risk
     status: 'Status Update',
     risk_level: 'Risk Level Updated',
-    
-    // References
     manager_id: 'Manager Changed',
     team_id: 'Team Changed',
-    
-    // Other
     tags: 'Tags Updated'
   };
 

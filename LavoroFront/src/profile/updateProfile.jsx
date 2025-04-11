@@ -388,17 +388,28 @@ const UpdateProfile = () => {
                 <div>
                   <span className="avatar avatar-xxl" style={{ marginLeft: "10px" }}>
                     {profileImage ? (
-                      <img
-                        src={profileImage.startsWith("data:image") ? profileImage : `http://localhost:3000${profileImage}`}
-                        alt="Profile"
-                        style={{
-                          width: "100px",
-                          height: "100px",
-                          borderRadius: "50%",
-                          objectFit: "cover",
-                          marginBottom: "10px",
-                        }}
-                      />
+                     <img
+                     src={
+                       profileImage
+                         ? profileImage.startsWith('data:image') 
+                           ? profileImage // Use as-is for data URLs
+                           : profileImage.startsWith('http') || profileImage.startsWith('https')
+                             ? profileImage // Use as-is for full URLs
+                             : `http://localhost:3000${profileImage}` // Prepend server URL for relative paths
+                         : "https://via.placeholder.com/100" // Fallback if no image
+                     }
+                     alt="Profile"
+                     style={{
+                       width: "100px",
+                       height: "100px",
+                       borderRadius: "50%",
+                       objectFit: "cover",
+                       marginBottom: "10px"
+                     }}
+                     onError={(e) => {
+                       e.target.src = "https://via.placeholder.com/100";
+                     }}
+                   />
                     ) : (
                       <p>No profile image uploaded.</p>
                     )}

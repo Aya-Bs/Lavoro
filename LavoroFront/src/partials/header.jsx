@@ -688,18 +688,20 @@ const Header = () => {
               >
                 <div className="d-flex align-items-center">
                   <div>
-                    <img
-                      src={
-                        userInfo?.image
-                          ? `http://localhost:3000${userInfo.image}`
-                          : "../assets/images/faces/15.jpg"
-                      }
-                      alt="Profile"
-                      className="avatar avatar-sm"
-                      onError={(e) => {
-                        e.target.src = "../assets/images/faces/15.jpg";
-                      }}
-                    />
+                  <img
+  src={
+    userInfo?.image
+      ? userInfo.image.startsWith('http') || userInfo.image.startsWith('https')
+        ? userInfo.image // Use as-is if it's already a full URL
+        : `http://localhost:3000${userInfo.image}` // Prepend server URL if relative
+      : "../assets/images/faces/15.jpg" // Fallback if no image
+  }
+  alt="Profile"
+  className="avatar avatar-sm"
+  onError={(e) => {
+    e.target.src = "../assets/images/faces/15.jpg";
+  }}
+/>
               </div>
             </div>
           </a>

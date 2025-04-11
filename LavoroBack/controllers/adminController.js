@@ -58,16 +58,35 @@ exports.updateUserRole = async (req, res) => {
 };
 
 
+// exports.getUserActivity = async (req, res) => {
+//   try {
+//     const { userId } = req.params;
+
+//     // Fetch the user's activity logs
+//     const activityLogs = await AccountActivityLog.find({ userId })
+//       .sort({ timestamp: -1 }) // Sort by most recent first
+//       .populate('userId', 'firstName lastName email'); // Populate user details
+
+//     // Return the activity logs as JSON
+//     res.status(200).json({ activityLogs });
+//   } catch (error) {
+//     console.error('Error fetching activity logs:', error);
+//     res.status(500).json({ error: 'Error fetching activity logs.' });
+//   }
+// };
+
+
 exports.getUserActivity = async (req, res) => {
   try {
     const { userId } = req.params;
 
-    // Fetch the user's activity logs
     const activityLogs = await AccountActivityLog.find({ userId })
-      .sort({ timestamp: -1 }) // Sort by most recent first
-      .populate('userId', 'firstName lastName email'); // Populate user details
+      .sort({ timestamp: -1 })
+      .populate({
+        path: 'userId',
+        select: 'firstName lastName email image' // Make sure to include image here
+      });
 
-    // Return the activity logs as JSON
     res.status(200).json({ activityLogs });
   } catch (error) {
     console.error('Error fetching activity logs:', error);
@@ -75,13 +94,30 @@ exports.getUserActivity = async (req, res) => {
   }
 };
 
+// exports.getDeleteRequests = async (req, res) => {
+//   try {
+//     const deleteRequests = await Notification.find({ type: 'delete_request', status: 'pending' })
+//       .populate('triggered_by', 'firstName lastName email'); // Populate user details
+
+//     console.log('Raw delete requests:', deleteRequests); // Log the raw data
+
+//     res.status(200).json(deleteRequests);
+//   } catch (error) {
+//     console.error('Error fetching delete requests:', error);
+//     res.status(500).json({ error: 'Error fetching delete requests.' });
+//   }
+// };
+
+
 exports.getDeleteRequests = async (req, res) => {
   try {
     const deleteRequests = await Notification.find({ type: 'delete_request', status: 'pending' })
-      .populate('triggered_by', 'firstName lastName email'); // Populate user details
+      .populate({
+        path: 'triggered_by',
+        select: 'firstName lastName email image' // Make sure to include 'image' here
+      });
 
-    console.log('Raw delete requests:', deleteRequests); // Log the raw data
-
+    console.log('Raw delete requests:', deleteRequests);
     res.status(200).json(deleteRequests);
   } catch (error) {
     console.error('Error fetching delete requests:', error);
