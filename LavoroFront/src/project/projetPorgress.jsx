@@ -208,7 +208,10 @@ const ProjectProgress = () => {
     return (
         <div className="container-fluid">
             <div className="row">
+           
                 <div className="col-12">
+                <br />
+                <br />
                     <div className="card custom-card">
                         <div className="card-header justify-content-between">
                             <div className="card-title">

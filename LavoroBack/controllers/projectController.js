@@ -223,18 +223,6 @@ exports.deleteProject = async (req, res) => {
 };
 
 
-// Fonction pour compter les projets
-exports.getProjectCount = async (req, res) => {
-    try {
-        const count = await Project.countDocuments(); // Compte les projets
-        res.status(200).json({ count });
-    } catch (error) {
-        res.status(500).json({ message: 'Erreur serveur', error });
-    }
-};
-
-
-
 
   exports.getProjectById = async (req, res) => {
     const { id } = req.params;
@@ -455,102 +443,6 @@ exports.checkTeamManagerProjects = async (req, res) => {
 };
 
 
-// exports.updateProjects = async (req, res) => {
-//   const { id } = req.params;
-//   const updates = req.body;
-
-//   try {
-//     const project = await Project.findById(id);
-//     if (!project) return res.status(404).json({ message: 'Project not found' });
-
-//     console.log("Current project:", project);
-//     console.log("Received updates:", updates);
-
-//     const changes = [];
-    
-//     // Special handling for manager_id
-//     if (updates.manager_id && (!project.manager_id || !project.manager_id.equals(updates.manager_id))) {
-//       const oldManager = project.manager_id ? await User.findById(project.manager_id) : null;
-//       const newManager = await User.findById(updates.manager_id);
-      
-//       changes.push({
-//         field: 'manager_id',
-//         oldValue: oldManager ? `${oldManager.firstName} ${oldManager.lastName}` : 'None',
-//         newValue: newManager ? `${newManager.firstName} ${newManager.lastName}` : 'None',
-//         changeType: 'Manager Changed'
-//       });
-//     }
-
-//     // Handle other fields
-//     for (const field in updates) {
-//       if (field === 'manager_id') continue;
-      
-//       const oldValue = project[field];
-//       const newValue = updates[field];
-      
-//       // Skip if no actual change
-//       if (JSON.stringify(oldValue) === JSON.stringify(newValue)) continue;
-
-//       // Special handling for dates
-//       if (field.includes('_date')) {
-//         const oldDate = oldValue ? new Date(oldValue) : null;
-//         const newDate = newValue ? new Date(newValue) : null;
-        
-//         // Compare timestamps if both dates exist
-//         if ((oldDate && newDate && oldDate.getTime() !== newDate.getTime()) || 
-//             (!oldDate && newDate) || 
-//             (oldDate && !newDate)) {
-//           changes.push({
-//             field,
-//             oldValue: oldDate ? oldDate.toISOString() : 'None',
-//             newValue: newDate ? newDate.toISOString() : 'None',
-//             changeType: getChangeType(field)
-//           });
-//         }
-//       } 
-//       // Default comparison for other fields
-//       else {
-//         changes.push({
-//           field,
-//           oldValue: stringifyForHistory(oldValue),
-//           newValue: stringifyForHistory(newValue),
-//           changeType: getChangeType(field)
-//         });
-//       }
-//     }
-
-//     console.log("Detected changes:", changes);
-
-//     // Save history entries
-//     for (const change of changes) {
-//       const history = new ProjectHistory({
-//         project_id: project._id,
-//         change_type: change.changeType,
-//         old_value: change.oldValue,
-//         new_value: change.newValue,
-//         changed_at: new Date()
-//       });
-//       await history.save();
-//       console.log("Saved history entry:", history);
-//     }
-
-//     // Apply updates to project
-//     Object.assign(project, updates);
-//     project.updated_at = new Date();
-//     await project.save();
-
-//     res.status(200).json({ message: 'Project updated successfully', project, changes });
-//   } catch (error) {
-//     console.error("Update error:", error);
-//     res.status(500).json({ 
-//       message: "Server error during update",
-//       error: error.message,
-//       stack: error.stack
-//     });
-//   }
-// };
-
-
 exports.updateProjects = async (req, res) => {
   const { id } = req.params;
   const updates = req.body;
@@ -733,35 +625,6 @@ exports.exportArchivedProjects = async (req, res) => {
 
 
 
-// Fonction pour récupérer le nombre de projets par statut
-exports.getProjectsByStatus = async () => {
-  try {
-      // Agrégation MongoDB pour compter les projets par statut
-      const projectsByStatus = await Project.aggregate([
-          {
-              $group: {
-                  _id: "$status", // Grouper par statut
-                  count: { $sum: 1 } // Compter le nombre de projets dans chaque groupe
-              }
-          }
-      ]);
-
-      // Formater les résultats pour les rendre plus faciles à utiliser côté frontend
-      const formattedResults = projectsByStatus.reduce((acc, { _id, count }) => {
-          acc[_id] = count;
-          return acc;
-      }, {});
-
-      return formattedResults;
-  } catch (err) {
-      console.error('Error fetching projects by status:', err);
-      throw err; // Propager l'erreur pour la gérer côté appelant
-  }
-
-
-};
-
-
 // Function to get all projects
 exports.getAllProjectss = async (req, res) => {
 try {
@@ -836,3 +699,98 @@ exports.getProjectsWithProgress = async (req, res) => {
   }
 };
 
+
+
+
+
+
+// Fonction pour compter les projets
+exports.getArchiveCount = async (req, res) => {
+  try {
+      const count = await Archive.countDocuments(); 
+      res.status(200).json({ count });
+  } catch (error) {
+      res.status(500).json({ message: 'Erreur serveur', error });
+  }
+};
+
+
+
+// Fonction pour compter les projets (incluant les archives)
+exports.getProjectCount = async (req, res) => {
+  try {
+      const projectCount = await Project.countDocuments();
+      const archiveCount = await Archive.countDocuments();
+      const totalCount = projectCount + archiveCount;
+      
+      res.status(200).json({ 
+        count: totalCount,
+        projectCount,
+        archiveCount 
+      });
+  } catch (error) {
+      res.status(500).json({ message: 'Erreur serveur', error });
+  }
+};
+
+
+
+
+
+exports.getProjectsByStatus = async () => {
+  try {
+    // Get active projects by status
+    const activeProjectsByStatus = await Project.aggregate([
+      {
+        $group: {
+          _id: "$status", // Group by status
+          count: { $sum: 1 } // Count projects in each group
+        }
+      }
+    ]);
+
+    // Get archived projects count
+    const archiveCount = await Archive.countDocuments();
+
+    // Format active projects results
+    const formattedResults = activeProjectsByStatus.reduce((acc, { _id, count }) => {
+      acc[_id] = count;
+      return acc;
+    }, {});
+
+    // Add archived count to the results
+    formattedResults['Archived'] = archiveCount;
+
+    return formattedResults;
+  } catch (err) {
+    console.error('Error fetching projects by status:', err);
+    throw err;
+  }
+};
+
+
+// // Fonction pour récupérer le nombre de projets par statut
+// exports.getProjectsByStatus = async () => {
+//   try {
+//       // Agrégation MongoDB pour compter les projets par statut
+//       const projectsByStatus = await Project.aggregate([
+//           {
+//               $group: {
+//                   _id: "$status", // Grouper par statut
+//                   count: { $sum: 1 } // Compter le nombre de projets dans chaque groupe
+//               }
+//           }
+//       ]);
+
+//       // Formater les résultats pour les rendre plus faciles à utiliser côté frontend
+//       const formattedResults = projectsByStatus.reduce((acc, { _id, count }) => {
+//           acc[_id] = count;
+//           return acc;
+//       }, {});
+
+//       return formattedResults;
+//   } catch (err) {
+//       console.error('Error fetching projects by status:', err);
+//       throw err; // Propager l'erreur pour la gérer côté appelant
+//   }
+// };

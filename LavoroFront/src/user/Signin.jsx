@@ -98,7 +98,7 @@ function SignIn() {
           }
         } catch (err) {
           console.error("Error during sign-in:", err.response?.data || err.message)
-          setError(err.response?.data?.error || "An error occurred during sign-in.")
+          setError(err.response?.data?.error || "Email or Password is incorrect.")
         }
       }
     
@@ -339,22 +339,24 @@ function SignIn() {
                     </div>
                 </div>
                 <div className="col-xxl-6 col-xl-5 col-lg-12 d-xl-block d-none px-0">
-                    <div className="authentication-cover overflow-hidden">
-                        <div className="aunthentication-cover-content d-flex align-items-center justify-content-center">
-                            <div>
-                                <h3 className="text-fixed-white mb-1 fw-medium">Welcome Back!</h3>
-                                <h6 className="text-fixed-white mb-3 fw-medium">
-                                    Login to Your Account
-                                </h6>
-                                <p className="text-fixed-white mb-1 op-6">
-                                    Welcome to the Admin Dashboard. Please log in to securely manage
-                                    your administrative tools and oversee platform activities. Your
-                                    credentials ensure system integrity and functionality.
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+  <div className="authentication-cover overflow-hidden" >
+    <div className="aunthentication-cover-content d-flex align-items-center justify-content-center h-100">
+      <div className="text-center p-4">
+      
+          {/* Alternative GIF URLs */}
+          <img 
+            src="src/assets/HI.gif" // Replace with your GIF URL
+            alt="Project Management Animation"
+            style={{
+              width: '500px',
+              height: '500px',
+              
+            }}
+          />
+      </div>
+    </div>
+  </div>
+</div>
                 {show2FAPopup && (
             <div className="modal fade show" style={{ display: 'block', backgroundColor: 'rgba(0, 0, 0, 0.5)' }}>
               <div className="modal-dialog modal-dialog-centered">

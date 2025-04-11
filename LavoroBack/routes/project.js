@@ -32,6 +32,9 @@ router.put('/updateProjects/:id', ProjectController.updateProjects);
 router.delete('/deleteProject/:id', ProjectController.deleteProject);
 router.get('/countProject', ProjectController.getProjectCount);
 
+router.get('/countArchive', ProjectController.getArchiveCount);
+
+
 
 router.get('/archived-projects', ProjectController.getAllArchivedProjects);
 router.get('/export-archived', ProjectController.exportArchivedProjects);

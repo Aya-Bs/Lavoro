@@ -45,8 +45,8 @@ const Sidebar = ({ userRole }) => {
                   </Link>
                 </li>
                 <li className="slide">
-                  <Link to="/sales" className="side-menu__item">
-                    Dashboard
+                  <Link to="/ProjectDash" className="side-menu__item">
+                    Project dashboard
                   </Link>
                 </li>
                
@@ -75,11 +75,6 @@ const Sidebar = ({ userRole }) => {
                 <li className="slide">
                   <Link to="/listPro" className="side-menu__item">
                     Projects List
-                  </Link>
-                </li>
-                <li className="slide">
-                  <Link to="/ProjectDash" className="side-menu__item">
-                    Project dashboard
                   </Link>
                 </li>
                 <li className="slide">
@@ -155,8 +150,8 @@ const Sidebar = ({ userRole }) => {
                   </Link>
                 </li>
                 <li className="slide">
-                  <Link to="/sales" className="side-menu__item">
-                    Dashboard
+                  <Link to="/ProjectDash" className="side-menu__item">
+                    Project dashboard
                   </Link>
                 </li>
                
@@ -187,11 +182,7 @@ const Sidebar = ({ userRole }) => {
                     Projects List
                   </Link>
                 </li>
-                <li className="slide">
-                  <Link to="/ProjectDash" className="side-menu__item">
-                    Project dashboard
-                  </Link>
-                </li>
+                
                 <li className="slide">
                   <Link to="/archieve" className="side-menu__item">
                     Projects Archive

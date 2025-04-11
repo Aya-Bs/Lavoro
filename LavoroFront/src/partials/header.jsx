@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
-import Sidebar from "./sidebar"; // Import the Sidebar component
+import Sidebar from "./Sidebar"; // Import the Sidebar component
 import Switcher from "./switcher";
 import { Search, Globe, ShoppingCart, Bell, Maximize, Minimize, Settings } from "lucide-react";
 import Pickr from '@simonwep/pickr';

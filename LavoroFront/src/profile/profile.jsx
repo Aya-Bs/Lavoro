@@ -229,8 +229,7 @@ const Profile = () => {
                             className={`nav-link w-100 text-start ${activeTab === "profile-about-tab-pane" ? "active" : ""}`}
                             id="profile-about-tab"
                             onClick={() => {
-                              setActiveTab("activities-tab-pane");
-                              fetchActivities();
+                              setActiveTab("profile-about-tab-pane");
                             }}
                             type="button"
                             role="tab"
