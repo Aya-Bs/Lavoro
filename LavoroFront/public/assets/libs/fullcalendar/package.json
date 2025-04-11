@@ -10,12 +10,7 @@
     "@fullcalendar/interaction": "~6.1.15",
     "@fullcalendar/list": "~6.1.15",
     "@fullcalendar/multimonth": "~6.1.15",
-<<<<<<< HEAD
     "@fullcalendar/timegrid": "~6.1.15"
-=======
-    "@fullcalendar/timegrid": "~6.1.15",
-    "fullcalendar": "file:"
->>>>>>> lilia
   },
   "type": "module",
   "keywords": [
@@ -52,8 +47,4 @@
       "import": "./index.js"
     }
   }
-<<<<<<< HEAD
 }
-=======
-}
->>>>>>> lilia

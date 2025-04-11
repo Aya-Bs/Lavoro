@@ -2,21 +2,14 @@ const mongo = require('mongoose');
 const Schema = mongo.Schema;
 
 const Project = new Schema({
-    project_id: { type: String, required: true, unique: true },
     name: { type: String, required: true , index: true },// index pour optimiser les recherches,
     description: { type: String },
     budget: { type: Number, default: 0 },
-
     manager_id: { type: mongo.Schema.Types.ObjectId, ref: 'user' }, // Reference to User model
-
     team_id: { type: mongo.Schema.Types.ObjectId },
     client: { type: String },
     start_date: { type: Date },
     end_date: { type: Date },
-    total_tasks_count: { type: Number, default: 0 }, 
-    estimated_duration: { type: Number, default: 0 }, 
-    team_member_count: { type: Number, default: 0 }, 
-    priority: { type: String }, 
     status: { 
         type: String, 
         enum: ['Not Started', 'In Progress', 'Completed', 'Archived'], 

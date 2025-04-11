@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom'; // Import useNavigate
+import { useParams, useNavigate ,useLocation  } from 'react-router-dom'; // Import useNavigate
 import Swal from 'sweetalert2';
 
 export default function ProjectOverview(){
@@ -11,6 +11,7 @@ export default function ProjectOverview(){
   const [currentPage, setCurrentPage] = useState(1); // Current page
   const [itemsPerPage] = useState(7); // Number of items per page
   const navigate = useNavigate(); // Initialize the navigate function
+  const { state } = useLocation(); // Get the navigation state
 
 
   // Calculate the index of the first and last item on the current page
@@ -22,10 +23,20 @@ const currentHistory = history.slice(indexOfFirstItem, indexOfLastItem);
 // Calculate the total number of pages
 const totalPages = Math.ceil(history.length / itemsPerPage);
 
+const isTeamManager = state?.isTeamManager || false;
+
+
+
+
 // Handle page change
 const handlePageChange = (pageNumber) => {
   setCurrentPage(pageNumber);
 };
+
+
+
+
+
 
 
 const handleArchiveClick = async (projectId, projectStatus) => {
@@ -82,10 +93,6 @@ const handleArchiveClick = async (projectId, projectStatus) => {
   }
 };
 
-
-const handleEditClick = (projectId) => {
-  navigate(`/updateProjects/${projectId}`);
-};
 
 
 const handleDelete = async (projectId) => {
@@ -166,6 +173,11 @@ const handleDelete = async (projectId) => {
       console.error('Error fetching project details:', error);
       Swal.fire('Error!', 'An error occurred while fetching project details.', 'error');
     }
+  };
+
+
+  const handleEditClick = (projectId) => {
+    navigate(`/updateProjects/${projectId}`);
   };
 
 
@@ -253,34 +265,34 @@ const handleDelete = async (projectId) => {
               <div className="card-header justify-content-between">
                 <div className="card-title">Project Details</div>
                 <div className="d-flex gap-1">
+                {/* Only show Delete & Archive if NOT a Team Manager */}
+                {!isTeamManager && (
+                  <>
 
-                <button
+<button
                                   className="btn btn-success btn-sm"
                                   onClick={() => handleEditClick(project._id)}
                                 >
-                                  <i className="ri-pencil-line me-1"></i> Edit
+                                  Edit
                                 </button>
 
-  <a
-    className="btn btn-sm btn-primary btn-wave"
-    onClick={() => handleDelete(project._id)}
-  >
-    {/* <i className="ri-delete-bin-line align-middle me-1 fw-medium" /> */}
-    Delete
-  </a>
-
-  <a
-    href="javascript:void(0);"
-    className="btn btn-sm btn-primary1 btn-wave"
-    onClick={() => handleArchiveClick(project._id, project.status)}
-  >
-    {/* <i className="ri-archive-line align-middle fw-medium me-1" /> */}
-    Archive
-  </a>
-</div>
-
-
+                    <button
+                      className="btn btn-sm btn-primary btn-wave"
+                      onClick={() => handleDelete(project._id)}
+                    >
+                      Delete
+                    </button>
+                    <button
+                      className="btn btn-sm btn-primary1 btn-wave"
+                      onClick={() => handleArchiveClick(project._id, project.status)}
+                    >
+                      Archive
+                    </button>
+                  </>
+                )}
               </div>
+            </div>
+            
               <div className="card-body">
                 <div className="d-flex align-items-center mb-4 gap-2 flex-wrap">
                   <span className="avatar avatar-lg me-1 bg-primary-gradient">
@@ -348,7 +360,7 @@ const handleDelete = async (projectId) => {
                       
   <div>
     <span className="d-block fs-14 fw-medium">
-    Project Manager
+    Team Manager
     </span>
     <span className="fs-12 text-muted">
     {manager && manager.firstName && manager.lastName

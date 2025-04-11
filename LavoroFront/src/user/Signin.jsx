@@ -42,7 +42,7 @@ function SignIn() {
                         if (response.data.role && response.data.role.RoleName === 'Admin') {
                             navigate('/admin-dashboard');
                         } else {
-                            navigate('/sales');
+                            navigate('/profile');
                         }
                     }
                 }
@@ -90,7 +90,7 @@ function SignIn() {
               if (userResponse.data.role && userResponse.data.role.RoleName === "Admin") {
                 navigate("/admin-dashboard") // Redirect to admin dashboard
               } else {
-                navigate("/sales") // Redirect to home
+                navigate("/profile") // Redirect to home
               }
             }, 2000)
           } else {
@@ -135,7 +135,7 @@ function SignIn() {
               if (userResponse.data.role && userResponse.data.role.RoleName === "Admin") {
                 navigate("/admin-dashboard") // Redirect to admin dashboard
               } else {
-                navigate("/sales") // Redirect to home
+                navigate("/profile") // Redirect to home
               }
             }, 2000)
           } else {

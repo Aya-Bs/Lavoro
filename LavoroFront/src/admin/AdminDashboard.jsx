@@ -28,7 +28,7 @@ function AdminDashboard() {
       {/* Users List Section */}
       <UsersList onViewActivity={(userId) => navigate(`/user-activity/${userId}`)} />
 
-    
+      {/* Logout Button */}
       
     </div>
   );
