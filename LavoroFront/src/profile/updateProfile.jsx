@@ -13,11 +13,16 @@ const UpdateProfile = () => {
   const [profileImage, setProfileImage] = useState("");
   const [imageSrc, setImageSrc] = useState(null);
   const [croppedImage, setCroppedImage] = useState(null);
-  const [showImageSourceModal, setShowImageSourceModal] = useState(false);
   const [showCameraModal, setShowCameraModal] = useState(false);
   const [showCropModal, setShowCropModal] = useState(false);
   const [crop, setCrop] = useState({ aspect: 1 / 1 });
   const [loading, setLoading] = useState(false);
+  const [errors, setErrors] = useState({
+    firstName: null,
+    lastName: null,
+    phoneNumber: null,
+    email: null
+  });
 
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
@@ -25,7 +30,6 @@ const UpdateProfile = () => {
   const imgRef = useRef(null);
   const navigate = useNavigate();
 
-  // Fetch user info on component mount
   useEffect(() => {
     const fetchUserInfo = async () => {
       try {
@@ -63,7 +67,58 @@ const UpdateProfile = () => {
     fetchUserInfo();
   }, [navigate]);
 
-  // Restore all changes to original values
+  const validateField = (fieldName, value) => {
+    let error = null;
+    
+    if (fieldName === 'firstName') {
+      if (!value) error = 'First name is required.';
+      else if (!/^[A-Za-z\s'-]+$/.test(value)) error = 'First name must contain only letters, spaces, hyphens, or apostrophes.';
+      else if (value.length < 3) error = 'First name cannot be less than three characters long.';
+    } 
+    else if (fieldName === 'lastName') {
+      if (!value) error = 'Last name is required.';
+      else if (!/^[A-Za-z\s'-]+$/.test(value)) error = 'Last name must contain only letters, spaces, hyphens, or apostrophes.';
+      else if (value.length < 3) error = 'Last name cannot be less than three characters long.';
+    }
+    else if (fieldName === 'phoneNumber') {
+      if (!value) error = 'Phone number is required.';
+      else if (value.length < 8) error = 'Phone number must be at least 8 digits long.';
+      else if (!/^[0-9]+$/.test(value)) error = 'Phone number must contain only numeric characters.';
+      else if (/^0+$/.test(value)) error = 'Phone number cannot be all zeros.';
+    }
+    else if (fieldName === 'email') {
+      if (!value) error = 'Email is required.';
+      else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) error = 'Please enter a valid email address.';
+    }
+    
+    setErrors(prev => ({ ...prev, [fieldName]: error }));
+    return !error;
+  };
+
+  const handleFirstNameChange = (e) => {
+    const value = e.target.value;
+    setFirstName(value);
+    validateField('firstName', value);
+  };
+
+  const handleLastNameChange = (e) => {
+    const value = e.target.value;
+    setLastName(value);
+    validateField('lastName', value);
+  };
+
+  const handlePhoneNumberChange = (e) => {
+    const value = e.target.value;
+    setPhoneNumber(value);
+    validateField('phoneNumber', value);
+  };
+
+  const handleEmailChange = (e) => {
+    const value = e.target.value;
+    setUser(prev => ({ ...prev, email: value }));
+    validateField('email', value);
+  };
+
   const handleRestoreChanges = () => {
     Swal.fire({
       title: "Restore Changes?",
@@ -82,6 +137,12 @@ const UpdateProfile = () => {
         setProfileImage(user.image);
         setImageSrc(null);
         setCroppedImage(null);
+        setErrors({
+          firstName: null,
+          lastName: null,
+          phoneNumber: null,
+          email: null
+        });
         
         Swal.fire({
           title: "Restored!",
@@ -158,7 +219,6 @@ const UpdateProfile = () => {
     }
   };
 
-  // Camera functions
   const openCamera = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ video: true });
@@ -194,14 +254,12 @@ const UpdateProfile = () => {
       const reader = new FileReader();
       reader.onload = (e) => {
         setImageSrc(e.target.result);
-        setShowImageSourceModal(false);
         setShowCropModal(true);
       };
       reader.readAsDataURL(file);
     }
   };
 
-  // Image cropping functions
   const onCropComplete = (crop) => {
     if (imgRef.current && crop.width && crop.height) {
       const croppedImageUrl = getCroppedImg(imgRef.current, crop);
@@ -232,9 +290,23 @@ const UpdateProfile = () => {
     return canvas.toDataURL("image/png");
   };
 
-  // Form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    const isFirstNameValid = validateField('firstName', firstName);
+    const isLastNameValid = validateField('lastName', lastName);
+    const isPhoneNumberValid = validateField('phoneNumber', phoneNumber);
+    const isEmailValid = validateField('email', user.email);
+    
+    if (!isFirstNameValid || !isLastNameValid || !isPhoneNumberValid || !isEmailValid) {
+      await Swal.fire({
+        title: "Validation Error",
+        text: "Please fix the errors in the form before submitting.",
+        icon: "error",
+      });
+      return;
+    }
+    
     setLoading(true);
 
     const token = localStorage.getItem('token');
@@ -248,6 +320,7 @@ const UpdateProfile = () => {
     formData.append("firstName", firstName);
     formData.append("lastName", lastName);
     formData.append("phoneNumber", phoneNumber);
+    formData.append("email", user.email);
 
     if (croppedImage) {
       const blob = await fetch(croppedImage).then((res) => res.blob());
@@ -315,17 +388,28 @@ const UpdateProfile = () => {
                 <div>
                   <span className="avatar avatar-xxl" style={{ marginLeft: "10px" }}>
                     {profileImage ? (
-                      <img
-                        src={profileImage.startsWith("data:image") ? profileImage : `http://localhost:3000${profileImage}`}
-                        alt="Profile"
-                        style={{
-                          width: "100px",
-                          height: "100px",
-                          borderRadius: "50%",
-                          objectFit: "cover",
-                          marginBottom: "10px",
-                        }}
-                      />
+                     <img
+                     src={
+                       profileImage
+                         ? profileImage.startsWith('data:image') 
+                           ? profileImage // Use as-is for data URLs
+                           : profileImage.startsWith('http') || profileImage.startsWith('https')
+                             ? profileImage // Use as-is for full URLs
+                             : `http://localhost:3000${profileImage}` // Prepend server URL for relative paths
+                         : "https://via.placeholder.com/100" // Fallback if no image
+                     }
+                     alt="Profile"
+                     style={{
+                       width: "100px",
+                       height: "100px",
+                       borderRadius: "50%",
+                       objectFit: "cover",
+                       marginBottom: "10px"
+                     }}
+                     onError={(e) => {
+                       e.target.src = "https://via.placeholder.com/100";
+                     }}
+                   />
                     ) : (
                       <p>No profile image uploaded.</p>
                     )}
@@ -356,45 +440,57 @@ const UpdateProfile = () => {
               <label htmlFor="profile-user-name" className="form-label">First Name :</label>
               <input
                 type="text"
-                className="form-control"
+                className={`form-control ${errors.firstName ? 'is-invalid' : ''}`}
                 id="profile-user-name"
                 value={firstName}
-                onChange={(e) => setFirstName(e.target.value)}
+                onChange={handleFirstNameChange}
                 placeholder="Enter First Name"
               />
+              {errors.firstName && (
+                <div className="invalid-feedback d-block">{errors.firstName}</div>
+              )}
             </div>
             <div className="col-xl-12">
               <label htmlFor="profile-last-name" className="form-label">Last Name :</label>
               <input
                 type="text"
-                className="form-control"
+                className={`form-control ${errors.lastName ? 'is-invalid' : ''}`}
                 id="profile-last-name"
                 value={lastName}
-                onChange={(e) => setLastName(e.target.value)}
+                onChange={handleLastNameChange}
                 placeholder="Enter Last Name"
               />
+              {errors.lastName && (
+                <div className="invalid-feedback d-block">{errors.lastName}</div>
+              )}
             </div>
             <div className="col-xl-12">
               <label htmlFor="profile-phone-number" className="form-label">Phone Number :</label>
               <input
                 type="text"
-                className="form-control"
+                className={`form-control ${errors.phoneNumber ? 'is-invalid' : ''}`}
                 id="profile-phone-number"
                 value={phoneNumber}
-                onChange={(e) => setPhoneNumber(e.target.value)}
+                onChange={handlePhoneNumberChange}
                 placeholder="Enter Phone Number"
               />
+              {errors.phoneNumber && (
+                <div className="invalid-feedback d-block">{errors.phoneNumber}</div>
+              )}
             </div>
             <div className="col-xl-12">
               <label htmlFor="profile-email" className="form-label">Email :</label>
               <input
                 type="email"
-                className="form-control"
+                className={`form-control ${errors.email ? 'is-invalid' : ''}`}
                 id="profile-email"
                 value={user.email}
-                readOnly
+                onChange={handleEmailChange}
                 placeholder="Enter Email"
               />
+              {errors.email && (
+                <div className="invalid-feedback d-block">{errors.email}</div>
+              )}
             </div>
           </div>
         </div>

@@ -49,6 +49,7 @@ app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'twig');
 
 
+
 // Middleware
 app.use(logger('dev'));
 app.use(express.json());
@@ -126,18 +127,7 @@ io.on('connection', (socket) => {
     console.log('User disconnected');
   });
 });
-console.log("Test script started...");
 
-const { predictProjectFields } = require('./utils/predict');
-async function testPrediction() {
-  const result = await predictProjectFields(
-    "E-Commerce Website",
-    "Build a Shopify store with 50 products and payment integration"
-  );
-  console.log(result);
-}
-
-testPrediction();
 // Start server
 server.listen(3000, () => {
   console.log('Server is running on port 3000');

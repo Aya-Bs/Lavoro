@@ -226,11 +226,25 @@ function UsersList({ onRoleUpdate, onViewActivity }) {
                 <tr key={user._id}>
                   <td>
                     <div className="d-flex align-items-center">
-                      <img
+                      {/* <img
                         src={user.image || 'https://via.placeholder.com/50'}
                         className="avatar avatar-sm me-2"
                         alt={user.firstName}
-                      />
+                      /> */}
+<img
+  src={
+    user.image
+      ? user.image.startsWith('http') // Check if it's already a full URL
+        ? user.image // Use as-is if full URL
+        : `http://localhost:3000${user.image}` // Prepend server URL if relative
+      : 'https://via.placeholder.com/50' // Fallback if no image
+  }
+  className="avatar avatar-sm me-2"
+  alt={`${user.firstName} ${user.lastName}`}
+  onError={(e) => {
+    e.target.src = 'https://via.placeholder.com/50';
+  }}
+/>
                       <span>
                         {user.firstName} {user.lastName}
                       </span>
