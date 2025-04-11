@@ -87,6 +87,11 @@ const Sidebar = ({ userRole }) => {
                     Projects Archive
                   </Link>
                 </li>
+                <li className="slide">
+                  <Link to="/ProjectProgress" className="side-menu__item">
+                    Projects Progress
+                  </Link>
+                </li>
               </ul>
             </li>
           </>
@@ -190,6 +195,11 @@ const Sidebar = ({ userRole }) => {
                 <li className="slide">
                   <Link to="/archieve" className="side-menu__item">
                     Projects Archive
+                  </Link>
+                </li>
+                <li className="slide">
+                  <Link to="/ProjectProgress" className="side-menu__item">
+                    Projects Progress
                   </Link>
                 </li>
               </ul>

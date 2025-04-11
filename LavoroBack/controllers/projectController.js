@@ -235,35 +235,6 @@ exports.getProjectCount = async (req, res) => {
 
 
 
-// Fonction pour récupérer le nombre de projets par statut
-exports.getProjectsByStatus = async () => {
-    try {
-        // Agrégation MongoDB pour compter les projets par statut
-        const projectsByStatus = await Project.aggregate([
-            {
-                $group: {
-                    _id: "$status", // Grouper par statut
-                    count: { $sum: 1 } // Compter le nombre de projets dans chaque groupe
-                }
-            }
-        ]);
-
-        // Formater les résultats pour les rendre plus faciles à utiliser côté frontend
-        const formattedResults = projectsByStatus.reduce((acc, { _id, count }) => {
-            acc[_id] = count;
-            return acc;
-        }, {});
-
-        return formattedResults;
-    } catch (err) {
-        console.error('Error fetching projects by status:', err);
-        throw err; // Propager l'erreur pour la gérer côté appelant
-    }
-
-
-};
-
-
 
   exports.getProjectById = async (req, res) => {
     const { id } = req.params;
@@ -759,4 +730,109 @@ exports.exportArchivedProjects = async (req, res) => {
 };
 
 
+
+
+
+// Fonction pour récupérer le nombre de projets par statut
+exports.getProjectsByStatus = async () => {
+  try {
+      // Agrégation MongoDB pour compter les projets par statut
+      const projectsByStatus = await Project.aggregate([
+          {
+              $group: {
+                  _id: "$status", // Grouper par statut
+                  count: { $sum: 1 } // Compter le nombre de projets dans chaque groupe
+              }
+          }
+      ]);
+
+      // Formater les résultats pour les rendre plus faciles à utiliser côté frontend
+      const formattedResults = projectsByStatus.reduce((acc, { _id, count }) => {
+          acc[_id] = count;
+          return acc;
+      }, {});
+
+      return formattedResults;
+  } catch (err) {
+      console.error('Error fetching projects by status:', err);
+      throw err; // Propager l'erreur pour la gérer côté appelant
+  }
+
+
+};
+
+
+// Function to get all projects
+exports.getAllProjectss = async (req, res) => {
+try {
+  const projects = await Project.find({});
+  res.status(200).json(projects);
+} catch (error) {
+  res.status(500).json({ message: error.message });
+}
+};
+
+
+
+exports.getProjectsWithProgress = async (req, res) => {
+  try {
+      console.log('Fetching projects with progress...');
+      
+      // Récupérer tous les projets
+      const allProjects = await Project.find({});
+      console.log('Total projects in database:', allProjects.length);
+
+      // Récupérer tous les historiques de projets
+      const allHistories = await ProjectHistory.find({}).sort({ changed_at: -1 });
+      console.log('Total histories:', allHistories.length);
+      console.log('Sample history:', JSON.stringify(allHistories[0], null, 2));
+
+      // Créer un map des derniers historiques par projet
+      const latestHistories = new Map();
+      allHistories.forEach(history => {
+          try {
+              if (history && history.project_id) {
+                  const projectId = history.project_id.toString();
+                  if (!latestHistories.has(projectId)) {
+                      latestHistories.set(projectId, history);
+                  }
+              } else {
+                  console.log('Skipping history entry:', history);
+              }
+          } catch (err) {
+              console.error('Error processing history entry:', err);
+              console.log('Problematic history entry:', history);
+          }
+      });
+
+      console.log('Latest histories map size:', latestHistories.size);
+
+      // Combiner les projets avec leur historique
+      const projectsWithProgress = allProjects.map(project => {
+          try {
+              const projectId = project._id.toString();
+              const history = latestHistories.get(projectId);
+
+              return {
+                  _id: project._id,
+                  name: project.name,
+                  description: project.description,
+                  status: project.status,
+                  progress: history ? history.progress : 0,
+                  updated_at: history ? history.changed_at : project.updated_at
+              };
+          } catch (err) {
+              console.error('Error processing project:', err);
+              console.log('Problematic project:', project);
+              return null;
+          }
+      }).filter(project => project !== null);
+
+      console.log('Projects with progress:', projectsWithProgress.length);
+      res.status(200).json(projectsWithProgress);
+  } catch (error) {
+      console.error('Error fetching projects with progress:', error);
+      res.status(500).json({ message: 'Failed to fetch projects with progress' });
+  }
+};
 

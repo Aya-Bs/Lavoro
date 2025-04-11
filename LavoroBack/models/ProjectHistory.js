@@ -25,6 +25,7 @@ const ProjectHistory = new Schema(
         required: true,
       }
     ,
+    progress: { type: Number, default: 0 },
     old_value: { type: String, required: true },
     new_value: { type: String, required: true },
     changed_at: { type: Date, default: Date.now },
