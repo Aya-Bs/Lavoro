@@ -43,7 +43,7 @@ pipeline {
             steps {
                 script {
                     try {
-                        // Build backend
+                        // Build backendd
                         sh 'cd LavoroBack && npm run build-dev || echo "No build-dev script found, skipping backend build"'
                         
                         // Build frontend
