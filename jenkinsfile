@@ -29,10 +29,10 @@ pipeline {
                 script {
                     try {
                         sh 'cd LavoroBack && npm test'
-                    } catch (error) {
-                        echo "Error running unit tests: ${error}"
+                    } catch (Exception e) {
+                        echo "Error running unit tests: ${e}"
                         currentBuild.result = 'FAILURE'
-                        error("Unit tests failed")
+                        throw new Exception("Unit tests failed")
                     }
                 }
             }
