@@ -68,18 +68,13 @@ pipeline {
         stage('SonarQube Analysis') {
             steps {
                 script {
-                    try {
-                        def scannerHome = tool 'Lavoro' // Assurez-vous que le scanner SonarQube est configuré dans Jenkins
-                        withSonarQubeEnv {
-                            sh "${scannerHome}/bin/sonar-scanner"
-                        }
-                    } catch (error) {
-                        echo "Error during SonarQube analysis: ${error}"
-                        currentBuild.result = 'FAILURE'
-                        error("SonarQube analysis failed")
-                    }
-                }
+                  def scannerHome = tool 'scanner' 
+                    withSonarQubeEnv { 
+                            sh "${scannerHome}/bin/sonar-scanner" 
+
+                             }
             }
+        }
         }
 
         // Stage 5: Building Docker images (node and mongo)
