@@ -4,7 +4,7 @@ import SignIn from "./user/Signin";
 import Home from "./Home";
 import VerifyEmail from "./user/verifymail";
 import ForgotPassword from "./user/ForgetPassword";
-import ResetPassword from "./user/resetPassword";
+import ResetPassword from "./user/ResetPassword";
 import Profile from "./profile/profile";
 import UpdateProfile from "./profile/updateProfile";
 import AdminDashboard from "./admin/AdminDashboard";
