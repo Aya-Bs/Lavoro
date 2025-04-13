@@ -3,7 +3,7 @@ import axios from 'axios';
 import { useParams } from 'react-router-dom';
 
 function UserActivity() {
-  const { userId } = useParams(); // Get userId from the URL
+  const { userId } = useParams();
   const [activities, setActivities] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -21,14 +21,16 @@ function UserActivity() {
 
         // Transform the API data into the expected format
         const transformedActivities = response.data.activityLogs.map((log, index) => ({
-          title: log.action, // Use the action as the title
-          description: `${log.userId.firstName} ${log.userId.lastName}`, // Display the username
-          date: new Date(log.timestamp).toLocaleDateString(), // Format the date
-          day: new Date(log.timestamp).toLocaleString('en-US', { weekday: 'long' }), // Get the day
-          time: new Date(log.timestamp).toLocaleTimeString(), // Format the time
-          avatar: '/placeholder.svg', // Use a placeholder avatar
-          borderColor: `primary${index % 4 + 1}`, // Alternating border colors
+          title: log.action,
+          description: `${log.userId.firstName} ${log.userId.lastName}`,
+          date: new Date(log.timestamp).toLocaleDateString(),
+          day: new Date(log.timestamp).toLocaleString('en-US', { weekday: 'long' }),
+          time: new Date(log.timestamp).toLocaleTimeString(),
+          avatar: log.userId.image, // Use the actual user image
+          borderColor: `primary${index % 4 + 1}`,
+          user: log.userId // Store the full user object
         }));
+        
         setActivities(transformedActivities);
       } catch (err) {
         console.error('Error fetching user activity:', err);
@@ -57,7 +59,6 @@ function UserActivity() {
     return <p className="text-center text-danger">{error}</p>;
   }
 
-  // If no activities are found, display a message
   if (!loading && activities.length === 0) {
     return <p className="text-center text-muted">No activities found for this user.</p>;
   }
@@ -84,8 +85,18 @@ function UserActivity() {
                             <div>
                               <span className="avatar avatar-lg online">
                                 <img
-                                  src={activity.avatar || '/placeholder.svg'}
-                                  alt={activity.title}
+                                  src={
+                                    activity.user?.image
+                                      ? activity.user.image.startsWith('http') || 
+                                        activity.user.image.startsWith('https')
+                                        ? activity.user.image
+                                        : `http://localhost:3000${activity.user.image}`
+                                      : 'https://via.placeholder.com/50'
+                                  }
+                                  alt={`${activity.user?.firstName || ''} ${activity.user?.lastName || ''}`}
+                                  onError={(e) => {
+                                    e.target.src = 'https://via.placeholder.com/50';
+                                  }}
                                 />
                               </span>
                             </div>
@@ -133,8 +144,18 @@ function UserActivity() {
                             <div>
                               <span className="avatar avatar-lg online">
                                 <img
-                                  src={activity.avatar || '/placeholder.svg'}
-                                  alt={activity.title}
+                                  src={
+                                    activity.user?.image
+                                      ? activity.user.image.startsWith('http') || 
+                                        activity.user.image.startsWith('https')
+                                        ? activity.user.image
+                                        : `http://localhost:3000${activity.user.image}`
+                                      : 'https://via.placeholder.com/50'
+                                  }
+                                  alt={`${activity.user?.firstName || ''} ${activity.user?.lastName || ''}`}
+                                  onError={(e) => {
+                                    e.target.src = 'https://via.placeholder.com/50';
+                                  }}
                                 />
                               </span>
                             </div>

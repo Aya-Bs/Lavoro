@@ -6,6 +6,21 @@ import flatpickr from 'flatpickr';
 import 'flatpickr/dist/flatpickr.min.css';
 import Choices from 'choices.js';
 import 'choices.js/public/assets/styles/choices.min.css';
+import Quill from 'quill';
+import 'quill/dist/quill.snow.css';
+import { FilePond, registerPlugin } from 'react-filepond';
+import FilePondPluginImagePreview from 'filepond-plugin-image-preview';
+import FilePondPluginImageExifOrientation from 'filepond-plugin-image-exif-orientation';
+import FilePondPluginFileValidateSize from 'filepond-plugin-file-validate-size';
+import FilePondPluginFileEncode from 'filepond-plugin-file-encode';
+import FilePondPluginImageEdit from 'filepond-plugin-image-edit';
+import FilePondPluginFileValidateType from 'filepond-plugin-file-validate-type';
+import FilePondPluginImageCrop from 'filepond-plugin-image-crop';
+import FilePondPluginImageResize from 'filepond-plugin-image-resize';
+import FilePondPluginImageTransform from 'filepond-plugin-image-transform';
+import 'filepond-plugin-image-preview/dist/filepond-plugin-image-preview.css';
+import 'filepond/dist/filepond.min.css';
+
 
 const CreateProject = () => {
   const [projectData, setProjectData] = useState({
@@ -89,6 +104,7 @@ const CreateProject = () => {
   const searchTeamManagers = async (term) => {
     try {
       const response = await axios.get(`http://localhost:3000/users/getTeamManager?search=${term}`);
+      console.log("API Response:", response.data); // Log pour déboguer
       setTeamManagers(Array.isArray(response.data) ? response.data : []);
     } catch (error) {
       console.error("Error fetching team managers:", error);
@@ -475,6 +491,13 @@ const CreateProject = () => {
 
                   {/* Submit Button */}
                   <div className="col-12 mt-4">
+                  <button 
+                  type="button"  // Add this line
+                  className="btn btn-info btn-wave"
+                  onClick={() => navigate('/createProWithAi')}
+                >
+                  <i className="ri-magic-line me-1"></i> AI Assistant
+                </button>
                     <button
                       type="submit"
                       className="btn btn-primary btn-wave float-end"

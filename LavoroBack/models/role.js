@@ -15,6 +15,7 @@ const Role = new Schema({
     required: true,
     unique: true,
   },
+  hierarchyLevel: { type: Number, required: true },
   Description: {
     type: String,
   },

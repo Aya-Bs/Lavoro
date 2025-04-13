@@ -83,11 +83,5 @@
 			"themes/*.css",
 			"prism.js"
 		]
-<<<<<<< HEAD
-=======
-	},
-	"dependencies": {
-		"prismjs": "file:"
->>>>>>> lilia
 	}
 }

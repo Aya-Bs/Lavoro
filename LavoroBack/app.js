@@ -14,6 +14,7 @@ const transporter = require('./utils/emailConfig'); // Import the transporter fr
 const MongoStore = require('connect-mongo');
 const cors = require('cors');
 
+
 // Connect to MongoDB
 mongo
   .connect(db.url)
@@ -49,6 +50,7 @@ app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'twig');
 
 
+
 // Middleware
 app.use(logger('dev'));
 app.use(express.json());
@@ -81,7 +83,7 @@ app.use('/users', usersRouter);
 // app.use('/', homeRouter);
 app.use('/admin',adminRouter);
 app.set('io', io);
-app.set('/tasks',taskRouter);
+app.use('/tasks',taskRouter);
 
 app.use('/project',projectRouter);
 
@@ -126,8 +128,8 @@ io.on('connection', (socket) => {
     console.log('User disconnected');
   });
 });
-
 // Start server
+
 server.listen(3000, () => {
   console.log('Server is running on port 3000');
 });

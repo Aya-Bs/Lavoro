@@ -5,9 +5,7 @@ const Project = new Schema({
     name: { type: String, required: true , index: true },// index pour optimiser les recherches,
     description: { type: String },
     budget: { type: Number, default: 0 },
-
     manager_id: { type: mongo.Schema.Types.ObjectId, ref: 'user' }, // Reference to User model
-
     team_id: { type: mongo.Schema.Types.ObjectId },
     client: { type: String },
     start_date: { type: Date },
@@ -22,6 +20,7 @@ const Project = new Schema({
         enum: ['Low', 'Medium', 'High'],
         default: 'Medium', 
     },
+    risks: { type: String, default: 'None' }, 
     tags: { type: String },
     ai_predicted_completion: { type: Date },
     ai_predicted_description: { type: String },

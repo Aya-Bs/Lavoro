@@ -60,19 +60,38 @@ const Profile = () => {
   // Fonction pour récupérer les activités
   const fetchActivities = async () => {
     try {
-      const response = await axios.get('http://localhost:3000/users/mytasks', { withCredentials: true });
-      setTasks(response.data);
-    } catch (err) {
-      console.error("Error fetching tasks:", err);
-      if (err.response?.status === 404) {
-        alert("The tasks endpoint was not found. Please check the backend.");
-      } else {
-        alert("An error occurred while fetching tasks. Please try again later.");
+      const token = localStorage.getItem('token');
+      if (!token) {
+        console.error("No token found");
+        navigate('/auth');
+        return;
       }
-      navigate('/auth');
+
+      const response = await axios.get('http://localhost:3000/tasks/my-tasks', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        withCredentials: true
+      });
+
+      console.log("Tasks response:", response.data); // Ajoutez ce log pour debug
+      setTasks(response.data);
+      
+    } catch (err) {
+      console.error("Full error:", err);
+      console.error("Error response:", err.response?.data); // Debug détaillé
+      
+      if (err.response?.status === 401) {
+        localStorage.removeItem('token');
+        navigate('/signin');
+      } else {
+        alert(`Error: ${err.response?.data?.message || err.message}`);
+      }
+      setTasks([]);
     }
   };
-
+  
   // Charger les activités lorsque l'onglet est activé
   useEffect(() => {
     if (activeTab === "activities-tab-pane") {
@@ -209,7 +228,9 @@ const Profile = () => {
                           <button
                             className={`nav-link w-100 text-start ${activeTab === "profile-about-tab-pane" ? "active" : ""}`}
                             id="profile-about-tab"
-                            onClick={() => setActiveTab("profile-about-tab-pane")}
+                            onClick={() => {
+                              setActiveTab("profile-about-tab-pane");
+                            }}
                             type="button"
                             role="tab"
                             aria-controls="profile-about-tab-pane"
@@ -377,17 +398,27 @@ const ProfileSidebar = ({ user }) => {
         <div className="text-center">
           <span className="avatar avatar-xxl avatar-rounded online mb-3">
             {user.image ? (
-              <img
-                src={`http://localhost:3000${user.image}`}
-                alt="Profile"
-                style={{
-                  width: "100px",
-                  height: "100px",
-                  borderRadius: "50%",
-                  objectFit: "cover",
-                  marginBottom: "10px"
-                }}
-              />
+            
+<img
+src={
+  user?.image
+    ? user.image.startsWith('http') || user.image.startsWith('https')
+      ? user.image // Use as-is if it's already a full URL
+      : `http://localhost:3000${user.image}` // Prepend server URL if relative
+    : "https://via.placeholder.com/100" // Fallback if no image
+}
+alt="Profile"
+style={{
+  width: "100px",
+  height: "100px",
+  borderRadius: "50%",
+  objectFit: "cover",
+  marginBottom: "10px"
+}}
+onError={(e) => {
+  e.target.src = "https://via.placeholder.com/100";
+}}
+/>
             ) : (
               <p>No profile image uploaded.</p>
             )}
@@ -562,3 +593,5 @@ const AboutTab = ({ user }) => {
 };
 
 export default Profile;
+
+
