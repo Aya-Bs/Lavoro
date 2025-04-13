@@ -14,6 +14,7 @@ const transporter = require('./utils/emailConfig'); // Import the transporter fr
 const MongoStore = require('connect-mongo');
 const cors = require('cors');
 
+
 // Connect to MongoDB
 mongo
   .connect(db.url)
@@ -126,6 +127,7 @@ io.on('connection', (socket) => {
     console.log('User disconnected');
   });
 });
+/*
 console.log("Test script started...");
 
 const { predictProjectFields } = require('./utils/predict');
@@ -137,8 +139,9 @@ async function testPrediction() {
   console.log(result);
 }
 
-testPrediction();
+testPrediction();*/
 // Start server
+
 server.listen(3000, () => {
   console.log('Server is running on port 3000');
 });

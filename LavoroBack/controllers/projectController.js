@@ -734,7 +734,7 @@ exports.checkTeamManagerProjects = async (req, res) => {
     }, 0);
 
     // 3. Définir des seuils de charge
-    const MAX_WORKLOAD = 10; // Seuil arbitraire (à ajuster)
+    const MAX_WORKLOAD = 10; 
     const availableCapacity = MAX_WORKLOAD - workloadScore;
 
     // 4. Retourner une réponse détaillée
@@ -921,43 +921,100 @@ exports.exportArchivedProjects = async (req, res) => {
   }
 };
 
-exports.createProjectWithAI = async (req, res) => {
+exports.generateAISuggestions = async (req, res) => {
   const { name, description, client, manager_id } = req.body;
 
   try {
-    // Get AI prediction
-    const prediction = await predictProjectFields(name, description);
+    // Get AI prediction (as raw text)
+    const predictionText = await predictProjectFields(name, description);
     
-    if (!prediction) {
+    if (!predictionText) {
       return res.status(400).json({ error: "Failed to generate project predictions" });
+    }
+
+    const cleaned = predictionText
+      .replace(/^```json\s*/i, '') 
+      .replace(/^```\s*/i, '')      
+      .replace(/```$/, '')          
+      .trim();
+
+    let prediction;
+    try {
+      prediction = JSON.parse(cleaned);
+    } catch (parseError) {
+      console.error("Failed to parse AI response:", parseError);
+      return res.status(400).json({ error: "Invalid AI response format" });
     }
 
     // Calculate dates
     const startDate = new Date();
     const endDate = new Date();
-    endDate.setMonth(startDate.getMonth() + prediction.duration);
+    endDate.setMonth(startDate.getMonth() + (prediction.duration || 0));
 
-    // Create project with predicted values
+    // Return suggestions without saving to database
+    res.status(200).json({
+      budget: prediction.budget || 0,
+      start_date: startDate,
+      end_date: endDate,
+      estimated_duration: prediction.duration || 0,
+      priority: prediction.priority || 'Medium',
+      risk_level: prediction.risk_level || 'Medium',
+      team_member_count: prediction.team_member_count || 0,
+      total_tasks_count: prediction.task_count || 0,
+      tags: prediction.Tags || '',
+      ai_description: prediction["Ai-description"] || description,
+      risks: prediction["Risks"] || []
+    });
+
+  } catch (error) {
+    console.error("Error in generateAISuggestions:", error);
+    res.status(500).json({ 
+      error: "Internal server error", 
+      details: error.message
+    });
+  }
+};
+
+exports.createProjectWithAI = async (req, res) => {
+  const {
+    name,
+    description,
+    client,
+    manager_id,
+    budget,
+    start_date,
+    end_date,
+    estimated_duration,
+    priority,
+    risk_level,
+    team_member_count,
+    total_tasks_count,
+    tags,
+    status
+  } = req.body;
+
+  try {
+    // Create project using the provided fields
     const newProject = new Project({
       project_id: new mongoose.Types.ObjectId().toString(), 
       name,
       description,
-      budget: prediction.budget,
+      budget: Number(budget),
       manager_id,
       client,
-      start_date: startDate,
-      end_date: endDate,
-      total_tasks_count: prediction.task_count,
-      estimated_duration: prediction.duration,
-      team_member_count: prediction.team_member_count,
-      priority: prediction.priority,
-      risk_level: prediction.risk_level,
-      status: 'Not Started',
-      ai_predicted_completion: endDate,
-      ai_predicted_description: description,
+      start_date: new Date(start_date),
+      end_date: new Date(end_date),
+      total_tasks_count: Number(total_tasks_count),
+      estimated_duration: Number(estimated_duration),
+      team_member_count: Number(team_member_count),
+      priority,
+      risk_level,
+      tags,
+      status: status || 'Not Started',
+      ai_predicted_completion: new Date(end_date),
+      ai_predicted_description: description
     });
 
-    // Save to database
     await newProject.save();
     res.status(201).json(newProject);
 
@@ -965,11 +1022,12 @@ exports.createProjectWithAI = async (req, res) => {
     console.error("Error in createProjectWithAI:", error);
     res.status(500).json({ 
       error: "Internal server error", 
-      details: error.message,
-      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+      details: error.message
     });
   }
 };
+
+
 
 
 

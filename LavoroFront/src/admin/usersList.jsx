@@ -1,23 +1,27 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import Swal from 'sweetalert2';
+import Mailer from './Mailer'
 
 function UsersList({ onRoleUpdate, onViewActivity }) {
   const [users, setUsers] = useState([]);
-  const [filteredUsers, setFilteredUsers] = useState([]); // For filtered results
+  const [filteredUsers, setFilteredUsers] = useState([]);
   const [roles, setRoles] = useState([]);
   const [error, setError] = useState(null);
-  const [selectedRole, setSelectedRole] = useState(''); // To track the selected role filter
-  const [searchQuery, setSearchQuery] = useState(''); // To track the search query
+  const [selectedRole, setSelectedRole] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [showMailComposer, setShowMailComposer] = useState(false);
+  const adminEmail = 'lavoroprojectmanagement@gmail.com';
 
   // Fetch users and roles on component mount
-  useEffect(() => {
+  /*useEffect(() => {
     const fetchData = async () => {
       try {
         const response = await axios.get('http://localhost:3000/admin/dashboard', {
-          withCredentials: true, // Include cookies
+          withCredentials: true,
         });
         setUsers(response.data.users);
-        setFilteredUsers(response.data.users); // Initialize filtered users
+        setFilteredUsers(response.data.users);
         setRoles(response.data.roles);
       } catch (err) {
         setError('Failed to fetch data. Please try again.');
@@ -27,34 +31,89 @@ function UsersList({ onRoleUpdate, onViewActivity }) {
 
     fetchData();
   }, []);
+*/
+const fetchUsersAndRoles = async () => {
+  try {
+    const response = await axios.get('http://localhost:3000/admin/dashboard', {
+      withCredentials: true,
+    });
+    setUsers(response.data.users);
+    setFilteredUsers(response.data.users); 
+    setRoles(response.data.roles);
+    setError(null);
+  } catch (err) {
+    setError('Failed to fetch data. Please try again.');
+    console.error('Fetch error:', err);
+  }
+};
 
-  // Handle role update for a user
-  const handleRoleUpdate = async (userId, roleId) => {
+// Use it in useEffect
+useEffect(() => {
+  fetchUsersAndRoles();
+}, []);
+
+  // Apply filters whenever searchQuery or selectedRole changes
+  useEffect(() => {
+    applyFilters();
+  }, [searchQuery, selectedRole, users]);
+  const handleRoleUpdate = async (userId, newRoleId) => {
     try {
-      await axios.post(
+      const { data } = await axios.put(
         `http://localhost:3000/admin/update-role/${userId}`,
-        { role: roleId },
+        { role: newRoleId },
         { withCredentials: true }
       );
-
-      // Update the local state to reflect the role change
-      setUsers((prevUsers) =>
-        prevUsers.map((user) =>
-          user._id === userId ? { ...user, role: roles.find((role) => role._id === roleId) } : user
-        )
-      );
-      setFilteredUsers((prevUsers) =>
-        prevUsers.map((user) =>
-          user._id === userId ? { ...user, role: roles.find((role) => role._id === roleId) } : user
-        )
-      );
-
-      alert('Role updated successfully!');
-    } catch (err) {
-      setError('Failed to update role. Please try again.');
-      console.error('Error updating role:', err);
+  
+      if (data.success) {
+        Swal.fire({
+          title: 'Success!',
+          text: data.message,
+          icon: 'success',
+          timer: 2000
+        });
+        fetchUsersAndRoles();
+      }
+    } catch (error) {
+      const response = error.response?.data;
+      
+      if (response?.error === 'Active Projects Exist') {
+        const projectsList = response.projects
+          .map(p => `<li>${p.name} (${p.status})</li>`)
+          .join('');
+  
+        await Swal.fire({
+          title: 'Cannot Change Role',
+          html: `
+            <div class="text-start">
+              <p>${response.message}</p>
+              <ul class="mt-2">${projectsList}</ul>
+              <small class="text-muted">Please reassign these projects first</small>
+            </div>
+          `,
+          icon: 'error',
+          confirmButtonText: 'Understood'
+        });
+      } 
+      else if (response?.error === 'Hierarchy Violation') {
+        await Swal.fire({
+          title: 'Invalid Role Change',
+          html: `
+            <p>Cannot change from <strong>${response.currentRole}</strong>
+            to <strong>${response.newRole}</strong></p>
+            <p class="text-danger mt-2">This violates role hierarchy rules</p>
+          `,
+          icon: 'error'
+        });
+      }
+      else {
+        await Swal.fire('Error', response?.message || 'Update failed', 'error');
+      }
+      
+      // Refresh data to ensure UI consistency
+      fetchUsersAndRoles();
     }
   };
+ 
 
   // Handle sending email to a user
   const handleSendEmail = (email) => {
@@ -64,62 +123,49 @@ function UsersList({ onRoleUpdate, onViewActivity }) {
   // Handle role filter change
   const handleRoleFilterChange = (roleId) => {
     setSelectedRole(roleId);
-
-    if (roleId === '') {
-      // If no role is selected, show all users
-      applyFilters(users, searchQuery);
-    } else {
-      // Filter users by the selected role
-      const filtered = users.filter((user) => user.role?._id === roleId);
-      applyFilters(filtered, searchQuery);
-    }
   };
 
   // Handle creation date filter change
   const handleCreationDateFilterChange = (filterType) => {
-    let sortedUsers = [...users];
-
+    let sortedUsers = [...filteredUsers]; // Sort the currently filtered users, not all users
+  
     switch (filterType) {
       case 'newest':
-        // Sort users by creation date (newest first)
-        sortedUsers.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+        sortedUsers.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
         break;
       case 'oldest':
-        // Sort users by creation date (oldest first)
-        sortedUsers.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+        sortedUsers.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
         break;
       default:
-        // No sorting (default order)
-        sortedUsers = [...users];
+        // No sorting needed
         break;
     }
-
-    applyFilters(sortedUsers, searchQuery);
+  
+    setFilteredUsers(sortedUsers); // Update the filtered users with the sorted array
   };
 
   // Handle search input change
   const handleSearchChange = (e) => {
-    const query = e.target.value;
-    setSearchQuery(query);
-    applyFilters(users, query);
+    setSearchQuery(e.target.value);
   };
 
-  // Apply filters (role, search query, etc.)
-  const applyFilters = (userList, query) => {
-    let filtered = userList;
+  // Apply all active filters
+  const applyFilters = (usersToFilter = users) => {
+    let filtered = [...usersToFilter];
 
-    // Apply role filter
+    // Apply role filter first
     if (selectedRole) {
-      filtered = filtered.filter((user) => user.role?._id === selectedRole);
+      filtered = filtered.filter(user => user.role?._id === selectedRole);
     }
 
-    // Apply search query filter
-    if (query) {
+    // Then apply search query filter
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase();
       filtered = filtered.filter(
-        (user) =>
-          user.firstName.toLowerCase().includes(query.toLowerCase()) ||
-          user.lastName.toLowerCase().includes(query.toLowerCase()) ||
-          user.email.toLowerCase().includes(query.toLowerCase()) 
+        user =>
+          user.firstName?.toLowerCase().includes(query) ||
+          user.lastName?.toLowerCase().includes(query) ||
+          user.email?.toLowerCase().includes(query)
       );
     }
 
@@ -143,65 +189,70 @@ function UsersList({ onRoleUpdate, onViewActivity }) {
             />
           </div>
           {/* Sort By Creation Date */}
+          {/* Sort By Creation Date */}
           <div className="dropdown my-1">
-            <a
-              href="#"
-              className="btn btn-sm btn-primary"
+            <button
+              className="btn btn-sm btn-primary dropdown-toggle"
+              type="button"
               data-bs-toggle="dropdown"
               aria-expanded="false"
             >
-              Sort By<i className="ri-arrow-down-s-line align-middle ms-1"></i>
-            </a>
-            <ul className="dropdown-menu" role="menu">
+              Sort By
+            </button>
+            <ul className="dropdown-menu">
               <li>
-                <a
+                <button
                   className="dropdown-item"
-                  href="#"
                   onClick={() => handleCreationDateFilterChange('newest')}
                 >
-                  Newest
-                </a>
+                  Newest First
+                </button>
               </li>
               <li>
-                <a
+                <button
                   className="dropdown-item"
-                  href="#"
                   onClick={() => handleCreationDateFilterChange('oldest')}
                 >
-                  Oldest
-                </a>
+                  Oldest First
+                </button>
+              </li>
+              <li>
+                <button
+                  className="dropdown-item"
+                  onClick={() => applyFilters()} // Reset sorting
+                >
+                  Reset Sorting
+                </button>
               </li>
             </ul>
           </div>
           {/* Filter By Role */}
           <div className="dropdown my-1">
-            <a
-              href="#"
-              className="btn btn-sm btn-primary"
+            <button
+              className="btn btn-sm btn-primary dropdown-toggle"
+              type="button"
               data-bs-toggle="dropdown"
               aria-expanded="false"
             >
-              Filter By Role<i className="ri-arrow-down-s-line align-middle ms-1"></i>
-            </a>
-            <ul className="dropdown-menu" role="menu">
+              Filter By Role
+            </button>
+            <ul className="dropdown-menu">
               <li>
-                <a
+                <button
                   className="dropdown-item"
-                  href="#"
                   onClick={() => handleRoleFilterChange('')}
                 >
                   All Roles
-                </a>
+                </button>
               </li>
-              {roles.map((role) => (
+              {roles.map(role => (
                 <li key={role._id}>
-                  <a
+                  <button
                     className="dropdown-item"
-                    href="#"
                     onClick={() => handleRoleFilterChange(role._id)}
                   >
                     {role.RoleName}
-                  </a>
+                  </button>
                 </li>
               ))}
             </ul>
@@ -209,7 +260,7 @@ function UsersList({ onRoleUpdate, onViewActivity }) {
         </div>
       </div>
       <div className="card-body">
-        {error && <p style={{ color: 'red' }}>{error}</p>}
+        {error && <div className="alert alert-danger">{error}</div>}
         <div className="table-responsive">
           <table className="table table-hover text-nowrap table-bordered">
             <thead>
@@ -222,98 +273,95 @@ function UsersList({ onRoleUpdate, onViewActivity }) {
               </tr>
             </thead>
             <tbody>
-              {filteredUsers.map((user) => (
-                <tr key={user._id}>
-                  <td>
-                    <div className="d-flex align-items-center">
-                      <img
-                        src={user.image || 'https://via.placeholder.com/50'}
-                        className="avatar avatar-sm me-2"
-                        alt={user.firstName}
-                      />
-                      <span>
-                        {user.firstName} {user.lastName}
-                      </span>
-                    </div>
-                  </td>
-                  <td>
-                    <a href={`mailto:${user.email}`}>{user.email}</a>
-                  </td>
-                  <td>{user.phone_number || 'N/A'}</td>
-                  <td>
+              {filteredUsers.length > 0 ? (
+                filteredUsers.map(user => (
+                  <tr key={user._id}>
+                    <td>
+                      <div className="d-flex align-items-center">
+                        <img
+                          src={user.image || 'https://via.placeholder.com/50'}
+                          className="avatar avatar-sm me-2"
+                          alt={user.firstName}
+                        />
+                        <span>
+                          {user.firstName} {user.lastName}
+                        </span>
+                      </div>
+                    </td>
+                    <td>
+                      <a href={`mailto:${user.email}`}>{user.email}</a>
+                    </td>
+                    <td>{user.phone_number || 'N/A'}</td>
+                    <td>
                     <select
-                      value={user.role?._id}
+                      value={user.role._id}
                       onChange={(e) => handleRoleUpdate(user._id, e.target.value)}
                       className="form-select form-select-sm"
                     >
                       {roles.map((role) => (
-                        <option key={role._id} value={role._id}>
+                        <option 
+                          key={role._id} 
+                          value={role._id}
+                          disabled={role.hierarchyLevel < user.role.hierarchyLevel}
+                        >
                           {role.RoleName}
                         </option>
                       ))}
                     </select>
-                  </td>
-                  <td>
-                    <div className="btn-list">
-                      {/* View Activity Button */}
-                      <button
-                        type="button"
-                        className="btn btn-icon btn-sm btn-primary-light"
-                        onClick={() => onViewActivity(user._id)}
-                        title="View Activity"
-                      >
-                        <i className="ri-eye-line"></i>
-                      </button>
-                      {/* Mail Button */}
-                      <button
-                        type="button"
-                        className="btn btn-icon btn-sm btn-success-light ms-2"
-                        onClick={() => handleSendEmail(user.email)}
-                        title="Send Email"
-                      >
-                        <i className="ri-mail-line"></i>
-                      </button>
-                    </div>
+                    </td>
+                    <td>
+                      <div className="btn-list">
+                        <button
+                          type="button"
+                          className="btn btn-icon btn-sm btn-primary-light"
+                          onClick={() => onViewActivity(user._id)}
+                          title="View Activity"
+                        >
+                          <i className="ri-eye-line"></i>
+                        </button>
+                        <button
+                          type="button"
+                          className="btn btn-icon btn-sm btn-success-light ms-2"
+                          onClick={() => handleSendEmail(user.email)}
+                          title="Send Email"
+                        >
+                          <i className="ri-mail-line"></i>
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan="5" className="text-center py-4">
+                    No users found matching your criteria
                   </td>
                 </tr>
-              ))}
+              )}
             </tbody>
           </table>
         </div>
       </div>
       <div className="card-footer">
-        <div className="d-flex align-items-center">
+        <div className="d-flex align-items-center justify-content-between">
+
           <div>
-            Showing {filteredUsers.length} Entries{' '}
-            <i className="bi bi-arrow-right ms-2 fw-medium"></i>
+            Showing {filteredUsers.length} Entries
           </div>
-          <div className="ms-auto">
-            <nav aria-label="Page navigation" className="pagination-style-4">
-              <ul className="pagination mb-0">
-                <li className="page-item disabled">
-                  <a className="page-link" href="#">
-                    Prev
-                  </a>
-                </li>
-                <li className="page-item active">
-                  <a className="page-link" href="#">
-                    1
-                  </a>
-                </li>
-                <li className="page-item">
-                  <a className="page-link" href="#">
-                    2
-                  </a>
-                </li>
-                <li className="page-item">
-                  <a className="page-link text-primary" href="#">
-                    next
-                  </a>
-                </li>
-              </ul>
-            </nav>
-          </div>
+          <button 
+        className="btn btn-primary"
+        onClick={() => setShowMailComposer(true)}
+      >
+        <i className="bi bi-envelope me-2"></i> Compose Mail
+      </button>
+
+      <Mailer
+        show={showMailComposer}
+        handleClose={() => setShowMailComposer(false)}
+        adminEmail={adminEmail}
+      />
         </div>
+        
       </div>
     </div>
   );

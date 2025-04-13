@@ -20,7 +20,6 @@ import FilePondPluginImageResize from 'filepond-plugin-image-resize';
 import FilePondPluginImageTransform from 'filepond-plugin-image-transform';
 import 'filepond-plugin-image-preview/dist/filepond-plugin-image-preview.css';
 import 'filepond/dist/filepond.min.css';
-import CreateProjectWithAI from './CreateProjectWithAI';
 
 
 const CreateProject = () => {
@@ -493,11 +492,12 @@ const CreateProject = () => {
                   {/* Submit Button */}
                   <div className="col-12 mt-4">
                   <button 
-                    className="btn btn-info btn-wave"
-                    onClick={() => navigate('/createProWithAi')}
-                  >
-                    <i className="ri-magic-line me-1"></i> AI Assistant
-                  </button>
+                  type="button"  // Add this line
+                  className="btn btn-info btn-wave"
+                  onClick={() => navigate('/createProWithAi')}
+                >
+                  <i className="ri-magic-line me-1"></i> AI Assistant
+                </button>
                     <button
                       type="submit"
                       className="btn btn-primary btn-wave float-end"

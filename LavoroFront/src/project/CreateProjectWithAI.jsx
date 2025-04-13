@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import Swal from 'sweetalert2';
@@ -14,9 +14,13 @@ const CreateWithAI = () => {
     client: '',
     start_date: '',
     end_date: '',
-    status: 'Not Started',
+    estimated_duration: 0,
+    priority: 'Medium',
     risk_level: 'Medium',
-    tags: ''
+    team_member_count: 0,
+    total_tasks_count: 0,
+    tags: '',
+    status: 'Not Started'
   });
   
   // Team Manager search state
@@ -59,6 +63,8 @@ const CreateWithAI = () => {
   useEffect(() => {
     if (selectedManager) {
       checkTeamManagerProjects(selectedManager._id);
+    } else {
+      setMessage(""); 
     }
   }, [selectedManager]);
 
@@ -80,29 +86,36 @@ const CreateWithAI = () => {
         `http://localhost:3000/project/checkTeamManagerProjects/${managerId}`
       );
       setMessage(response.data.message);
-      setMessageColor(
-        response.data.message.includes("Vous pouvez affecter") 
-          ? "#28a745" 
-          : "#dc3545"
-      );
+      
+      if (response.status === 200) {
+        setMessageColor("#28a745");
+      }
     } catch (error) {
-      console.error("Error checking team manager projects:", error);
-      setMessage("Une erreur s'est produite");
-      setMessageColor("#dc3545");
+      if (error.response && error.response.status === 400) {
+        setMessage(error.response.data.message);
+        setMessageColor("#dc3545");
+      } else {
+        console.error("Error checking team manager projects:", error);
+        setMessage("An error has occurred");
+        setMessageColor("#dc3545");
+      }
     }
   };
 
   const handleInputChange = (e) => {
     const value = e.target.value;
     setSearchTerm(value);
-    setSelectedManager(null);
-    setMessage("");
+    if (!value) {
+      setSelectedManager(null);
+      setMessage("");
+    }
   };
 
   const handleSelectManager = (manager) => {
     setSelectedManager(manager);
     setSearchTerm(`${manager.firstName} ${manager.lastName}`);
     setTeamManagers([]);
+    setMessage("");
   };
 
   const handleChange = (e) => {
@@ -125,7 +138,7 @@ const CreateWithAI = () => {
       const token = localStorage.getItem('token');
       
       const response = await axios.post(
-        'http://localhost:3000/project/createProjectWithAI',
+        'http://localhost:3000/project/generateAISuggestions', // Changed to a different endpoint
         {
           name: formData.name,
           description: formData.description,
@@ -140,12 +153,21 @@ const CreateWithAI = () => {
         }
       );
 
+      // Format dates properly for the form
+      const startDate = new Date(response.data.start_date);
+      const endDate = new Date(response.data.end_date);
+
       setFormData(prev => ({
         ...prev,
-        budget: response.data.budget,
-        start_date: response.data.start_date,
-        end_date: response.data.end_date,
-        risk_level: response.data.risk_level,
+        budget: response.data.budget || 0,
+        start_date: startDate.toISOString().slice(0, 16),
+        end_date: endDate.toISOString().slice(0, 16),
+        estimated_duration: response.data.estimated_duration || 0,
+        risk_level: response.data.risk_level || 'Medium',
+        priority: response.data.priority || 'Medium',
+        team_member_count: response.data.team_member_count || 0,
+        total_tasks_count: response.data.total_tasks_count || 0,
+        tags: response.data.tags || '',
         status: 'Not Started'
       }));
 
@@ -158,12 +180,94 @@ const CreateWithAI = () => {
     }
   };
 
+  const validateForm = () => {
+    if (!formData.name) {
+      Swal.fire('Error', 'Project name is required', 'error');
+      return false;
+    }
+    if (!formData.description) {
+      Swal.fire('Error', 'Description is required', 'error');
+      return false;
+    }
+    if (!selectedManager) {
+      Swal.fire('Error', 'Team manager is required', 'error');
+      return false;
+    }
+    return true;
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    // Your submit logic here
+    
+    if (!validateForm()) {
+      return;
+    }
+  
+    try {
+      setLoading(true);
+      const token = localStorage.getItem('token');
+      
+      const dataToSend = {
+        name: formData.name,
+        description: formData.description,
+        client: formData.client,
+        budget: Number(formData.budget),
+        start_date: new Date(formData.start_date),
+        end_date: new Date(formData.end_date),
+        estimated_duration: Number(formData.estimated_duration),
+        priority: formData.priority,
+        risk_level: formData.risk_level,
+        team_member_count: Number(formData.team_member_count),
+        total_tasks_count: Number(formData.total_tasks_count),
+        tags: formData.tags,
+        status: formData.status,
+        manager_id: selectedManager._id
+      };
+  
+      await axios.post(
+        'http://localhost:3000/project/createProjectWithAI',
+        dataToSend,
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+  
+      Swal.fire('Success', 'Project created successfully!', 'success');
+      navigate('/ListPro');
+    } catch (error) {
+      console.error('Error creating project:', error);
+      Swal.fire('Error', error.response?.data?.message || 'Failed to create project', 'error');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
+    <div className="container-fluid">
+      <div className="d-flex align-items-center justify-content-between page-header-breadcrumb flex-wrap gap-2 mb-4">
+      <div>
+      <nav aria-label="breadcrumb">
+            <ol className="breadcrumb mb-1">
+              <li className="breadcrumb-item">
+                <a href="#" onClick={(e) => e.preventDefault()}>Projects</a>
+              </li>
+              <li className="breadcrumb-item active" aria-current="page">Create Project With AI Assistance</li>
+            </ol>
+      </nav>
+          <h1 className="page-title fw-medium fs-18 mb-0">Create Project</h1>
+        </div>
+        <div className="btn-list">
+          <button className="btn btn-outline-secondary btn-wave">
+            <i className="ri-filter-3-line align-middle me-1" /> Filter
+          </button>
+          <button className="btn btn-primary btn-wave">
+            <i className="ri-share-forward-line me-1" /> Share
+          </button>
+        </div>
+      </div>
     <div className="row">
       <div className="col-xl-12">
         <div className="card custom-card">
@@ -197,7 +301,7 @@ const CreateWithAI = () => {
                   />
                 </div>
 
-                {/* Team Manager Search - Same as in CreateProject */}
+                
                 <div className="col-xl-4" style={{ position: "relative" }}>
                   <label className="form-label">Team Manager</label>
                   <input
@@ -260,10 +364,24 @@ const CreateWithAI = () => {
                   )}
                   
                   {selectedManager && (
-                    <div>
-                      <p style={{ color: messageColor }}>{message}</p>
-                    </div>
-                  )}
+                  <div className="mt-2">
+                    <span className="badge bg-light text-dark">
+                      <img
+                        src={`http://localhost:3000${selectedManager.image}` || "https://via.placeholder.com/20"}
+                        alt={selectedManager.firstName}
+                        className="rounded-circle me-1"
+                        width="20"
+                        height="20"
+                      />
+                      {selectedManager.firstName} {selectedManager.lastName}
+                    </span>
+                    {message && (
+                      <div className="small mt-1" style={{ color: messageColor }}>
+                        {message}
+                      </div>
+                    )}
+                  </div>
+                )}
                 </div>
 
                 <div className="col-xl-12">
@@ -333,18 +451,52 @@ const CreateWithAI = () => {
                   />
                 </div>
 
+                <div className="col-xl-4">
+                  <label className="form-label">Estimated Duration (months)</label>
+                  <input
+                    type="number"
+                    className="form-control"
+                    name="estimated_duration"
+                    value={formData.estimated_duration}
+                    onChange={handleChange}
+                  />
+                </div>
+
+                <div className="col-xl-4">
+                  <label className="form-label">Team Members Count</label>
+                  <input
+                    type="number"
+                    className="form-control"
+                    name="team_member_count"
+                    value={formData.team_member_count}
+                    onChange={handleChange}
+                  />
+                </div>
+
+                <div className="col-xl-4">
+                  <label className="form-label">Task Count</label>
+                  <input
+                    type="number"
+                    className="form-control"
+                    name="total_tasks_count"
+                    value={formData.total_tasks_count}
+                    onChange={handleChange}
+                  />
+                </div>
+
+                
+
                 <div className="col-xl-6">
-                  <label className="form-label">Status</label>
+                  <label className="form-label">Priority</label>
                   <select
                     className="form-control"
-                    name="status"
-                    value={formData.status}
+                    name="priority"
+                    value={formData.priority}
                     onChange={handleChange}
                   >
-                    <option value="Not Started">Not Started</option>
-                    <option value="In Progress">In Progress</option>
-                    <option value="Completed">Completed</option>
-                    <option value="Archived">Archived</option>
+                    <option value="Low">Low</option>
+                    <option value="Medium">Medium</option>
+                    <option value="High">High</option>
                   </select>
                 </div>
 
@@ -397,6 +549,7 @@ const CreateWithAI = () => {
           </div>
         </div>
       </div>
+    </div>
     </div>
   );
 };

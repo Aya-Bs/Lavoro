@@ -3,10 +3,11 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import UsersList from './usersList';
 import DeleteRequests from './deleteRequests';
+import RoleDistributionChart from './RoleDistributionChart'
 function AdminDashboard() {
   const navigate = useNavigate();
 
-  // Handle logout
+  
   
   return (
     <div className="container-fluid">
@@ -19,15 +20,20 @@ function AdminDashboard() {
                 <p className="mb-4 text-fixed-white">Here's an overview of your dashboard.</p>
               </div>
             </div>
+            
           </div>
+          
         </div>
       </div>
+      
+      {/* Role Distribution Chart Section */}
+      <RoleDistributionChart/>
       {/* Pending Requests Section */}
       <DeleteRequests />
 
       {/* Users List Section */}
       <UsersList onViewActivity={(userId) => navigate(`/user-activity/${userId}`)} />
-
+      
     
       
     </div>

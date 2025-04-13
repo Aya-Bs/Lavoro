@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import Swal from 'sweetalert2';
+
 
 function DeleteRequests({ onAccept, onReject }) {
   const [deleteRequests, setDeleteRequests] = useState([]);
@@ -30,17 +32,20 @@ function DeleteRequests({ onAccept, onReject }) {
         { notificationId: requestId, action },
         { withCredentials: true }
       );
-
+  
       if (response.status === 200) {
-        // Update the state to reflect the change
         setDeleteRequests((prevRequests) =>
           prevRequests.filter((request) => request._id !== requestId)
         );
-        alert(`Request ${action}d successfully.`);
+        Swal.fire('Success', `Request ${action}d successfully.`, 'success');
       }
     } catch (err) {
       console.error('Error handling delete request:', err);
-      alert('Failed to handle delete request.');
+      if (err.response && err.response.data.error) {
+        Swal.fire('Error', err.response.data.error, 'error');
+      } else {
+        Swal.fire('Error', 'Failed to handle delete request.', 'error');
+      }
     }
   };
 

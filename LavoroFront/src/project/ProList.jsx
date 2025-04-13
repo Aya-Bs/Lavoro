@@ -240,8 +240,8 @@ export default function ProList() {
                       {filteredProjects.length > 0 ? (
                         filteredProjects.map((project) => (
                           <tr key={project._id}>
-                            <td>{project.name}</td>
-                            <td>{project.description || '-'}</td>
+                            <td >{project.name}</td>
+                            <td style={{ maxWidth: '200px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{project.description || '-'}</td>
                             <td>{project.budget ? `${project.budget} DT` : '-'}</td>
                             <td>{project.start_date ? new Date(project.start_date).toLocaleDateString() : '-'}</td>
                             <td>{project.end_date ? new Date(project.end_date).toLocaleDateString() : '-'}</td>

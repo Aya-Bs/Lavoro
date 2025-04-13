@@ -206,6 +206,15 @@ const handleDelete = async (projectId) => {
     return <div>Project not found.</div>;
   }
 
+  const parseRisks = (risksString) => {
+    if (!risksString) return [];
+    // Split by number-dot pattern and remove empty strings
+    return risksString
+      .split(/\s*\d+\.\s*/)
+      .filter(risk => risk.trim() !== '');
+  };
+  
+
     return (
         <>
 
@@ -248,6 +257,7 @@ const handleDelete = async (projectId) => {
         {/* Page Header Close */}
         {/* Start::row-1 */}
         <div className="row">
+
           <div className="col-xxl-8">
             <div className="card custom-card">
               <div className="card-header justify-content-between">
@@ -277,7 +287,7 @@ const handleDelete = async (projectId) => {
     {/* <i className="ri-archive-line align-middle fw-medium me-1" /> */}
     Archive
   </a>
-</div>
+                </div>
 
 
               </div>
@@ -400,37 +410,63 @@ const handleDelete = async (projectId) => {
                           </a>
                       </div>
                       <ul className="list-group">
-                        <li className="list-group-item">
-                          <div className="d-flex align-items-center">
-                            <div className="me-2">
-                              <i className="ri-link fs-15 text-secondary lh-1 p-1 bg-secondary-transparent rounded-circle" />
-                            </div>
-                            <div className="fw-medium">
-                              Research latest web development trends.
-                            </div>
-                          </div>
-                        </li>
-                        <li className="list-group-item">
-                          <div className="d-flex align-items-center">
-                            <div className="me-2">
-                              <i className="ri-link fs-15 text-secondary lh-1 p-1 bg-secondary-transparent rounded-circle" />
-                            </div>
-                            <div className="fw-medium">
-                              Create technical specifications document.
-                            </div>
-                          </div>
-                        </li>
-                        <li className="list-group-item">
-                          <div className="d-flex align-items-center">
-                            <div className="me-2">
-                              <i className="ri-link fs-15 text-secondary lh-1 p-1 bg-secondary-transparent rounded-circle" />
-                            </div>
-                            <div className="fw-medium">
-                              Optimize website for mobile responsiveness.
-                            </div>
-                          </div>
-                        </li>
-                      </ul>
+    {(() => {
+      try {
+        // Try multiple parsing methods
+        const risksText = project.risks || '';
+        
+        // Method 1: Split by newlines if risks are line-separated
+        if (risksText.includes('\n')) {
+          return risksText.split('\n')
+            .filter(line => line.trim().length > 0)
+            .map((risk, index) => (
+              <li key={index} className="list-group-item">
+                <div className="d-flex align-items-center">
+                  <div className="me-2">
+                    <i className="ri-alert-line fs-15 text-danger" />
+                  </div>
+                  <div>{risk.trim()}</div>
+                </div>
+              </li>
+            ));
+        }
+        
+        // Method 2: Split by numbers and periods
+        const numberedItems = risksText.split(/\d+\.\s+/).filter(x => x.trim());
+        if (numberedItems.length > 1) {
+          return numberedItems.map((risk, index) => (
+            <li key={index} className="list-group-item">
+              <div className="d-flex align-items-center">
+                <div className="me-2">
+                  <i className="ri-alert-line fs-15 text-danger" />
+                </div>
+                <div>{risk.trim()}</div>
+              </div>
+            </li>
+          ));
+        }
+        
+        // Method 3: Fallback - display as single item
+        return (
+          <li className="list-group-item">
+            <div className="d-flex align-items-center">
+              <div className="me-2">
+                <i className="ri-alert-line fs-15 text-danger" />
+              </div>
+              <div>{risksText || 'No risks identified'}</div>
+            </div>
+          </li>
+        );
+      } catch (error) {
+        console.error('Error parsing risks:', error);
+        return (
+          <li className="list-group-item text-muted">
+            Error displaying risks
+          </li>
+        );
+      }
+    })()}
+  </ul>
                     </div>
                   </div>
                 </div>
@@ -446,7 +482,41 @@ const handleDelete = async (projectId) => {
                 </div>
               </div>
               
-                 
+              <div className="card-footer">
+              
+                <div className="d-flex align-items-center justify-content-between gap-2 flex-wrap">
+                  <div className="d-flex gap-3 align-items-center">
+                    <span className="d-block fs-14 fw-medium">AI Estimation:</span>
+                    
+                  </div>
+                  <div className="d-flex gap-3 align-items-center">
+                    <span className="fs-12">Duration:</span>
+                    <span className="d-block">
+                      <span className="badge bg-primary">
+                        {project.estimated_duration ? `${project.estimated_duration} months` : 'Not specified'}
+                      </span>
+                    </span>
+                  </div>
+                  <div className="d-flex gap-3 align-items-center">
+                    <span className="fs-12">Team:</span>
+                    <span className="d-block fs-14 fw-medium">
+                      <span className="badge bg-info">
+                        {project.team_member_count || 0} members
+                      </span>
+                    </span>
+                  </div>
+                  <div className="d-flex gap-3 align-items-center">
+                    <span className="fs-12">Tasks:</span>
+                    <span className="d-block fs-14 fw-medium">
+                      <span className="badge bg-success">
+                        {project.total_tasks_count || 0} tasks
+                      </span>
+                    </span>
+                  </div>
+                </div>
+             
+              </div>
+            
             </div>
             <div className="card custom-card overflow-hidden">
               
@@ -527,9 +597,12 @@ const handleDelete = async (projectId) => {
   </div>
 </div>
   </div>
+  
 </div>
+ 
  </div>
-</>
+ 
+      </>
 
     );
 }

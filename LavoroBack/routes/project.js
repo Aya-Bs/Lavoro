@@ -1,9 +1,8 @@
 const express = require('express');
 const router = express.Router();
-const ProjectController = require('../controllers/projectController');
-const projectController = require('../controllers/projectController'); // Importez le contrôleur
 const { getProjectsByStatus } = require('../controllers/projectController'); // Importez la fonction du contrôleur
 const Project = require('../models/Project');
+const ProjectController = require('../controllers/projectController'); // Importez le contrôleur de projet
 
 
 //const { getProjectsByStatus } = require('../controllers/ProjectController'); // Importez la fonction du contrôleur
@@ -12,6 +11,7 @@ const Project = require('../models/Project');
 
 router.post('/createProject', ProjectController.createProject);
 router.post('/createProjectWithAI', ProjectController.createProjectWithAI);
+router.post('/generateAISuggestions', ProjectController.generateAISuggestions);
 
 router.get('/getProjectById/:id', ProjectController.getProjectById);
 router.get('/getProjectByName', ProjectController.getProjectByName);
