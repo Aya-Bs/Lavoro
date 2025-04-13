@@ -50,6 +50,7 @@ app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'twig');
 
 
+
 // Middleware
 app.use(logger('dev'));
 app.use(express.json());
@@ -82,7 +83,7 @@ app.use('/users', usersRouter);
 // app.use('/', homeRouter);
 app.use('/admin',adminRouter);
 app.set('io', io);
-app.set('/tasks',taskRouter);
+app.use('/tasks',taskRouter);
 
 app.use('/project',projectRouter);
 
@@ -127,19 +128,6 @@ io.on('connection', (socket) => {
     console.log('User disconnected');
   });
 });
-/*
-console.log("Test script started...");
-
-const { predictProjectFields } = require('./utils/predict');
-async function testPrediction() {
-  const result = await predictProjectFields(
-    "E-Commerce Website",
-    "Build a Shopify store with 50 products and payment integration"
-  );
-  console.log(result);
-}
-
-testPrediction();*/
 // Start server
 
 server.listen(3000, () => {

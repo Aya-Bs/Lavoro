@@ -67,14 +67,24 @@ function DeleteRequests({ onAccept, onReject }) {
                   <div className="me-2">
                     <span className="avatar avatar-sm">
                       <img
-                        src={request.triggered_by.avatar || '/placeholder.svg'}
-                        alt={`${request.triggered_by.firstName} ${request.triggered_by.lastName}`}
+                        src={
+                          request.triggered_by?.image
+                            ? request.triggered_by.image.startsWith('http') || 
+                              request.triggered_by.image.startsWith('https')
+                              ? request.triggered_by.image
+                              : `http://localhost:3000${request.triggered_by.image}`
+                            : 'https://via.placeholder.com/50'
+                        }
+                        alt={`${request.triggered_by?.firstName || ''} ${request.triggered_by?.lastName || ''}`}
+                        onError={(e) => {
+                          e.target.src = 'https://via.placeholder.com/50';
+                        }}
                       />
                     </span>
                   </div>
                   <div className="flex-fill text-truncate">
                     <span className="fw-medium d-block mb-0">
-                      {request.triggered_by.firstName} {request.triggered_by.lastName}
+                      {request.triggered_by?.firstName || 'Unknown'} {request.triggered_by?.lastName || ''}
                     </span>
                     <span className="text-muted d-block fs-12 w-75 text-truncate">
                       Request to delete account.

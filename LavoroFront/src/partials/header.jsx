@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
-import Sidebar from "./Sidebar"; // Import the Sidebar component
+import Sidebar from "./sidebar"; // Import the Sidebar component
 import Switcher from "./switcher";
 import { Search, Globe, ShoppingCart, Bell, Maximize, Minimize, Settings } from "lucide-react";
 import Pickr from '@simonwep/pickr';
@@ -69,28 +69,6 @@ const Header = () => {
   }, []);
 
 
-  // useEffect(() => {
-  //   // Load the Google Translate script dynamically
-  //   const script = document.createElement("script");
-  //   script.src = "//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit";
-  //   script.async = true;
-  //   document.body.appendChild(script);
-
-  //   // Initialize the Google Translate widget
-  //   window.googleTranslateElementInit = () => {
-  //     new window.google.translate.TranslateElement(
-  //       { pageLanguage: "en" },
-  //       "google_translate_element"
-  //     );
-  //   };
-
-  //   // Clean up the script when the component unmounts
-  //   return () => {
-  //     document.body.removeChild(script);
-  //     delete window.googleTranslateElementInit;
-  //   };
-  // }, []);
-
   useEffect(() => {
     // Load the Google Translate script dynamically
     const script = document.createElement("script");
@@ -120,36 +98,6 @@ const Header = () => {
       googleTranslateElement.dispatchEvent(new Event("change"));
     }
   };
-  // Function to trigger language change
-  // const changeLanguage = (languageCode) => {
-  //   const googleTranslateElement = document.querySelector(".goog-te-combo");
-  //   if (googleTranslateElement) {
-  //     googleTranslateElement.value = languageCode;
-  //     googleTranslateElement.dispatchEvent(new Event("change"));
-  //   }
-  // };
-
-  // useEffect(() => {
-  //   // Load the Google Translate script dynamically
-  //   const script = document.createElement("script");
-  //   script.src = "//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit";
-  //   script.async = true;
-  //   document.body.appendChild(script);
-
-  //   // Initialize the Google Translate widget
-  //   window.googleTranslateElementInit = () => {
-  //     new window.google.translate.TranslateElement(
-  //       { pageLanguage: "en" },
-  //       "google_translate_element"
-  //     );
-  //   };
-
-  //   // Clean up the script when the component unmounts
-  //   return () => {
-  //     document.body.removeChild(script);
-  //     delete window.googleTranslateElementInit;
-  //   };
-  // }, []);
 
 
   useEffect(() => {
@@ -740,18 +688,20 @@ const Header = () => {
               >
                 <div className="d-flex align-items-center">
                   <div>
-                    <img
-                      src={
-                        userInfo?.image
-                          ? `http://localhost:3000${userInfo.image}`
-                          : "../assets/images/faces/15.jpg"
-                      }
-                      alt="Profile"
-                      className="avatar avatar-sm"
-                      onError={(e) => {
-                        e.target.src = "../assets/images/faces/15.jpg";
-                      }}
-                    />
+                  <img
+  src={
+    userInfo?.image
+      ? userInfo.image.startsWith('http') || userInfo.image.startsWith('https')
+        ? userInfo.image // Use as-is if it's already a full URL
+        : `http://localhost:3000${userInfo.image}` // Prepend server URL if relative
+      : "../assets/images/faces/15.jpg" // Fallback if no image
+  }
+  alt="Profile"
+  className="avatar avatar-sm"
+  onError={(e) => {
+    e.target.src = "../assets/images/faces/15.jpg";
+  }}
+/>
               </div>
             </div>
           </a>
@@ -872,8 +822,8 @@ const Header = () => {
         className={`sidebar-wrapper ${isSidebarVisible ? "visible" : "hidden"}`}
         ref={sidebarRef}
       >
-        <Sidebar />
-      </div>
+<Sidebar userRole={userInfo?.role?.RoleName} />
+</div>
 
       {/* Overlay for closing the sidebar */}
       {isSidebarVisible && (

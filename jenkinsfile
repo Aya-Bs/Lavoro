@@ -28,11 +28,18 @@ pipeline {
             steps {
                 script {
                     try {
-                        sh 'cd LavoroBack && npm test'
-                    } catch (error) {
-                        echo "Error running unit tests: ${error}"
+                        // Vérifier si le script test existe
+                        def hasTestScript = sh(script: 'cd LavoroBack && npm run | grep -q "test"', returnStatus: true) == 0
+                        
+                        if (hasTestScript) {
+                            sh 'cd LavoroBack && npm test'
+                        } else {
+                            echo "Warning: No test script found in package.json. Skipping tests."
+                        }
+                    } catch (Exception e) {
+                        echo "Error running unit tests: ${e}"
                         currentBuild.result = 'FAILURE'
-                        error("Unit tests failed")
+                        throw new Exception("Unit tests failed")
                     }
                 }
             }
@@ -61,18 +68,13 @@ pipeline {
         stage('SonarQube Analysis') {
             steps {
                 script {
-                    try {
-                        def scannerHome = tool 'scanner' // Assurez-vous que le scanner SonarQube est configuré dans Jenkins
-                        withSonarQubeEnv {
-                            sh "${scannerHome}/bin/sonar-scanner"
-                        }
-                    } catch (error) {
-                        echo "Error during SonarQube analysis: ${error}"
-                        currentBuild.result = 'FAILURE'
-                        error("SonarQube analysis failed")
-                    }
-                }
+                  def scannerHome = tool 'scanner' 
+                    withSonarQubeEnv { 
+                            sh "${scannerHome}/bin/sonar-scanner" 
+
+                             }
             }
+        }
         }
 
         // Stage 5: Building Docker images (node and mongo)

@@ -18,12 +18,5 @@
   "bugs": {
     "url": "https://github.com/apvarun/toastify-js/issues"
   },
-<<<<<<< HEAD
   "homepage": "https://github.com/apvarun/toastify-js#readme"
-=======
-  "homepage": "https://github.com/apvarun/toastify-js#readme",
-  "dependencies": {
-    "toastify-js": "file:"
-  }
->>>>>>> lilia
 }

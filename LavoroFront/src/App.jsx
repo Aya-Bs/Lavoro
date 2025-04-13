@@ -4,7 +4,7 @@ import SignIn from "./user/Signin";
 import Home from "./Home";
 import VerifyEmail from "./user/verifymail";
 import ForgotPassword from "./user/ForgetPassword";
-import ResetPassword from "./user/resetPassword";
+import ResetPassword from "./user/ResetPassword";
 import Profile from "./profile/profile";
 import UpdateProfile from "./profile/updateProfile";
 import AdminDashboard from "./admin/AdminDashboard";
@@ -18,8 +18,6 @@ import Sales from "./project/Sales";
 import CreateProject from "./project/createProject";
 import ListPro from "./project/ProList";
 import ProjectDash from "./project/ProjectDash";
-import ProjectHistory from "./project/ProjectHistory";
-
 
 
 import "../public/assets/css/icons.css";
@@ -32,7 +30,7 @@ import Archieve from "./project/Archieve";
 import UserActivity from "./admin/UserActivity";
 import ArchiveOverview from "./project/ArchiveOverview";
 import UpdateProject from "./project/updateProject";
-import CreateProjectWithAI from "./project/CreateProjectWithAI";
+import ProjectProgress from "./project/projetPorgress";
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -64,7 +62,6 @@ function App() {
               <Route path="/activities" element={<ActivitiesPage />} />
               <Route path="/sales" element={<Sales />} />
               <Route path="/createPro" element ={<CreateProject />} />
-              <Route path="/createProWithAi" element ={<CreateProjectWithAI />} />
               <Route path="/ProjectDash" element={<ProjectDash />} />
               <Route path="/AllProject" element={<AllProject />} />
 
@@ -75,7 +72,7 @@ function App() {
               <Route path="/archieve" element={< Archieve />} />
               <Route path="/updateProjects/:id" element={<UpdateProject />} />
 
-
+              <Route path="/ProjectProgress" element={<ProjectProgress/>} />
 
             </Route>
         </Routes>

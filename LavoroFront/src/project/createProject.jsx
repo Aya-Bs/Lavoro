@@ -104,6 +104,7 @@ const CreateProject = () => {
   const searchTeamManagers = async (term) => {
     try {
       const response = await axios.get(`http://localhost:3000/users/getTeamManager?search=${term}`);
+      console.log("API Response:", response.data); // Log pour déboguer
       setTeamManagers(Array.isArray(response.data) ? response.data : []);
     } catch (error) {
       console.error("Error fetching team managers:", error);
@@ -268,13 +269,13 @@ const CreateProject = () => {
           </button>
         </div>
       </div>
+
       <div className="row">
         <div className="col-xl-12">
           <div className="card custom-card">
             <div className="card-header bg-transparent border-bottom">
               <div className="card-title">Project Details</div>
             </div>
-            
             <div className="card-body">
               <form onSubmit={handleSubmit}>
                 <div className="row gy-4">
@@ -487,7 +488,6 @@ const CreateProject = () => {
                       ref={tagsRef}
                     />
                   </div>
-                  
 
                   {/* Submit Button */}
                   <div className="col-12 mt-4">

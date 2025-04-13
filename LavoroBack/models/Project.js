@@ -10,10 +10,6 @@ const Project = new Schema({
     client: { type: String },
     start_date: { type: Date },
     end_date: { type: Date },
-    total_tasks_count: { type: Number, default: 0 }, 
-    estimated_duration: { type: Number, default: 0 }, 
-    team_member_count: { type: Number, default: 0 }, 
-    priority: { type: String }, 
     status: { 
         type: String, 
         enum: ['Not Started', 'In Progress', 'Completed', 'Archived'], 
