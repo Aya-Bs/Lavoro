@@ -58,7 +58,7 @@ pipeline {
                     } catch (error) {
                         echo "Error building application: ${error}"
                         currentBuild.result = 'FAILURE'
-                        error("Build failed")
+                        throw new Exception("Build failed")
                     }
                 }
             }
@@ -86,7 +86,7 @@ pipeline {
                     } catch (error) {
                         echo "Error building Docker images: ${error}"
                         currentBuild.result = 'FAILURE'
-                        error("Docker build failed")
+                        throw new Exception("Docker build failed")
                     }
                 }
             }
