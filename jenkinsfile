@@ -76,24 +76,19 @@ pipeline {
             }
         }
 
-        // Stage 5: Building Docker images (node and mongo) - Désactivé temporairement
-        stage('Building Docker images') {
-            when {
-                expression { return false } // Désactive cette étape
-            }
-            steps {
-                script {
-                    try {
-                        sh 'docker-compose build'
-                    } catch (error) {
-                        echo "Error building Docker images: ${error}"
-                        currentBuild.result = 'FAILURE'
-                        error("Docker build failed")
-                    }
-                }
+       stage('Building Docker images') {
+    steps {
+        script {
+            try {
+                sh 'docker-compose build'  // Sans sudo
+            } catch (error) {
+                echo "Error building Docker images: ${error}"
+                currentBuild.result = 'FAILURE'
+                error("Docker build failed")
             }
         }
-
+    }
+}
         // Stage 6: Deploy to Nexus - Désactivé temporairement
         stage('Deploy to Nexus') {
             when {
