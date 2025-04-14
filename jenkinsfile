@@ -17,7 +17,7 @@ pipeline {
                     } catch (error) {
                         echo "Error installing dependencies: ${error}"
                         currentBuild.result = 'FAILURE'
-                        error("Failed to install dependencies")
+                        throw new Exception("Failed to install dependencies")
                     }
                 }
             }
@@ -113,7 +113,7 @@ pipeline {
                     } catch (error) {
                         echo "Error deploying to Nexus: ${error}"
                         currentBuild.result = 'FAILURE'
-                        error("Deploy to Nexus failed")
+                        throw new Exception("Deploy to Nexus failed")
                     }
                 }
             }
