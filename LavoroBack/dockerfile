@@ -22,8 +22,8 @@ RUN npm install
 # Copier le reste de l'application
 COPY . .
 
-# Compiler l'application (si nécessaire)
-RUN npm run build-dev
+# Aucune étape de build nécessaire
+# RUN npm run build-dev  # Commenté car ce script n'existe pas dans package.json
 
 # Exposer le port
 EXPOSE 5000
