@@ -65,11 +65,11 @@ pipeline {
         }
 
         // Stage 4: SonarQube Analysis
-   stage('SonarQube Analysis') {
+stage('SonarQube Analysis') {
     steps {
         script {
             def scannerHome = tool 'scanner' 
-            withSonarQubeEnv { 
+            withSonarQubeEnv('scanner') { // Assurez-vous que 'SonarQube' correspond au nom de l'installation dans Jenkins
                 sh "${scannerHome}/bin/sonar-scanner -X > sonar-debug.log 2>&1 || (cat sonar-debug.log && exit 1)"
             }
         }
