@@ -65,22 +65,26 @@ pipeline {
         }
 
         // Stage 4: SonarQube Analysis
-stage('SonarQube Analysis') {
-    steps {
-        script {
-            def scannerHome = tool 'scanner'
-            withSonarQubeEnv('scanner') { // Assurez-vous que 'SonarQube' correspond au nom de l'installation dans Jenkins
-                sh "${scannerHome}/bin/sonar-scanner -X > sonar-debug.log 2>&1 || (cat sonar-debug.log && exit 1)"
+        stage('SonarQube Analysis') {
+            steps {
+                script {
+                    def scannerHome = tool 'scanner'
+                    withSonarQubeEnv('scanner') { // Nom correct de l'installation SonarQube dans Jenkins
+                        sh "${scannerHome}/bin/sonar-scanner"
+                    }
+                }
             }
         }
-    }
-}
-        // Stage 5: Building Docker images (node and mongo)
+
+        // Stage 5: Building Docker images (node and mongo) - Désactivé temporairement
         stage('Building Docker images') {
+            when {
+                expression { return false } // Désactive cette étape
+            }
             steps {
                 script {
                     try {
-                        sh 'sudo docker-compose build'
+                        sh 'docker-compose build'
                     } catch (error) {
                         echo "Error building Docker images: ${error}"
                         currentBuild.result = 'FAILURE'
@@ -90,20 +94,19 @@ stage('SonarQube Analysis') {
             }
         }
 
-        // Stage 6: Deploy to Nexus
+        // Stage 6: Deploy to Nexus - Désactivé temporairement
         stage('Deploy to Nexus') {
+            when {
+                expression { return false } // Désactive cette étape
+            }
             steps {
                 script {
-                        docker.withRegistry("http://"+registry, registryCredentials) {
-                            sh "sudo docker push $registry/nodemongoapp:5.0"
-                        }
-
+                    docker.withRegistry("http://"+registry, registryCredentials) {
+                        sh "docker push $registry/nodemongoapp:5.0"
+                    }
                 }
             }
         }
-
-
-
     } // Fin du bloc stages
 
     // Gestion des échecs
