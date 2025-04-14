@@ -93,31 +93,40 @@ pipeline {
         }
 
         // Stage 6: Deploy to Nexus
-        stage('Deploy to Nexus') {
-            steps {
-                script {
-                    try {
-                        // Vérifier que l'image existe
-                        sh "docker images | grep backend || echo 'Image not found'"
+      // Stage 6: Deploy to Nexus
+stage('Deploy to Nexus') {
+    steps {
+        script {
+            try {
+                // Vérifier que l'image existe
+                sh "docker images | grep backend || echo 'Image not found'"
 
-                        // Vérifier la connexion à Nexus
-                        sh "curl -v http://${registry}/v2/ || echo 'Cannot connect to Nexus'"
+                // Vérifier la connexion à Nexus
+                sh "curl -v http://${registry}/v2/ || echo 'Cannot connect to Nexus'"
 
-                        // Tagger l'image avec le nom correct pour Nexus
-                        sh "docker tag backend ${registry}/nodemongoapp:5.0 || echo 'Tagging failed'"
-
-                        // Essayer de pousser l'image
-                        docker.withRegistry("http://" + registry, registryCredentials) {
-                            sh "docker push ${registry}/nodemongoapp:5.0 || echo 'Push failed'"
-                        }
-                    } catch (error) {
-                        echo "Error deploying to Nexus: ${error}"
-                        currentBuild.result = 'FAILURE'
-                        throw new Exception("Deploy to Nexus failed")
-                    }
+                // Tagger l'image avec le nom correct pour Nexus
+                sh "docker tag backend ${registry}/nodemongoapp:5.0 || echo 'Tagging failed'"
+                
+                // Essayer de se connecter et pousser l'image avec des identifiants explicites
+                withCredentials([usernamePassword(credentialsId: registryCredentials, usernameVariable: 'NEXUS_USER', passwordVariable: 'NEXUS_PASS')]) {
+                    // Afficher les informations de débogage (masquer le mot de passe)
+                    echo "Trying to login to Nexus with user: ${NEXUS_USER}"
+                    
+                    // Se connecter à Nexus
+                    sh 'echo "$NEXUS_PASS" | docker login -u "$NEXUS_USER" --password-stdin http://${registry}'
+                    
+                    // Pousser l'image
+                    sh "docker push ${registry}/nodemongoapp:5.0 || echo 'Push failed'"
                 }
+            } catch (error) {
+                echo "Error deploying to Nexus: ${error}"
+                currentBuild.result = 'FAILURE'
+                throw new Exception("Deploy to Nexus failed")
             }
         }
+    }
+}
+          
     } // Fin du bloc stages
 
     // Gestion des échecs
