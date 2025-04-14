@@ -76,29 +76,31 @@ pipeline {
             }
         }
 
-    stage('Building Docker images') {
-    steps {
-        script {
-            try {
-                sh 'cd LavoroBack && docker build -t backend .'
-                sh 'docker pull mongo:4.2'
-            } catch (error) {
-                echo "Error building Docker images: ${error}"
-                currentBuild.result = 'FAILURE'
-                error("Docker build failed")
+        // Stage 5: Building Docker images
+        stage('Building Docker images') {
+            steps {
+                script {
+                    try {
+                        sh 'cd LavoroBack && docker build -t backend .'
+                        sh 'docker pull mongo:4.2'
+                    } catch (error) {
+                        echo "Error building Docker images: ${error}"
+                        currentBuild.result = 'FAILURE'
+                        error("Docker build failed")
+                    }
+                }
             }
         }
-    }
-}
-        // Stage 6: Deploy to Nexus - Désactivé temporairement
+
+        // Stage 6: Deploy to Nexus
         stage('Deploy to Nexus') {
-           steps{   
-                      script { 
-                           docker.withRegistry("http://"+registry, 
-                               registryCredentials ) { 
-                                    sh('docker push $registry/nodemongoapp:5.0 ') 
-           } 
-       } 
+            steps {
+                script {
+                    docker.withRegistry("http://" + registry, registryCredentials) {
+                        sh "docker push $registry/nodemongoapp:5.0"
+                    }
+                }
+            }
         }
     } // Fin du bloc stages
 
