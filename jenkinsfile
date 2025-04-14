@@ -30,7 +30,7 @@ pipeline {
                     try {
                         // Vérifier si le script test existe
                         def hasTestScript = sh(script: 'cd LavoroBack && npm run | grep -q "test"', returnStatus: true) == 0
-                        
+
                         if (hasTestScript) {
                             sh 'cd LavoroBack && npm test'
                         } else {
@@ -52,7 +52,7 @@ pipeline {
                     try {
                         // Build backend
                         sh 'cd LavoroBack && npm run build-dev || echo "No build-dev script found, skipping backend build"'
-                        
+
                         // Build frontend
                         sh 'cd LavoroFront && npm run build'
                     } catch (error) {
@@ -68,7 +68,7 @@ pipeline {
 stage('SonarQube Analysis') {
     steps {
         script {
-            def scannerHome = tool 'scanner' 
+            def scannerHome = tool 'scanner'
             withSonarQubeEnv('scanner') { // Assurez-vous que 'SonarQube' correspond au nom de l'installation dans Jenkins
                 sh "${scannerHome}/bin/sonar-scanner -X > sonar-debug.log 2>&1 || (cat sonar-debug.log && exit 1)"
             }
@@ -80,7 +80,7 @@ stage('SonarQube Analysis') {
             steps {
                 script {
                     try {
-                        sh 'docker-compose build'
+                        sh 'sudo docker-compose build'
                     } catch (error) {
                         echo "Error building Docker images: ${error}"
                         currentBuild.result = 'FAILURE'
@@ -95,15 +95,15 @@ stage('SonarQube Analysis') {
             steps {
                 script {
                         docker.withRegistry("http://"+registry, registryCredentials) {
-                            sh "docker push $registry/nodemongoapp:5.0"
+                            sh "sudo docker push $registry/nodemongoapp:5.0"
                         }
-                   
+
                 }
             }
         }
 
-   
-    
+
+
     } // Fin du bloc stages
 
     // Gestion des échecs
