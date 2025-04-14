@@ -92,16 +92,13 @@ pipeline {
 }
         // Stage 6: Deploy to Nexus - Désactivé temporairement
         stage('Deploy to Nexus') {
-            when {
-                expression { return false } // Désactive cette étape
-            }
-            steps {
-                script {
-                    docker.withRegistry("http://"+registry, registryCredentials) {
-                        sh "docker push $registry/nodemongoapp:5.0"
-                    }
-                }
-            }
+           steps{   
+                      script { 
+                           docker.withRegistry("http://"+registry, 
+                               registryCredentials ) { 
+                                    sh('docker push $registry/nodemongoapp:5.0 ') 
+           } 
+       } 
         }
     } // Fin du bloc stages
 
