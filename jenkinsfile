@@ -76,11 +76,12 @@ pipeline {
             }
         }
 
-       stage('Building Docker images') {
+    stage('Building Docker images') {
     steps {
         script {
             try {
-                sh 'docker-compose build'  // Sans sudo
+                sh 'cd LavoroBack && docker build -t backend .'
+                sh 'docker pull mongo:4.2'
             } catch (error) {
                 echo "Error building Docker images: ${error}"
                 currentBuild.result = 'FAILURE'
