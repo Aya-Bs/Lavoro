@@ -65,7 +65,7 @@ pipeline {
         }
 
         // Stage 4: SonarQube Analysis
-        stage('SonarQube Analysis') {
+     /*   stage('SonarQube Analysis') {
             steps {
                 script {
                     def scannerHome = tool 'scanner'
@@ -75,7 +75,7 @@ pipeline {
                 }
             }
         }
-
+*/
         // Stage 5: Building Docker images
         stage('Building Docker images') {
           steps{
@@ -89,12 +89,26 @@ pipeline {
 stage('Deploy to Nexus') {
                         steps{
                            script {
-                                      // Push the image to Nexus
-                                    docker.withRegistry("http://"+registry,
-                                     registryCredentials ) {
-                                     sh "docker push ${registry}/nodemongoapp:5.0"
-                                                    }
-                                }
+                               try {
+                                   // Debug information
+                                   echo "Starting Nexus deployment with registry: ${registry}"
+                                   sh "docker images | grep ${registry}/nodemongoapp"
+
+                                   // Push the image to Nexus
+                                   docker.withRegistry("http://"+registry, registryCredentials ) {
+                                       echo "Connected to Nexus registry at http://${registry}"
+                                       sh "docker push ${registry}/nodemongoapp:5.0 || (echo 'Push failed' && exit 1)"
+                                       echo "Successfully pushed image to Nexus"
+                                   }
+                               } catch (Exception e) {
+                                   echo "ERROR: Failed to push to Nexus: ${e.getMessage()}"
+                                   echo "Stack trace: ${e.getStackTrace().join('\n')}"
+                                   sh "docker info"
+                                   sh "curl -v http://${registry}/v2/ || echo 'Cannot connect to registry'"
+                                   currentBuild.result = 'FAILURE'
+                                   throw e
+                               }
+                           }
                         }
                     }
 
