@@ -81,7 +81,7 @@ pipeline {
             steps {
                 script {
                     try {
-                        sh 'cd LavoroBack && docker build -t backend .'
+                        sh 'cd LavoroBack && docker build -t ${registry}/nodemongoapp:5.0 .'
                         sh 'docker pull mongo:4.2'
                     } catch (error) {
                         echo "Error building Docker images: ${error}"
@@ -93,17 +93,13 @@ pipeline {
         }
 
         // Stage 6: Deploy to Nexus
-      // Stage 6: Deploy to Nexus
 stage('Deploy to Nexus') {
                         steps{
                                             script {
-                                                    // Tag the backend image with the registry path
-                                                    sh "docker tag backend ${registry}/backend:latest"
-
                                                     // Push the image to Nexus
                                                     docker.withRegistry("http://"+registry,
                                                        registryCredentials ) {
-                                                        sh "docker push ${registry}/backend:latest"
+                                                        sh "docker push ${registry}/nodemongoapp:5.0"
                                                     }
                                 }
                         }
