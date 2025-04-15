@@ -17,7 +17,7 @@ pipeline {
                     } catch (error) {
                         echo "Error installing dependencies: ${error}"
                         currentBuild.result = 'FAILURE'
-                        error("Failed to install dependencies")
+                        throw new Exception("Failed to install dependencies")
                     }
                 }
             }
@@ -30,7 +30,7 @@ pipeline {
                     try {
                         // Vérifier si le script test existe
                         def hasTestScript = sh(script: 'cd LavoroBack && npm run | grep -q "test"', returnStatus: true) == 0
-                        
+
                         if (hasTestScript) {
                             sh 'cd LavoroBack && npm test'
                         } else {
@@ -52,58 +52,81 @@ pipeline {
                     try {
                         // Build backend
                         sh 'cd LavoroBack && npm run build-dev || echo "No build-dev script found, skipping backend build"'
-                        
+
                         // Build frontend
                         sh 'cd LavoroFront && npm run build'
                     } catch (error) {
                         echo "Error building application: ${error}"
                         currentBuild.result = 'FAILURE'
-                        error("Build failed")
+                        throw new Exception("Build failed")
                     }
                 }
             }
         }
 
         // Stage 4: SonarQube Analysis
-stage('SonarQube Analysis') {
-    steps {
-        script {
-            def scannerHome = tool 'scanner' 
-            withSonarQubeEnv('scanner') { // Assurez-vous que 'SonarQube' correspond au nom de l'installation dans Jenkins
-                sh "${scannerHome}/bin/sonar-scanner -X > sonar-debug.log 2>&1 || (cat sonar-debug.log && exit 1)"
+        stage('SonarQube Analysis') {
+            steps {
+                script {
+                    def scannerHome = tool 'scanner'
+                    withSonarQubeEnv('scanner') { // Nom correct de l'installation SonarQube dans Jenkins
+                        sh "${scannerHome}/bin/sonar-scanner"
+                    }
+                }
             }
         }
-    }
-}
-        // Stage 5: Building Docker images (node and mongo)
+
+        // Stage 5: Building Docker images
         stage('Building Docker images') {
             steps {
                 script {
                     try {
-                        sh 'docker-compose build'
+                        sh 'cd LavoroBack && docker build -t backend .'
+                        sh 'docker pull mongo:4.2'
                     } catch (error) {
                         echo "Error building Docker images: ${error}"
                         currentBuild.result = 'FAILURE'
-                        error("Docker build failed")
+                        throw new Exception("Docker build failed")
                     }
                 }
             }
         }
 
         // Stage 6: Deploy to Nexus
-        stage('Deploy to Nexus') {
-            steps {
-                script {
-                        docker.withRegistry("http://"+registry, registryCredentials) {
-                            sh "docker push $registry/nodemongoapp:5.0"
-                        }
-                   
+      // Stage 6: Deploy to Nexus
+stage('Deploy to Nexus') {
+    steps {
+        script {
+            try {
+                // Vérifier que l'image existe
+                sh "docker images | grep backend || echo 'Image not found'"
+
+                // Vérifier la connexion à Nexus
+                sh "curl -v http://${registry}/v2/ || echo 'Cannot connect to Nexus'"
+
+                // Tagger l'image avec le nom correct pour Nexus
+                sh "docker tag backend ${registry}/nodemongoapp:5.0 || echo 'Tagging failed'"
+                
+                // Essayer de se connecter et pousser l'image avec des identifiants explicites
+                withCredentials([usernamePassword(credentialsId: registryCredentials, usernameVariable: 'NEXUS_USER', passwordVariable: 'NEXUS_PASS')]) {
+                    // Afficher les informations de débogage (masquer le mot de passe)
+                    echo "Trying to login to Nexus with user: ${NEXUS_USER}"
+                    
+                    // Se connecter à Nexus
+                    sh 'echo "$NEXUS_PASS" | docker login -u "$NEXUS_USER" --password-stdin http://${registry}'
+                    
+                    // Pousser l'image
+                    sh "docker push ${registry}/nodemongoapp:5.0 || echo 'Push failed'"
                 }
+            } catch (error) {
+                echo "Error deploying to Nexus: ${error}"
+                currentBuild.result = 'FAILURE'
+                throw new Exception("Deploy to Nexus failed")
             }
         }
-
-   
-    
+    }
+}
+          
     } // Fin du bloc stages
 
     // Gestion des échecs
