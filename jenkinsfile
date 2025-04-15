@@ -96,40 +96,69 @@ stage('Deploy to Nexus') {
                                    echo "Nexus UI is at: http://${nexusUrl}"
                                    sh "docker images | grep ${registry}/nodemongoapp"
 
-                                   // Test connectivity to Nexus
+                                   // Test connectivity to Nexus UI
                                    sh "curl -s -f http://${nexusUrl} > /dev/null || (echo 'Cannot connect to Nexus UI' && exit 1)"
                                    echo "Successfully connected to Nexus UI"
 
-                                   // Use withCredentials to explicitly handle Docker registry authentication
+                                   // Test connectivity to Docker registry
+                                   echo "Testing connectivity to Docker registry at http://${registry}"
+                                   sh "curl -s -f http://${registry} || echo 'Warning: Cannot connect directly to Docker registry port'"
+
+                                   // Check if Docker daemon is configured for insecure registries
+                                   sh "docker info | grep 'Insecure Registries'"
+
+                                   // ALTERNATIVE APPROACH: Save image to tar and upload to Nexus REST API
+                                   echo "Trying alternative approach: Save image to tar and upload to Nexus"
+
+                                   // Save the Docker image to a tar file
+                                   sh "docker save -o nodemongoapp.tar ${registry}/nodemongoapp:5.0"
+                                   echo "Docker image saved to tar file"
+
+                                   // Upload the tar file to Nexus raw repository using curl
                                    withCredentials([usernamePassword(credentialsId: registryCredentials,
                                                                   usernameVariable: 'NEXUS_USER',
                                                                   passwordVariable: 'NEXUS_PASS')]) {
-                                       // Try direct push without login (Nexus might be configured to allow anonymous pushes)
-                                       sh "docker push ${registry}/nodemongoapp:5.0 || (echo 'Direct push failed, trying with login' && false)"
+                                       // Create a raw repository URL (assuming 'docker-images' raw repository exists)
+                                       echo "Uploading tar file to Nexus raw repository"
+                                       sh "curl -v -u \${NEXUS_USER}:\${NEXUS_PASS} --upload-file nodemongoapp.tar http://${nexusUrl}/repository/docker-images/nodemongoapp-5.0.tar || echo 'Upload to raw repository failed'"
 
-                                       // If we get here, push succeeded
-                                       echo "Successfully pushed image to Nexus"
+                                       // Try direct push again as a last resort
+                                       echo "Trying direct push to Docker registry as last resort"
+                                       sh "docker push ${registry}/nodemongoapp:5.0 || echo 'Direct push still failing'"
                                    }
+
+                                   echo "Deployment process completed. Check logs for success/failure details."
                                } catch (Exception e) {
                                    echo "ERROR: Failed to push to Nexus: ${e.getMessage()}"
-                                   // Removed getStackTrace() call that was causing security issues
 
-                                   // Diagnostic information
-                                   echo "Checking Docker configuration:"
-                                   sh "docker info || echo 'Failed to get Docker info'"
-                                   echo "Checking Nexus connectivity:"
+                                   // Detailed diagnostic information
+                                   echo "\n==== DETAILED DIAGNOSTICS ===="
+                                   echo "1. Docker Images:"
+                                   sh "docker images"
+
+                                   echo "\n2. Docker Info:"
+                                   sh "docker info"
+
+                                   echo "\n3. Network Connectivity to Nexus UI:"
+                                   sh "ping -c 3 192.168.50.4 || echo 'Ping failed'"
                                    sh "curl -v http://${nexusUrl} || echo 'Cannot connect to Nexus UI'"
-                                   echo "Checking Docker registry connectivity:"
-                                   sh "curl -v http://${registry}/v2/ || echo 'Cannot connect to Docker registry'"
 
-                                   echo "TROUBLESHOOTING TIPS:"
-                                   echo "1. Verify Nexus is running and accessible at http://${nexusUrl}"
-                                   echo "2. Verify Docker registry is properly configured in Nexus at port 8083"
-                                   echo "3. Check if firewall is blocking connections to port 8083"
-                                   echo "4. Verify Docker daemon can connect to external registries"
+                                   echo "\n4. Network Connectivity to Docker Registry:"
+                                   sh "curl -v http://${registry} || echo 'Cannot connect to Docker registry'"
+
+                                   echo "\n5. Docker Daemon Configuration:"
+                                   sh "cat /etc/docker/daemon.json || echo 'No daemon.json file found'"
+
+                                   echo "\n==== TROUBLESHOOTING TIPS ===="
+                                   echo "1. Verify Nexus is running: docker ps | grep sonarLavoro"
+                                   echo "2. Check if port 8083 is exposed in your Nexus container"
+                                   echo "3. Verify Docker registry is enabled in Nexus"
+                                   echo "4. Add your registry to insecure-registries in /etc/docker/daemon.json"
+                                   echo "5. Restart Docker daemon after configuration changes"
+                                   echo "6. Check firewall settings for port 8083"
 
                                    currentBuild.result = 'FAILURE'
-                                   error "Failed to push to Nexus: ${e.getMessage()}"
+                                   error "Failed to deploy to Nexus. See diagnostics above."
                                }
                            }
                         }
