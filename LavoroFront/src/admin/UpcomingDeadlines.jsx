@@ -1,141 +1,238 @@
-import React, { useEffect, useState } from 'react';
-import axios from 'axios';
+
+import { useEffect, useState } from "react"
+import axios from "axios"
+import { Swiper, SwiperSlide } from "swiper/react"
 import Swal from 'sweetalert2';
-import { Swiper, SwiperSlide } from 'swiper/react';
-import 'swiper/css';
-import 'swiper/css/navigation';
+import "swiper/css"
+import { Bell, AlertTriangle, CheckCircle, ArrowUp, ArrowDown, Clock } from "lucide-react"
+//import { CircularProgressbar, buildStyles } from 'react-circular-progressbar';
+//import 'react-circular-progressbar/dist/styles.css';
+
 
 const UpcomingDeadlinesCarousel = () => {
-  const [upcomingProjects, setUpcomingProjects] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [projects, setProjects] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [progressData, setProgressData] = useState({});
+
 
   useEffect(() => {
-    const fetchUpcomingProjects = async () => {
+    const fetchProjects = async () => {
       try {
-        const response = await axios.get('http://localhost:3000/admin/upcomingDl');
+        setLoading(true);
+        const response = await axios.get("http://localhost:3000/admin/upcomingDl");
         
-        // Safely handle the response data
-        const projects = response.data?.data || [];
-        setUpcomingProjects(projects);
-        setLoading(false);
-      } catch (err) {
-        console.error('Error fetching upcoming projects:', err);
-        setError(err.message || 'Failed to load upcoming deadlines');
+        if (response.data?.success) {
+          const validProjects = response.data.data.filter(project => {
+            const isValidDate = !isNaN(new Date(project.end_date).getTime());
+            if (!isValidDate) {
+              console.warn('Invalid date in project:', project._id, project.end_date);
+            }
+            return isValidDate;
+          });
+  
+          const projectsWithDates = validProjects.map(project => ({
+            ...project,
+            end_date: new Date(project.end_date),
+            daysLeft: Math.ceil((new Date(project.end_date) - new Date()) / (86400000))
+          }));
+  
+          setProjects(projectsWithDates);
+          console.log('Fetched projects:', projectsWithDates);
+        }
+      } catch (error) {
+        console.error('Fetch error:', error.response?.data || error.message);
+      } finally {
         setLoading(false);
       }
     };
-
-    fetchUpcomingProjects();
+    fetchProjects();
   }, []);
 
-  const getDaysRemaining = (endDate) => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0); // Normalize to start of day
-    
-    const end = new Date(endDate);
-    end.setHours(23, 59, 59, 999); // Normalize to end of day
-    
-    return Math.ceil((end - today) / (1000 * 60 * 60 * 24));
-  };
   
-  const handleSendReminder = async (projectId, endDate) => {
-    const daysRemaining = getDaysRemaining(endDate);
-    
-    if (daysRemaining > 14) {
+  
+  const handleSendReminder = async (projectId, projectName, managerName) => {
+    const result = await Swal.fire({
+      title: 'Send Reminder?',
+      html: `Are you sure you want to send a deadline reminder to <b>${managerName}</b> about project <b>${projectName}</b>?`,
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonColor: '#3085d6',
+      cancelButtonColor: '#d33',
+      confirmButtonText: 'Yes, send reminder',
+      cancelButtonText: 'Cancel',
+      reverseButtons: true,
+      showLoaderOnConfirm: true,
+      preConfirm: async () => {
+        try {
+          const response = await axios.post(
+            `http://localhost:3000/admin/remind/${projectId}`
+          );
+          if (!response.data.success) {
+            throw new Error(response.data.message || 'Failed to send reminder');
+          }
+          return response.data;
+        } catch (error) {
+          Swal.showValidationMessage(
+            `Request failed: ${error.response?.data?.message || error.message}`
+          );
+          return false;
+        }
+      }
+    });
+  
+    if (result.isConfirmed) {
       Swal.fire({
-        icon: 'error',
-        title: 'Too Early',
-        text: `This project's deadline is in ${daysRemaining} days`,
-        footer: 'Reminders can only be sent for deadlines within 2 weeks'
+        title: 'Reminder Sent!',
+        html: `Successfully sent reminder to <b>${managerName}</b>`,
+        icon: 'success',
+        timer: 2000
       });
-      return;
     }
+  };
   
-    try {
-      await axios.post(`http://localhost:3000/admin/remind/${projectId}`);
-      Swal.fire('Success!', 'Reminder sent to manager', 'success');
-    } catch (error) {
-      Swal.fire('Error', error.response?.data?.message || 'Failed to send', 'error');
+  
+
+  const getDaysRemaining = (endDate) => {
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+    return Math.ceil((endDate - today) / (1000 * 60 * 60 * 24))
+  }
+
+  const getPriorityStyles = (risk_level) => {
+    const styles = {
+      High: { bg: "bg-danger-transparent", iconColor: "text-danger", icon: <AlertTriangle size={14} /> },
+      Medium: { bg: "bg-warning-transparent", iconColor: "text-warning", icon: <AlertTriangle size={14} /> },
+      Low: { bg: "bg-success-transparent", iconColor: "text-success", icon: <AlertTriangle size={14} /> },
     }
-  };
+    return styles[risk_level] || { bg: "bg-secondary-transparent", iconColor: "text-secondary" }
+  }
 
-  const getPriorityColor = (priority) => {
-    switch (priority) {
-      case 'High': return 'danger';
-      case 'Medium': return 'warning';
-      case 'Low': return 'success';
-      default: return 'primary';
-    }
-  };
+  const getStatusStyles = (status) => {
+    return status === "Completed" ? "text-success" : "text-warning"
+  }
 
-  const formatDate = (dateString) => {
-    const options = { year: 'numeric', month: 'short', day: 'numeric' };
-    return new Date(dateString).toLocaleDateString(undefined, options);
-  };
+  const formatDate = (date) => {
+    return date.toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    })
+  }
+  
 
-  if (loading) return <div className="text-center py-4">Loading upcoming deadlines...</div>;
-  if (error) return <div className="text-center py-4 text-danger">Error: {error}</div>;
+  if (loading) {
+    return (
+      <div className="col-xl-12">
+        <div className="card custom-card">
+          <div className="card-body text-center py-4">
+            <div className="spinner-border text-primary" role="status">
+              <span className="visually-hidden">Loading...</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+  
+
 
   return (
     <div className="col-xl-12">
       <div className="swiper swiper-basic swiper-initialized swiper-horizontal swiper-backface-hidden">
         <div className="swiper-wrapper">
-          {upcomingProjects.length > 0 ? (
-            <Swiper
-              spaceBetween={20}
-              slidesPerView={'auto'}
-              className="swiper-container"
-            >
-              {upcomingProjects.map((project) => (
-                <SwiperSlide key={project._id} className="swiper-slide" style={{ width: '300px' }}>
-                  <div className="card custom-card overflow-hidden">
-                    <div className="card-body">
-                      <div className="d-flex gap-2 flex-wrap align-items-start justify-content-between">
-                        <div className="d-flex flex-fill align-items-center">
-                          <div className="me-2">
-                            <span className={`avatar avatar-rounded bg-${getPriorityColor(project.priority)}-transparent p-2 avatar-sm`}>
-                              <i className={`bi bi-calendar-event text-${getPriorityColor(project.priority)}`}></i>
+          {projects.length > 0 ? (
+            <Swiper spaceBetween={16} slidesPerView={"auto"} className="px-2">
+              {projects.map((project) => {
+                const daysLeft = getDaysRemaining(project.end_date)
+                //const totalDays = Math.ceil((project.end_date - new Date(project.start_date)) / (1000 * 60 * 60 * 24));
+                //const progressPercentage = totalDays > 0 ? ((totalDays - daysLeft) / totalDays) * 100 : 100;
+
+                const priority = getPriorityStyles(project.risk_level)
+                const isUrgent = daysLeft <= 7
+                const statusClass = getStatusStyles(project.status)
+                const daysIndicator = isUrgent ? (
+                  <ArrowDown className="text-danger lh-1 align-middle ms-1" size={16} />
+                ) : (
+                  <ArrowDown className="text-danger lh-1 align-middle ms-1" size={16} />
+                )
+
+                return (
+                  <SwiperSlide key={project._id} style={{ width: "300px" }}>
+                    <div className="card custom-card overflow-hidden">
+                      <div className="card-body">
+                        <div className="d-flex align-items-center justify-content-between mb-2">
+                          <div className="d-flex align-items-center">
+                            <div className="me-2">
+                              <span className={`avatar avatar-rounded ${priority.bg} p-2 avatar-sm` }>
+                                {priority.icon} 
+                              </span>
+                            </div>
+                            <span className="text-default fs-14 fw-medium">{project.name}</span>
+                          </div>
+                          <span className="fs-12 text-muted">{project.status}</span>
+                        </div>
+
+                        <div className="d-flex flex-fill align-items-end gap-2 justify-content-between mt-3">
+                          <div>
+                          <span className="d-block text-muted">Manager:</span>
+                            <span className="d-block ms-auto fs-15 fw-semibold">
+                              {project.manager || "Unassigned"}
                             </span>
                           </div>
-                          <div className="">
-                            <span className="d-block text-default fs-14 fw-semibold">{project.name}</span>
-                            <span className="d-block text-muted fs-12">{project.client}</span>
+                          <div className="text-end">
+                            <span className="d-block text-muted fs-12">Days Left:</span>
+                            <div className="d-flex align-items-center justify-content-end">
+                              <span className={`d-block fs-15 fw-medium ${isUrgent ? "text-danger" : ""}`}>
+                                {daysLeft} 
+                              </span>
+                              {isUrgent && (
+                                <Clock className="ms-1 text-danger" size={16} />
+                              )}
+                              {!isUrgent && daysLeft <= 14 && (
+                                <Clock className="ms-1 text-warning" size={16} />
+                              )}
+                            </div>
                           </div>
                         </div>
-                        <div className="fs-12 text-end">
-                          <span className="d-block text-muted">Status</span>
-                          <span className="d-block fw-medium fs-14">{project.status}</span>
-                        </div>
-                      </div>
-                      <div className="d-flex flex-fill align-items-end gap-2 justify-content-between mt-3">
-                        <div>
-                          <span className="d-block text-muted">End Date:</span>
-                          <span className="d-block ms-auto fs-15 fw-medium">
-                            {formatDate(project.end_date)}
-                            <i className={`ri-arrow-up-s-fill text-${project.status === 'In Progress' ? 'warning' : 'success'} lh-1 align-middle fs-20 ms-1`}></i>
-                          </span>
-                        </div>
-                        <div>
-                          <button 
-                            className="btn btn-sm btn-primary"
-                            onClick={() => handleSendReminder(project._id)}
+
+                        <div className="d-flex justify-content-center mt-3">
+                        {/*<div style={{ width: 25, height: 25 }}>
+                              <CircularProgressbar
+                                value={progressPercentage}
+                                text=""
+                                styles={buildStyles({
+                                  pathColor: isUrgent ? "#dc3545" : "#0d6efd",
+                                  
+                                  trailColor: "#e9ecef"
+                                })}
+                              />
+                            </div>*/}
+
+                          <button
+                            className="btn btn-sm btn-outline-primary " style={{ width: "50%" }}
+                            onClick={() => handleSendReminder(
+                              project._id, 
+                              project.name, 
+                              project.manager || "the manager")}
                           >
-                            <i className="bi bi-envelope me-1"></i> Remind
+                            <Bell size={14} className="me-1" />
+                            Remind
                           </button>
+
                         </div>
                       </div>
                     </div>
-                  </div>
-                </SwiperSlide>
-              ))}
+                  </SwiperSlide>
+                )
+              })}
             </Swiper>
           ) : (
-            <div className="swiper-slide" style={{ width: '100%' }}>
+            <div className="swiper-slide" style={{ width: "100%" }}>
               <div className="card custom-card overflow-hidden">
                 <div className="card-body text-center py-4">
-                  <i className="bi bi-check2-circle fs-3 text-success"></i>
-                  <p className="mt-2 mb-0">No projects ending in the next two weeks</p>
+                  <CheckCircle className="text-success fs-3" />
+                  <p className="mt-2 mb-0">All caught up!</p>
+                  <p className="text-muted fs-12">No projects ending in the next 30 days</p>
                 </div>
               </div>
             </div>
@@ -143,7 +240,7 @@ const UpcomingDeadlinesCarousel = () => {
         </div>
       </div>
     </div>
-  );
-};
+  )
+}
 
-export default UpcomingDeadlinesCarousel;
+export default UpcomingDeadlinesCarousel

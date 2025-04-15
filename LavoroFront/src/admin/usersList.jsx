@@ -173,6 +173,7 @@ useEffect(() => {
   };
 
   return (
+    
     <div className="card custom-card">
       <div className="card-header justify-content-between">
         <div className="card-title">Users List</div>
@@ -364,15 +365,17 @@ useEffect(() => {
         <i className="bi bi-envelope me-2"></i> Compose Mail
       </button>
 
+      
+        </div>
+        
+      </div>
       <Mailer
         show={showMailComposer}
         handleClose={() => setShowMailComposer(false)}
         adminEmail={adminEmail}
       />
-        </div>
-        
-      </div>
     </div>
+    
   );
 }
 

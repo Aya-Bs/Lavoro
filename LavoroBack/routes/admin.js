@@ -17,7 +17,7 @@ router.get('/all-users', adminController.getUsersForEmail);
 
 router.post('/send', adminController.sendBulkEmail);
 
-//router.get('/upcomingDl', adminController.getUpcomingDeadlines);
-//router.post('/remind/:projectId', adminController.sendDeadlineReminder);
+router.get('/upcomingDl', adminController.getUpcomingDeadlines);
+router.post('/remind/:projectId', adminController.sendDeadlineReminder);
 
 module.exports = router;

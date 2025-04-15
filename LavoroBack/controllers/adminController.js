@@ -133,19 +133,6 @@ exports.getUserActivity = async (req, res) => {
   }
 };
 
-// exports.getDeleteRequests = async (req, res) => {
-//   try {
-//     const deleteRequests = await Notification.find({ type: 'delete_request', status: 'pending' })
-//       .populate('triggered_by', 'firstName lastName email'); // Populate user details
-
-//     console.log('Raw delete requests:', deleteRequests); // Log the raw data
-
-//     res.status(200).json(deleteRequests);
-//   } catch (error) {
-//     console.error('Error fetching delete requests:', error);
-//     res.status(500).json({ error: 'Error fetching delete requests.' });
-//   }
-// };
 
 
 exports.getDeleteRequests = async (req, res) => {
@@ -251,17 +238,27 @@ exports.getRoleStatistics = async (req, res) => {
 };
 exports.getUsersForEmail = async (req, res) => {
   try {
-    const users = await User.find({}, 'email firstName lastName');
+    const users = await User.find({})
+      .populate('role', 'RoleName')
+      .select('email firstName lastName role')
+      .lean();
+
+    const nonAdminUsers = users.filter(user => {
+      const roleName = (user.role?.RoleName || '').trim().toLowerCase();
+      return roleName !== 'admin';
+    });
+
     res.status(200).json({
       success: true,
-      data: users
+      data: nonAdminUsers
     });
+
   } catch (error) {
     console.error('Error fetching users:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to fetch users',
-      error: error.message
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
   }
 };
@@ -312,47 +309,60 @@ exports.sendBulkEmail = async (req, res) => {
   }
 };
 
-/*
+
 exports.getUpcomingDeadlines = async (req, res) => {
   try {
     const today = new Date();
-    today.setHours(0, 0, 0, 0); // Start of today
-    
-    const twoWeeksLater = new Date();
-    twoWeeksLater.setDate(today.getDate() + 14);
-    twoWeeksLater.setHours(23, 59, 59, 999); // End of the day two weeks from now
-
-    console.log('Query date range:', {
-      today: today.toISOString(),
-      twoWeeksLater: twoWeeksLater.toISOString()
-    });
+    today.setHours(0, 0, 0, 0); // Normalize to start of day
+    const nextMonth = new Date(today);
+    nextMonth.setMonth(today.getMonth() + 1);
 
     const projects = await Project.find({
-      end_date: {
-        $gte: today,                   // Deadline is today or later
-        $lte: twoWeeksLater            // And within two weeks from today
+      end_date: { 
+        $lte: nextMonth,
+        $gte: today
       },
-      status: { $ne: 'Completed' }     // Only active projects
+      status: { $ne: "Completed" }
     })
-    .populate('manager_id', 'email firstName lastName')
-    .sort({ end_date: 1 });            // Sort by nearest deadline first
+    .populate('manager_id', 'firstName lastName email') // Changed to manager_id
+    .sort({ end_date: 1 })
+    .lean();
 
-    console.log('Found projects:', projects);
+    const formattedProjects = projects.map(project => {
+      const managerName = project.manager_id
+        ? `${project.manager_id.firstName} ${project.manager_id.lastName}`
+        : 'Unassigned';
 
-    res.status(200).json({
-      success: true,
-      count: projects.length,
-      data: projects
+      return {
+        ...project,
+        _id: project._id.toString(),
+        end_date: project.end_date.toISOString(),
+        manager: managerName, // Frontend expects this field
+        manager_email: project.manager_id?.email || null
+      };
     });
+
+    res.status(200).json({ 
+      success: true,
+      data: formattedProjects,
+      meta: {
+        count: formattedProjects.length,
+        date_range: {
+          start: today.toISOString(),
+          end: nextMonth.toISOString()
+        }
+      }
+    });
+
   } catch (error) {
-    console.error('Error fetching upcoming deadlines:', error);
+    console.error("Deadline fetch error:", error);
     res.status(500).json({ 
       success: false,
-      message: 'Server error while fetching upcoming deadlines'
+      error: "Failed to fetch deadlines",
+      details: error.message
     });
   }
 };
-
 exports.sendDeadlineReminder = async (req, res) => {
   try {
     const { projectId } = req.params;
@@ -428,4 +438,4 @@ exports.sendDeadlineReminder = async (req, res) => {
       error: error.message
     });
   }
-};*/
+};
