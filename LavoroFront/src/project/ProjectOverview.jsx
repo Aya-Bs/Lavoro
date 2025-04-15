@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom'; // Import useNavigate
 import Swal from 'sweetalert2';
+import axios from 'axios';
 
 export default function ProjectOverview(){
   const { id } = useParams(); // Get the project ID from the URL
@@ -11,6 +12,7 @@ export default function ProjectOverview(){
   const [currentPage, setCurrentPage] = useState(1); // Current page
   const [itemsPerPage] = useState(7); // Number of items per page
   const navigate = useNavigate(); // Initialize the navigate function
+  const [projectDuration, setProjectDuration] = useState(0);
 
 
   // Calculate the index of the first and last item on the current page
@@ -192,6 +194,20 @@ const handleDelete = async (projectId) => {
     };
 
     fetchData();
+
+    
+        const fetchActuelDuration = async () => {
+          try {
+            const response = await axios.get("http://localhost:3000/project/calculateDuration");
+            setProjectDuration(response.data.count);
+          } catch (error) {
+            console.error("Erreur lors de la récupération du nombre de projets :", error);
+          }
+        };
+    
+        fetchActuelDuration();
+
+
   }, [id]);
 
   // Display loading state
@@ -233,6 +249,7 @@ const handleDelete = async (projectId) => {
           <br />
           <h1 className="page-title fw-medium fs-18 mb-0">Projects Overview</h1>
         </div>
+        
           
           <div className="btn-list">
             <button className="btn btn-white btn-wave">
@@ -243,6 +260,25 @@ const handleDelete = async (projectId) => {
             </button>
           </div>
         </div>
+        <div className="col-xxl-3 col-xl-6">
+                <div className="card custom-card overflow-hidden main-content-card">
+                  <div className="card-body">
+                    <div className="d-flex align-items-start justify-content-between mb-2 gap-1 flex-xxl-nowrap flex-wrap">
+                      <div>
+                        <span className="text-muted d-block mb-1 text-nowrap">
+                          Actuel Duration
+                        </span>
+                        <h4 className="fw-medium mb-0">{projectDuration}</h4>
+                      </div>
+                      <div className="lh-1">
+                        <span className="avatar avatar-md avatar-rounded bg-primary3">
+                          <i className="ri-bar-chart-2-line fs-5" />
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
         {/* Page Header Close */}
         {/* Start::row-1 */}
         <div className="row">
