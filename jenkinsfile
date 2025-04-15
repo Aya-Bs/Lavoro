@@ -78,18 +78,11 @@ pipeline {
 
         // Stage 5: Building Docker images
         stage('Building Docker images') {
-            steps {
-                script {
-                    try {
-                        sh 'cd LavoroBack && docker build -t ${registry}/nodemongoapp:5.0 .'
-                        sh 'docker pull mongo:4.2'
-                    } catch (error) {
-                        echo "Error building Docker images: ${error}"
-                        currentBuild.result = 'FAILURE'
-                        throw new Exception("Docker build failed")
-                    }
-                }
-            }
+          steps{ 
+                    script { 
+                            sh('docker-compose build') 
+                                    } 
+                        } 
         }
 
         // Stage 6: Deploy to Nexus
