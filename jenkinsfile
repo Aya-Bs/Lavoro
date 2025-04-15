@@ -94,11 +94,20 @@ stage('Deploy to Nexus') {
                                    echo "Starting Nexus deployment with registry: ${registry}"
                                    sh "docker images | grep ${registry}/nodemongoapp"
 
-                                   // Push the image to Nexus
-                                   docker.withRegistry("http://"+registry, registryCredentials ) {
-                                       echo "Connected to Nexus registry at http://${registry}"
+                                   // Use withCredentials to explicitly handle Docker registry authentication
+                                   withCredentials([usernamePassword(credentialsId: registryCredentials,
+                                                                  usernameVariable: 'NEXUS_USER',
+                                                                  passwordVariable: 'NEXUS_PASS')]) {
+                                       // Manual Docker login
+                                       sh "echo \${NEXUS_PASS} | docker login -u \${NEXUS_USER} --password-stdin http://${registry}"
+                                       echo "Logged in to Nexus registry at http://${registry}"
+
+                                       // Push the image
                                        sh "docker push ${registry}/nodemongoapp:5.0 || (echo 'Push failed' && exit 1)"
                                        echo "Successfully pushed image to Nexus"
+
+                                       // Logout for security
+                                       sh "docker logout http://${registry}"
                                    }
                                } catch (Exception e) {
                                    echo "ERROR: Failed to push to Nexus: ${e.getMessage()}"
