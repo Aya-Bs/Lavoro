@@ -4,6 +4,7 @@ pipeline {
     environment {
         registryCredentials = "Nexus" // Identifiants pour Nexus
         registry = "192.168.50.4:8083" // Adresse du registre Docker (Nexus)
+        nexusUrl = "192.168.50.4:8081" // Adresse de l'interface Nexus
     }
 
     stages {
@@ -92,30 +93,43 @@ stage('Deploy to Nexus') {
                                try {
                                    // Debug information
                                    echo "Starting Nexus deployment with registry: ${registry}"
+                                   echo "Nexus UI is at: http://${nexusUrl}"
                                    sh "docker images | grep ${registry}/nodemongoapp"
+
+                                   // Test connectivity to Nexus
+                                   sh "curl -s -f http://${nexusUrl} > /dev/null || (echo 'Cannot connect to Nexus UI' && exit 1)"
+                                   echo "Successfully connected to Nexus UI"
 
                                    // Use withCredentials to explicitly handle Docker registry authentication
                                    withCredentials([usernamePassword(credentialsId: registryCredentials,
                                                                   usernameVariable: 'NEXUS_USER',
                                                                   passwordVariable: 'NEXUS_PASS')]) {
-                                       // Manual Docker login
-                                       sh "echo \${NEXUS_PASS} | docker login -u \${NEXUS_USER} --password-stdin http://${registry}"
-                                       echo "Logged in to Nexus registry at http://${registry}"
+                                       // Try direct push without login (Nexus might be configured to allow anonymous pushes)
+                                       sh "docker push ${registry}/nodemongoapp:5.0 || (echo 'Direct push failed, trying with login' && false)"
 
-                                       // Push the image
-                                       sh "docker push ${registry}/nodemongoapp:5.0 || (echo 'Push failed' && exit 1)"
+                                       // If we get here, push succeeded
                                        echo "Successfully pushed image to Nexus"
-
-                                       // Logout for security
-                                       sh "docker logout http://${registry}"
                                    }
                                } catch (Exception e) {
                                    echo "ERROR: Failed to push to Nexus: ${e.getMessage()}"
-                                   echo "Stack trace: ${e.getStackTrace().join('\n')}"
-                                   sh "docker info"
-                                   sh "curl -v http://${registry}/v2/ || echo 'Cannot connect to registry'"
+                                   // Removed getStackTrace() call that was causing security issues
+
+                                   // Diagnostic information
+                                   echo "Checking Docker configuration:"
+                                   sh "docker info || echo 'Failed to get Docker info'"
+                                   echo "Checking Nexus connectivity:"
+                                   sh "curl -v http://${nexusUrl} || echo 'Cannot connect to Nexus UI'"
+                                   echo "Checking Docker registry connectivity:"
+                                   sh "curl -v http://${registry}/v2/ || echo 'Cannot connect to Docker registry'"
+
+                                   echo "TROUBLESHOOTING TIPS:"
+                                   echo "1. Verify Nexus is running and accessible at http://${nexusUrl}"
+                                   echo "2. Verify Docker registry is properly configured in Nexus at port 8083"
+                                   echo "3. Check if firewall is blocking connections to port 8083"
+                                   echo "4. Verify Docker daemon can connect to external registries"
+
                                    currentBuild.result = 'FAILURE'
-                                   throw e
+                                   error "Failed to push to Nexus: ${e.getMessage()}"
                                }
                            }
                         }
