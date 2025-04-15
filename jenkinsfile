@@ -177,17 +177,34 @@ stage('Deploy to Nexus') {
                            }
                         }
                     }
-                    stage('Run application ') { 
-steps{   
-script { 
-docker.withRegistry("http://"+registry, registryCredentials 
-) { 
-sh('docker pull $registry/nodemongoapp:6.0 ') 
-sh('docker-compose up -d ') 
-} 
-} 
-} 
-} 
+        // Stage 7: Run application
+        stage('Run application') {
+            steps {
+                script {
+                    try {
+                        echo "Starting application deployment"
+
+                        // Use the same registry and tag as in previous stages
+                        withCredentials([usernamePassword(credentialsId: registryCredentials,
+                                                      usernameVariable: 'NEXUS_USER',
+                                                      passwordVariable: 'NEXUS_PASS')]) {
+                            // Pull the image we just pushed
+                            echo "Pulling image from registry"
+                            sh "docker pull ${registry}/nodemongoapp:5.0 || echo 'Pull failed, using local image'"
+
+                            // Start the application with docker-compose
+                            echo "Starting application with docker-compose"
+                            sh "docker-compose up -d"
+                            echo "Application started successfully"
+                        }
+                    } catch (Exception e) {
+                        echo "ERROR: Failed to run application: ${e.getMessage()}"
+                        currentBuild.result = 'FAILURE'
+                        error "Failed to run application. See logs for details."
+                    }
+                }
+            }
+        }
 
     } // Fin du bloc stages
 
