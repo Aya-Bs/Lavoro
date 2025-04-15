@@ -94,17 +94,21 @@ pipeline {
 
         // Stage 6: Deploy to Nexus
       // Stage 6: Deploy to Nexus
-stage('Deploy  to Nexus') { 
-                        steps{   
-                                            script { 
-                                                    docker.withRegistry("http://"+registry, 
-                                                       registryCredentials ) { 
-                                                sh('docker push $registry/nodemongoapp:5.0 ') 
-                                } 
-                                } 
-                        } 
-                    } 
-          
+stage('Deploy to Nexus') {
+                        steps{
+                                            script {
+                                                    // Tag the backend image with the registry path
+                                                    sh "docker tag backend ${registry}/backend:latest"
+
+                                                    // Push the image to Nexus
+                                                    docker.withRegistry("http://"+registry,
+                                                       registryCredentials ) {
+                                                        sh "docker push ${registry}/backend:latest"
+                                                    }
+                                }
+                        }
+                    }
+
     } // Fin du bloc stages
 
     // Gestion des échecs
