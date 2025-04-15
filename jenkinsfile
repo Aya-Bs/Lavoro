@@ -3,7 +3,7 @@ pipeline {
 
     environment {
         registryCredentials = "Nexus" // Identifiants pour Nexus
-        registry = "192.168.50.4:8081" // Adresse du registre Docker (Nexus)
+        registry = "192.168.50.4:8083" // Adresse du registre Docker (Nexus)
     }
 
     stages {
@@ -106,15 +106,19 @@ stage('Deploy to Nexus') {
 
                 // Tagger l'image avec le nom correct pour Nexus
                 sh "docker tag backend ${registry}/nodemongoapp:5.0 || echo 'Tagging failed'"
-                
+
+                // Configurer Docker pour accepter les registres insécurisés
+                sh "mkdir -p ~/.docker || true"
+                sh "echo '{\"insecure-registries\":[\"${registry}\"]}' > ~/.docker/config.json || true"
+
                 // Essayer de se connecter et pousser l'image avec des identifiants explicites
                 withCredentials([usernamePassword(credentialsId: registryCredentials, usernameVariable: 'NEXUS_USER', passwordVariable: 'NEXUS_PASS')]) {
                     // Afficher les informations de débogage (masquer le mot de passe)
                     echo "Trying to login to Nexus with user: ${NEXUS_USER}"
-                    
-                    // Se connecter à Nexus
-                    sh 'echo "$NEXUS_PASS" | docker login -u "$NEXUS_USER" --password-stdin http://${registry}'
-                    
+
+                    // Se connecter à Nexus sans le préfixe http://
+                    sh 'echo "$NEXUS_PASS" | docker login -u "$NEXUS_USER" --password-stdin ${registry}'
+
                     // Pousser l'image
                     sh "docker push ${registry}/nodemongoapp:5.0 || echo 'Push failed'"
                 }
@@ -126,7 +130,7 @@ stage('Deploy to Nexus') {
         }
     }
 }
-          
+
     } // Fin du bloc stages
 
     // Gestion des échecs
