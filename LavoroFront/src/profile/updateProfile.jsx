@@ -10,16 +10,19 @@ const UpdateProfile = () => {
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
-  const [currentPassword, setCurrentPassword] = useState("");
-  const [newPassword, setNewPassword] = useState("");
-  const [confirmNewPassword, setConfirmNewPassword] = useState("");
   const [profileImage, setProfileImage] = useState("");
   const [imageSrc, setImageSrc] = useState(null);
   const [croppedImage, setCroppedImage] = useState(null);
-  const [showModal, setShowModal] = useState(false);
-  const [showCameraInModal, setShowCameraInModal] = useState(false);
+  const [showCameraModal, setShowCameraModal] = useState(false);
+  const [showCropModal, setShowCropModal] = useState(false);
   const [crop, setCrop] = useState({ aspect: 1 / 1 });
   const [loading, setLoading] = useState(false);
+  const [errors, setErrors] = useState({
+    firstName: null,
+    lastName: null,
+    phoneNumber: null,
+    email: null
+  });
 
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
@@ -64,13 +67,99 @@ const UpdateProfile = () => {
     fetchUserInfo();
   }, [navigate]);
 
+  const validateField = (fieldName, value) => {
+    let error = null;
+    
+    if (fieldName === 'firstName') {
+      if (!value) error = 'First name is required.';
+      else if (!/^[A-Za-z\s'-]+$/.test(value)) error = 'First name must contain only letters, spaces, hyphens, or apostrophes.';
+      else if (value.length < 3) error = 'First name cannot be less than three characters long.';
+    } 
+    else if (fieldName === 'lastName') {
+      if (!value) error = 'Last name is required.';
+      else if (!/^[A-Za-z\s'-]+$/.test(value)) error = 'Last name must contain only letters, spaces, hyphens, or apostrophes.';
+      else if (value.length < 3) error = 'Last name cannot be less than three characters long.';
+    }
+    else if (fieldName === 'phoneNumber') {
+      if (!value) error = 'Phone number is required.';
+      else if (value.length < 8) error = 'Phone number must be at least 8 digits long.';
+      else if (!/^[0-9]+$/.test(value)) error = 'Phone number must contain only numeric characters.';
+      else if (/^0+$/.test(value)) error = 'Phone number cannot be all zeros.';
+    }
+    else if (fieldName === 'email') {
+      if (!value) error = 'Email is required.';
+      else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) error = 'Please enter a valid email address.';
+    }
+    
+    setErrors(prev => ({ ...prev, [fieldName]: error }));
+    return !error;
+  };
+
+  const handleFirstNameChange = (e) => {
+    const value = e.target.value;
+    setFirstName(value);
+    validateField('firstName', value);
+  };
+
+  const handleLastNameChange = (e) => {
+    const value = e.target.value;
+    setLastName(value);
+    validateField('lastName', value);
+  };
+
+  const handlePhoneNumberChange = (e) => {
+    const value = e.target.value;
+    setPhoneNumber(value);
+    validateField('phoneNumber', value);
+  };
+
+  const handleEmailChange = (e) => {
+    const value = e.target.value;
+    setUser(prev => ({ ...prev, email: value }));
+    validateField('email', value);
+  };
+
+  const handleRestoreChanges = () => {
+    Swal.fire({
+      title: "Restore Changes?",
+      text: "Are you sure you want to discard all changes?",
+      icon: "question",
+      showCancelButton: true,
+      confirmButtonColor: "#3085d6",
+      cancelButtonColor: "#d33",
+      confirmButtonText: "Yes, restore!",
+      cancelButtonText: "Cancel"
+    }).then((result) => {
+      if (result.isConfirmed) {
+        setFirstName(user.firstName);
+        setLastName(user.lastName);
+        setPhoneNumber(user.phone_number);
+        setProfileImage(user.image);
+        setImageSrc(null);
+        setCroppedImage(null);
+        setErrors({
+          firstName: null,
+          lastName: null,
+          phoneNumber: null,
+          email: null
+        });
+        
+        Swal.fire({
+          title: "Restored!",
+          text: "All changes have been discarded.",
+          icon: "success"
+        });
+      }
+    });
+  };
+
   const handleDeleteAccount = async () => {
     try {
       const token = localStorage.getItem('token');
       if (!token) {
         throw new Error("No token found");
       }
-
+  
       const result = await Swal.fire({
         title: "Are you sure?",
         text: "You won't be able to revert this!",
@@ -80,7 +169,7 @@ const UpdateProfile = () => {
         cancelButtonColor: "#d33",
         confirmButtonText: "Yes, delete it!",
       });
-
+  
       if (result.isConfirmed) {
         const response = await axios.post(
           "http://localhost:3000/profiles/request-delete",
@@ -93,7 +182,7 @@ const UpdateProfile = () => {
             withCredentials: true,
           }
         );
-
+  
         if (response.status === 200) {
           await Swal.fire({
             title: "Deleted!",
@@ -136,6 +225,11 @@ const UpdateProfile = () => {
       videoRef.current.srcObject = stream;
     } catch (err) {
       console.error("Error accessing camera:", err);
+      Swal.fire({
+        title: "Error",
+        text: "Could not access camera. Please check permissions.",
+        icon: "error"
+      });
     }
   };
 
@@ -150,8 +244,8 @@ const UpdateProfile = () => {
 
     const imageData = canvas.toDataURL("image/png");
     setImageSrc(imageData);
-    setShowCameraInModal(false);
-    setShowModal(false);
+    setShowCameraModal(false);
+    setShowCropModal(true);
   };
 
   const previewImage = (event) => {
@@ -160,7 +254,7 @@ const UpdateProfile = () => {
       const reader = new FileReader();
       reader.onload = (e) => {
         setImageSrc(e.target.result);
-        setShowModal(false);
+        setShowCropModal(true);
       };
       reader.readAsDataURL(file);
     }
@@ -196,26 +290,24 @@ const UpdateProfile = () => {
     return canvas.toDataURL("image/png");
   };
 
-  const saveCroppedImage = () => {
-    const newImage = croppedImage || imageSrc;
-    setProfileImage(newImage); // Set profileImage to the new cropped image
-    setImageSrc(null);
-    setCroppedImage(null);
-  };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setLoading(true);
-
-    if (newPassword !== confirmNewPassword) {
+    
+    const isFirstNameValid = validateField('firstName', firstName);
+    const isLastNameValid = validateField('lastName', lastName);
+    const isPhoneNumberValid = validateField('phoneNumber', phoneNumber);
+    const isEmailValid = validateField('email', user.email);
+    
+    if (!isFirstNameValid || !isLastNameValid || !isPhoneNumberValid || !isEmailValid) {
       await Swal.fire({
-        title: "Error",
-        text: "New password and confirm password do not match.",
+        title: "Validation Error",
+        text: "Please fix the errors in the form before submitting.",
         icon: "error",
       });
-      setLoading(false);
       return;
     }
+    
+    setLoading(true);
 
     const token = localStorage.getItem('token');
     if (!token) {
@@ -228,24 +320,13 @@ const UpdateProfile = () => {
     formData.append("firstName", firstName);
     formData.append("lastName", lastName);
     formData.append("phoneNumber", phoneNumber);
-    formData.append("currentPassword", currentPassword);
-    formData.append("newPassword", newPassword);
-    formData.append("confirmNewPassword", confirmNewPassword);
+    formData.append("email", user.email);
 
-    // Handle image cases with clear priority
     if (croppedImage) {
       const blob = await fetch(croppedImage).then((res) => res.blob());
       formData.append("image", blob, "profile.png");
-    } else if (profileImage === "") {
-      formData.append("image", ""); // Explicitly send empty string for removal
     } else if (profileImage) {
-      if (profileImage.startsWith("http")) {
-        const response = await fetch(profileImage);
-        const blob = await response.blob();
-        formData.append("image", blob, "existing_profile.png");
-      } else {
-        formData.append("image", profileImage);
-      }
+      formData.append("image", profileImage);
     }
 
     try {
@@ -294,7 +375,12 @@ const UpdateProfile = () => {
         <div className="tab-pane show active overflow-hidden p-0 border-0" id="account-pane" role="tabpanel" aria-labelledby="account" tabIndex="0">
           <div className="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-1">
             <div className="fw-semibold d-block fs-15">Account Settings :</div>
-            <div className="btn btn-primary btn-sm"><i className="ri-loop-left-line lh-1 me-2"></i>Restore Changes</div>
+            <div 
+              className="btn btn-primary btn-sm" 
+              onClick={handleRestoreChanges}
+            >
+              <i className="ri-loop-left-line lh-1 me-2"></i>Restore Changes
+            </div>
           </div>
           <div className="row gy-3">
             <div className="col-xl-12">
@@ -302,29 +388,47 @@ const UpdateProfile = () => {
                 <div>
                   <span className="avatar avatar-xxl" style={{ marginLeft: "10px" }}>
                     {profileImage ? (
-                      <img
-                        src={profileImage.startsWith("data:image") ? profileImage : `http://localhost:3000${profileImage}`}
-                        alt="Profile"
-                        style={{
-                          width: "100px",
-                          height: "100px",
-                          borderRadius: "50%",
-                          objectFit: "cover",
-                          marginBottom: "10px",
-                        }}
-                      />
+                     <img
+                     src={
+                       profileImage
+                         ? profileImage.startsWith('data:image') 
+                           ? profileImage // Use as-is for data URLs
+                           : profileImage.startsWith('http') || profileImage.startsWith('https')
+                             ? profileImage // Use as-is for full URLs
+                             : `http://localhost:3000${profileImage}` // Prepend server URL for relative paths
+                         : "https://via.placeholder.com/100" // Fallback if no image
+                     }
+                     alt="Profile"
+                     style={{
+                       width: "100px",
+                       height: "100px",
+                       borderRadius: "50%",
+                       objectFit: "cover",
+                       marginBottom: "10px"
+                     }}
+                     onError={(e) => {
+                       e.target.src = "https://via.placeholder.com/100";
+                     }}
+                   />
                     ) : (
-                      <p></p>
+                      <p>No profile image uploaded.</p>
                     )}
                   </span>
                 </div>
                 <div>
                   <span className="fw-medium d-block mb-2">Profile Picture</span>
                   <div className="btn-list mb-1">
-                    <button className="btn btn-sm btn-primary btn-wave" onClick={() => setShowModal(true)}>
+                    <button 
+                      className="btn btn-sm btn-primary btn-wave" 
+                      data-bs-toggle="modal" 
+                      data-bs-target="#imageSourceModal"
+                    >
                       <i className="ri-upload-2-line me-1"></i>Change Image
                     </button>
-                    <button className="btn btn-sm btn-primary1-light btn-wave" onClick={() => setProfileImage("")}>
+                    <button 
+                      className="btn btn-sm btn-primary1-light btn-wave" 
+                      onClick={() => setProfileImage("")}
+                    >
                       <i className="ri-delete-bin-line me-1"></i>Remove
                     </button>
                   </div>
@@ -336,268 +440,212 @@ const UpdateProfile = () => {
               <label htmlFor="profile-user-name" className="form-label">First Name :</label>
               <input
                 type="text"
-                className="form-control"
+                className={`form-control ${errors.firstName ? 'is-invalid' : ''}`}
                 id="profile-user-name"
                 value={firstName}
-                onChange={(e) => setFirstName(e.target.value)}
+                onChange={handleFirstNameChange}
                 placeholder="Enter First Name"
               />
+              {errors.firstName && (
+                <div className="invalid-feedback d-block">{errors.firstName}</div>
+              )}
             </div>
             <div className="col-xl-12">
               <label htmlFor="profile-last-name" className="form-label">Last Name :</label>
               <input
                 type="text"
-                className="form-control"
+                className={`form-control ${errors.lastName ? 'is-invalid' : ''}`}
                 id="profile-last-name"
                 value={lastName}
-                onChange={(e) => setLastName(e.target.value)}
+                onChange={handleLastNameChange}
                 placeholder="Enter Last Name"
               />
+              {errors.lastName && (
+                <div className="invalid-feedback d-block">{errors.lastName}</div>
+              )}
             </div>
             <div className="col-xl-12">
               <label htmlFor="profile-phone-number" className="form-label">Phone Number :</label>
               <input
                 type="text"
-                className="form-control"
+                className={`form-control ${errors.phoneNumber ? 'is-invalid' : ''}`}
                 id="profile-phone-number"
                 value={phoneNumber}
-                onChange={(e) => setPhoneNumber(e.target.value)}
+                onChange={handlePhoneNumberChange}
                 placeholder="Enter Phone Number"
               />
+              {errors.phoneNumber && (
+                <div className="invalid-feedback d-block">{errors.phoneNumber}</div>
+              )}
             </div>
             <div className="col-xl-12">
               <label htmlFor="profile-email" className="form-label">Email :</label>
               <input
                 type="email"
-                className="form-control"
+                className={`form-control ${errors.email ? 'is-invalid' : ''}`}
                 id="profile-email"
                 value={user.email}
-                readOnly
+                onChange={handleEmailChange}
                 placeholder="Enter Email"
               />
-            </div>
-            <div className="col-xl-12">
-              <label htmlFor="current-password" className="form-label">Current Password :</label>
-              <input
-                type="password"
-                className="form-control"
-                id="current-password"
-                value={currentPassword}
-                onChange={(e) => setCurrentPassword(e.target.value)}
-                placeholder="Enter Current Password"
-              />
-            </div>
-            <div className="col-xl-12">
-              <label htmlFor="new-password" className="form-label">New Password :</label>
-              <input
-                type="password"
-                className="form-control"
-                id="new-password"
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-                placeholder="Enter New Password"
-              />
-            </div>
-            <div className="col-xl-12">
-              <label htmlFor="confirm-password" className="form-label">Confirm New Password :</label>
-              <input
-                type="password"
-                className="form-control"
-                id="confirm-password"
-                value={confirmNewPassword}
-                onChange={(e) => setConfirmNewPassword(e.target.value)}
-                placeholder="Confirm New Password"
-              />
+              {errors.email && (
+                <div className="invalid-feedback d-block">{errors.email}</div>
+              )}
             </div>
           </div>
         </div>
       </div>
       <div className="card-footer border-top-0">
         <div className="btn-list float-end">
-          <button className="btn btn-primary2 btn-wave" id="alert-confirm" onClick={handleDeleteAccount}>Deactivate Account</button>
+          <button className="btn btn-primary2 btn-wave" id="alert-confirm" onClick={handleDeleteAccount}>
+            Deactivate Account
+          </button>
           <button className="btn btn-primary btn-wave" onClick={handleSubmit} disabled={loading}>
             {loading ? "Updating..." : "Save Changes"}
           </button>
         </div>
       </div>
 
-      {showModal && (
-        <div className="modal-backdrop" style={{
-          position: "fixed",
-          top: 0,
-          left: 0,
-          width: "100%",
-          height: "100%",
-          backgroundColor: "rgba(0, 0, 0, 0.5)",
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-          zIndex: 1000,
-        }}>
-          <div className="modal-content" style={{
-            backgroundColor: "#fff",
-            padding: "20px",
-            borderRadius: "12px",
-            boxShadow: "0px 4px 12px rgba(0, 0, 0, 0.2)",
-            width: "700px",
-            maxWidth: "90%",
-          }}>
-            {showCameraInModal ? (
-              <div>
-                <video ref={videoRef} width="500" height="400" autoPlay></video>
-                <canvas ref={canvasRef} style={{ display: "none" }}></canvas>
-                <button
-                  onClick={capturePhoto}
-                  className="btn btn-primary w-100 mb-2"
-                  style={{
-                    padding: "8px",
-                    borderRadius: "8px",
-                    backgroundColor: "#007bff",
-                    border: "none",
-                    color: "#fff",
-                    cursor: "pointer",
+      {/* Image Source Selection Modal */}
+      <div className="modal fade" id="imageSourceModal" tabIndex="-1" aria-labelledby="imageSourceModalLabel" aria-hidden="true">
+        <div className="modal-dialog modal-dialog-centered">
+          <div className="modal-content">
+            <div className="modal-header">
+              <h5 className="modal-title" id="imageSourceModalLabel">Choose Image Source</h5>
+              <button type="button" className="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div className="modal-body">
+              <div className="d-grid gap-2">
+                <button 
+                  type="button" 
+                  className="btn btn-primary"
+                  data-bs-dismiss="modal"
+                  onClick={() => {
+                    setShowCameraModal(true);
+                    openCamera();
                   }}
+                >
+                  <i className="ri-camera-line me-2"></i>Capture Image
+                </button>
+                <button 
+                  type="button" 
+                  className="btn btn-primary"
+                  onClick={() => fileInputRef.current.click()}
+                >
+                  <i className="ri-upload-line me-2"></i>Upload Image from PC
+                </button>
+              </div>
+            </div>
+            <div className="modal-footer">
+              <button type="button" className="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Camera Modal */}
+      {showCameraModal && (
+        <div className="modal fade show d-block" id="cameraModal" tabIndex="-1" aria-labelledby="cameraModalLabel" aria-hidden="true">
+          <div className="modal-dialog modal-dialog-centered">
+            <div className="modal-content">
+              <div className="modal-header">
+                <h5 className="modal-title" id="cameraModalLabel">Capture Photo</h5>
+                <button 
+                  type="button" 
+                  className="btn-close" 
+                  onClick={() => {
+                    setShowCameraModal(false);
+                    const stream = videoRef.current?.srcObject;
+                    if (stream) {
+                      stream.getTracks().forEach(track => track.stop());
+                    }
+                  }}
+                ></button>
+              </div>
+              <div className="modal-body text-center">
+                <video ref={videoRef} width="100%" autoPlay></video>
+                <canvas ref={canvasRef} style={{ display: "none" }}></canvas>
+              </div>
+              <div className="modal-footer">
+                <button 
+                  type="button" 
+                  className="btn btn-primary"
+                  onClick={capturePhoto}
                 >
                   Capture
                 </button>
-                <button
-                  onClick={() => setShowCameraInModal(false)}
-                  className="btn btn-light w-100"
-                  style={{
-                    padding: "8px",
-                    borderRadius: "8px",
-                    backgroundColor: "#f8f9fa",
-                    border: "1px solid #ddd",
-                    color: "#333",
-                    cursor: "pointer",
+                <button 
+                  type="button" 
+                  className="btn btn-secondary"
+                  onClick={() => {
+                    setShowCameraModal(false);
+                    const stream = videoRef.current?.srcObject;
+                    if (stream) {
+                      stream.getTracks().forEach(track => track.stop());
+                    }
                   }}
                 >
                   Cancel
                 </button>
               </div>
-            ) : (
-              <>
-                <h3>Choose Image Source</h3>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Crop Modal */}
+      {showCropModal && (
+        <div className="modal fade show d-block" id="cropModal" tabIndex="-1" aria-labelledby="cropModalLabel" aria-hidden="true">
+          <div className="modal-dialog modal-dialog-centered modal-lg">
+            <div className="modal-content">
+              <div className="modal-header">
+                <h5 className="modal-title" id="cropModalLabel">Crop Image</h5>
+                <button 
+                  type="button" 
+                  className="btn-close" 
+                  onClick={() => setShowCropModal(false)}
+                ></button>
+              </div>
+              <div className="modal-body">
+                <ReactCrop
+                  src={imageSrc}
+                  crop={crop}
+                  onChange={(newCrop) => setCrop(newCrop)}
+                  onComplete={onCropComplete}
+                >
+                  <img
+                    ref={imgRef}
+                    src={imageSrc}
+                    alt="Crop me"
+                    style={{ maxWidth: "100%", maxHeight: "500px", height: "auto", width: "auto" }}
+                  />
+                </ReactCrop>
+              </div>
+              <div className="modal-footer">
                 <button
+                  type="button"
+                  className="btn btn-primary"
                   onClick={() => {
-                    setShowCameraInModal(true);
-                    openCamera();
-                  }}
-                  className="btn btn-primary w-100 mb-2"
-                  style={{
-                    padding: "8px",
-                    borderRadius: "8px",
-                    backgroundColor: "#007bff",
-                    border: "none",
-                    color: "#fff",
-                    cursor: "pointer",
+                    setProfileImage(croppedImage || imageSrc);
+                    setShowCropModal(false);
                   }}
                 >
-                  Capture Image
+                  Save
                 </button>
                 <button
-                  onClick={() => {
-                    fileInputRef.current.click();
-                    setShowModal(false);
-                  }}
-                  className="btn btn-primary w-100 mb-2"
-                  style={{
-                    padding: "8px",
-                    borderRadius: "8px",
-                    backgroundColor: "#007bff",
-                    border: "none",
-                    color: "#fff",
-                    cursor: "pointer",
-                  }}
-                >
-                  Upload Image from PC
-                </button>
-                <button
-                  onClick={() => setShowModal(false)}
-                  className="btn btn-light w-100"
-                  style={{
-                    padding: "8px",
-                    borderRadius: "8px",
-                    backgroundColor: "#f8f9fa",
-                    border: "1px solid #ddd",
-                    color: "#333",
-                    cursor: "pointer",
-                  }}
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={() => setShowCropModal(false)}
                 >
                   Cancel
                 </button>
-              </>
-            )}
+              </div>
+            </div>
           </div>
         </div>
       )}
 
-      {imageSrc && (
-        <div className="modal-backdrop" style={{
-          position: "fixed",
-          top: 0,
-          left: 0,
-          width: "100%",
-          height: "100%",
-          backgroundColor: "rgba(0, 0, 0, 0.5)",
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-          zIndex: 1000,
-        }}>
-          <div className="modal-content" style={{
-            backgroundColor: "#fff",
-            padding: "20px",
-            borderRadius: "12px",
-            boxShadow: "0px 4px 12px rgba(0, 0, 0, 0.2)",
-            width: "700px",
-            maxWidth: "90%",
-          }}>
-            <ReactCrop
-              src={imageSrc}
-              crop={crop}
-              onChange={(newCrop) => setCrop(newCrop)}
-              onComplete={onCropComplete}
-            >
-              <img
-                ref={imgRef}
-                src={imageSrc}
-                alt="Crop me"
-                style={{ maxWidth: "100%", maxHeight: "500px", height: "auto", width: "auto" }}
-              />
-            </ReactCrop>
-            <button
-              onClick={saveCroppedImage}
-              className="btn btn-primary w-100 mt-2"
-              style={{
-                padding: "8px",
-                borderRadius: "8px",
-                backgroundColor: "#007bff",
-                border: "none",
-                color: "#fff",
-                cursor: "pointer",
-              }}
-            >
-              Save
-            </button>
-            <button
-              onClick={() => setImageSrc(null)}
-              className="btn btn-light w-100 mt-2"
-              style={{
-                padding: "8px",
-                borderRadius: "8px",
-                backgroundColor: "#f8f9fa",
-                border: "1px solid #ddd",
-                color: "#333",
-                cursor: "pointer",
-              }}
-            >
-              Cancel
-            </button>
-          </div>
-        </div>
-      )}
-
+      {/* Hidden file input */}
       <input
         type="file"
         ref={fileInputRef}

@@ -6,11 +6,11 @@ const bcrypt = require('bcrypt');
 const fs = require('fs');
 const qrcode = require('qrcode');
 const speakeasy = require('speakeasy');
+
 const jwt = require('jsonwebtoken');
 
 
-// Fonction pour mettre à jour le profil de l'utilisateur
-// Fonction pour mettre à jour le profil de l'utilisateur
+// Update user profile (without password handling)
 exports.updateProfile = async (req, res) => {
   try {
     const authHeader = req.headers['authorization'];
@@ -59,22 +59,6 @@ exports.updateProfile = async (req, res) => {
       imagePath = "";
     }
 
-    // Handle password update
-    const { currentPassword, newPassword, confirmNewPassword } = req.body;
-    if (currentPassword && newPassword && confirmNewPassword) {
-      const isPasswordValid = await bcrypt.compare(currentPassword, user.password_hash);
-      if (!isPasswordValid) {
-        return res.status(400).json({ message: 'Mot de passe actuel incorrect' });
-      }
-
-      if (newPassword !== confirmNewPassword) {
-        return res.status(400).json({ message: 'Les nouveaux mots de passe ne correspondent pas' });
-      }
-
-      const hashedPassword = await bcrypt.hash(newPassword, 10);
-      user.password_hash = hashedPassword;
-    }
-
     // Prepare update data
     const updateData = {
       firstName: req.body.firstName || user.firstName,
@@ -84,10 +68,6 @@ exports.updateProfile = async (req, res) => {
 
     if (imagePath !== user.image) {
       updateData.image = imagePath;
-    }
-
-    if (user.password_hash) {
-      updateData.password_hash = user.password_hash;
     }
 
     const updatedUser = await User.findByIdAndUpdate(userId, updateData, { new: true });
@@ -104,6 +84,52 @@ exports.updateProfile = async (req, res) => {
     res.status(200).json({ message: 'Profil mis à jour avec succès' });
   } catch (error) {
     console.error("Backend error:", error);
+    res.status(500).json({ message: error.message });
+  }
+};
+
+
+
+// Separate method for updating password
+exports.updatePassword = async (req, res) => {
+  try {
+    const userId = req.session.user._id;
+    const { currentPassword, newPassword, confirmNewPassword } = req.body;
+
+    // Validate inputs
+    if (!currentPassword || !newPassword || !confirmNewPassword) {
+      return res.status(400).json({ message: 'Tous les champs de mot de passe sont requis' });
+    }
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: 'Utilisateur non trouvé' });
+    }
+
+    // Validate current password
+    const isPasswordValid = await bcrypt.compare(currentPassword, user.password_hash);
+    if (!isPasswordValid) {
+      return res.status(400).json({ message: 'Mot de passe actuel incorrect' });
+    }
+
+    // Check if new passwords match
+    if (newPassword !== confirmNewPassword) {
+      return res.status(400).json({ message: 'Les nouveaux mots de passe ne correspondent pas' });
+    }
+
+    // Hash and update new password
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    user.password_hash = hashedPassword;
+    await user.save();
+
+    // req.session.user = user;
+    // await AccountActivityLog.create({
+    //   userId: user._id,
+    //   action: 'User Changed Password',
+    // });
+
+    res.status(200).json({ message: 'Mot de passe mis à jour avec succès' });
+  } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };

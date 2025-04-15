@@ -24,8 +24,5 @@
   "devDependencies": {
     "prettier": "^1.18.2",
     "uglify-js": "^3.6.5"
-  },
-  "dependencies": {
-    "wnumb": "file:"
   }
 }

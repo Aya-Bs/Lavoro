@@ -4,9 +4,12 @@
   "main": "app.js",
   "private": true,
   "scripts": {
-    "dev": "nodemon app.js"
+    "dev": "nodemon app.js",
+    "build-dev": "echo 'No build step required for backend'",
+    "start": "node app.js"
   },
   "dependencies": {
+    "@google/genai": "^0.8.0",
     "axios": "^1.7.9",
     "backend": "file:",
     "bcrypt": "^5.1.1",
@@ -19,6 +22,7 @@
     "crypto": "^1.0.1",
     "debug": "~2.6.9",
     "dotenv": "^16.4.7",
+    "exceljs": "^4.4.0",
     "express": "^4.21.2",
     "express-session": "^1.18.1",
     "googleapis": "^144.0.0",

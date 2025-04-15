@@ -39,6 +39,7 @@ const UpdateProject = () => {
     const fetchProject = async () => {
       try {
         const response = await axios.get(`http://localhost:3000/project/getProjectById/${id}`);
+        console.log("API Response:", response.data);
         const data = response.data;
         
         setProjectData({
@@ -52,12 +53,14 @@ const UpdateProject = () => {
           risk_level: data.risk_level,
           tags: data.tags
         });
-
-        if (data.teamManager) {
+    
+        // Gestion du manager
+        if (data.manager_id && data.teamManager) {
           setSelectedManager({
-            _id: data.manager_id,
-            firstName: data.teamManager.split(' ')[0],
-            lastName: data.teamManager.split(' ')[1] || ''
+            _id: data.manager_id._id,
+            firstName: data.manager_id.firstName,
+            lastName: data.manager_id.lastName,
+            image: data.managerImage || ''
           });
           setSearchTerm(data.teamManager);
         }
@@ -151,13 +154,26 @@ const UpdateProject = () => {
     try {
       const response = await axios.get(`http://localhost:3000/project/checkTeamManagerProjects/${managerId}`);
       setMessage(response.data.message);
-      setMessageColor(response.data.message.includes("Vous pouvez affecter") ? "#28a745" : "#dc3545");
+      console.log("API Response:", response.data); // Log pour déboguer
+
+      // Définir la couleur du message en fonction de la disponibilité du Team Manager
+      if (response.status===200) {
+        setMessageColor("#28a745"); // Message en vert si disponible
+      } 
+      
     } catch (error) {
-      console.error("Error checking team manager projects:", error);
-      setMessage("An error occurred");
-      setMessageColor("#dc3545");
+      if (error.response && error.response.status === 400) {
+        // On affiche uniquement le message d'erreur 400
+        setMessage(error.response.data.message);
+        setMessageColor("#dc3545"); // Rouge pour les erreurs
+      } else {
+        console.error("Error checking team manager projects:", error);
+        // On n'affiche PAS de message pour les autres erreurs
+        setMessage("An error has occurred"); // Ou null si vous préférez
+      }
     }
   };
+
 
   // Handle team manager selection
   const handleSelectManager = (manager) => {

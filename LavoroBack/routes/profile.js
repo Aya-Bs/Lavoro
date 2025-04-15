@@ -19,6 +19,7 @@ router.get('/profile', async (req, res) => {
 
   // Update user profile
   router.post('/update', upload.single('image'), profileController.updateProfile);
+  router.put('/update-password', profileController.updatePassword);
 
 
   router.get('/update', async (req, res) => {

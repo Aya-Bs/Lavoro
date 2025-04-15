@@ -1,35 +1,25 @@
 const express = require('express');
 const router = express.Router();
 
-
-//const { getProjectsByStatus } = require('../controllers/ProjectController'); // Importez la fonction du contrôleur
-const Project = require('../models/Project');
-
 const ProjectController = require('../controllers/projectController');
 
-
-router.post('/createProject', ProjectController.createProject);
-router.get('/getProjectById/:id', ProjectController.getProjectById);
-router.get('/getProjectByName', ProjectController.getProjectByName);
-router.put('/updateProjects/:id', ProjectController.updateProjects);
-router.delete('/deleteProject/:id', ProjectController.deleteProject);
-router.get('/countProject', ProjectController.getProjectCount);
-router.get('/calculateDuration', ProjectController.calculateDuration);
-
-router.get('/archived-projects', ProjectController.getAllArchivedProjects);
-
-router.get('/export-archived', ProjectController.exportArchivedProjects);
-
+const { getProjectsByStatus } = require('../controllers/projectController'); // Importez la fonction du contrôleur
+const Project = require('../models/Project');
 
 
 
 router.get('/', ProjectController.getAllProjects);
 
+
+router.get('/dash', ProjectController.getAllProjectss);
+
+
+router.get('/projects-with-progress', ProjectController.getProjectsWithProgress);
+
 router.get('/projetStatus', async (req, res) => {
     try {
-        // Appeler la fonction du contrôleur
-        const projectsByStatus = await getProjectsByStatus();
-        res.json(projectsByStatus); // Renvoyer les résultats au format JSON
+        const projectsByStatus = await ProjectController.getProjectsByStatus();
+        res.json(projectsByStatus);
     } catch (err) {
         console.error('Error in /projects-by-status route:', err);
         res.status(500).json({ message: 'Internal server error' });
@@ -37,10 +27,28 @@ router.get('/projetStatus', async (req, res) => {
 });
 
 
+router.post('/createProject', ProjectController.createProject);
+router.post('/createProjectWithAI', ProjectController.createProjectWithAI);
+router.post('/generateAISuggestions', ProjectController.generateAISuggestions);
+router.get('/getProjectById/:id', ProjectController.getProjectById);
+router.get('/getProjectByName', ProjectController.getProjectByName);
+router.put('/updateProjects/:id', ProjectController.updateProjects);
+router.delete('/deleteProject/:id', ProjectController.deleteProject);
+router.get('/countProject', ProjectController.getProjectCount);
+
+router.get('/countArchive', ProjectController.getArchiveCount);
+
+
+
+router.get('/archived-projects', ProjectController.getAllArchivedProjects);
+router.get('/export-archived', ProjectController.exportArchivedProjects);
+
+
+
+
+
+
 // router.put('/:id', ProjectController.updateProject); // Add this route
-
-router.put('/:id', ProjectController.updateProject); // Add this route
-
 router.get('/:id/history', ProjectController.getProjectHistory); // Add this route
 router.get('/:id', ProjectController.getProjectById); // Add this route
 router.post('/:id/archive', ProjectController.archiveProject);
@@ -58,6 +66,4 @@ router.get('/checkTeamManagerProjects/:id', ProjectController.checkTeamManagerPr
 
 
 
-
 module.exports = router;
-
