@@ -112,9 +112,7 @@ const Project = new Schema({
     ai_predicted_description: { type: String },
     created_at: { type: Date, default: Date.now },
     updated_at: { type: Date, default: Date.now }
-});
-// Crée un index texte si vous voulez des recherches full-text
-Project.index({ name: 'text' });
-module.exports = mongo.model('Project', Project);
-
-
+  });
+  // Crée un index texte si vous voulez des recherches full-text
+  Project.index({ name: 'text' });
+  module.exports = mongo.model('Project', Project);

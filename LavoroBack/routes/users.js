@@ -6,6 +6,7 @@ const setDefaultRole = require('../middleware/setDefaultRole');
 const { googleLogin } = require('../controllers/authController');
 const { MicrosoftLogin } = require('../controllers/MicrosoftController');
 const { GitHubLogin, getData } = require('../controllers/GitHubController');
+const authenticateToken = require('../middleware/authenticatedToken');
 
 const TaskController = require('../controllers/TaskController');
 
@@ -67,6 +68,8 @@ router.post('/seedtasks', async (req, res) => {
 });
 
 router.get('/tasks/:userId', TaskController.getTasksByUser);
+router.get('/mytasks', authenticateToken, TaskController.getTasksByUser);
+
 router.post('/verify2FALogin', userController.verify2FALogin);
 
 

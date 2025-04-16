@@ -96,7 +96,7 @@ const Profile = () => {
   useEffect(() => {
     if (activeTab === "activities-tab-pane") {
       fetchActivities();
-    }
+    } 
   }, [activeTab]);
 
   // Enable 2FA
@@ -593,5 +593,3 @@ const AboutTab = ({ user }) => {
 };
 
 export default Profile;
-
-

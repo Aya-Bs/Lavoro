@@ -1,35 +1,36 @@
+
 const mongoose = require('mongoose');
 const Task = require('../models/Task');
 
 const ObjectId = mongoose.Types.ObjectId;
 
 exports.getTasksByUser = async (req, res) => {
-    try {
-      console.log("Request user object:", req.user);
-      console.log("Authenticated user ID:", req.user._id);
-      
-      const query = { assigned_to: req.user._id };
-      console.log("Query:", query);
-  
-      // Récupérer les tâches sans populate pour éviter l'erreur
-      const tasks = await Task.find(query).lean();
-  
-      console.log("Found tasks:", tasks);
-      
-      if (!tasks.length) {
-        console.log("No tasks found for user:", req.user._id);
-        return res.status(200).json([]);
-      }
-  
-      res.status(200).json(tasks);
-    } catch (error) {
-      console.error("Controller error:", error);
-      res.status(500).json({ 
-        error: 'Server error',
-        details: error.message 
-      });
+  try {
+    console.log("Request user object:", req.user);
+    console.log("Authenticated user ID:", req.user._id);
+    
+    const query = { assigned_to: req.user._id };
+    console.log("Query:", query);
+
+    // Récupérer les tâches sans populate pour éviter l'erreur
+    const tasks = await Task.find(query).lean();
+
+    console.log("Found tasks:", tasks);
+    
+    if (!tasks.length) {
+      console.log("No tasks found for user:", req.user._id);
+      return res.status(200).json([]);
     }
-  };
+
+    res.status(200).json(tasks);
+  } catch (error) {
+    console.error("Controller error:", error);
+    res.status(500).json({ 
+      error: 'Server error',
+      details: error.message 
+    });
+  }
+};
 
 exports.seedTasks = async () => {
     try {
@@ -114,8 +115,3 @@ exports.seedTaskHistory = async () => {
         console.error('Erreur lors de l’insertion de l’historique :', error);
     }
 };
-
-
-
-
-
