@@ -8,11 +8,12 @@ export default function ProjectOverview(){
   const [history, setHistory] = useState([]); // State for project history
   const [loading, setLoading] = useState(true); // State for loading status
   const [manager, setManager] = useState(null); // State for manager details
+  const [projectManager, setProjectManager] = useState(null); // State for manager details
+
   const [currentPage, setCurrentPage] = useState(1); // Current page
   const [itemsPerPage] = useState(7); // Number of items per page
   const navigate = useNavigate(); // Initialize the navigate function
   const { state } = useLocation(); // Get the navigation state
-
 
   // Calculate the index of the first and last item on the current page
 const indexOfLastItem = currentPage * itemsPerPage;
@@ -37,6 +38,48 @@ const handlePageChange = (pageNumber) => {
 
 
 
+
+const handleStartProject = async (projectId) => {
+  try {
+    const response = await fetch(`http://localhost:3000/project/${projectId}/start`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to start project');
+    }
+
+    const updatedProject = await response.json();
+    
+    // Update local state with the new project data
+    setProject(updatedProject);
+    
+    // Show success message
+    Swal.fire({
+      title: "Project Started!",
+      text: "The project status has been updated to 'In Progress'",
+      icon: "success",
+      confirmButtonColor: "#3085d6",
+      confirmButtonText: "OK",
+    });
+
+    // Refresh the history to show the new status change
+    await fetchProjectHistory();
+
+  } catch (error) {
+    console.error('Error starting project:', error);
+    Swal.fire({
+      title: "Error",
+      text: "An error occurred while starting the project",
+      icon: "error",
+      confirmButtonColor: "#3085d6",
+      confirmButtonText: "OK",
+    });
+  }
+};
 
 
 const handleArchiveClick = async (projectId, projectStatus) => {
@@ -166,6 +209,11 @@ const handleDelete = async (projectId) => {
           console.log('Manager Data:', data.manager_id); // Log the manager object
           setManager(data.manager_id); // Set manager details
         }
+
+        if (data.ProjectManager_id) {
+          console.log('Project manager Data:', data.ProjectManager_id); // Log the manager object
+          setProjectManager(data.ProjectManager_id); // Set manager details
+        }
       } else {
         Swal.fire('Error!', data.message || 'Failed to fetch project details.', 'error');
       }
@@ -255,12 +303,19 @@ const handleDelete = async (projectId) => {
         </div>
         
         <div className="btn-list">
-          <button className="btn btn-white btn-wave">
-            <i className="ri-filter-3-line align-middle me-1 lh-1" /> Filter
-          </button>
-          <button className="btn btn-primary btn-wave me-0">
-            <i className="ri-share-forward-line me-1" /> Share
-          </button>
+          {/* <button className="btn btn-white btn-wave">
+            <i className="ri-filter-3-line align-middle me-1 lh-1" /> Start Project
+          </button> */}
+                        {!isTeamManager && (
+
+          <button 
+  className="btn btn-white btn-wave"
+  onClick={() => handleStartProject(project._id)}
+  disabled={project.status !== 'Not Started'}
+>
+  <i className="ri-play-line align-middle me-1 lh-1" /> Start Project
+</button>
+)}
         </div>
       </div>
   
@@ -320,6 +375,20 @@ const handleDelete = async (projectId) => {
               </p>
   
               <div className="d-flex gap-5 mb-4 flex-wrap">
+              <div className="d-flex align-items-center gap-2 me-3">
+                  <span className="avatar avatar-md avatar-rounded me-1 bg-primary2-transparent">
+                    <i className="ri-user-3-line fs-18 lh-1 align-middle" />
+                  </span>
+                  <div>
+                    <span className="d-block fs-14 fw-medium">Project Manager</span>
+                    <span className="fs-12 text-muted">
+                      {projectManager && projectManager.firstName && projectManager.lastName
+                        ? `${projectManager.firstName} ${projectManager.lastName}`
+                        : 'projectManager not assigned'}
+                    </span>
+                  </div>
+                </div>
+               
                 <div className="d-flex align-items-center gap-2 me-3">
                   <span className="avatar avatar-md avatar-rounded me-1 bg-primary1-transparent">
                     <i className="ri-calendar-event-line fs-18 lh-1 align-middle" />
@@ -347,7 +416,7 @@ const handleDelete = async (projectId) => {
                     <span className="fs-12 text-muted">{project.budget}</span>
                   </div>
                 </div>
-                <div className="d-flex align-items-center gap-2 me-3">
+               <div className="d-flex align-items-center gap-2 me-3">
                   <span className="avatar avatar-md avatar-rounded me-1 bg-primary2-transparent">
                     <i className="ri-user-3-line fs-18 lh-1 align-middle" />
                   </span>

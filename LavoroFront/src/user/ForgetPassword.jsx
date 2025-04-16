@@ -1,11 +1,12 @@
 import { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import Swal from 'sweetalert2';
+import "../../public/assets/libs/sweetalert2/sweetalert2.min.css";
 
 const ForgotPassword = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const [email, setEmail] = useState(location.state?.email || ''); // Récupérer l'email depuis l'état de navigation
-  const [showPopup, setShowPopup] = useState(false);
+  const [email, setEmail] = useState(location.state?.email || '');
   const [error, setError] = useState('');
 
   const handleForgotPassword = async (e) => {
@@ -19,17 +20,39 @@ const ForgotPassword = () => {
       });
 
       const data = await response.json();
-      console.log('Server response:', data); // Log la réponse du serveur
+      console.log('Server response:', data);
 
       if (response.ok) {
-        setShowPopup(true); // Afficher la pop-up
+        // Show success Swal alert
+        Swal.fire({
+          title: "Success!",
+          text: "Password reset link has been sent to your email!",
+          icon: "success",
+          confirmButtonText: "OK",
+        }).then(() => {
+          navigate('/signin'); // Navigate after user clicks OK
+        });
         setError('');
       } else {
         setError(data.error || 'An error occurred');
+        // Show error Swal alert
+        Swal.fire({
+          title: "Error!",
+          text: data.error || 'An error occurred',
+          icon: "error",
+          confirmButtonText: "OK",
+        });
       }
     } catch (err) {
       setError("An error occurred while sending the email.");
-      console.error('Error:', err); // Log l'erreur
+      console.error('Error:', err);
+      // Show error Swal alert
+      Swal.fire({
+        title: "Error!",
+        text: "An error occurred while sending the email.",
+        icon: "error",
+        confirmButtonText: "OK",
+      });
     }
   };
 
@@ -39,12 +62,6 @@ const ForgotPassword = () => {
         <div className="col-xxl-4 col-xl-5 col-lg-5 col-md-6 col-sm-8 col-12">
           <div className="card custom-card my-4">
             <div className="card-body p-5">
-              <div className="mb-3 d-flex justify-content-center">
-                <a href="index.html">
-                  <img src="../assets/images/brand-logos/desktop-logo.png" alt="logo" className="desktop-logo" />
-                  <img src="../assets/images/brand-logos/desktop-white.png" alt="logo" className="desktop-white" />
-                </a>
-              </div>
               <p className="h5 mb-2 text-center">Forgot Password</p>
               <p className="mb-4 text-muted op-7 fw-normal text-center fs-14">
                 Enter your email to reset your password.
@@ -77,42 +94,15 @@ const ForgotPassword = () => {
               </form>
               <div className="text-center">
                 <p className="text-muted mt-3">
-                  Remembered your password? <a href="/auth" className="text-primary">Sign In</a>
+                  Remembered your password? <a href="/signin" className="text-primary">Sign In</a>
                 </p>
               </div>
             </div>
           </div>
         </div>
       </div>
-
-      {/* Pop-up */}
-      {showPopup && (
-        <div style={popupStyle}>
-          <p>✅ Check your email for the reset link!</p>
-          <button
-            className="btn btn-primary"
-            onClick={() => navigate('/auth')}
-          >
-            OK
-          </button>
-        </div>
-      )}
     </div>
   );
-};
-
-// Style pour la pop-up
-const popupStyle = {
-  position: 'fixed',
-  top: '50%',
-  left: '50%',
-  transform: 'translate(-50%, -50%)',
-  background: 'white',
-  padding: '20px',
-  borderRadius: '8px',
-  boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
-  textAlign: 'center',
-  zIndex: 1000,
 };
 
 export default ForgotPassword;

@@ -4,9 +4,7 @@
   "main": "app.js",
   "private": true,
   "scripts": {
-    "dev": "nodemon app.js",
-    "build-dev": "echo 'No build step required for backend'",
-    "start": "node app.js"
+    "dev": "nodemon app.js"
   },
   "dependencies": {
     "@google/genai": "^0.8.0",

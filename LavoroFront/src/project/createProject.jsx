@@ -446,8 +446,8 @@ const CreateProject = () => {
                     </div>
                   </div>
 
-                  {/* Status and Priority */}
-                  <div className="col-xl-6">
+                  {/* 
+                   <div className="col-xl-6">
                     <label className="form-label">Status</label>
                     <select
                       className="form-select"
@@ -455,11 +455,28 @@ const CreateProject = () => {
                       value={projectData.status}
                       onChange={(e) => setProjectData({...projectData, status: e.target.value})}
                     >
-                      <option value="Not Started">Not Started</option>
-                      <option value="In Progress">In Progress</option>
-                      <option value="Completed">Completed</option>
+                      <option value="Completed">Completed</option> 
                     </select>
-                  </div>
+                  </div> */}
+
+<div className="col-xl-6">
+  <label className="form-label">Status</label>
+  
+  {/* Visible read-only display */}
+  <input
+    type="text"
+    className="form-control"
+    value={projectData.status || "Not Started"}
+    readOnly
+  />
+  
+  {/* Hidden field to maintain the value in form data */}
+  <input
+    type="hidden"
+    name="status"
+    value={projectData.status || "Not Started"}
+  />
+</div>
 
                   <div className="col-xl-6">
                     <label className="form-label">Priority</label>

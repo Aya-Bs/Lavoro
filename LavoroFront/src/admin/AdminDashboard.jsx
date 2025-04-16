@@ -4,6 +4,7 @@ import axios from 'axios';
 import UsersList from './usersList';
 import DeleteRequests from './deleteRequests';
 import RoleDistributionChart from './RoleDistributionChart'
+import UpcomingDeadlinesCarousel from './UpcomingDeadlines';
 function AdminDashboard() {
   const navigate = useNavigate();
 
@@ -25,6 +26,8 @@ function AdminDashboard() {
           
         </div>
       </div>
+      {/* Upcoming Deadlines Section */}
+      <UpcomingDeadlinesCarousel/>
       
       {/* Role Distribution Chart Section */}
       <RoleDistributionChart/>

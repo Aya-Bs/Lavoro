@@ -1,9 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect ,useRef} from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import Swal from 'sweetalert2';
-import jsPDF from "jspdf";
-
-
+import jsPDF from 'jspdf';
 
 export default function ArchiveOverview() {
   const { id } = useParams(); // Get the project ID from the URL
@@ -13,6 +11,8 @@ export default function ArchiveOverview() {
     const [manager, setManager] = useState(null); // State for manager details
   const [archivedProjects, setArchivedProjects] = useState([]);
   const navigate = useNavigate();
+    const [projectManager, setProjectManager] = useState(null); // State for manager details
+  
   
   
   const [currentPage, setCurrentPage] = useState(1); // Current page
@@ -34,171 +34,173 @@ export default function ArchiveOverview() {
   };
 
 
+// Helper function to draw colored rectangles
+const drawColoredSection = (pdf, x, y, width, height, color) => {
+  pdf.setFillColor(...color)
+  pdf.rect(x, y, width, height, "F")
+}
 
-  // Helper function to draw colored rectangles
-  const drawColoredSection = (pdf, x, y, width, height, color) => {
-    pdf.setFillColor(...color)
-    pdf.rect(x, y, width, height, "F")
+// Helper function to draw circles
+const drawCircle = (pdf, x, y, radius, color) => {
+  pdf.setFillColor(...color)
+  pdf.circle(x, y, radius, "F")
+}
+
+
+
+const handleDownloadPDF = () => {
+  // Create a new PDF document
+  const pdf = new jsPDF("p", "mm", "a4")
+  const pageWidth = pdf.internal.pageSize.getWidth()
+  const pageHeight = pdf.internal.pageSize.getHeight()
+  const margin = 15
+
+  // Define colors
+  const colors = {
+    coral: [242, 132, 130], // Coral/pink color
+    mint: [142, 187, 164], // Mint green color
+    lightGray: [245, 245, 245], // Background for sections
+    textColor: [80, 80, 80], // Dark gray for text
   }
 
-  // Helper function to draw circles
-  const drawCircle = (pdf, x, y, radius, color) => {
-    pdf.setFillColor(...color)
-    pdf.circle(x, y, radius, "F")
-  }
+  // Set default font
+  pdf.setFont("helvetica", "normal")
 
+  // Add title with gradient-like effect
+  pdf.setFontSize(24)
+  pdf.setTextColor(242, 132, 130) // Coral color
+  pdf.text("ARCHIVED", pageWidth / 2 - 45, 20, { align: "left" })
+  pdf.setTextColor(142, 187, 164) // Mint color
+  pdf.text("PROJECT", pageWidth / 2, 20, { align: "left" })
+  pdf.setTextColor(242, 132, 130) // Coral color
+  pdf.text("DETAILS", pageWidth / 2 + 40, 20, { align: "left" })
 
+  // Project header section
+  drawColoredSection(pdf, margin, 30, pageWidth - 2 * margin, 15, colors.mint)
+  pdf.setFontSize(14)
+  pdf.setTextColor(255, 255, 255)
+  pdf.text(`PROJECT: ${archive.name}`, margin + 5, 40)
 
-  const handleDownloadPDF = () => {
-    // Create a new PDF document
-    const pdf = new jsPDF("p", "mm", "a4")
-    const pageWidth = pdf.internal.pageSize.getWidth()
-    const pageHeight = pdf.internal.pageSize.getHeight()
-    const margin = 15
+  // Project overview section
+  drawColoredSection(pdf, margin, 50, pageWidth - 2 * margin - 80, 60, colors.lightGray)
+  pdf.setFontSize(12)
+  pdf.setTextColor(...colors.textColor)
+  pdf.text("PROJECT OVERVIEW:", margin + 5, 60)
+
+  // Split description into lines to fit the box
+  const descriptionLines = pdf.splitTextToSize(archive.description, pageWidth - 2 * margin - 90)
+  pdf.text(descriptionLines, margin + 5, 70)
+
+  // Dates section
+  drawColoredSection(pdf, pageWidth - margin - 75, 50, 75, 60, colors.lightGray)
+  pdf.text("START DATE:", pageWidth - margin - 70, 60)
+  pdf.text(new Date(archive.start_date).toLocaleDateString(), pageWidth - margin - 70, 70)
+  pdf.text("END DATE:", pageWidth - margin - 70, 85)
+  pdf.text(new Date(archive.end_date).toLocaleDateString(), pageWidth - margin - 70, 95)
+
+  // PROJECT DETAILS SECTION (MINT COLOR)
+  drawColoredSection(pdf, margin, 120, (pageWidth - 2 * margin), 50, colors.coral)
+  pdf.setFontSize(12)
+  pdf.setTextColor(255, 255, 255)
+
+  const managerName = manager && manager.firstName && manager.lastName
+    ? `${manager.firstName} ${manager.lastName}`
+    : "Manager not assigned"
   
-    // Define colors
-    const colors = {
-      coral: [242, 132, 130], // Coral/pink color
-      mint: [142, 187, 164], // Mint green color
-      lightGray: [245, 245, 245], // Background for sections
-      textColor: [80, 80, 80], // Dark gray for text
+  pdf.text(`Status: ${archive.originalStatus}`, margin + 10, 132)
+  pdf.text(`Manager: ${managerName}`, margin + 10, 142)
+  pdf.text(`Budget: ${archive.budget}`, margin + 10, 152)
+  pdf.text(`Risk Level: ${archive.risk_level}`, margin + 10, 162)
+
+
+  // TAGS SECTION (CORAL/PINK COLOR) - Placed below project details
+  drawColoredSection(pdf, margin, 180, (pageWidth - 2 * margin), 40, colors.mint)
+  pdf.setFontSize(12)
+  pdf.setTextColor(255, 255, 255)
+  pdf.text("TAGS", margin + 5, 189)
+
+  const tags = archive.tags.split(",").map((tag) => tag.trim())
+  tags.forEach((tag, index) => {
+    const yPos = 200 + index * 10
+    drawCircle(pdf, margin + 10, yPos - 3, 3, [255, 255, 255])
+    pdf.text(tag, margin + 18, yPos)
+  })
+
+      // Add a new page for history
+      pdf.addPage()
+
+      // History title
+      drawColoredSection(pdf, margin, 20, pageWidth - 2 * margin, 15, colors.mint)
+      pdf.setFontSize(14)
+      pdf.setTextColor(255, 255, 255)
+      pdf.text("KEY TASKS", margin + 5, 30)
+  const tasks = [
+    "Design dashboard interface",
+    "Integrate data sources and APIs",
+    "Develop data visualizations",
+    "Implement filters and sorting",
+    "Create user authentication",
+    "Perform usability testing",
+  ]
+
+  tasks.forEach((task, index) => {
+    const yPos = 50 + index * 20
+    drawCircle(pdf, margin + 10, yPos - 3, 3, colors.mint)
+    pdf.text(`${index + 1}. ${task}`, margin + 18, yPos)
+  })
+
+  // Add a new page for history
+  pdf.addPage()
+
+  // History title
+  drawColoredSection(pdf, margin, 20, pageWidth - 2 * margin, 15, colors.coral)
+  pdf.setFontSize(14)
+  pdf.setTextColor(255, 255, 255)
+  pdf.text("PROJECT HISTORY", margin + 5, 30)
+
+  // Add history items
+  pdf.setTextColor(...colors.textColor)
+  history.forEach((entry, index) => {
+    const yPosition = 50 + index * 20
+
+    if (yPosition > pageHeight - 30) {
+      pdf.addPage()
+      drawColoredSection(pdf, margin, 20, pageWidth - 2 * margin, 15, colors.coral)
+      pdf.setFontSize(14)
+      pdf.setTextColor(255, 255, 255)
+      pdf.text("PROJECT HISTORY (CONTINUED)", margin + 5, 30)
+      pdf.setTextColor(...colors.textColor)
+      return
     }
-  
-    // Set default font
+
+    drawCircle(pdf, margin + 5, yPosition - 3, 3, colors.coral)
+    pdf.setFontSize(11)
+    pdf.setFont("helvetica", "bold")
+    pdf.text(`${entry.change_type}`, margin + 15, yPosition)
+
+    const dateStr = new Date(entry.changed_at).toLocaleDateString("en-GB", {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    })
+
     pdf.setFont("helvetica", "normal")
-  
-    // Add title with gradient-like effect
-    pdf.setFontSize(24)
-    pdf.setTextColor(242, 132, 130) // Coral color
-    pdf.text("ARCHIVED", pageWidth / 2 - 45, 20, { align: "left" })
-    pdf.setTextColor(142, 187, 164) // Mint color
-    pdf.text("PROJECT", pageWidth / 2, 20, { align: "left" })
-    pdf.setTextColor(242, 132, 130) // Coral color
-    pdf.text("DETAILS", pageWidth / 2 + 40, 20, { align: "left" })
-  
-    // Project header section
-    drawColoredSection(pdf, margin, 30, pageWidth - 2 * margin, 15, colors.mint)
-    pdf.setFontSize(14)
-    pdf.setTextColor(255, 255, 255)
-    pdf.text(`PROJECT: ${archive.name}`, margin + 5, 40)
-  
-    // Project overview section
-    drawColoredSection(pdf, margin, 50, pageWidth - 2 * margin - 80, 60, colors.lightGray)
-    pdf.setFontSize(12)
-    pdf.setTextColor(...colors.textColor)
-    pdf.text("PROJECT OVERVIEW:", margin + 5, 60)
-  
-    // Split description into lines to fit the box
-    const descriptionLines = pdf.splitTextToSize(archive.description, pageWidth - 2 * margin - 90)
-    pdf.text(descriptionLines, margin + 5, 70)
-  
-    // Dates section
-    drawColoredSection(pdf, pageWidth - margin - 75, 50, 75, 60, colors.lightGray)
-    pdf.text("START DATE:", pageWidth - margin - 70, 60)
-    pdf.text(new Date(archive.start_date).toLocaleDateString(), pageWidth - margin - 70, 70)
-    pdf.text("END DATE:", pageWidth - margin - 70, 85)
-    pdf.text(new Date(archive.end_date).toLocaleDateString(), pageWidth - margin - 70, 95)
-  
-    // PROJECT DETAILS SECTION (MINT COLOR)
-    drawColoredSection(pdf, margin, 120, (pageWidth - 2 * margin), 50, colors.coral)
-    pdf.setFontSize(12)
-    pdf.setTextColor(255, 255, 255)
-  
-    const managerName = manager && manager.firstName && manager.lastName
-      ? `${manager.firstName} ${manager.lastName}`
-      : "Manager not assigned"
-    
-    pdf.text(`Status: ${archive.originalStatus}`, margin + 10, 132)
-    pdf.text(`Manager: ${managerName}`, margin + 10, 142)
-    pdf.text(`Budget: ${archive.budget}`, margin + 10, 152)
-    pdf.text(`Risk Level: ${archive.risk_level}`, margin + 10, 162)
+    pdf.text(dateStr, pageWidth - margin - 50, yPosition)
+
+    if (entry.change_type === "Project Created") {
+      pdf.text(`Project ${entry.new_value}`, margin + 15, yPosition + 7)
+    } else {
+      pdf.text(`Changed from ${entry.old_value} to ${entry.new_value}`, margin + 15, yPosition + 7)
+    }
+  })
+
+  pdf.save(`${archive.name}_Project_Details.pdf`);
+}
+
 
   
-    // TAGS SECTION (CORAL/PINK COLOR) - Placed below project details
-    drawColoredSection(pdf, margin, 180, (pageWidth - 2 * margin), 40, colors.mint)
-    pdf.setFontSize(12)
-    pdf.setTextColor(255, 255, 255)
-    pdf.text("TAGS", margin + 5, 189)
-  
-    const tags = archive.tags.split(",").map((tag) => tag.trim())
-    tags.forEach((tag, index) => {
-      const yPos = 200 + index * 10
-      drawCircle(pdf, margin + 10, yPos - 3, 3, [255, 255, 255])
-      pdf.text(tag, margin + 18, yPos)
-    })
-  
-        // Add a new page for history
-        pdf.addPage()
-  
-        // History title
-        drawColoredSection(pdf, margin, 20, pageWidth - 2 * margin, 15, colors.mint)
-        pdf.setFontSize(14)
-        pdf.setTextColor(255, 255, 255)
-        pdf.text("KEY TASKS", margin + 5, 30)
-    const tasks = [
-      "Design dashboard interface",
-      "Integrate data sources and APIs",
-      "Develop data visualizations",
-      "Implement filters and sorting",
-      "Create user authentication",
-      "Perform usability testing",
-    ]
-  
-    tasks.forEach((task, index) => {
-      const yPos = 50 + index * 20
-      drawCircle(pdf, margin + 10, yPos - 3, 3, colors.mint)
-      pdf.text(`${index + 1}. ${task}`, margin + 18, yPos)
-    })
-  
-    // Add a new page for history
-    pdf.addPage()
-  
-    // History title
-    drawColoredSection(pdf, margin, 20, pageWidth - 2 * margin, 15, colors.coral)
-    pdf.setFontSize(14)
-    pdf.setTextColor(255, 255, 255)
-    pdf.text("PROJECT HISTORY", margin + 5, 30)
-  
-    // Add history items
-    pdf.setTextColor(...colors.textColor)
-    history.forEach((entry, index) => {
-      const yPosition = 50 + index * 20
-  
-      if (yPosition > pageHeight - 30) {
-        pdf.addPage()
-        drawColoredSection(pdf, margin, 20, pageWidth - 2 * margin, 15, colors.coral)
-        pdf.setFontSize(14)
-        pdf.setTextColor(255, 255, 255)
-        pdf.text("PROJECT HISTORY (CONTINUED)", margin + 5, 30)
-        pdf.setTextColor(...colors.textColor)
-        return
-      }
-  
-      drawCircle(pdf, margin + 5, yPosition - 3, 3, colors.coral)
-      pdf.setFontSize(11)
-      pdf.setFont("helvetica", "bold")
-      pdf.text(`${entry.change_type}`, margin + 15, yPosition)
-  
-      const dateStr = new Date(entry.changed_at).toLocaleDateString("en-GB", {
-        day: "numeric",
-        month: "short",
-        year: "numeric",
-        hour: "2-digit",
-        minute: "2-digit",
-      })
-  
-      pdf.setFont("helvetica", "normal")
-      pdf.text(dateStr, pageWidth - margin - 50, yPosition)
-  
-      if (entry.change_type === "Project Created") {
-        pdf.text(`Project ${entry.new_value}`, margin + 15, yPosition + 7)
-      } else {
-        pdf.text(`Changed from ${entry.old_value} to ${entry.new_value}`, margin + 15, yPosition + 7)
-      }
-    })
-  
-    pdf.save("Archived_Project.pdf")
-  }
 
   const handleDelete = async (projectId) => {
     Swal.fire({
@@ -293,6 +295,11 @@ export default function ArchiveOverview() {
           setManager(data.manager_id); // Set manager details
         }
 
+        if (data.ProjectManager_id) {
+          console.log('Project manager Data:', data.ProjectManager_id); // Log the manager object
+          setProjectManager(data.ProjectManager_id); // Set manager details
+        }
+
       } else {
         Swal.fire('Error!', data.message || 'Failed to fetch archive details.', 'error');
       }
@@ -372,15 +379,11 @@ export default function ArchiveOverview() {
           <h1 className="page-title fw-medium fs-18 mb-0">Archived Project Overview</h1>
         </div>
         <div className="btn-list">
-       
-       
-
           <button className="btn btn-primary btn-wave me-0" onClick={handleDownloadPDF}>
         <i className="ri-file-pdf-2-line me-1" /> PDF
           </button>
         </div>
       </div>
-
 
       <div className="row">
         <div className="col-xxl-8">
@@ -419,8 +422,22 @@ export default function ArchiveOverview() {
               </div>
               <div className="fs-15 fw-medium mb-2">Project Description:</div>
               <p className="text-muted mb-4">{archive.description}</p>
+
               <div className="d-flex gap-5 mb-4 flex-wrap">
-                <div className="d-flex align-items-center gap-2 me-3">
+              <div className="d-flex align-items-center gap-2 me-3">
+                  <span className="avatar avatar-md avatar-rounded me-1 bg-primary2-transparent">
+                    <i className="ri-user-3-line fs-18 lh-1 align-middle" />
+                  </span>
+                  <div>
+                    <span className="d-block fs-14 fw-medium">Project Manager</span>
+                    <span className="fs-12 text-muted">
+                      {projectManager && projectManager.firstName && projectManager.lastName
+                        ? `${projectManager.firstName} ${projectManager.lastName}`
+                        : 'projectManager not assigned'}
+                    </span>
+                  </div>
+                </div>
+                               <div className="d-flex align-items-center gap-2 me-3">
                   <span className="avatar avatar-md avatar-rounded me-1 bg-primary1-transparent">
                     <i className="ri-calendar-event-line fs-18 lh-1 align-middle" />
                   </span>
@@ -501,50 +518,69 @@ export default function ArchiveOverview() {
                       </ul>
                     </div>
                     <div className="col-xl-6">
-                      <div className="d-flex align-items-center justify-content-between mb-2">
-                        <div className="fs-15 fw-medium">Risks :</div>
-                        <a
-                          href="javascript:void(0);"
-                          className="btn btn-primary-light btn-wave btn-sm waves-effect waves-light"
-                        >
-                          {archive.risk_level}
-                        </a>
-                      </div>
-                      <ul className="list-group">
-                        <li className="list-group-item">
-                          <div className="d-flex align-items-center">
-                            <div className="me-2">
-                              <i className="ri-link fs-15 text-secondary lh-1 p-1 bg-secondary-transparent rounded-circle" />
-                            </div>
-                            <div className="fw-medium">
-                              Research latest web development trends.
-                            </div>
-                          </div>
-                        </li>
-                        <li className="list-group-item">
-                          <div className="d-flex align-items-center">
-                            <div className="me-2">
-                              <i className="ri-link fs-15 text-secondary lh-1 p-1 bg-secondary-transparent rounded-circle" />
-                            </div>
-                            <div className="fw-medium">
-                              Create technical specifications document.
-                            </div>
-                          </div>
-                        </li>
-                        <li className="list-group-item">
-                          <div className="d-flex align-items-center">
-                            <div className="me-2">
-                              <i className="ri-link fs-15 text-secondary lh-1 p-1 bg-secondary-transparent rounded-circle" />
-                            </div>
-                            <div className="fw-medium">
-                              Optimize website for mobile responsiveness.
-                            </div>
-                          </div>
-                        </li>
-                      </ul>
+                    <div className="d-flex align-items-center justify-content-between mb-2">
+                      <div className="fs-15 fw-medium">Risks :</div>
+                      <a
+                        href="javascript:void(0);"
+                        className="btn btn-primary-light btn-wave btn-sm waves-effect waves-light"
+                      >
+                        {archive.risk_level}
+                      </a>
                     </div>
+                    <ul className="list-group">
+                      {(() => {
+                        try {
+                          const risksText = archive.risks || '';
+                          if (risksText.includes('\n')) {
+                            return risksText.split('\n')
+                              .filter(line => line.trim().length > 0)
+                              .map((risk, index) => (
+                                <li key={index} className="list-group-item">
+                                  <div className="d-flex align-items-center">
+                                    <div className="me-2">
+                                      <i className="ri-alert-line fs-15 text-danger" />
+                                    </div>
+                                    <div>{risk.trim()}</div>
+                                  </div>
+                                </li>
+                              ));
+                          }
+                          const numberedItems = risksText.split(/\d+\.\s+/).filter(x => x.trim());
+                          if (numberedItems.length > 1) {
+                            return numberedItems.map((risk, index) => (
+                              <li key={index} className="list-group-item">
+                                <div className="d-flex align-items-center">
+                                  <div className="me-2">
+                                    <i className="ri-alert-line fs-15 text-danger" />
+                                  </div>
+                                  <div>{risk.trim()}</div>
+                                </div>
+                              </li>
+                            ));
+                          }
+                          return (
+                            <li className="list-group-item">
+                              <div className="d-flex align-items-center">
+                                <div className="me-2">
+                                  <i className="ri-alert-line fs-15 text-danger" />
+                                </div>
+                                <div>{risksText || 'No risks identified'}</div>
+                              </div>
+                            </li>
+                          );
+                        } catch (error) {
+                          console.error('Error parsing risks:', error);
+                          return (
+                            <li className="list-group-item text-muted">
+                              Error displaying risks
+                            </li>
+                          );
+                        }
+                      })()}
+                    </ul>
                   </div>
                 </div>
+              </div>
                 <div className="fs-15 fw-medium mb-2">Tags :</div>
                 <div className="d-flex gap-2 flex-wrap">
                 {archive.tags.split(',').map((tag, index) => (

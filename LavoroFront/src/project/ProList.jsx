@@ -229,12 +229,15 @@ export default function ProList() {
           <h1 className="page-title fw-medium fs-18 mb-0">Projects List</h1>
         </div>
         <div className="btn-list">
+        {!isTeamManager && (
+
           <button 
             className="btn btn-primary d-flex align-items-center gap-2"
             onClick={() => navigate('/createPro')}
           >
             <i className="ri-add-line"></i> Add New Project
           </button>
+          )}
         </div>
       </div>
       

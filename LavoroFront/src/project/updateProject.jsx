@@ -495,10 +495,8 @@ const UpdateProject = () => {
                       value={projectData.status}
                       onChange={(e) => setProjectData({...projectData, status: e.target.value})}
                     >
-                      <option value="Not Started">Not Started</option>
                       <option value="In Progress">In Progress</option>
                       <option value="Completed">Completed</option>
-                      <option value="Archived">Archived</option>
                     </select>
                   </div>
 

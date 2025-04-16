@@ -35,7 +35,7 @@ function GoogleLogin() {
                     setTimeout(() => {
                         setShowModal(false);
                         // Rediriger vers la page d'accueil après la fermeture de la modale
-                        navigate("/sales", { replace: true });
+                        navigate("/profile", { replace: true });
                     }, 1000); // 1000 ms = 1 seconde
                 } else {
                     // Afficher une modale d'erreur
@@ -80,36 +80,27 @@ function GoogleLogin() {
         flow: "auth-code",
     });
 
-    const style ={
-        position: 'absolute',
-        top: "142px",
-        left: '215px',
-        transform: 'translate(-50%, -50%)',
-        
-    }
 
     return (
         <div className="social-container">
-            <a href="#" className="social" onClick={googleLogin}>
-                <i className="ri-google-line" style={style}></i>
+            <a href="#" onClick={googleLogin}
+             className="btn btn-icon btn-wave btn-primary2-light"
+             style={{
+                 position: "relative",
+                 width: "20px", // Fixed size for all devices
+                 height: "20px", // Fixed size for all devices
+                 padding: 0,
+                 display: "flex",
+                 alignItems: "center",
+                 justifyContent: "center",
+                 backgroundColor: "transparent",
+                 borderColor: "transparent",
+             }}>
+                <i className="ri-google-line"></i>
             </a>
 
             {/* Modale Bootstrap */}
-            <Modal show={showModal} onHide={() => setShowModal(false)}>
-                <Modal.Header closeButton className={`bg-${modalType} text-white`}>
-                    <Modal.Title>
-                        {modalType === "success" ? "Success" : "Error"}
-                    </Modal.Title>
-                </Modal.Header>
-                <Modal.Body>
-                    {modalMessage}
-                </Modal.Body>
-                <Modal.Footer>
-                    <Button variant={modalType} onClick={() => setShowModal(false)}>
-                        Close
-                    </Button>
-                </Modal.Footer>
-            </Modal>
+            
         </div>
     );
 }

@@ -29,6 +29,7 @@ const usersRouter = require('./routes/users');
 const taskRouter=require('./routes/Task')
 const profileRouter = require('./routes/profile');
 const projectRouter = require('./routes/project');
+const notifroute = require('./routes/notification');
 
 // const homeRouter = require('./routes/home');
 const adminRouter = require('./routes/admin');
@@ -77,6 +78,9 @@ app.use(
     },
   })
 );
+
+app.use('/notifications',notifroute);
+
 
 // Routes
 app.use('/users', usersRouter);

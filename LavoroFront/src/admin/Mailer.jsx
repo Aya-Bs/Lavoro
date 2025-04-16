@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import Swal from 'sweetalert2';
-import { Modal, Button } from 'react-bootstrap';
+import { Modal, Button, Form } from 'react-bootstrap';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
 
@@ -11,6 +11,7 @@ const Mailer = ({ show, handleClose, adminEmail }) => {
   const [subject, setSubject] = useState('');
   const [content, setContent] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showDropdown, setShowDropdown] = useState(false);
 
   useEffect(() => {
     const fetchUsers = async () => {
@@ -30,19 +31,22 @@ const Mailer = ({ show, handleClose, adminEmail }) => {
     }
   }, [show]);
 
-  const handleUserSelect = (e) => {
-    const options = e.target.options;
-    const selected = [];
-    for (let i = 0; i < options.length; i++) {
-      if (options[i].selected) {
-        selected.push(options[i].value);
+  const handleUserSelect = (email) => {
+    setSelectedUsers(prev => {
+      if (prev.includes(email)) {
+        return prev.filter(e => e !== email);
+      } else {
+        return [...prev, email];
       }
-    }
-    setSelectedUsers(selected);
+    });
   };
 
   const handleSelectAll = () => {
-    setSelectedUsers(users.map(user => user.email));
+    if (selectedUsers.length === users.length) {
+      setSelectedUsers([]);
+    } else {
+      setSelectedUsers(users.map(user => user.email));
+    }
   };
 
   const handleSendMail = async () => {
@@ -78,7 +82,7 @@ const Mailer = ({ show, handleClose, adminEmail }) => {
   };
 
   return (
-    <Modal show={show} onHide={handleClose} size="lg" centered>
+    <Modal show={show} onHide={handleClose} size="lg" centered style={{ marginLeft: '50px'}}>
       <Modal.Header closeButton>
         <Modal.Title>Compose Mail</Modal.Title>
       </Modal.Header>
@@ -100,28 +104,48 @@ const Mailer = ({ show, handleClose, adminEmail }) => {
             <label htmlFor="toMail" className="form-label">
               To<sup><i className="ri-star-s-fill text-success fs-8"></i></sup>
             </label>
-            <div className="d-flex gap-2 mb-2">
-              <button 
-                className="btn btn-sm btn-outline-primary"
-                onClick={handleSelectAll}
+            <div className="dropdown">
+              <button
+                className="btn btn-outline-secondary dropdown-toggle w-100 text-start"
+                type="button"
+                onClick={() => setShowDropdown(!showDropdown)}
+                aria-expanded={showDropdown}
               >
-                Select All
+                {selectedUsers.length > 0 
+                  ? `${selectedUsers.length} selected` 
+                  : 'Select recipients'}
               </button>
+              <div 
+                className={`dropdown-menu w-100 ${showDropdown ? 'show' : ''}`}
+                style={{ maxHeight: '300px', overflowY: 'auto' }}
+              >
+                <div className="px-3 py-1">
+                  <Form.Check
+                    type="checkbox"
+                    label="Select All"
+                    checked={selectedUsers.length === users.length}
+                    onChange={handleSelectAll}
+                  />
+                </div>
+                <div className="dropdown-divider"></div>
+                {users.map(user => (
+                  <div key={user._id} className="dropdown-item">
+                    <Form.Check
+                      type="checkbox"
+                      id={`user-${user._id}`}
+                      label={`${user.firstName} ${user.lastName} (${user.email})`}
+                      checked={selectedUsers.includes(user.email)}
+                      onChange={() => handleUserSelect(user.email)}
+                    />
+                  </div>
+                ))}
+              </div>
             </div>
-            <select 
-              className="form-control" 
-              id="toMail" 
-              multiple
-              size="4"
-              onChange={handleUserSelect}
-              value={selectedUsers}
-            >
-              {users.map(user => (
-                <option key={user._id} value={user.email}>
-                  {user.firstName} {user.lastName} ({user.email})
-                </option>
-              ))}
-            </select>
+            {selectedUsers.length > 0 && (
+              <div className="mt-2">
+                <small className="text-muted">Selected: {selectedUsers.join(', ')}</small>
+              </div>
+            )}
           </div>
           <div className="col-xl-12 mb-3">
             <label htmlFor="subject" className="form-label">

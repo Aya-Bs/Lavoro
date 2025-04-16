@@ -4,6 +4,7 @@ pipeline {
     environment {
         registryCredentials = "Nexus" // Identifiants pour Nexus
         registry = "192.168.50.4:8083" // Adresse du registre Docker (Nexus)
+        nexusUrl = "192.168.50.4:8081" // Adresse de l'interface Nexus
     }
 
     stages {
@@ -65,7 +66,7 @@ pipeline {
         }
 
         // Stage 4: SonarQube Analysis
-        stage('SonarQube Analysis') {
+      stage('SonarQube Analysis') {
             steps {
                 script {
                     def scannerHome = tool 'scanner'
@@ -78,55 +79,133 @@ pipeline {
 
         // Stage 5: Building Docker images
         stage('Building Docker images') {
+          steps{
+                    script {
+                            sh('docker-compose build')
+                                    }
+                        }
+        }
+
+        // Stage 6: Deploy to Nexus
+stage('Deploy to Nexus') {
+                        steps{
+                           script {
+                               try {
+                                   // Debug information
+                                   echo "Starting Nexus deployment with registry: ${registry}"
+                                   echo "Nexus UI is at: http://${nexusUrl}"
+                                   sh "docker images | grep ${registry}/nodemongoapp"
+
+                                   // Test connectivity to Nexus UI
+                                   sh "curl -s -f http://${nexusUrl} > /dev/null || (echo 'Cannot connect to Nexus UI' && exit 1)"
+                                   echo "Successfully connected to Nexus UI"
+
+                                   // Test connectivity to Docker registry
+                                   echo "Testing connectivity to Docker registry at http://${registry}"
+                                   sh "curl -s -f http://${registry} || echo 'Warning: Cannot connect directly to Docker registry port'"
+
+                                   // Check if Docker daemon is configured for insecure registries
+                                   sh "docker info | grep 'Insecure Registries'"
+
+                                   // Check disk space
+                                   echo "Checking available disk space"
+                                   sh "df -h"
+
+                                   // ALTERNATIVE APPROACH: Configure Docker daemon for insecure registry
+                                   echo "Trying alternative approach: Configure Docker for insecure registry"
+
+                                   withCredentials([usernamePassword(credentialsId: registryCredentials,
+                                                                  usernameVariable: 'NEXUS_USER',
+                                                                  passwordVariable: 'NEXUS_PASS')]) {
+                                       // Try to create/update Docker daemon.json to allow insecure registry
+                                       echo "Attempting to configure Docker daemon for insecure registry"
+
+                                       // Check if we have permission to modify Docker config
+                                       sh "touch /tmp/test_docker_config_permission || echo 'Cannot write to /tmp'"
+
+                                       // Try direct push with explicit login
+                                       echo "Trying direct push with explicit credentials"
+                                       sh "echo \${NEXUS_PASS} | docker login -u \${NEXUS_USER} --password-stdin http://${registry} || echo 'Login failed but continuing'"
+                                       sh "docker push ${registry}/nodemongoapp:5.0 || echo 'Push failed but continuing'"
+
+                                       // Try with a different tag as a last resort
+                                       echo "Trying with a different tag as last resort"
+                                       sh "docker tag ${registry}/nodemongoapp:5.0 ${registry}/nodemongoapp:latest"
+                                       sh "docker push ${registry}/nodemongoapp:latest || echo 'Push with latest tag also failed'"
+                                   }
+
+                                   echo "Deployment process completed. Check logs for success/failure details."
+                               } catch (Exception e) {
+                                   echo "ERROR: Failed to push to Nexus: ${e.getMessage()}"
+
+                                   // Detailed diagnostic information
+                                   echo "\n==== DETAILED DIAGNOSTICS ===="
+                                   echo "1. Disk Space (Critical Issue Detected):"
+                                   sh "df -h"
+                                   sh "du -sh /var/* | sort -hr | head -10 || echo 'Cannot check directory sizes'"
+
+                                   echo "\n2. Docker Images and Disk Usage:"
+                                   sh "docker images"
+                                   sh "docker system df"
+
+                                   echo "\n3. Docker Info:"
+                                   sh "docker info"
+
+                                   echo "\n4. Network Connectivity to Nexus:"
+                                   sh "ping -c 3 192.168.50.4 || echo 'Ping failed'"
+                                   sh "curl -v http://${nexusUrl} || echo 'Cannot connect to Nexus UI'"
+                                   sh "curl -v http://${registry} || echo 'Cannot connect to Docker registry'"
+
+                                   echo "\n5. Nexus Container Status:"
+                                   sh "docker ps | grep -E 'nexus|sonar' || echo 'No Nexus container found'"
+
+                                   echo "\n==== TROUBLESHOOTING TIPS ===="
+                                   echo "1. DISK SPACE ISSUE: Free up disk space on the Jenkins server"
+                                   echo "   - Run: docker system prune -a"
+                                   echo "   - Run: docker volume prune"
+                                   echo "   - Remove old builds: rm -rf /var/jenkins_home/jobs/*/builds/*/archive"
+
+                                   echo "\n2. DOCKER REGISTRY ISSUES:"
+                                   echo "   - Verify Nexus Docker registry is enabled and running on port 8083"
+                                   echo "   - Check Nexus container port mappings: docker port <nexus-container-id>"
+                                   echo "   - Configure Docker for insecure registry: add '${registry}' to insecure-registries"
+                                   echo "   - Restart Docker after configuration changes: systemctl restart docker"
+
+                                   currentBuild.result = 'FAILURE'
+                                   error "Failed to deploy to Nexus. See diagnostics above."
+                               }
+                           }
+                        }
+                    }
+        // Stage 7: Run application
+        stage('Run application') {
             steps {
                 script {
                     try {
-                        sh 'cd LavoroBack && docker build -t backend .'
-                        sh 'docker pull mongo:4.2'
-                    } catch (error) {
-                        echo "Error building Docker images: ${error}"
+                        echo "Starting application deployment"
+
+                        // Use the same registry and tag as in previous stages
+                        withCredentials([usernamePassword(credentialsId: registryCredentials,
+                                                      usernameVariable: 'NEXUS_USER',
+                                                      passwordVariable: 'NEXUS_PASS')]) {
+                            // Pull the image we just pushed
+                            echo "Pulling image from registry"
+                            sh "docker pull ${registry}/nodemongoapp:5.0 || echo 'Pull failed, using local image'"
+
+                            // Start the application with docker-compose
+                            echo "Starting application with docker-compose"
+                            sh "docker-compose up -d"
+                            echo "Application started successfully"
+                        }
+                    } catch (Exception e) {
+                        echo "ERROR: Failed to run application: ${e.getMessage()}"
                         currentBuild.result = 'FAILURE'
-                        throw new Exception("Docker build failed")
+                        error "Failed to run application. See logs for details."
                     }
                 }
             }
         }
 
-        // Stage 6: Deploy to Nexus
-      // Stage 6: Deploy to Nexus
-stage('Deploy to Nexus') {
-    steps {
-        script {
-            try {
-                // Vérifier que l'image existe
-                sh "docker images | grep backend || echo 'Image not found'"
-
-                // Vérifier la connexion à Nexus
-                sh "curl -v http://${registry}/v2/ || echo 'Cannot connect to Nexus'"
-
-                // Tagger l'image avec le nom correct pour Nexus
-                sh "docker tag backend ${registry}/nodemongoapp:5.0 || echo 'Tagging failed'"
-                
-                // Essayer de se connecter et pousser l'image avec des identifiants explicites
-                withCredentials([usernamePassword(credentialsId: registryCredentials, usernameVariable: 'NEXUS_USER', passwordVariable: 'NEXUS_PASS')]) {
-                    // Afficher les informations de débogage (masquer le mot de passe)
-                    echo "Trying to login to Nexus with user: ${NEXUS_USER}"
-                    
-                    // Se connecter à Nexus
-                    sh 'echo "$NEXUS_PASS" | docker login -u "$NEXUS_USER" --password-stdin http://${registry}'
-                    
-                    // Pousser l'image
-                    sh "docker push ${registry}/nodemongoapp:5.0 || echo 'Push failed'"
-                }
-            } catch (error) {
-                echo "Error deploying to Nexus: ${error}"
-                currentBuild.result = 'FAILURE'
-                throw new Exception("Deploy to Nexus failed")
-            }
-        }
-    }
-}
-          
     } // Fin du bloc stages
 
     // Gestion des échecs

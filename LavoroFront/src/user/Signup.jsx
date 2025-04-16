@@ -105,7 +105,7 @@ function SignUp() {
             withCredentials: true,
           })
           if (response.data) {
-            navigate("/sales") // Redirect to profile if already authenticated
+            navigate("/profile") // Redirect to profile if already authenticated
           }
         }
       } catch (err) {

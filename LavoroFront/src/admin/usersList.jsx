@@ -13,25 +13,6 @@ function UsersList({ onRoleUpdate, onViewActivity }) {
   const [showMailComposer, setShowMailComposer] = useState(false);
   const adminEmail = 'lavoroprojectmanagement@gmail.com';
 
-  // Fetch users and roles on component mount
-  /*useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const response = await axios.get('http://localhost:3000/admin/dashboard', {
-          withCredentials: true,
-        });
-        setUsers(response.data.users);
-        setFilteredUsers(response.data.users);
-        setRoles(response.data.roles);
-      } catch (err) {
-        setError('Failed to fetch data. Please try again.');
-        console.error('Error fetching admin dashboard data:', err);
-      }
-    };
-
-    fetchData();
-  }, []);
-*/
 const fetchUsersAndRoles = async () => {
   try {
     const response = await axios.get('http://localhost:3000/admin/dashboard', {
@@ -173,6 +154,7 @@ useEffect(() => {
   };
 
   return (
+    
     <div className="card custom-card">
       <div className="card-header justify-content-between">
         <div className="card-title">Users List</div>
@@ -364,15 +346,17 @@ useEffect(() => {
         <i className="bi bi-envelope me-2"></i> Compose Mail
       </button>
 
+      
+        </div>
+        
+      </div>
       <Mailer
         show={showMailComposer}
         handleClose={() => setShowMailComposer(false)}
         adminEmail={adminEmail}
       />
-        </div>
-        
-      </div>
     </div>
+    
   );
 }
 

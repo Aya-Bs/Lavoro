@@ -10,6 +10,121 @@ import { useTranslation } from "react-i18next";
 import i18n from "./i18n"; // Adjust the path to your i18n.jsx file
 
 const Header = () => {
+  const [notifications, setNotifications] = useState([]);
+const [unreadCount, setUnreadCount] = useState(0);
+
+
+// Add this function to your header component
+const markAsRead = async (notificationId) => {
+  try {
+    const token = localStorage.getItem("token");
+    if (!token) return;
+
+    await axios.post(
+      `http://localhost:3000/notifications/${notificationId}/mark-read`,
+      {},
+      {
+        headers: { Authorization: `Bearer ${token}` }
+      }
+    );
+
+    // Update local state
+    setNotifications(notifications.map(notif => 
+      notif._id === notificationId ? { ...notif, is_read: true } : notif
+    ));
+    setUnreadCount(prev => Math.max(0, prev - 1));
+  } catch (error) {
+    console.error("Error marking notification as read:", error);
+  }
+};
+
+
+
+// useEffect(() => {
+//   const fetchNotifications = async () => {
+//     try {
+//       const token = localStorage.getItem("token");
+//       if (!token) return;
+
+//       const response = await axios.get("http://localhost:3000/notifications", {
+//         headers: { Authorization: `Bearer ${token}` }
+//       });
+
+//       setNotifications(response.data.notifications);
+//       setUnreadCount(response.data.unreadCount);
+//     } catch (error) {
+//       console.error("Error fetching notifications:", error);
+//     }
+//   };
+
+//   fetchNotifications();
+  
+//   // Optional: Set up polling or websocket for real-time updates
+//   const interval = setInterval(fetchNotifications, 60000); // Refresh every minute
+//   return () => clearInterval(interval);
+// }, []);
+
+
+
+// useEffect(() => {
+//   const fetchNotifications = async () => {
+//     try {
+//       const token = localStorage.getItem("token");
+//       if (!token) return;
+
+//       const response = await axios.get("http://localhost:3000/notifications", {
+//         headers: { 
+//           Authorization: `Bearer ${token}`,
+//           'Content-Type': 'application/json'
+//         }
+//       });
+
+//       if (response.data && response.data.notifications) {
+//         setNotifications(response.data.notifications);
+//         setUnreadCount(response.data.unreadCount || 0);
+//       }
+//     } catch (error) {
+//       console.error("Error fetching notifications:", error);
+//       // Optionally show error to user
+//     }
+//   };
+
+//   fetchNotifications();
+  
+//   const interval = setInterval(fetchNotifications, 60000);
+//   return () => clearInterval(interval);
+// }, []);
+
+
+useEffect(() => {
+  const fetchNotifications = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) return;
+
+      const response = await axios.get("http://localhost:3000/notifications", {
+        headers: { 
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.data) {
+        setNotifications(response.data.notifications || []);
+        setUnreadCount(response.data.unreadCount || 0);
+      }
+    } catch (error) {
+      console.error("Error fetching notifications:", error);
+    }
+  };
+
+  fetchNotifications();
+  
+  const interval = setInterval(fetchNotifications, 60000); // Refresh every minute
+  return () => clearInterval(interval);
+}, []);
+
+
 
   const translatePage = async (targetLanguage) => {
     try {
@@ -67,6 +182,8 @@ const Header = () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, []);
+
+
 
 
   useEffect(() => {
@@ -450,188 +567,119 @@ const Header = () => {
             <div className="p-3">
               <div className="d-flex align-items-center justify-content-between">
                 <p className="mb-0 fs-15 fw-medium">Notifications</p>
-                <span
-                  className="badge bg-secondary text-fixed-white"
-                  id="notifiation-data"
-                >
-                  5 Unread
-                </span>
+<span className="badge bg-primary text-fixed-white">
+  {unreadCount} Unread
+</span>
               </div>
             </div>
             <div className="dropdown-divider" />
             <ul className="list-unstyled mb-0" id="header-notification-scroll">
-              <li className="dropdown-item">
-                <div className="d-flex align-items-center">
-                  <div className="pe-2 lh-1">
-                    <span className="avatar avatar-md avatar-rounded bg-primary">
-                      <img src="../assets/images/faces/1.jpg" alt="user1" />
-                    </span>
-                  </div>
-                  <div className="flex-grow-1 d-flex align-items-center justify-content-between">
-                    <div>
-                      <p className="mb-0 fw-medium">
-                        <a href="chat.html">New Messages</a>
-                      </p>
-                      <div className="text-muted fw-normal fs-12 header-notification-text text-truncate">
-                        Jane Sam sent you a message.
-                      </div>
-                      <div className="fw-normal fs-10 text-muted op-8">Now</div>
-                    </div>
-                    <div>
-                      <a
-                        href="javascript:void(0);"
-                        className="min-w-fit-content dropdown-item-close1"
-                      >
-                        <i className="ri-close-line" />
-                      </a>
-                    </div>
-                  </div>
-                </div>
-              </li>
-              <li className="dropdown-item">
-                <div className="d-flex align-items-center">
-                  <div className="pe-2 lh-1">
-                    <span className="avatar avatar-md bg-primary avatar-rounded fs-20">
-                      <i className="fe fe-shopping-cart lh-1 " />
-                    </span>
-                  </div>
-                  <div className="flex-grow-1 d-flex align-items-center justify-content-between">
-                    <div>
-                      <p className="mb-0 fw-medium">
-                        <a href="chat.html">Order Updates</a>
-                      </p>
-                      <div className="text-muted fw-normal fs-12 header-notification-text text-truncate">
-                        Order <span className="text-primary1">#54321</span> has
-                        been shipped.
-                      </div>
-                      <div className="fw-normal fs-10 text-muted op-8">
-                        2 hours ago
-                      </div>
-                    </div>
-                    <div>
-                      <a
-                        href="javascript:void(0);"
-                        className="min-w-fit-content dropdown-item-close1"
-                      >
-                        <i className="ri-close-line" />
-                      </a>
-                    </div>
-                  </div>
-                </div>
-              </li>
-              <li className="dropdown-item">
-                <div className="d-flex align-items-center">
-                  <div className="pe-2 lh-1">
-                    <span className="avatar avatar-md bg-orange avatar-rounded">
-                      <img src="../assets/images/faces/10.jpg" alt="user1" />
-                    </span>
-                  </div>
-                  <div className="flex-grow-1 d-flex align-items-center justify-content-between">
-                    <div>
-                      <p className="mb-0 fw-medium">
-                        <a href="chat.html">Comment on Post</a>
-                      </p>
-                      <div className="text-muted fw-normal fs-12 header-notification-text text-truncate">
-                        Reacted:{" "}
-                        <span className="text-primary3">John Richard</span> on
-                        your next purchase!
-                      </div>
-                      <div className="fw-normal fs-10 text-muted op-8">
-                        2 hours ago
-                      </div>
-                    </div>
-                    <div>
-                      <a
-                        href="javascript:void(0);"
-                        className="min-w-fit-content dropdown-item-close1"
-                      >
-                        <i className="ri-close-line" />
-                      </a>
-                    </div>
-                  </div>
-                </div>
-              </li>
-              <li className="dropdown-item">
-                <div className="d-flex align-items-center">
-                  <div className="pe-2 lh-1">
-                    <span className="avatar avatar-md bg-success avatar-rounded">
-                      <img src="../assets/images/faces/11.jpg" alt="user1" />
-                    </span>
-                  </div>
-                  <div className="flex-grow-1 d-flex align-items-center justify-content-between">
-                    <div>
-                      <p className="mb-0 fw-medium">
-                        <a href="chat.html">Follow Request</a>
-                      </p>
-                      <div className="text-muted fw-normal fs-12 header-notification-text text-truncate">
-                        <span className="text-info">Kelin Brown</span> has sent
-                        you the request.
-                      </div>
-                      <div className="fw-normal fs-10 text-muted op-8">
-                        1 Day ago
-                      </div>
-                    </div>
-                    <div>
-                      <a
-                        href="javascript:void(0);"
-                        className="min-w-fit-content dropdown-item-close1"
-                      >
-                        <i className="ri-close-line" />
-                      </a>
-                    </div>
-                  </div>
-                </div>
-              </li>
-              <li className="dropdown-item">
-                <div className="d-flex align-items-center">
-                  <div className="pe-2 lh-1">
-                    <span className="avatar avatar-md bg-primary2 avatar-rounded">
-                      <i className="ri-gift-line lh-1 fs-16" />
-                    </span>
-                  </div>
-                  <div className="flex-grow-1 d-flex align-items-center justify-content-between">
-                    <div>
-                      <p className="mb-0 fw-medium">
-                        <a href="chat.html">Exclusive Offers</a>
-                      </p>
-                      <div className="text-muted fw-normal fs-12 header-notification-text text-truncate">
-                        Enjoy<span className="text-success">20% off</span> on
-                        your next purchase!
-                      </div>
-                      <div className="fw-normal fs-10 text-muted op-8">
-                        5 hours ago
-                      </div>
-                    </div>
-                    <div>
-                      <a
-                        href="javascript:void(0);"
-                        className="min-w-fit-content dropdown-item-close1"
-                      >
-                        <i className="ri-close-line" />
-                      </a>
-                    </div>
-                  </div>
-                </div>
-              </li>
-            </ul>
-            <div className="p-3 empty-header-item1 border-top">
-              <div className="d-grid">
-                <a
-                  href="javascript:void(0);"
-                  className="btn btn-primary btn-wave"
-                >
-                  View All
-                </a>
-              </div>
+  {notifications.length > 0 ? (
+    notifications.map((notification) => (
+<li 
+  key={notification._id} 
+  className="dropdown-item"
+  onClick={() => markAsRead(notification._id)}
+  style={{ cursor: 'pointer' }}
+>
+        <div className="d-flex align-items-start">
+          {/* Notification icon on left */}
+          <div className="pe-2 lh-1">
+            <span className={`avatar avatar-md avatar-rounded ${
+              notification.is_read ? 'bg-secondary' : 'bg-primary'
+            }`}>
+              <i className="ri-notification-line fs-16" />
+            </span>
+          </div>
+          
+          {/* Notification content - fills remaining space */}
+          <div className="flex-grow-1">
+            {/* Top row - notification text left, timestamp right */}
+            <div className="d-flex justify-content-between align-items-start w-100">
+              <p className={`mb-0 fw-medium ${
+                notification.is_read ? '' : 'text-primary'
+              }`}>
+                {notification.notification_text}
+              </p>
+              <span className="text-muted fs-11 ms-2">
+                {new Date(notification.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+              </span>
             </div>
-            <div className="p-5 empty-item1 d-none">
-              <div className="text-center">
-                <span className="avatar avatar-xl avatar-rounded bg-secondary-transparent">
-                  <i className="ri-notification-off-line fs-2" />
-                </span>
-                <h6 className="fw-medium mt-3">No New Notifications</h6>
-              </div>
+            
+            {/* Bottom row - notification type badge */}
+            <div className="d-flex justify-content-end w-100 mt-1">
+              <span className="badge bg-light text-default">
+              {new Date(notification.created_at).toLocaleDateString('en-US', {
+            month: 'short',
+            day: 'numeric',
+            year: 'numeric'
+          })}              </span>
             </div>
+          </div>
+        </div>
+      </li>
+    ))
+  ) : (
+    <li className="p-5 empty-item1">
+      <div className="text-center">
+        <span className="avatar avatar-xl avatar-rounded bg-secondary-transparent">
+          <i className="ri-notification-off-line fs-2" />
+        </span>
+        <h6 className="fw-medium mt-3">No New Notifications</h6>
+      </div>
+    </li>
+  )}
+</ul>
+{/*     
+<ul className="list-unstyled mb-0" id="header-notification-scroll">
+  {notifications.length > 0 ? (
+    notifications.map((notification) => (
+<li 
+  key={notification._id} 
+  className="dropdown-item"
+  onClick={() => markAsRead(notification._id)}
+  style={{ cursor: 'pointer' }}
+>
+  
+          <div className="d-flex align-items-center">
+          <div className="pe-2 lh-1">
+            <span className={`avatar avatar-md avatar-rounded ${
+              notification.is_read ? 'bg-secondary' : 'bg-primary'
+            }`}>
+              <i className="ri-notification-line fs-16" />
+            </span>
+          </div>
+          <div className="flex-grow-1">
+            <p className={`mb-0 fw-medium ${
+              notification.is_read ? '' : 'text-primary'
+            }`}>
+              {notification.notification_text}
+            </p>
+            <div className="d-flex justify-content-between align-items-center">
+              <span className="text-muted fs-11">
+                {new Date(notification.created_at).toLocaleString()}
+              </span>
+              <span className="badge bg-light text-default">
+                {new Date(notification.created_at).toLocaleString()}
+              </span>
+            </div>
+          </div>
+        </div>
+      </li>
+    ))
+  ) : (
+    <li className="p-5 empty-item1">
+      <div className="text-center">
+        <span className="avatar avatar-xl avatar-rounded bg-secondary-transparent">
+          <i className="ri-notification-off-line fs-2" />
+        </span>
+        <h6 className="fw-medium mt-3">No New Notifications</h6>
+      </div>
+    </li>
+  )}
+</ul> */}
+           
+           
           </div>
           {/* End::main-header-dropdown */}
         </li>
