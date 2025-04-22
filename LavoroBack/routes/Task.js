@@ -24,4 +24,17 @@ router.post('/seed-task-history', async (req, res) => {
 });
 router.get('/getTasksByUser/:userId', getTasksByUser);
 router.get('/my-tasks', auth, taskController.getTasksByUser);
+
+
+router.patch('/:taskId/status',
+    auth, // Protection de la route
+    taskController.updateTaskStatus
+);
+
+// Route pour tester le système de points
+router.post('/test-points-system/:userId',
+    auth, // Protection de la route
+    taskController.testPointsSystem
+);
+
 module.exports = router;

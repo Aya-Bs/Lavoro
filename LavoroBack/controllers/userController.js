@@ -132,17 +132,17 @@ exports.signup = async (req, res) => {
             <p style="font-size: 16px; line-height: 1.5;">
               Thank you for registering with us. To complete your registration, please verify your email address by clicking the button below:
             </p>
-            
+
             <div style="text-align: center; margin: 30px 0;">
-              <a href="${verificationUrl}" 
-                 style="background-color: #4CAF50; color: white; padding: 12px 24px; 
+              <a href="${verificationUrl}"
+                 style="background-color: #4CAF50; color: white; padding: 12px 24px;
                         text-decoration: none; border-radius: 4px; font-weight: bold;
                         display: inline-block;">
-                Verify Your Email 
+                Verify Your Email
               </a>
             </div>
-            
-            
+
+
             <p style="font-size: 14px; color: #666;">
               This link will expire in 24 hours for security reasons.
             </p>
@@ -150,7 +150,7 @@ exports.signup = async (req, res) => {
 
                 <p style="font-size: 14px; color: #666;">
 Best Regard , ${lastName} ${firstName}       </p>
-            
+
             <div style="text-align: center; margin-top: 40px; padding-top: 20px; border-top: 1px solid #e0e0e0;">
               <img src="https://res.cloudinary.com/dh6l1swhr/image/upload/v1744759769/487972506_1688041379262753_7417474063211568728_n_ooxbbd.png" alt="LAVORO Logo" style="max-width: 200px; max-height: 150px;">
               <p style="font-size: 12px; color: #999; margin-top: 10px;">
@@ -200,7 +200,7 @@ exports.signin = async (req, res) => {
   // Vérifier si le compte est verrouillé
   if (user.lockUntil && user.lockUntil > Date.now()) {
     const remainingTime = Math.ceil((user.lockUntil - Date.now()) / 60000); // en minutes
-    return res.status(403).json({ 
+    return res.status(403).json({
         error: `Votre compte est bloqué pour ${remainingTime} minutes. Il sera réactivé à ${new Date(user.lockUntil).toLocaleTimeString()}.`,
         lockMessage: `Votre compte est verrouillé jusqu'à ${new Date(user.lockUntil).toLocaleTimeString()}.`
     });
@@ -216,23 +216,23 @@ exports.signin = async (req, res) => {
       const isPasswordValid = await bcrypt.compare(password, user.password_hash);
       if (!isPasswordValid) {
           user.loginAttempts += 1;
-    
+
           if (user.loginAttempts >= MAX_ATTEMPTS) {
             user.lockUntil = Date.now() + LOCK_TIME;
-    
+
             // Envoyer un e-mail à l'utilisateur
             const emailSubject = 'Votre compte est verrouillé';
             const emailText = `  Hello ${user.firstName},
-      
+
             Your account has been locked for 5 minutes due to multiple failed login attempts.
            Please try again later
-      
-            Best regards,  
+
+            Best regards,
             The Lavoro Team`;
             await sendEmail(user.email, emailSubject, emailText);
           }
 
-    
+
           await user.save();
           return res.status(400).render('signin', { error: 'Mot de passe invalide.', email });
         }
@@ -253,8 +253,8 @@ exports.signin = async (req, res) => {
 
       // Set the user session
       req.session.user = user;
-      
-      
+
+
       console.log('Session created for user:', req.session.user);
       await AccountActivityLog.create({
           userId: user._id,
@@ -264,8 +264,8 @@ exports.signin = async (req, res) => {
         if (user.twoFactorEnabled) {
           return res.status(200).json({ requires2FA: true, userId: user._id });
         }
-  
-      
+
+
       // Generate a token with 7-day expiration
       const token = jwt.sign(
         { _id: user._id }, // Payload
@@ -274,11 +274,11 @@ exports.signin = async (req, res) => {
     );
 
     // Return user data and token
-    res.status(200).json({ 
-        user, 
-        token 
+    res.status(200).json({
+        user,
+        token
     });
-      
+
 
 
   } catch (error) {
@@ -332,26 +332,26 @@ exports.verifyEmail = async (req, res) => {
     try {
         const { token } = req.query;
         console.log('Verification token received:', token);
-  
+
         const user = await User.findOne({ verificationToken: token });
-  
+
         if (!user) {
             console.log('User not found for token:', token);
             return res.status(400).json({ error: 'Invalid or expired token.' });
         }
-  
+
         if (user.isVerified) {
             console.log('User is already verified:', user.email);
             return res.status(200).json({ message: 'Email is already verified.' });
         }
-  
+
         // Only delete the token *after* a successful response
         user.isVerified = true;
         await user.save();
-        
+
         console.log('User verified successfully:', user.email);
         res.status(200).json({ message: ' ✅ Email verified successfully!' });
-  
+
         // Remove the token AFTER responding
         user.verificationToken = undefined;
         await user.save();
@@ -360,7 +360,7 @@ exports.verifyEmail = async (req, res) => {
         res.status(500).json({ error: 'An error occurred while verifying your email. Please try again.' });
     }
   };
-  
+
 
   exports.getUserInfo = async (req, res) => {
     try {
@@ -401,7 +401,7 @@ exports.verifyEmail = async (req, res) => {
 
 //       // Verify the token
 //       const decoded = jwt.verify(token, process.env.JWT_SECRET);
-      
+
 //       // Attach user to request
 //       req.user = await User.findById(decoded._id).select('-password_hash').populate('role');
 //       if (!req.user) {
@@ -425,6 +425,31 @@ exports.checkmail =  async (req, res) => {
     } catch (error) {
         console.error('Error checking email:', error);
         res.status(500).json({ error: 'Error checking email' });
+    }
+}
+
+// Récupérer l'utilisateur avec le plus de points de performance
+exports.getBestPerformer = async (req, res) => {
+    try {
+        // Trouver l'utilisateur avec le plus de points de performance
+        const bestPerformer = await User.findOne({
+            performancePoints: { $gt: 0 } // Seulement les utilisateurs avec des points positifs
+        })
+        .sort({ performancePoints: -1 }) // Trier par points de performance (décroissant)
+        .select('firstName lastName image performancePoints') // Sélectionner uniquement les champs nécessaires
+        .limit(1); // Limiter à un seul résultat
+
+        if (!bestPerformer) {
+            return res.status(404).json({ message: 'Aucun utilisateur avec des points de performance trouvé' });
+        }
+
+        res.status(200).json(bestPerformer);
+    } catch (error) {
+        console.error('Erreur lors de la récupération du meilleur performeur:', error);
+        res.status(500).json({
+            message: 'Erreur serveur',
+            error: error.message
+        });
     }
 }
 
@@ -476,50 +501,50 @@ exports.redirectIfNotAuthenticated = (req, res, next) => {
 exports.resetPassword = async (req, res) => {
     const token = req.query.token || req.body.token;
     const { newPassword, confirmPassword } = req.body;
-  
+
     try {
       if (!token) {
         return res.status(400).json({ error: 'Token is missing.' });
       }
-  
+
       const user = await User.findOne({
         resetPasswordToken: token,
         resetPasswordExpires: { $gt: Date.now() },
       });
-  
+
       if (!user) {
         return res.status(400).json({ error: 'Link expired or invalid.' });
       }
-  
+
       // Vérifier si le nouveau mot de passe est identique à l'ancien
       const isSamePassword = await bcrypt.compare(newPassword, user.password_hash);
       if (isSamePassword) {
         return res.status(400).json({ error: 'Please choose a new password. You cannot reuse your current password.' });
       }
-  
+
       // Vérifier que les mots de passe correspondent
       if (newPassword !== confirmPassword) {
         return res.status(400).json({ error: 'Passwords do not match.' });
       }
-  
+
       // Valider le nouveau mot de passe
       const passwordError = validatePassword(newPassword);
       if (passwordError) {
         return res.status(400).json({ error: passwordError });
       }
-  
+
       // Mettre à jour le mot de passe
       user.password_hash = await bcrypt.hash(newPassword, 10);
       user.resetPasswordToken = null;
       user.resetPasswordExpires = null;
       await user.save();
-  
+
       // Log l'action de réinitialisation du mot de passe
       await AccountActivityLog.create({
         userId: user._id,
         action: 'User has reset their password',
       });
-  
+
       res.status(200).json({ message: 'Password successfully updated!' });
     } catch (error) {
       console.error('Error:', error);
@@ -551,15 +576,15 @@ exports.forgotPassword = async (req, res) => {
     const message = `
       Hello ${user.firstName},
 
-      We received a password reset request for your account.  
+      We received a password reset request for your account.
       If you did not request this, please ignore this email.
 
-      ➡️ **Click the link below to reset your password:**  
-      🔗 ${resetLink}  
+      ➡️ **Click the link below to reset your password:**
+      🔗 ${resetLink}
 
       This link will expire in 1 hour.
 
-      Best regards,  
+      Best regards,
       The Lavoro Team
     `;
 

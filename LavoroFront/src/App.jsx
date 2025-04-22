@@ -33,6 +33,7 @@ import UpdateProject from "./project/updateProject";
 import ProjectProgress from "./project/projetPorgress";
 import CreateWithAI from "./project/CreateProjectWithAI";
 import CreateProjectWithAI from "./project/CreateProjectWithAI";
+import BestPerformerPage from "./pages/BestPerformerPage";
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -74,6 +75,8 @@ function App() {
               <Route path="/updateProjects/:id" element={<UpdateProject />} />
 
               <Route path="/ProjectProgress" element={<ProjectProgress/>} />
+
+              <Route path="/best-performer" element={<BestPerformerPage />} />
 
             </Route>
         </Routes>
