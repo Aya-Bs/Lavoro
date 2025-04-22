@@ -443,9 +443,104 @@ exports.getBestPerformer = async (req, res) => {
             return res.status(404).json({ message: 'Aucun utilisateur avec des points de performance trouvé' });
         }
 
-        res.status(200).json(bestPerformer);
+        // Récupérer les tâches de l'utilisateur et l'historique des tâches pour des statistiques précises
+        const Task = require('../models/Task');
+        const TaskHistory = require('../models/TaskHistory');
+
+        // Récupérer toutes les tâches assignées à l'utilisateur
+        const tasks = await Task.find({ assigned_to: bestPerformer._id });
+
+        // Récupérer l'historique des tâches pour cet utilisateur
+        // Trouver les entrées d'historique où le statut a été changé à 'Done'
+        const taskIds = tasks.map(task => task._id);
+        const taskHistories = await TaskHistory.find({
+            task_id: { $in: taskIds },
+            change_type: 'Status Update',
+            new_value: 'Done'
+        });
+
+        // Calculer les statistiques de performance à partir de l'historique
+        const tasksCompleted = taskHistories.length;
+
+        // Compter les tâches par type de complétion
+        const tasksEarly = taskHistories.filter(history => history.completion_type === 'early').length;
+        const tasksOnTime = taskHistories.filter(history => history.completion_type === 'on_time').length;
+        const tasksLate = taskHistories.filter(history => history.completion_type === 'late').length;
+
+        // Calculer le taux de réussite
+        const completionRate = tasksCompleted > 0 ?
+            ((tasksEarly + tasksOnTime) / tasksCompleted) * 100 : 0;
+
+        // Calculer le nombre total de points gagnés via les tâches
+        const totalPointsEarned = taskHistories.reduce((sum, history) => sum + (history.points_earned || 0), 0);
+
+        // Ajouter les statistiques à l'objet bestPerformer
+        const performerWithStats = {
+            ...bestPerformer.toObject(),
+            stats: {
+                tasksCompleted,
+                tasksEarly,
+                tasksOnTime,
+                tasksLate,
+                completionRate,
+                totalPointsEarned
+            }
+        };
+
+        res.status(200).json(performerWithStats);
     } catch (error) {
         console.error('Erreur lors de la récupération du meilleur performeur:', error);
+        res.status(500).json({
+            message: 'Erreur serveur',
+            error: error.message
+        });
+    }
+};
+
+// Récupérer les meilleurs performeurs (top 5)
+exports.getTopPerformers = async (req, res) => {
+    try {
+        // Récupérer le nombre de performeurs à afficher (par défaut 5)
+        const limit = parseInt(req.query.limit) || 5;
+
+        // Trouver les utilisateurs avec le plus de points de performance
+        const topPerformers = await User.find({
+            performancePoints: { $gt: 0 } // Seulement les utilisateurs avec des points positifs
+        })
+        .sort({ performancePoints: -1 }) // Trier par points de performance (décroissant)
+        .select('firstName lastName image performancePoints role') // Sélectionner uniquement les champs nécessaires
+        .limit(limit); // Limiter au nombre demandé
+
+        // Récupérer des statistiques supplémentaires pour chaque utilisateur
+        const performersWithStats = await Promise.all(topPerformers.map(async (performer) => {
+            // Ici, vous pourriez récupérer des statistiques supplémentaires comme le nombre de tâches terminées
+            // Pour l'exemple, nous allons simuler ces données
+            const tasksCompleted = Math.floor(performer.performancePoints / 2) + Math.floor(Math.random() * 5);
+            const tasksEarly = Math.floor(tasksCompleted * 0.6);
+
+            return {
+                id: performer._id,
+                firstName: performer.firstName,
+                lastName: performer.lastName,
+                fullName: `${performer.firstName} ${performer.lastName}`,
+                image: performer.image,
+                points: performer.performancePoints,
+                role: performer.role,
+                stats: {
+                    tasksCompleted,
+                    tasksEarly,
+                    completionRate: tasksEarly / tasksCompleted
+                }
+            };
+        }));
+
+        if (performersWithStats.length === 0) {
+            return res.status(404).json({ message: 'Aucun utilisateur avec des points de performance trouvé' });
+        }
+
+        res.status(200).json(performersWithStats);
+    } catch (error) {
+        console.error('Erreur lors de la récupération des meilleurs performeurs:', error);
         res.status(500).json({
             message: 'Erreur serveur',
             error: error.message

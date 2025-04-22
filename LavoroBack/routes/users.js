@@ -84,4 +84,7 @@ router.get('/getTeamManager', userController.getTeamManager);
 // Route pour récupérer le meilleur performeur
 router.get('/best-performer', authenticateToken, userController.getBestPerformer);
 
+// Route pour récupérer les meilleurs performeurs (top 5 par défaut)
+router.get('/top-performers', authenticateToken, userController.getTopPerformers);
+
 module.exports = router;

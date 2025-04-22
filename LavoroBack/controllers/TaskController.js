@@ -146,27 +146,18 @@ exports.updateTaskStatus = async (req, res) => {
         { new: true, runValidators: true }
       );
 
-      // 4. Enregistrer dans l'historique
-      const historyEntry = new TaskHistory({
-        task_id: taskId,
-        changed_by: req.user._id,
-        change_type: 'Status Update',
-        old_value: oldTask.status,
-        new_value: status // Ici on s'assure que new_value est bien fourni
-      });
-
-      await historyEntry.save();
-
       // 5. Système de points pour les employés (uniquement quand une tâche est marquée comme terminée)
       let pointsMessage = "";
+      let completionType = "not_applicable";
+      let hoursDifference = 0;
+      let pointsEarned = 0;
+
       if (status === 'Done' && oldTask.assigned_to) {
         try {
           // Récupérer l'utilisateur assigné à la tâche
           const user = await User.findById(oldTask.assigned_to);
 
           if (user) {
-            let pointsEarned = 0;
-
             // Vérifier si la tâche a été terminée dans les délais
             const now = new Date();
             const deadline = oldTask.deadline;
@@ -181,17 +172,25 @@ exports.updateTaskStatus = async (req, res) => {
                 const estimatedEndTime = new Date(startDate.getTime() + (oldTask.estimated_duration * 60 * 60 * 1000)); // Conversion en millisecondes
 
                 // Calculer combien d'heures avant la durée estimée
-                const hoursDifference = Math.floor((estimatedEndTime - now) / (1000 * 60 * 60));
+                hoursDifference = Math.floor((estimatedEndTime - now) / (1000 * 60 * 60));
 
                 if (hoursDifference > 0) {
                   // +1 point supplémentaire par heure d'avance (max +3 points)
                   const additionalPoints = Math.min(hoursDifference, 3);
                   pointsEarned += additionalPoints;
+                  completionType = "early";
+                } else {
+                  completionType = "on_time";
                 }
+              } else {
+                completionType = "on_time";
               }
             } else if (deadline && now > deadline) {
               // Tâche non terminée à temps
               pointsEarned = -1;
+              completionType = "late";
+              // Calculer le retard en heures (valeur négative)
+              hoursDifference = -Math.floor((now - deadline) / (1000 * 60 * 60));
             }
 
             // Mettre à jour les points de l'utilisateur
@@ -205,6 +204,20 @@ exports.updateTaskStatus = async (req, res) => {
           // Ne pas bloquer la mise à jour du statut si l'attribution des points échoue
         }
       }
+
+      // 4. Enregistrer dans l'historique avec les informations de performance
+      const historyEntry = new TaskHistory({
+        task_id: taskId,
+        changed_by: req.user._id,
+        change_type: 'Status Update',
+        old_value: oldTask.status,
+        new_value: status,
+        completion_type: completionType,
+        hours_difference: hoursDifference,
+        points_earned: pointsEarned
+      });
+
+      await historyEntry.save();
 
       res.status(200).json({
         message: "Statut mis à jour avec succès",
