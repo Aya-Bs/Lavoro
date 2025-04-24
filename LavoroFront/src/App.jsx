@@ -34,6 +34,7 @@ import ProjectProgress from "./project/projetPorgress";
 import CreateWithAI from "./project/CreateProjectWithAI";
 import CreateProjectWithAI from "./project/CreateProjectWithAI";
 import BestPerformerPage from "./pages/BestPerformerPage";
+import ChatComponent from "./chat/ChatComponent";
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -77,6 +78,7 @@ function App() {
               <Route path="/ProjectProgress" element={<ProjectProgress/>} />
 
               <Route path="/best-performer" element={<BestPerformerPage />} />
+              <Route path="/chat" element={<ChatComponent />} />
 
             </Route>
         </Routes>

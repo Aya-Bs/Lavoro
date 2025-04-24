@@ -22,6 +22,16 @@ const Sidebar = ({ userRole }) => {
             </li>
 
             <li className="slide__category">
+              <span className="category-name">Communication</span>
+            </li>
+            <li className="slide">
+              <Link to="/chat" className="side-menu__item">
+                <i className="ri-message-3-line side-menu__icon"></i>
+                <span className="side-menu__label">Messagerie</span>
+              </Link>
+            </li>
+
+            <li className="slide__category">
               <span className="category-name">Performance</span>
             </li>
             <li className="slide">
@@ -132,6 +142,16 @@ const Sidebar = ({ userRole }) => {
             </li>
 
             <li className="slide__category">
+              <span className="category-name">Communication</span>
+            </li>
+            <li className="slide">
+              <Link to="/chat" className="side-menu__item">
+                <i className="ri-message-3-line side-menu__icon"></i>
+                <span className="side-menu__label">Messagerie</span>
+              </Link>
+            </li>
+
+            <li className="slide__category">
               <span className="category-name">Performance</span>
             </li>
             <li className="slide">
@@ -163,6 +183,16 @@ const Sidebar = ({ userRole }) => {
               <Link to="/listPro" className="side-menu__item">
                 <i className="ri-file-list-line side-menu__icon"></i>
                 <span className="side-menu__label">Projects List</span>
+              </Link>
+            </li>
+
+            <li className="slide__category">
+              <span className="category-name">Communication</span>
+            </li>
+            <li className="slide">
+              <Link to="/chat" className="side-menu__item">
+                <i className="ri-message-3-line side-menu__icon"></i>
+                <span className="side-menu__label">Messagerie</span>
               </Link>
             </li>
 
@@ -284,6 +314,16 @@ const Sidebar = ({ userRole }) => {
                   </Link>
                 </li>
               </ul>
+            </li>
+
+            <li className="slide__category">
+              <span className="category-name">Communication</span>
+            </li>
+            <li className="slide">
+              <Link to="/chat" className="side-menu__item">
+                <i className="ri-message-3-line side-menu__icon"></i>
+                <span className="side-menu__label">Messagerie</span>
+              </Link>
             </li>
 
             <li className="slide__category">
