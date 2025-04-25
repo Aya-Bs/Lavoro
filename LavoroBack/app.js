@@ -33,6 +33,8 @@ const notifroute = require('./routes/notification');
 const teamMemberRouter = require('./routes/teamMember');
 const skillsRouter = require('./routes/skills');
 const userSkillsRouter = require('./routes/userSkills');
+const taskAssignmentRoutes = require('./routes/taskAssignmentRoutes');
+
 
 
 // const homeRouter = require('./routes/home');
@@ -99,6 +101,8 @@ app.use('/profiles', profileRouter);
 app.use('/teamMember', teamMemberRouter);
 app.use('/skills', skillsRouter);
 app.use('/userSkills', userSkillsRouter);
+app.use('/ai-assignment', taskAssignmentRoutes);
+
 
 
 app.post("/translate", async (req, res) => {
