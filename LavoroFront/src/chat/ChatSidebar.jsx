@@ -138,8 +138,12 @@ const ChatSidebar = ({
                                             <div className="me-1 lh-1">
                                                 <span className="avatar avatar-md online me-2">
                                                     <img
-                                                        src={conv.user.profileImage || "../assets/images/faces/5.jpg"}
+                                                        src={conv.user.profileImage || conv.user.image || "https://ui-avatars.com/api/?name=" + encodeURIComponent(conv.user.name) + "&background=4a6bff&color=fff"}
                                                         alt={conv.user.name}
+                                                        onError={(e) => {
+                                                            e.target.onerror = null;
+                                                            e.target.src = "https://ui-avatars.com/api/?name=" + encodeURIComponent(conv.user.name) + "&background=4a6bff&color=fff";
+                                                        }}
                                                     />
                                                 </span>
                                             </div>
@@ -195,8 +199,12 @@ const ChatSidebar = ({
                                             <div className="me-1 lh-1">
                                                 <span className="avatar avatar-md offline me-2">
                                                     <img
-                                                        src={conv.user.profileImage || "../assets/images/faces/11.jpg"}
+                                                        src={conv.user.profileImage || conv.user.image || "https://ui-avatars.com/api/?name=" + encodeURIComponent(conv.user.name) + "&background=4a6bff&color=fff"}
                                                         alt={conv.user.name}
+                                                        onError={(e) => {
+                                                            e.target.onerror = null;
+                                                            e.target.src = "https://ui-avatars.com/api/?name=" + encodeURIComponent(conv.user.name) + "&background=4a6bff&color=fff";
+                                                        }}
                                                     />
                                                 </span>
                                             </div>
@@ -260,8 +268,12 @@ const ChatSidebar = ({
                                         {group.members.slice(0, 4).map((member, idx) => (
                                             <span key={idx} className="avatar avatar-sm avatar-rounded">
                                                 <img
-                                                    src={member.profileImage || `../assets/images/faces/${(idx + 2)}.jpg`}
+                                                    src={member.profileImage || member.image || "https://ui-avatars.com/api/?name=" + encodeURIComponent(member.name) + "&background=4a6bff&color=fff"}
                                                     alt={member.name}
+                                                    onError={(e) => {
+                                                        e.target.onerror = null;
+                                                        e.target.src = "https://ui-avatars.com/api/?name=" + encodeURIComponent(member.name) + "&background=4a6bff&color=fff";
+                                                    }}
                                                 />
                                             </span>
                                         ))}
@@ -362,8 +374,12 @@ const ChatSidebar = ({
                                             <div className="lh-1">
                                                 <span className="avatar avatar-sm">
                                                     <img
-                                                        src={contact.profileImage || "../assets/images/faces/5.jpg"}
+                                                        src={contact.profileImage || contact.image || "https://ui-avatars.com/api/?name=" + encodeURIComponent(contact.name) + "&background=4a6bff&color=fff"}
                                                         alt={contact.name}
+                                                        onError={(e) => {
+                                                            e.target.onerror = null;
+                                                            e.target.src = "https://ui-avatars.com/api/?name=" + encodeURIComponent(contact.name) + "&background=4a6bff&color=fff";
+                                                        }}
                                                     />
                                                 </span>
                                             </div>

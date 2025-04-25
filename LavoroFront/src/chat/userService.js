@@ -47,14 +47,24 @@ export const fetchAllUsers = async () => {
     try {
         console.log('Fetching all users from API...');
         const api = createAuthAxios();
-        const response = await api.get('/users/all');
+
+        // Récupérer l'ID de l'utilisateur actuel
+        const currentUser = JSON.parse(localStorage.getItem('user')) || {};
+        const userId = currentUser._id || currentUser.id;
+
+        if (!userId) {
+            console.error('No user ID found in localStorage');
+            return [];
+        }
+
+        // Utiliser la route de contacts du chat qui inclut les photos de profil
+        const response = await api.get(`/chat/contacts/${userId}`);
 
         console.log('Users response:', response.data);
 
-        if (response.data && Array.isArray(response.data.users)) {
-            return response.data.users;
-        } else if (response.data && Array.isArray(response.data)) {
-            return response.data;
+        if (response.data && response.data.success && response.data.data) {
+            // La réponse est déjà organisée par lettre, nous pouvons la retourner directement
+            return flattenContacts(response.data.data);
         }
 
         console.warn('Invalid users response format:', response.data);
@@ -63,6 +73,17 @@ export const fetchAllUsers = async () => {
         console.error('Error fetching all users:', error);
         return [];
     }
+};
+
+// Fonction pour aplatir les contacts organisés par lettre en une seule liste
+const flattenContacts = (contacts) => {
+    const flatList = [];
+    Object.keys(contacts).forEach(letter => {
+        contacts[letter].forEach(contact => {
+            flatList.push(contact);
+        });
+    });
+    return flatList;
 };
 
 // Fonction pour organiser les utilisateurs par ordre alphabétique pour l'affichage des contacts

@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import * as chatService from './chatService.js';
+import EmojiPicker from 'emoji-picker-react';
 
 // API URL for file uploads
 const API_URL = 'http://localhost:3000';
@@ -11,8 +12,10 @@ const ChatWindow = ({ chat, messages, currentUser, onSendMessage, isLoading }) =
     const [attachment, setAttachment] = useState(null);
     const [isTyping, setIsTyping] = useState(false);
     const [typingTimeout, setTypingTimeout] = useState(null);
+    const [showEmojiPicker, setShowEmojiPicker] = useState(false);
     const chatContentRef = useRef(null);
     const fileInputRef = useRef(null);
+    const emojiPickerRef = useRef(null);
 
     // Scroll to bottom when messages change
     useEffect(() => {
@@ -20,6 +23,31 @@ const ChatWindow = ({ chat, messages, currentUser, onSendMessage, isLoading }) =
             chatContentRef.current.scrollTop = chatContentRef.current.scrollHeight;
         }
     }, [messages]);
+
+    // Close emoji picker when clicking outside
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (emojiPickerRef.current && !emojiPickerRef.current.contains(event.target)) {
+                setShowEmojiPicker(false);
+            }
+        };
+
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, []);
+
+    // Handle emoji selection
+    const handleEmojiClick = (emojiData) => {
+        setMessageText(prev => prev + emojiData.emoji);
+        setShowEmojiPicker(false);
+    };
+
+    // Toggle emoji picker
+    const toggleEmojiPicker = () => {
+        setShowEmojiPicker(prev => !prev);
+    };
 
     // Format timestamp to time (e.g., "14:30")
     const formatTime = (timestamp) => {
@@ -249,9 +277,29 @@ const ChatWindow = ({ chat, messages, currentUser, onSendMessage, isLoading }) =
                     >
                         <i className="ri-attachment-2"></i>
                     </button>
-                    <button type="button" className="btn btn-icon me-2 btn-primary2 emoji-picker">
-                        <i className="ri-emotion-line"></i>
-                    </button>
+                    <div className="position-relative">
+                        <button
+                            type="button"
+                            className="btn btn-icon me-2 btn-primary2 emoji-picker"
+                            onClick={toggleEmojiPicker}
+                        >
+                            <i className="ri-emotion-line"></i>
+                        </button>
+                        {showEmojiPicker && (
+                            <div
+                                className="position-absolute bottom-100 start-0 mb-2"
+                                style={{ zIndex: 1000 }}
+                                ref={emojiPickerRef}
+                            >
+                                <EmojiPicker
+                                    onEmojiClick={handleEmojiClick}
+                                    width={300}
+                                    height={400}
+                                    theme="auto"
+                                />
+                            </div>
+                        )}
+                    </div>
                     <input
                         className="form-control chat-message-space"
                         placeholder="Tapez votre message ici..."

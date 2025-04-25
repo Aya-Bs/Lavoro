@@ -9,7 +9,14 @@ const path = require('path');
 // Helper function to get user details
 const getUserDetails = async (userId) => {
     try {
-        const user = await User.findById(userId).select('name email profileImage');
+        const user = await User.findById(userId).select('firstName lastName email image');
+        if (user) {
+            // Combine firstName and lastName to create a full name
+            user.name = `${user.firstName} ${user.lastName || ''}`.trim();
+
+            // Map image to profileImage for frontend compatibility
+            user.profileImage = user.image;
+        }
         return user;
     } catch (error) {
         console.error('Error fetching user details:', error);
@@ -157,14 +164,14 @@ exports.getUserGroups = async (req, res) => {
         // Find all groups where the user is a member
         const groups = await ChatGroup.find({
             members: userId
-        }).populate('creator', 'name email profileImage')
-          .populate('members', 'name email profileImage');
+        }).populate('creator', 'firstName lastName email image')
+          .populate('members', 'firstName lastName email image');
 
         // Get last message for each group
         const groupsWithLastMessage = await Promise.all(groups.map(async (group) => {
             const lastMessage = await GroupMessage.findOne({ group_id: group._id })
                 .sort({ sent_at: -1 })
-                .populate('sender_id', 'name email profileImage');
+                .populate('sender_id', 'firstName lastName email image');
 
             // Count unread messages
             const unreadCount = await GroupMessage.countDocuments({
@@ -244,7 +251,7 @@ exports.getGroupMessages = async (req, res) => {
         // Find all messages for the group
         const messages = await GroupMessage.find({ group_id: groupId })
             .sort({ sent_at: 1 })
-            .populate('sender_id', 'name email profileImage');
+            .populate('sender_id', 'firstName lastName email image');
 
         // Mark messages as read by this user
         await GroupMessage.updateMany(
@@ -254,8 +261,8 @@ exports.getGroupMessages = async (req, res) => {
 
         // Get group details
         const group = await ChatGroup.findById(groupId)
-            .populate('creator', 'name email profileImage')
-            .populate('members', 'name email profileImage');
+            .populate('creator', 'firstName lastName email image')
+            .populate('members', 'firstName lastName email image');
 
         res.status(200).json({
             success: true,
@@ -344,13 +351,19 @@ exports.getContacts = async (req, res) => {
 
         // Get all users except the current user
         const users = await User.find({ _id: { $ne: userId } })
-            .select('name email profileImage')
-            .sort({ name: 1 });
+            .select('firstName lastName email image')
+            .sort({ firstName: 1 });
 
         // Group users by first letter of name
         const contacts = {};
 
         users.forEach(user => {
+            // Combine firstName and lastName to create a full name
+            user.name = `${user.firstName} ${user.lastName || ''}`.trim();
+
+            // Map image to profileImage for frontend compatibility
+            user.profileImage = user.image;
+
             const firstLetter = user.name.charAt(0).toUpperCase();
             if (!contacts[firstLetter]) {
                 contacts[firstLetter] = [];
@@ -382,8 +395,8 @@ exports.addUserToGroup = async (req, res) => {
             groupId,
             { $addToSet: { members: userId } },
             { new: true }
-        ).populate('creator', 'name email profileImage')
-         .populate('members', 'name email profileImage');
+        ).populate('creator', 'firstName lastName email image')
+         .populate('members', 'firstName lastName email image');
 
         // Get the io instance
         const io = req.app.get('io');
@@ -415,8 +428,8 @@ exports.removeUserFromGroup = async (req, res) => {
             groupId,
             { $pull: { members: userId } },
             { new: true }
-        ).populate('creator', 'name email profileImage')
-         .populate('members', 'name email profileImage');
+        ).populate('creator', 'firstName lastName email image')
+         .populate('members', 'firstName lastName email image');
 
         // Get the io instance
         const io = req.app.get('io');
