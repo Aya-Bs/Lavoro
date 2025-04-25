@@ -38,22 +38,14 @@ const GitHubLogin = () => {
   // Stockez le token dans le localStorage
   localStorage.setItem('token', data.token);
 
-  // Afficher une modale de bienvenue
-  setModalMessage("Welcome to Lavoro");
-  setModalType("success");
-  setShowModal(true);
 
   // Fermer la modale après 1 seconde
   setTimeout(() => {
-      setShowModal(false);
-      // Rediriger vers la page d'accueil après la fermeture de la modale
-      navigate('/sales');
+   
+      navigate('/profile');
   }, 1000); // 1000 ms = 1 seconde
 } catch (error) {
   console.error('Error during Microsoft login:', error);
-  setModalMessage("An error occurred during login. Please try again.");
-  setModalType("danger");
-  setShowModal(true);
 
   // Fermer la modale après 1 seconde
   setTimeout(() => {
@@ -61,37 +53,29 @@ const GitHubLogin = () => {
   }, 1000); // 1000 ms = 1 seconde
 }
   };
-  const style ={
-    position: 'absolute',
-    top: "142px",
-    left: '176px',
-    transform: 'translate(-50%, -50%)',
-    
-}
+
+  
   return (
     <>
     <div className="social-container">
-      <a href="#" className="social" onClick={githHubLogin}>
-        <i className="ri-github-line" style={style}></i> 
+      <a href="#" onClick={githHubLogin}
+       style={{
+        position: "relative",
+        width: "20px", // Fixed size for all devices
+        height: "20px", // Fixed size for all devices
+        padding: 0,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        backgroundColor: "transparent",
+        borderColor: "transparent",
+    }}>
+        <i className="ri-github-line" ></i> 
       </a>
     </div>
 
     {/* Modale Bootstrap */}
-    <Modal show={showModal} onHide={() => setShowModal(false)}>
-                <Modal.Header closeButton className={`bg-${modalType} text-white`}>
-                    <Modal.Title>
-                        {modalType === "success" ? "Success" : "Error"}
-                    </Modal.Title>
-                </Modal.Header>
-                <Modal.Body>
-                    {modalMessage}
-                </Modal.Body>
-                <Modal.Footer>
-                    <Button variant={modalType} onClick={() => setShowModal(false)}>
-                        Close
-                    </Button>
-                </Modal.Footer>
-            </Modal>
+    
     </>
   );
 };

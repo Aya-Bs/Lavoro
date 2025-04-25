@@ -3,33 +3,109 @@ import axios from "axios";
 import Swal from "sweetalert2";
 
 const ProfileSecurity = ({ user }) => {
-  const [qrCodeUrl, setQrCodeUrl] = useState(""); 
+  const [qrCodeUrl, setQrCodeUrl] = useState("");
   const [showQRCode, setShowQRCode] = useState(false);
-  const [token, setToken] = useState(""); 
-  const [message, setMessage] = useState(""); 
+  const [token, setToken] = useState("");
+  const [message, setMessage] = useState("");
   const [is2FAEnabled, setIs2FAEnabled] = useState(user.twoFactorEnabled);
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [passwordErrors, setPasswordErrors] = useState({
+    length: false,
+    uppercase: false,
+    lowercase: false,
+    number: false,
+    specialChar: false
+  });
+  const [passwordStrength, setPasswordStrength] = useState({
+    level: "empty",
+    message: "Enter a password",
+    color: "text-muted",
+    progressColor: "bg-light",
+    progress: 0
+  });
 
-  // Enable 2FA
+  const validatePassword = (password) => {
+    const errors = {
+      length: password.length >= 8,
+      uppercase: /[A-Z]/.test(password),
+      lowercase: /[a-z]/.test(password),
+      number: /[0-9]/.test(password),
+      specialChar: /[!@#$%^&*(),.?":{}|<>]/.test(password)
+    };
+    setPasswordErrors(errors);
+
+    const strengthScore = Object.values(errors).filter(Boolean).length;
+    let strength = {
+      level: "weak",
+      message: "Weak password",
+      color: "text-danger",
+      progressColor: "bg-danger",
+      progress: 33
+    };
+
+    const missingCriteria = [];
+    if (!errors.length) missingCriteria.push("8+ characters");
+    if (!errors.uppercase) missingCriteria.push("uppercase letter");
+    if (!errors.lowercase) missingCriteria.push("lowercase letter");
+    if (!errors.number) missingCriteria.push("number");
+    if (!errors.specialChar) missingCriteria.push("special character");
+
+    if (strengthScore === 5) {
+      strength = { 
+        level: "strong", 
+        message: "Strong password",
+        color: "text-success",
+        progressColor: "bg-success",
+        progress: 100
+      };
+    } else if (strengthScore >= 3) {
+      strength = { 
+        level: "medium", 
+        message: "Medium strength",
+        color: "text-warning",
+        progressColor: "bg-warning",
+        progress: 66
+      };
+    } else if (password.length > 0) {
+      strength = { 
+        level: "weak", 
+        message: "Weak password",
+        color: "text-danger",
+        progressColor: "bg-danger",
+        progress: 33
+      };
+    } else {
+      strength = { 
+        level: "empty", 
+        message: "Enter a password",
+        color: "text-muted",
+        progressColor: "bg-light",
+        progress: 0
+      };
+    }
+
+    setPasswordStrength(strength);
+    return strengthScore === 5;
+  };
+
+  const handleNewPasswordChange = (e) => {
+    const value = e.target.value;
+    setNewPassword(value);
+    validatePassword(value);
+  };
+
   const handleEnable2FA = async () => {
     try {
       const authToken = localStorage.getItem("token");
-      if (!authToken) {
-        throw new Error("No token found");
-      }
+      if (!authToken) throw new Error("No token found");
 
       const response = await axios.post(
         "http://localhost:3000/profiles/enable-2fa",
         {},
-        {
-          headers: {
-            Authorization: `Bearer ${authToken}`,
-          },
-          withCredentials: true,
-        }
+        { headers: { Authorization: `Bearer ${authToken}` }, withCredentials: true }
       );
 
       setQrCodeUrl(response.data.qrCodeUrl);
@@ -43,19 +119,12 @@ const ProfileSecurity = ({ user }) => {
   const handleVerify2FA = async () => {
     try {
       const authToken = localStorage.getItem("token");
-      if (!authToken) {
-        throw new Error("No token found");
-      }
+      if (!authToken) throw new Error("No token found");
   
       const response = await axios.post(
         "http://localhost:3000/profiles/verify-2fa",
         { token },
-        {
-          headers: {
-            Authorization: `Bearer ${authToken}`,
-          },
-          withCredentials: true,
-        }
+        { headers: { Authorization: `Bearer ${authToken}` }, withCredentials: true }
       );
   
       setMessage(response.data.message);
@@ -67,23 +136,15 @@ const ProfileSecurity = ({ user }) => {
     }
   };
   
-  // Disable 2FA
   const handleDisable2FA = async () => {
     try {
       const authToken = localStorage.getItem("token");
-      if (!authToken) {
-        throw new Error("No token found");
-      }
+      if (!authToken) throw new Error("No token found");
 
       const response = await axios.post(
         "http://localhost:3000/profiles/disable-2fa",
         {},
-        {
-          headers: {
-            Authorization: `Bearer ${authToken}`,
-          },
-          withCredentials: true,
-        }
+        { headers: { Authorization: `Bearer ${authToken}` }, withCredentials: true }
       );
 
       setMessage(response.data.message);
@@ -94,56 +155,35 @@ const ProfileSecurity = ({ user }) => {
     }
   };
 
-  // Handle password reset with SweetAlert2 popups
   const handlePasswordReset = async () => {
     try {
       setLoading(true);
       const authToken = localStorage.getItem("token");
-      if (!authToken) {
-        throw new Error("No token found");
-      }
+      if (!authToken) throw new Error("No token found");
 
-      // Validate inputs
       if (!currentPassword || !newPassword || !confirmPassword) {
-        await Swal.fire({
-          title: "Error!",
-          text: "All password fields are required",
-          icon: "error"
-        });
+        await Swal.fire({ title: "Error!", text: "All fields are required", icon: "error" });
         return;
       }
 
       if (newPassword !== confirmPassword) {
-        await Swal.fire({
-          title: "Error!",
-          text: "New passwords don't match",
-          icon: "error"
-        });
+        await Swal.fire({ title: "Error!", text: "Passwords don't match", icon: "error" });
+        return;
+      }
+
+      if (!validatePassword(newPassword)) {
+        await Swal.fire({ title: "Error!", text: "Password doesn't meet requirements", icon: "error" });
         return;
       }
 
       const response = await axios.put(
         "http://localhost:3000/profiles/update-password",
-        {
-          currentPassword,
-          newPassword,
-          confirmNewPassword: confirmPassword
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${authToken}`,
-            "Content-Type": "application/json",
-          },
-          withCredentials: true,
-        }
+        { currentPassword, newPassword, confirmNewPassword: confirmPassword },
+        { headers: { Authorization: `Bearer ${authToken}`, "Content-Type": "application/json" }, withCredentials: true }
       );
 
       if (response.status === 200) {
-        await Swal.fire({
-          title: "Success!",
-          text: "Password updated successfully!",
-          icon: "success"
-        });
+        await Swal.fire({ title: "Success!", text: "Password updated successfully!", icon: "success" });
         window.location.reload();
         setCurrentPassword("");
         setNewPassword("");
@@ -153,10 +193,7 @@ const ProfileSecurity = ({ user }) => {
       console.error("Error changing password:", err);
       await Swal.fire({
         title: "Error!",
-        text: err.response?.data?.message || 
-              err.response?.data?.error || 
-              err.message || 
-              "Error changing password",
+        text: err.response?.data?.message || err.response?.data?.error || err.message || "Error changing password",
         icon: "error"
       });
     } finally {
@@ -170,27 +207,24 @@ const ProfileSecurity = ({ user }) => {
         <div className="col-xxl-7">
           <div className="card custom-card shadow-none mb-0">
             <div className="card-body">
-              {/* Two Step Verification - Unchanged */}
               <div className="d-flex gap-2 flex-wrap align-items-top mb-4 justify-content-between">
                 <div className="w-75">
-                  <p className="fs-14 mb-1 fw-medium">Two Step Verification</p>
+                  <p className="fs-14 mb-1 fw-medium">Two-Step Verification</p>
                   <p className="fs-12 text-muted mb-0">
-                    Two-step verification provides enhanced security measures and helps prevent unauthorized access and fraudulent activities.
+                    Enhanced security to prevent unauthorized access
                   </p>
                 </div>
                 <div
                   className={`toggle toggle-success ${is2FAEnabled ? "on" : "off"} mb-0`}
-                  id="two-step-verification"
                   onClick={is2FAEnabled ? handleDisable2FA : handleEnable2FA}
                 >
                   <span></span>
                 </div>
               </div>
 
-              {/* QR Code and Verification Input */}
               {showQRCode && (
                 <div className="mt-4">
-                  <img src={qrCodeUrl} alt="QR Code" className="img-fluid mb-3" />
+                  <img src={qrCodeUrl} alt="QR Code" className="img-fluid mb-3" style={{ maxWidth: "200px" }} />
                   <input
                     type="text"
                     value={token}
@@ -198,13 +232,12 @@ const ProfileSecurity = ({ user }) => {
                     placeholder="Enter 2FA code"
                     className="form-control mb-3"
                   />
-                  <button onClick={handleVerify2FA} className="btn btn-primary">
-                    Verify 2FA
+                  <button onClick={handleVerify2FA} className="btn btn-primary btn-sm">
+                    Verify Code
                   </button>
                 </div>
               )}
 
-              {/* Display Messages */}
               {message && (
                 <div className="mt-3">
                   <p className={`fs-14 ${message.includes("Error") ? "text-danger" : "text-success"}`}>
@@ -213,53 +246,103 @@ const ProfileSecurity = ({ user }) => {
                 </div>
               )}
 
-              {/* Reset Password Section with updated button */}
               <div className="d-flex align-items-top justify-content-between mt-4">
                 <div className="w-100">
                   <p className="fs-14 mb-1 fw-medium">Reset Password</p>
                   <p className="fs-12 text-muted">Password should be min of <b className="text-success">8 digits<sup>*</sup></b>, at least <b className="text-success">One Capital letter<sup>*</sup></b> and <b className="text-success">One Special Character<sup>*</sup></b> included.</p>
+                  
                   <div className="mb-2">
-                    <label htmlFor="current-password" className="form-label">Current Password</label>
+                    <label className="form-label">Current Password</label>
                     <input 
                       type="password" 
                       className="form-control" 
-                      id="current-password" 
-                      placeholder="Current Password"
                       value={currentPassword}
                       onChange={(e) => setCurrentPassword(e.target.value)}
                       required
                     />
                   </div>
-                  <div className="mb-2">
-                    <label htmlFor="new-password" className="form-label">New Password</label>
+                  
+                  <div className="mb-3">
+                    <label className="form-label">New Password</label>
                     <input 
                       type="password" 
                       className="form-control" 
-                      id="new-password" 
-                      placeholder="New Password"
                       value={newPassword}
-                      onChange={(e) => setNewPassword(e.target.value)}
+                      onChange={handleNewPasswordChange}
                       required
                     />
+                    
+                    <div className="mt-3">
+                      <div className="d-flex justify-content-between align-items-center mb-1">
+                        <small className={passwordStrength.color}>
+                          <strong>Password Strength:</strong> {passwordStrength.message}
+                        </small>
+                        <small className="text-muted">
+                          {newPassword.length > 0 ? `${newPassword.length}/8` : ""}
+                        </small>
+                      </div>
+                      
+                      <div className="progress" style={{ height: "4px", backgroundColor: "#f0f0f0" }}>
+                        <div 
+                          className={`progress-bar ${passwordStrength.progressColor}`}
+                          style={{ width: `${passwordStrength.progress}%`, transition: "width 0.3s ease" }}
+                          role="progressbar"
+                        ></div>
+                      </div>
+                      
+                      <div className="row mt-3 g-2">
+                        <div className="col-6">
+                          <small className={`d-flex align-items-center ${passwordErrors.length ? "text-success" : "text-danger"}`}>
+                            <span className="me-1">{passwordErrors.length ? "✓" : "✗"}</span>
+                            <span>8+ characters</span>
+                          </small>
+                          <small className={`d-flex align-items-center ${passwordErrors.uppercase ? "text-success" : "text-danger"}`}>
+                            <span className="me-1">{passwordErrors.uppercase ? "✓" : "✗"}</span>
+                            <span>Uppercase letter</span>
+                          </small>
+                        </div>
+                        <div className="col-6">
+                          <small className={`d-flex align-items-center ${passwordErrors.lowercase ? "text-success" : "text-danger"}`}>
+                            <span className="me-1">{passwordErrors.lowercase ? "✓" : "✗"}</span>
+                            <span>Lowercase letter</span>
+                          </small>
+                          <small className={`d-flex align-items-center ${passwordErrors.number ? "text-success" : "text-danger"}`}>
+                            <span className="me-1">{passwordErrors.number ? "✓" : "✗"}</span>
+                            <span>Number</span>
+                          </small>
+                          <small className={`d-flex align-items-center ${passwordErrors.specialChar ? "text-success" : "text-danger"}`}>
+                            <span className="me-1">{passwordErrors.specialChar ? "✓" : "✗"}</span>
+                            <span>Special character</span>
+                          </small>
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                  <div className="mb-3">
-                    <label htmlFor="confirm-password" className="form-label">Confirm Password</label>
+                  
+                  <div className="mb-4">
+                    <label className="form-label">Confirm Password</label>
                     <input 
                       type="password" 
                       className="form-control" 
-                      id="confirm-password" 
-                      placeholder="Confirm Password"
                       value={confirmPassword}
                       onChange={(e) => setConfirmPassword(e.target.value)}
                       required
                     />
                   </div>
+                  
                   <button 
                     onClick={handlePasswordReset} 
-                    className="btn btn-primary"
+                    className="btn btn-primary w-100"
                     disabled={loading}
                   >
-                    {loading ? "Updating..." : "Change Password"}
+                    {loading ? (
+                      <>
+                        <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                        Updating...
+                      </>
+                    ) : (
+                      "Update Password"
+                    )}
                   </button>
                 </div>
               </div>

@@ -42,51 +42,9 @@ function VerifyEmail() {
     verifyEmail();
   }, [token, navigate]);
 
-    
-  const CustomAlert = ({ message, onClose }) => {
-    return (
-      <div style={{
-        position: "fixed",
-        top: 0,
-        left: 0,
-        width: "100%",
-        height: "100%",
-        backgroundColor: "rgba(0, 0, 0, 0.5)",
-        display: "flex",
-        justifyContent: "center",
-        alignItems: "center",
-        zIndex: 1000,
-      }}>
-        <div style={{
-          backgroundColor: "#fff",
-          padding: "20px",
-          borderRadius: "10px",
-          boxShadow: "0px 4px 8px rgba(0, 0, 0, 0.1)",
-          textAlign: "center",
-        }}>
-          <p>{message}</p>
-          <button
-            onClick={onClose}
-            style={{
-              width: "100%",
-              padding: "10px",
-              marginTop: "10px",
-              backgroundColor: "#FFC300",
-              border: "none",
-              borderRadius: "5px",
-              cursor: "pointer",
-            }}
-          >
-            OK
-          </button>
-        </div>
-      </div>
-    );
-  };
 
   return (
     <>
-      <div>Loading .......</div>
     </>
   );
 }

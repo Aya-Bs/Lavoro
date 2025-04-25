@@ -52,7 +52,7 @@ const MicrosoftLogin = () => {
             setTimeout(() => {
                 setShowModal(false);
                 // Rediriger vers la page d'accueil après la fermeture de la modale
-                navigate('/sales');
+                navigate('/profile');
             }, 1000); // 1000 ms = 1 seconde
         } catch (error) {
             console.error('Error during Microsoft login:', error);
@@ -67,37 +67,30 @@ const MicrosoftLogin = () => {
         }
     };
 
-    const style ={
-        position: 'absolute',
-        top: "142px",
-        left: '254px',
-        transform: 'translate(-50%, -50%)',
-        
-    }
     return (
         <>
             <div className="social-container">
-                <a  onClick={microsoftLogin}>
-                    <i className="ri-microsoft-line " style={style}></i>
-                </a>
+                <button 
+                    onClick={microsoftLogin}
+                    className="btn btn-icon btn-wave btn-primary2-light"
+                    style={{
+                        position: "relative",
+                        width: "20px", // Fixed size for all devices
+                        height: "20px", // Fixed size for all devices
+                        padding: 0,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        backgroundColor: "transparent",
+                        borderColor: "transparent",
+                    }}
+                >
+                    <i className="ri-microsoft-line"></i>
+                </button>
             </div>
 
             {/* Modale Bootstrap */}
-            <Modal show={showModal} onHide={() => setShowModal(false)}>
-                <Modal.Header closeButton className={`bg-${modalType} text-white`}>
-                    <Modal.Title>
-                        {modalType === "success" ? "Success" : "Error"}
-                    </Modal.Title>
-                </Modal.Header>
-                <Modal.Body>
-                    {modalMessage}
-                </Modal.Body>
-                <Modal.Footer>
-                    <Button variant={modalType} onClick={() => setShowModal(false)}>
-                        Close
-                    </Button>
-                </Modal.Footer>
-            </Modal>
+            
         </>
     );
 };
