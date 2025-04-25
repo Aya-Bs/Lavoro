@@ -16,6 +16,7 @@ const Role = require('../models/role');
 
 const jwt = require('jsonwebtoken');
 const sendEmail = require('../utils/email');
+const role = require('../models/role');
 
 
 
@@ -580,5 +581,49 @@ exports.getTeamManager = async (req, res) => {
   } catch (error) {
     console.error("Error fetching team managers:", error);
     res.status(500).json({ error: "An error occurred while fetching team managers" });
+  }
+};
+
+// Dans userController.js
+exports.getAllDev = async (req, res) => {
+  try {
+    const devRole = await Role.findOne({ RoleName: "Developer" });
+    const devs = await User.find({ role: devRole._id })
+      .select('firstName lastName image'); // Sélectionnez seulement les champs nécessaires
+
+    res.status(200).json({
+      success: true,
+      data: devs
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+};
+
+exports.searchDevsByName = async (req, res) => {
+  try {
+    const { searchTerm } = req.query;
+    
+    const devRole = await Role.findOne({ RoleName: "Developer" });
+    const devs = await User.find({
+      role: devRole._id,
+      $or: [
+        { firstName: { $regex: searchTerm, $options: 'i' } },
+        { lastName: { $regex: searchTerm, $options: 'i' } }
+      ]
+    }).select('firstName lastName email image');
+
+    res.status(200).json({
+      success: true,
+      data: devs
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
   }
 };

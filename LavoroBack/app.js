@@ -14,6 +14,7 @@ const transporter = require('./utils/emailConfig'); // Import the transporter fr
 const MongoStore = require('connect-mongo');
 const cors = require('cors');
 
+
 // Connect to MongoDB
 mongo
   .connect(db.url)
@@ -28,6 +29,11 @@ const usersRouter = require('./routes/users');
 const taskRouter=require('./routes/Task')
 const profileRouter = require('./routes/profile');
 const projectRouter = require('./routes/project');
+const notifroute = require('./routes/notification');
+const teamMemberRouter = require('./routes/teamMember');
+const skillsRouter = require('./routes/skills');
+const userSkillsRouter = require('./routes/userSkills');
+
 
 // const homeRouter = require('./routes/home');
 const adminRouter = require('./routes/admin');
@@ -47,6 +53,7 @@ app.use(cors({
 // View engine setup
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'twig');
+
 
 
 // Middleware
@@ -76,16 +83,23 @@ app.use(
   })
 );
 
+app.use('/notifications',notifroute);
+
+
 // Routes
 app.use('/users', usersRouter);
 // app.use('/', homeRouter);
 app.use('/admin',adminRouter);
 app.set('io', io);
-app.set('/tasks',taskRouter);
+app.use('/tasks',taskRouter);
 
 app.use('/project',projectRouter);
 
 app.use('/profiles', profileRouter);
+app.use('/teamMember', teamMemberRouter);
+app.use('/skills', skillsRouter);
+app.use('/userSkills', userSkillsRouter);
+
 
 app.post("/translate", async (req, res) => {
   const { text, targetLanguage } = req.body;
@@ -126,8 +140,8 @@ io.on('connection', (socket) => {
     console.log('User disconnected');
   });
 });
-
 // Start server
+
 server.listen(3000, () => {
   console.log('Server is running on port 3000');
 });

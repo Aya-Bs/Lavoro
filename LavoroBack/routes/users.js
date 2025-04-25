@@ -78,5 +78,8 @@ router.get('/getData', getData);
 
 router.get('/getTeamManager', userController.getTeamManager);
 
+router.get('/getAllDev', userController.getAllDev);
+router.get('/searchDevsByName', userController.searchDevsByName);
+
 
 module.exports = router;
