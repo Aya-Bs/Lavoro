@@ -5,24 +5,31 @@ const ObjectId = mongoose.Types.ObjectId;
 
 exports.getTasksByUser = async (req, res) => {
     try {
-        const userId = req.params.userId;
-
-        // Vérifier si l'ID utilisateur est valide
-        if (!ObjectId.isValid(userId)) {
-            return res.status(400).json({ error: 'Invalid userId format' });
-        }
-
-        // Rechercher les tâches assignées à cet utilisateur spécifique
-        const tasks = await Task.find({ assigned_to: new ObjectId(userId) });
-
-        console.log("Tâches récupérées :", tasks); // 🔍 Debugging
-
-        res.status(200).json(tasks);
+      console.log("Request user object:", req.user);
+      console.log("Authenticated user ID:", req.user._id);
+      
+      const query = { assigned_to: req.user._id };
+      console.log("Query:", query);
+  
+      // Récupérer les tâches sans populate pour éviter l'erreur
+      const tasks = await Task.find(query).lean();
+  
+      console.log("Found tasks:", tasks);
+      
+      if (!tasks.length) {
+        console.log("No tasks found for user:", req.user._id);
+        return res.status(200).json([]);
+      }
+  
+      res.status(200).json(tasks);
     } catch (error) {
-        console.error("Erreur dans getTasksByUser :", error);
-        res.status(500).json({ error: 'Internal Server Error', message: error.message });
+      console.error("Controller error:", error);
+      res.status(500).json({ 
+        error: 'Server error',
+        details: error.message 
+      });
     }
-};
+  };
 
 exports.seedTasks = async () => {
     try {
@@ -109,24 +116,6 @@ exports.seedTaskHistory = async () => {
 };
 
 
-// Fonction pour récupérer les tâches assignées à un utilisateur spécifique
-exports.getTasksByUser = async (req, res) => {
-    try {
-        const userId = req.params.userId;
-
-        // Vérifier si l'ID utilisateur est valide
-        if (!ObjectId.isValid(userId)) {
-            return res.status(400).json({ error: 'Invalid userId format' });
-        }
-
-        // Rechercher les tâches assignées à l'utilisateur
-        const tasks = await Task.find({ assignedTo: userId });
-
-        res.status(200).json(tasks);
-    } catch (error) {
-        res.status(500).json({ error: 'Internal Server Error', message: error.message });
-    }
-};
 
 
 

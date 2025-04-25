@@ -124,10 +124,45 @@ exports.signup = async (req, res) => {
       // Send verification email
       const verificationUrl = `http://localhost:5173/verify-email?token=${verificationToken}`;
       const mailOptions = {
-          to: email,
-          from: `LAVORO <${process.env.EMAIL_USER || 'no-reply@example.com'}>`,
-          subject: 'Email Verification',
-          text: `Please verify your email by clicking the following link: ${verificationUrl}`,
+        to: email,
+        from: `LAVORO <${process.env.EMAIL_USER || 'no-reply@example.com'}>`,
+        subject: 'Verify Your Email Address',
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0;">
+            <h2 style="color: #333;">Welcome to LAVORO!</h2>
+            <p style="font-size: 16px; line-height: 1.5;">
+              Thank you for registering with us. To complete your registration, please verify your email address by clicking the button below:
+            </p>
+            
+            <div style="text-align: center; margin: 30px 0;">
+              <a href="${verificationUrl}" 
+                 style="background-color: #4CAF50; color: white; padding: 12px 24px; 
+                        text-decoration: none; border-radius: 4px; font-weight: bold;
+                        display: inline-block;">
+                Verify Your Email 
+              </a>
+            </div>
+            
+            
+            <p style="font-size: 14px; color: #666;">
+              This link will expire in 24 hours for security reasons.
+            </p>
+
+
+                <p style="font-size: 14px; color: #666;">
+Best Regard , ${lastName} ${firstName}       </p>
+            
+            <div style="text-align: center; margin-top: 40px; padding-top: 20px; border-top: 1px solid #e0e0e0;">
+              <img src="https://res.cloudinary.com/dh6l1swhr/image/upload/v1744759769/487972506_1688041379262753_7417474063211568728_n_ooxbbd.png" alt="LAVORO Logo" style="max-width: 200px; max-height: 150px;">
+              <p style="font-size: 12px; color: #999; margin-top: 10px;">
+                © ${new Date().getFullYear()} LAVORO. All rights reserved.
+              </p>
+            </div>
+          </div>
+        `,
+
+        // Keep text version for email clients that don't support HTML
+        text: `Welcome to LAVORO!\n\nPlease verify your email by clicking the following link:\n${verificationUrl}\n\nIf you didn't create an account with LAVORO, you can safely ignore this email.`
       };
 
       await transporter.sendMail(mailOptions);
@@ -336,7 +371,6 @@ exports.verifyEmail = async (req, res) => {
         if (!token) {
             return res.status(401).json({ error: 'No token provided' });
         }
-
         // Verify the token
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
         console.log('Decoded token:', decoded); // Log the decoded token
@@ -354,6 +388,33 @@ exports.verifyEmail = async (req, res) => {
         res.status(401).json({ error: 'Invalid or expired token' });
     }
 };
+
+
+
+// exports.getUserInfo = async (req, res, next) => {
+//   try {
+//       const authHeader = req.headers['authorization'];
+//       const token = authHeader && authHeader.split(' ')[1];
+
+//       if (!token) {
+//           return res.status(401).json({ error: 'No token provided' });
+//       }
+
+//       // Verify the token
+//       const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      
+//       // Attach user to request
+//       req.user = await User.findById(decoded._id).select('-password_hash').populate('role');
+//       if (!req.user) {
+//           return res.status(404).json({ error: 'User not found' });
+//       }
+
+//       next(); // Continue to the next middleware/route handler
+//   } catch (err) {
+//       console.error('Error in getUserInfo:', err);
+//       res.status(401).json({ error: 'Invalid or expired token' });
+//   }
+// };
 
 
 exports.checkmail =  async (req, res) => {

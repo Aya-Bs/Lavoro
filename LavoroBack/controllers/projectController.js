@@ -4,9 +4,15 @@ const ProjectHistory = require('../models/ProjectHistory'); // Chemin vers votre
 const Archive = require('../models/Archive'); // Chemin vers votre modèle Archive
 const Role = require('../models/role');
 const User = require('../models/user');
+const ExcelJS = require('exceljs');
+const jwt = require('jsonwebtoken');
+
 const nodemailer = require('nodemailer');
 const sendEmail = require('../utils/email');
-const transporter = require('../utils/emailConfig'); // Import the email transporter
+const transporter = require('../utils/emailConfig'); 
+const { createNotification } = require('../utils/notification');
+const { predictProjectFields } = require('../utils/predict'); 
+
 
 
 // Define the sendProjectAssignmentEmail function
@@ -46,137 +52,164 @@ const sendProjectAssignmentEmail = async (email, projectDetails) => {
 
 
 
-
-// Créer un projet
-// Route pour créer un projet
-exports.createProject = async (req, res) => {
-  try {
-    const newProject = new Project({
-      name: req.body.name,
-      description: req.body.description,
-      budget: req.body.budget || 0,
-      manager_id: req.body.manager_id,
-      team_id: req.body.team_id,
-      client: req.body.client,
-      start_date: req.body.start_date,
-      end_date: req.body.end_date,
-      status: req.body.status || 'Not Started',
-      risk_level: req.body.risk_level || 'Medium',
-      tags: req.body.tags,
-    });
-
-    console.log("New project created:", req.body);
-    // Sauvegarder le projet dans la base de données
-    await newProject.save();
-
-    // Récupérer l'utilisateur (manager) associé au projet
-    const manager = await User.findById(req.body.manager_id);  // Assurez-vous que `manager_id` est envoyé dans la requête
-
-    // Vérifier si le manager existe
-    if (!manager) {
-      return res.status(404).json({ message: 'Manager non trouvé' });
-    }
-
-    // Appeler la fonction d'envoi d'email
-    await sendProjectAssignmentEmail(manager.email, newProject);
-
-    return res.status(201).json({ message: 'Projet créé avec succès et email envoyé', project: newProject });
-  } catch (error) {
-    return res.status(500).json({ message: error.message });
-  }
-};
-
-
-
-// Récupérer tous les projets
-exports.getAllProjects = async (req, res) => {
-    try {
-        const projects = await Project.find().sort({ created_at: -1 });
-        res.status(200).json(projects);
-    } catch (error) {
-        res.status(500).json({ 
-            message: "Erreur lors de la récupération des projets",
-            error: error.message 
-        });
-    }
-};
-
-// Récupérer un projet par ID
-// exports.getProjectById = async (req, res) => {
-//     try {
-//         const project = await Project.findById(req.params.id);
-//         if (!project) {
-//             return res.status(404).json({ message: "Projet non trouvé" });
-//         }
-//         res.status(200).json(project);
-//     } catch (error) {
-//         res.status(500).json({ 
-//             message: "Erreur lors de la récupération du projet",
-//             error: error.message 
-//         });
+// Updated getAllProjects function
+// exports.getAllProjects = async (req, res) => {
+//   try {
+//     // Get token from headers
+//     const token = req.headers.authorization;
+//     if (!token) {
+//       return res.status(401).json({ message: 'Authentication required' });
 //     }
+
+//     // Verify token and get user
+//     const decoded = jwt.verify(token.replace('Bearer ', ''), process.env.JWT_SECRET);
+//     const user = await User.findById(decoded._id).populate('role');
+    
+//     if (!user) {
+//       return res.status(401).json({ message: 'User not found' });
+//     }
+
+//     // Build query based on role
+//     let query = {};
+//     if (user.role?.RoleName === 'Team Manager') {
+//       query = { manager_id: user._id }; // Only show projects assigned to this manager
+//     }
+
+
+//     const projects = await Project.find(query)
+//       .sort({ created_at: -1 })
+//       .populate('manager_id', 'firstName lastName email');
+
+//     res.status(200).json(projects);
+//   } catch (error) {
+//     console.error('Error fetching projects:', error);
+//     res.status(500).json({ 
+//       message: "Error fetching projects",
+//       error: error.message 
+//     });
+//   }
 // };
 
-exports.getProjectById = async (req, res) => {
+// Updated getAllProjects function
+exports.getAllProjects = async (req, res) => {
   try {
-    const project = await Project.findById(req.params.id)
-      .populate({
-        path: 'manager_id',
-        select: 'firstName lastName image',
-        model: 'user' // Assurez-vous que c'est le bon nom de modèle
-      });
-
-    if (!project) {
-      return res.status(404).json({ message: "Projet non trouvé" });
+    // Get token from headers
+    const token = req.headers.authorization;
+    if (!token) {
+      return res.status(401).json({ message: 'Authentication required' });
     }
 
-    // Créez un objet de réponse standardisé
-    const responseData = {
-      ...project._doc,
-      teamManager: project.manager_id 
-        ? `${project.manager_id.firstName} ${project.manager_id.lastName}`
-        : null,
-      managerImage: project.manager_id?.image || null
-    };
+    // Verify token and get user
+    const decoded = jwt.verify(token.replace('Bearer ', ''), process.env.JWT_SECRET);
+    const user = await User.findById(decoded._id).populate('role');
+    
+    if (!user) {
+      return res.status(401).json({ message: 'User not found' });
+    }
 
-    res.status(200).json(responseData);
+    // Build query based on role
+    let query = {};
+    if (user.role?.RoleName === 'Team Manager') {
+      query = { manager_id: user._id }; // Team Managers see projects where they are manager_id
+    } else if (user.role?.RoleName === 'Project Manager') {
+      query = { ProjectManager_id: user._id }; // Project Managers see projects where they are ProjectManager_id
+    }
+
+    const projects = await Project.find(query)
+      .sort({ created_at: -1 })
+      .populate('manager_id', 'firstName lastName email')
+      .populate('ProjectManager_id', 'firstName lastName email');
+
+    res.status(200).json(projects);
   } catch (error) {
+    console.error('Error fetching projects:', error);
     res.status(500).json({ 
-      message: "Erreur lors de la récupération du projet",
+      message: "Error fetching projects",
       error: error.message 
     });
   }
 };
 
-// Mettre à jour un projet
-exports.updateProjects = async (req, res) => {
-    try {
-        const updatedData = {
-            ...req.body,
-            updated_at: Date.now(),
-            // Mise à jour des dates si nécessaire
-            start_date: req.body.start_date ? new Date(req.body.start_date) : undefined,
-            end_date: req.body.end_date ? new Date(req.body.end_date) : undefined
-        };
 
-        const project = await Project.findByIdAndUpdate(
-            req.params.id,
-            updatedData,
-            { new: true, runValidators: true }
-        );
-
-        if (!project) {
-            return res.status(404).json({ message: "Projet non trouvé" });
-        }
-
-        res.status(200).json(project);
-    } catch (error) {
-        res.status(400).json({ 
-            message: "Erreur lors de la mise à jour du projet",
-            error: error.message 
-        });
+exports.createProject = async (req, res) => {
+  try {
+    // Get the logged-in user from the token
+    const token = req.headers.authorization;
+    if (!token) {
+      return res.status(401).json({ message: 'Authentication required' });
     }
+
+    // Verify token and get user
+    const decoded = jwt.verify(token.replace('Bearer ', ''), process.env.JWT_SECRET);
+    const loggedInUser = await User.findById(decoded._id).populate('role');
+    
+    if (!loggedInUser) {
+      return res.status(401).json({ message: 'User not found' });
+    }
+    // Create the project with proper date handling
+    const projectData = {
+      name: req.body.name,
+      description: req.body.description,
+      budget: req.body.budget || 0,
+      manager_id: req.body.manager_id,
+      ProjectManager_id: loggedInUser._id, // Set the TeamManager_id to the logged-in user's ID
+      team_id: req.body.team_id,
+      client: req.body.client,
+      start_date: req.body.start_date ? new Date(req.body.start_date) : null,
+      end_date: req.body.end_date ? new Date(req.body.end_date) : null,
+      status: req.body.status || 'Not Started',
+      risk_level: req.body.risk_level || 'Medium',
+      tags: req.body.tags
+    };
+
+    const newProject = new Project(projectData);
+    await newProject.save();
+
+    console.log("New project created:", newProject);
+
+    // Create project history entry
+    const historyEntry = new ProjectHistory({
+      project_id: newProject._id,
+      change_type: 'Project Created',
+      old_value: 'N/A',
+      new_value: `Project "${newProject.name}" created by Project Manager ${loggedInUser.firstName} ${loggedInUser.lastName}.`,
+    });
+    await historyEntry.save();
+
+    // Get manager and send email notification
+    const manager = await User.findById(req.body.manager_id);
+    if (!manager) {
+      return res.status(404).json({ message: 'Manager not found' });
+    }
+
+    await sendProjectAssignmentEmail(manager.email, newProject);
+
+    return res.status(201).json({
+      message: 'Project created successfully',
+      project: newProject,
+      history: historyEntry
+    });
+
+  } catch (error) {
+    console.error("Error creating project:", error);
+    
+    // Handle validation errors specifically
+    if (error.name === 'ValidationError') {
+      return res.status(400).json({
+        message: "Validation Error",
+        errors: error.errors
+      });
+    }
+
+    // Handle other errors
+    return res.status(500).json({
+      message: "Error creating project",
+      error: error.message
+    });
+  }
 };
+
+
 // Récupérer un projet par son nom (exact match)
 exports.getProjectByName = async (req, res) => {
   try {
@@ -228,293 +261,189 @@ exports.deleteProject = async (req, res) => {
         });
     }
 };
-// Fonction pour compter les projets
-exports.getProjectCount = async (req, res) => {
-    try {
-        const count = await Project.countDocuments(); // Compte les projets
-        res.status(200).json({ count });
-    } catch (error) {
-        res.status(500).json({ message: 'Erreur serveur', error });
-    }
-};
 
 
-
-// Fonction pour récupérer le nombre de projets par statut
-exports.getProjectsByStatus = async () => {
-    try {
-        // Agrégation MongoDB pour compter les projets par statut
-        const projectsByStatus = await Project.aggregate([
-            {
-                $group: {
-                    _id: "$status", // Grouper par statut
-                    count: { $sum: 1 } // Compter le nombre de projets dans chaque groupe
-                }
-            }
-        ]);
-
-        // Formater les résultats pour les rendre plus faciles à utiliser côté frontend
-        const formattedResults = projectsByStatus.reduce((acc, { _id, count }) => {
-            acc[_id] = count;
-            return acc;
-        }, {});
-
-        return formattedResults;
-    } catch (err) {
-        console.error('Error fetching projects by status:', err);
-        throw err; // Propager l'erreur pour la gérer côté appelant
-    }
-
-
-};
-
-
-// Function to get all projects
-exports.getAllProjects = async (req, res) => {
-  try {
-    const projects = await Project.find({});
-    res.status(200).json(projects);
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-};
-
-// Function to update a project and track changes
-exports.updateProject = async (req, res) => {
-    const { id } = req.params; // Project ID
-    const updates = req.body; // Updated fields
+  exports.getProjectById = async (req, res) => {
+    const { id } = req.params;
   
     try {
-      // Find the project
-      const project = await Project.findById(id);
+      // Populate both manager_id and ProjectManager_id in a single query
+      const project = await Project.findById(id)
+        .populate('manager_id', 'firstName lastName email image')
+        .populate('ProjectManager_id', 'firstName lastName email image');
+  
       if (!project) {
         return res.status(404).json({ message: 'Project not found' });
       }
   
-      // Track changes
-      const changes = [];
-      for (const field in updates) {
-        if (project[field] !== updates[field]) {
-          changes.push({
-            field,
-            oldValue: project[field],
-            newValue: updates[field],
-          });
+      res.status(200).json(project);
+    } catch (error) {
+      res.status(500).json({ message: error.message });
+    }
+  };
+
+  
+  
+    exports.archiveProject = async (req, res) => {
+      const { id } = req.params; // Get the project ID from the URL
+    
+      console.log(`Archiving project with ID: ${id}`); // Log the project ID
+    
+      try {
+        // Find the project by ID
+        const project = await Project.findById(id);
+        if (!project) {
+          console.log('Project not found'); // Log if project is not found
+          return res.status(404).json({ message: 'Project not found' });
         }
+    
+        console.log('Project found:', project); // Log the project details
+    
+        // Capture the original status before updating
+        const originalStatus = project.status;
+    
+        // Update the project's status to "Archived"
+        project.status = 'Archived';
+        await project.save();
+    
+        // Track the status change in ProjectHistory
+        const history = new ProjectHistory({
+          project_id: project._id, // Use project._id (ObjectId)
+          change_type: 'Status Update',
+          old_value: originalStatus, // Use the original status
+          new_value: 'Archived', // New status
+          changed_at: new Date(),
+        });
+        await history.save();
+    
+        console.log('Status change tracked in ProjectHistory:', history); // Log the history entry
+    
+        // Create a new archive entry with the original status
+        const archive = new Archive({
+          ...project.toObject(), // Copy all project fields
+          originalStatus, // Store the original status
+        });
+        await archive.save();
+    
+        console.log('Project archived successfully:', archive); // Log the archived project
+    
+        // Delete the project from the projects collection
+        await Project.findByIdAndDelete(id);
+    
+        console.log('Project deleted from projects collection'); // Log deletion
+    
+        res.status(200).json({ message: 'Project archived successfully', archive });
+      } catch (error) {
+        console.error('Error archiving project:', error); // Log any errors
+        res.status(500).json({ message: error.message });
       }
+    };
   
-      // If there are changes, save them to ProjectHistory
-      if (changes.length > 0) {
-        for (const change of changes) {
-          const history = new ProjectHistory({
-            project_id: project._id, // Use project._id (ObjectId)
-            change_type: getChangeType(change.field),
-            old_value: change.oldValue,
-            new_value: change.newValue,
-            changed_at: new Date(),
-          });
-          await history.save();
-        }
+  
+  exports.getAllArchivedProjects = async (req, res) => {
+    try {
+      const archivedProjects = await Archive.find({});
+      if (!archivedProjects || archivedProjects.length === 0) {
+        return res.status(404).json({ message: 'No archived projects found' });
       }
-  
-      // Update the project
-      Object.assign(project, updates);
-      project.updated_at = new Date();
-      await project.save();
-  
-      res.status(200).json({ message: 'Project updated successfully', project });
+      res.status(200).json(archivedProjects);
     } catch (error) {
       res.status(500).json({ message: error.message });
     }
   };
   
-  // Helper function to determine the type of change
-  function getChangeType(field) {
-    switch (field) {
-      case 'status':
-        return 'Status Update';
-      case 'end_date':
-        return 'Deadline Change';
-      case 'description':
-        return 'Description Update';
-      default:
-        return 'Other Update';
-    }
-  }
-
-
-  exports.getProjectHistory = async (req, res) => {
+  
+  exports.unarchiveProject = async (req, res) => {
     const { id } = req.params; // Project ID
   
     try {
-      // Find all history entries for the project
-      const history = await ProjectHistory.find({ project_id: id });
-      if (!history || history.length === 0) {
-        return res.status(404).json({ message: 'No history found for this project' });
+      // Find the archived project
+      const archivedProject = await Archive.findById(id);
+      if (!archivedProject) {
+        return res.status(404).json({ message: 'Archived project not found' });
       }
   
-      res.status(200).json(history);
-    } catch (error) {
-      res.status(500).json({ message: error.message });
-    }
-  };
-  
-
-  // In your backend controller (e.g., projectController.js)
-exports.getProjectById = async (req, res) => {
-    const { id } = req.params; // Get the project ID from the URL
-  
-    try {
-      const project = await Project.findById(id); // Fetch the project by ID
-      if (!project) {
-        return res.status(404).json({ message: 'Project not found' });
-      }
-  
-      res.status(200).json(project); // Return the project details
-    } catch (error) {
-      res.status(500).json({ message: error.message });
-    }
-  };
-
-
-
-  exports.archiveProject = async (req, res) => {
-    const { id } = req.params; // Get the project ID from the URL
-  
-    console.log(`Archiving project with ID: ${id}`); // Log the project ID
-  
-    try {
-      // Find the project by ID
-      const project = await Project.findById(id);
-      if (!project) {
-        console.log('Project not found'); // Log if project is not found
-        return res.status(404).json({ message: 'Project not found' });
-      }
-  
-      console.log('Project found:', project); // Log the project details
-  
-      // Capture the original status before updating
-      const originalStatus = project.status;
-  
-      // Update the project's status to "Archived"
-      project.status = 'Archived';
+      // Create a new project in the Project collection
+      const project = new Project(archivedProject.toObject());
+      project.status = 'Completed'; // Update the status to "Completed"
+      project.updated_at = new Date(); // Update the updated_at field
       await project.save();
   
-      // Track the status change in ProjectHistory
+      // Track the unarchive action in ProjectHistory
       const history = new ProjectHistory({
-        project_id: project._id, // Use project._id (ObjectId)
+        project_id: project._id,
         change_type: 'Status Update',
-        old_value: originalStatus, // Use the original status
-        new_value: 'Archived', // New status
+        old_value: 'Archived', // The old value is "Archived"
+        new_value: 'Unarchived', // Set the new value to "Unarchived"
         changed_at: new Date(),
       });
       await history.save();
   
-      console.log('Status change tracked in ProjectHistory:', history); // Log the history entry
+      // Delete the project from the Archive collection
+      await Archive.findByIdAndDelete(id);
   
-      // Create a new archive entry with the original status
-      const archive = new Archive({
-        ...project.toObject(), // Copy all project fields
-        originalStatus, // Store the original status
-      });
-      await archive.save();
-  
-      console.log('Project archived successfully:', archive); // Log the archived project
-  
-      // Delete the project from the projects collection
-      await Project.findByIdAndDelete(id);
-  
-      console.log('Project deleted from projects collection'); // Log deletion
-  
-      res.status(200).json({ message: 'Project archived successfully', archive });
+      res.status(200).json({ message: 'Project unarchived successfully', project });
     } catch (error) {
-      console.error('Error archiving project:', error); // Log any errors
+      res.status(500).json({ message: error.message });
+    }
+  };
+  
+  
+  exports.deleteArchivedProject = async (req, res) => {
+    const { id } = req.params; // Project ID
+  
+    try {
+      // Find and delete the archived project
+      const deletedProject = await Archive.findByIdAndDelete(id);
+      if (!deletedProject) {
+        return res.status(404).json({ message: 'Archived project not found' });
+      }
+  
+      res.status(200).json({ message: 'Archived project deleted successfully', deletedProject });
+    } catch (error) {
+      res.status(500).json({ message: error.message });
+    }
+  };
+  
+  
+  exports.getArchivedProjectById = async (req, res) => {
+    const { id } = req.params; // Get the archive ID from the URL
+  
+    try {
+      const archivedProject = await Archive.findById(id)
+      .populate('manager_id', 'firstName lastName email image')
+      .populate('ProjectManager_id', 'firstName lastName email image');
+      // Fetch the archived project by ID
+      if (!archivedProject) {
+        return res.status(404).json({ message: 'Archived project not found' });
+      }
+  
+      res.status(200).json(archivedProject); // Return the archived project details
+    } catch (error) {
       res.status(500).json({ message: error.message });
     }
   };
 
 
-exports.getAllArchivedProjects = async (req, res) => {
-  try {
-    const archivedProjects = await Archive.find({});
-    if (!archivedProjects || archivedProjects.length === 0) {
-      return res.status(404).json({ message: 'No archived projects found' });
-    }
-    res.status(200).json(archivedProjects);
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-};
 
-
-exports.unarchiveProject = async (req, res) => {
-  const { id } = req.params; // Project ID
-
-  try {
-    // Find the archived project
-    const archivedProject = await Archive.findById(id);
-    if (!archivedProject) {
-      return res.status(404).json({ message: 'Archived project not found' });
-    }
-
-    // Create a new project in the Project collection
-    const project = new Project(archivedProject.toObject());
-    project.status = 'Completed'; // Update the status to "Completed"
-    project.updated_at = new Date(); // Update the updated_at field
-    await project.save();
-
-    // Track the unarchive action in ProjectHistory
-    const history = new ProjectHistory({
-      project_id: project._id,
-      change_type: 'Status Update',
-      old_value: 'Archived', // The old value is "Archived"
-      new_value: 'Unarchived', // Set the new value to "Unarchived"
-      changed_at: new Date(),
-    });
-    await history.save();
-
-    // Delete the project from the Archive collection
-    await Archive.findByIdAndDelete(id);
-
-    res.status(200).json({ message: 'Project unarchived successfully', project });
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-};
-
-
-exports.deleteArchivedProject = async (req, res) => {
-  const { id } = req.params; // Project ID
-
-  try {
-    // Find and delete the archived project
-    const deletedProject = await Archive.findByIdAndDelete(id);
-    if (!deletedProject) {
-      return res.status(404).json({ message: 'Archived project not found' });
-    }
-
-    res.status(200).json({ message: 'Archived project deleted successfully', deletedProject });
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-};
-
-
-exports.getArchivedProjectById = async (req, res) => {
-  const { id } = req.params; // Get the archive ID from the URL
-
-  try {
-    const archivedProject = await Archive.findById(id); // Fetch the archived project by ID
-    if (!archivedProject) {
-      return res.status(404).json({ message: 'Archived project not found' });
-    }
-
-    res.status(200).json(archivedProject); // Return the archived project details
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-};
-
+  
+  
+    exports.getProjectHistory = async (req, res) => {
+      const { id } = req.params; // Project ID
+    
+      try {
+        // Find all history entries for the project
+        const history = await ProjectHistory.find({ project_id: id });
+        if (!history || history.length === 0) {
+          return res.status(404).json({ message: 'No history found for this project' });
+        }
+    
+        res.status(200).json(history);
+      } catch (error) {
+        res.status(500).json({ message: error.message });
+      }
+    };
+  
 
 // Fonction qui vérifie si un utilisateur est un Team Manager
 exports.checkTeamManager = async (id) => {
@@ -540,7 +469,6 @@ exports.checkTeamManager = async (id) => {
 };
 
 
-// Fonction qui vérifie combien de projets un Team Manager a
 exports.checkTeamManagerProjects = async (req, res) => {
   try {
     const user = await this.checkTeamManager(req.params.id);
@@ -549,13 +477,8 @@ exports.checkTeamManagerProjects = async (req, res) => {
     }
     console.log("User found:", req.params.id);
 
-    // 1. Récupérer tous les projets du Team Manager
     const projects = await Project.find({ manager_id: req.params.id });
 
-    // 2. Calculer la charge de travail basée sur :
-    //    - Nombre de projets
-    //    - Statut des projets (en cours = plus de charge)
-    //    - Délais des projets (urgence = plus de charge)
     const workloadScore = projects.reduce((score, project) => {
       let projectScore = 0;
 
@@ -589,20 +512,12 @@ exports.checkTeamManagerProjects = async (req, res) => {
         suggestion: 'Réaffectez certains projets ou ajustez les délais.'
       });
     } else {
-      // return res.status(200).json({ 
-      //   message: 'Capacité disponible pour un nouveau projet',
-      //   workloadScore,
-      //   maxWorkload: MAX_WORKLOAD,
-      //   availableCapacity,
-      //   projectsCount: projects.length
-      // });
       return res.status(200).json({message: 'Capacity available for a new project'});
     }
   } catch (error) {
     return res.status(500).json({ message: error.message });
   }
 };
-
 
 
 exports.updateProjects = async (req, res) => {
@@ -613,59 +528,87 @@ exports.updateProjects = async (req, res) => {
     const project = await Project.findById(id);
     if (!project) return res.status(404).json({ message: 'Project not found' });
 
-    console.log("Received updates:", updates); // Debug what's coming in
+    console.log("Current project:", project);
+    console.log("Received updates:", updates);
 
     const changes = [];
+    
+    // Special handling for manager_id - this is the key fix
+    if (updates.hasOwnProperty('manager_id')) {
+      const oldManagerId = project.manager_id;
+      const newManagerId = updates.manager_id;
+      
+      // Check if manager actually changed
+      if ((!oldManagerId && newManagerId) || 
+          (oldManagerId && !newManagerId) || 
+          (oldManagerId && newManagerId && !oldManagerId.equals(newManagerId))) {
+        
+        const oldManager = oldManagerId ? await User.findById(oldManagerId) : null;
+        const newManager = newManagerId ? await User.findById(newManagerId) : null;
+        
+        changes.push({
+          field: 'manager_id',
+          oldValue: oldManager ? `${oldManager.firstName} ${oldManager.lastName}` : 'None',
+          newValue: newManager ? `${newManager.firstName} ${newManager.lastName}` : 'None',
+          changeType: 'Manager Changed' // Explicitly set the correct change type
+        });
+      }
+    }
+
+    // Rest of your existing code for other fields...
     for (const field in updates) {
-      // Better comparison that handles different types
+      if (field === 'manager_id') continue;
+      
       const oldValue = project[field];
       const newValue = updates[field];
       
-      // Special handling for dates
-      if (field.includes('_date') && oldValue && newValue) {
-        const oldDate = new Date(oldValue).getTime();
-        const newDate = new Date(newValue).getTime();
-        if (oldDate !== newDate) {
-          changes.push({ field, oldValue, newValue });
+      if (JSON.stringify(oldValue) === JSON.stringify(newValue)) continue;
+
+      if (field.includes('_date')) {
+        const oldDate = oldValue ? new Date(oldValue) : null;
+        const newDate = newValue ? new Date(newValue) : null;
+        
+        if ((oldDate && newDate && oldDate.getTime() !== newDate.getTime()) || 
+            (!oldDate && newDate) || 
+            (oldDate && !newDate)) {
+          changes.push({
+            field,
+            oldValue: oldDate ? oldDate.toISOString() : 'None',
+            newValue: newDate ? newDate.toISOString() : 'None',
+            changeType: getChangeType(field)
+          });
         }
-      } 
-      // Special handling for ObjectIds
-      else if ((field === 'manager_id' || field === 'team_id') && oldValue && newValue) {
-        if (!oldValue.equals(newValue)) {
-          changes.push({ field, oldValue, newValue });
-        }
-      }
-      // Default comparison
-      else if (JSON.stringify(oldValue) !== JSON.stringify(newValue)) {
-        changes.push({ field, oldValue, newValue });
+      } else {
+        changes.push({
+          field,
+          oldValue: stringifyForHistory(oldValue),
+          newValue: stringifyForHistory(newValue),
+          changeType: getChangeType(field)
+        });
       }
     }
 
-    console.log("Detected changes:", changes); // Debug before saving
+    console.log("Detected changes:", changes);
 
+    // Save history entries
     for (const change of changes) {
-      const changeType = getChangeType(change.field);
-      console.log(`Field: ${change.field}, Type: ${changeType}`); // Debug change type
-      
       const history = new ProjectHistory({
         project_id: project._id,
-        change_type: changeType,
-        old_value: stringifyForHistory(change.oldValue),
-        new_value: stringifyForHistory(change.newValue),
-        changed_at: new Date(),
+        change_type: change.changeType, // This will now be 'Manager Changed' when appropriate
+        old_value: change.oldValue,
+        new_value: change.newValue,
+        changed_at: new Date()
       });
       await history.save();
+      console.log("Saved history entry:", history);
     }
 
     // Apply updates
-    for (const field in updates) {
-      project[field] = updates[field];
-    }
+    Object.assign(project, updates);
     project.updated_at = new Date();
-    
     await project.save();
 
-    res.status(200).json({ message: 'Project updated successfully', project });
+    res.status(200).json({ message: 'Project updated successfully', project, changes });
   } catch (error) {
     console.error("Update error:", error);
     res.status(500).json({ 
@@ -678,6 +621,7 @@ exports.updateProjects = async (req, res) => {
 
 // Helper to properly stringify values for history
 function stringifyForHistory(value) {
+  if (value === null || value === undefined) return 'None';
   if (value instanceof Date) return value.toISOString();
   if (value instanceof mongoose.Types.ObjectId) return value.toString();
   if (typeof value === 'object') return JSON.stringify(value);
@@ -686,27 +630,17 @@ function stringifyForHistory(value) {
 
 // Improved change type detection
 function getChangeType(field) {
-  // Map all possible field names to their change types
   const fieldMap = {
-    // Project fields
-    name: 'ProjectName Updated',
+    name: 'Project Name Updated',
     description: 'Description Update',
     budget: 'Budget Update',
     client: 'Client Updated',
-    
-    // Dates
     start_date: 'Start Date Change',
     end_date: 'Deadline Change',
-    
-    // Status/risk
     status: 'Status Update',
     risk_level: 'Risk Level Updated',
-    
-    // References
     manager_id: 'Manager Changed',
     team_id: 'Team Changed',
-    
-    // Other
     tags: 'Tags Updated'
   };
 
@@ -761,5 +695,627 @@ exports.exportArchivedProjects = async (req, res) => {
   } catch (err) {
     console.error('❌ Excel export error:', err);
     res.status(500).json({ message: 'Failed to export Excel file.', error: err.message });
+  }
+};
+
+
+
+
+
+// Function to get all projects
+exports.getAllProjectss = async (req, res) => {
+try {
+  const projects = await Project.find({});
+  res.status(200).json(projects);
+} catch (error) {
+  res.status(500).json({ message: error.message });
+}
+};
+
+
+
+
+exports.getProjectsWithProgress = async (req, res) => {
+  try {
+      console.log('Fetching projects with progress...');
+      
+      // Récupérer tous les projets
+      const allProjects = await Project.find({});
+      console.log('Total projects in database:', allProjects.length);
+
+      // Récupérer tous les historiques de projets
+      const allHistories = await ProjectHistory.find({}).sort({ changed_at: -1 });
+      console.log('Total histories:', allHistories.length);
+      console.log('Sample history:', JSON.stringify(allHistories[0], null, 2));
+
+      // Créer un map des derniers historiques par projet
+      const latestHistories = new Map();
+      allHistories.forEach(history => {
+          try {
+              if (history && history.project_id) {
+                  const projectId = history.project_id.toString();
+                  if (!latestHistories.has(projectId)) {
+                      latestHistories.set(projectId, history);
+                  }
+              } else {
+                  console.log('Skipping history entry:', history);
+              }
+          } catch (err) {
+              console.error('Error processing history entry:', err);
+              console.log('Problematic history entry:', history);
+          }
+      });
+
+      console.log('Latest histories map size:', latestHistories.size);
+
+      // Combiner les projets avec leur historique
+      const projectsWithProgress = allProjects.map(project => {
+          try {
+              const projectId = project._id.toString();
+              const history = latestHistories.get(projectId);
+
+              return {
+                  _id: project._id,
+                  name: project.name,
+                  description: project.description,
+                  status: project.status,
+                  progress: history ? history.progress : 0,
+                  updated_at: history ? history.changed_at : project.updated_at
+              };
+          } catch (err) {
+              console.error('Error processing project:', err);
+              console.log('Problematic project:', project);
+              return null;
+          }
+      }).filter(project => project !== null);
+
+      console.log('Projects with progress:', projectsWithProgress.length);
+      res.status(200).json(projectsWithProgress);
+  } catch (error) {
+      console.error('Error fetching projects with progress:', error);
+      res.status(500).json({ message: 'Failed to fetch projects with progress' });
+  }
+};
+
+
+
+
+
+// Fonction pour compter les projets
+exports.getArchiveCount = async (req, res) => {
+  try {
+      const count = await Archive.countDocuments(); 
+      res.status(200).json({ count });
+  } catch (error) {
+      res.status(500).json({ message: 'Erreur serveur', error });
+  }
+};
+
+
+
+// Fonction pour compter les projets (incluant les archives)
+exports.getProjectCount = async (req, res) => {
+  try {
+      const projectCount = await Project.countDocuments();
+      const archiveCount = await Archive.countDocuments();
+      const totalCount = projectCount + archiveCount;
+      
+      res.status(200).json({ 
+        count: totalCount,
+        projectCount,
+        archiveCount 
+      });
+  } catch (error) {
+      res.status(500).json({ message: 'Erreur serveur', error });
+  }
+};
+
+
+
+
+
+exports.getProjectsByStatus = async () => {
+  try {
+    // Get active projects by status
+    const activeProjectsByStatus = await Project.aggregate([
+      {
+        $group: {
+          _id: "$status", // Group by status
+          count: { $sum: 1 } // Count projects in each group
+        }
+      }
+    ]);
+
+    // Get archived projects count
+    const archiveCount = await Archive.countDocuments();
+
+    // Format active projects results
+    const formattedResults = activeProjectsByStatus.reduce((acc, { _id, count }) => {
+      acc[_id] = count;
+      return acc;
+    }, {});
+
+    // Add archived count to the results
+    formattedResults['Archived'] = archiveCount;
+
+    return formattedResults;
+  } catch (err) {
+    console.error('Error fetching projects by status:', err);
+    throw err;
+  }
+};
+
+
+// exports.generateAISuggestions = async (req, res) => {
+//   const { name, description, client, manager_id } = req.body;
+//   try {
+//     // Get AI prediction (as raw text)
+//     const predictionText = await predictProjectFields(name, description);
+    
+//     if (!predictionText) {
+//       return res.status(400).json({ error: "Failed to generate project predictions" });
+//     }
+
+//     const cleaned = predictionText
+//       .replace(/^```json\s*/i, '') 
+//       .replace(/^```\s*/i, '')      
+//       .replace(/```$/, '')          
+//       .trim();
+
+//     let prediction;
+//     try {
+//       prediction = JSON.parse(cleaned);
+//     } catch (parseError) {
+//       console.error("Failed to parse AI response:", parseError);
+//       return res.status(400).json({ error: "Invalid AI response format" });
+//     }
+
+//     // Calculate dates
+//     const startDate = new Date();
+//     const endDate = new Date();
+//     endDate.setMonth(startDate.getMonth() + (prediction.duration || 0));
+//     console.log("********************************************risk level:", prediction["Risks"] );
+//     // Return suggestions without saving to database
+//     res.status(200).json({
+//       budget: prediction.budget || 0,
+//       start_date: startDate,
+//       end_date: endDate,
+//       estimated_duration: prediction.duration || 0,
+//       priority: prediction.priority || 'Medium',
+//       risk_level: prediction.risk_level || 'Medium',
+//       team_member_count: prediction.team_member_count || 0,
+//       total_tasks_count: prediction.task_count || 0,
+//       tags: prediction.Tags || '',
+//       ai_description: prediction["Ai-description"] || description,
+//       risks: prediction["Risks"] || []
+//     });
+
+//   } catch (error) {
+//     console.error("Error in generateAISuggestions:", error);
+//     res.status(500).json({ 
+//       error: "Internal server error", 
+//       details: error.message
+//     });
+//   }
+// };
+
+  
+// exports.createProjectWithAI = async (req, res) => {
+//   const {
+//     name,
+//     description,
+//     client,
+//     manager_id,
+//     budget,
+//     start_date,
+//     end_date,
+//     estimated_duration,
+//     priority,
+//     risk_level,
+//     team_member_count,
+//     total_tasks_count,
+//     tags,
+//     status
+//   } = req.body;
+
+//   try {
+//     // Create project using the provided fields
+//     const newProject = new Project({
+//       project_id: new mongoose.Types.ObjectId().toString(), 
+//       name,
+//       description,
+//       budget: Number(budget),
+//       manager_id,
+//       client,
+//       start_date: new Date(start_date),
+//       end_date: new Date(end_date),
+//       total_tasks_count: Number(total_tasks_count),
+//       estimated_duration: Number(estimated_duration),
+//       team_member_count: Number(team_member_count),
+//       risks,
+//       priority,
+//       risk_level,
+//       tags,
+//       status: status || 'Not Started',
+//       ai_predicted_completion: new Date(end_date),
+//       ai_predicted_description: description
+//     });
+
+//     await newProject.save();
+
+//     // Create project history entry (same as in createProject)
+//     const historyEntry = new ProjectHistory({
+//       project_id: newProject._id,
+//       change_type: 'Project Created',
+//       old_value: 'N/A',
+//       new_value: `Project "${newProject.name}" created with AI assistance.`, // Slightly different message
+//     });
+//     await historyEntry.save();
+
+//     // Get manager and send email notification (optional)
+//     const manager = await User.findById(manager_id);
+//     if (manager) {
+//       await sendProjectAssignmentEmail(manager.email, newProject);
+//     }
+
+//     res.status(201).json({
+//       message: 'Project created successfully with AI',
+//       project: newProject,
+//       history: historyEntry
+//     });
+
+//   } catch (error) {
+//     console.error("Error in createProjectWithAI:", error);
+    
+//     // Handle validation errors specifically
+//      if (error.name === 'ValidationError') {
+//       return res.status(400).json({
+//         message: "Validation Error",
+//         errors: error.errors
+//       });
+//     }
+
+//     res.status(500).json({ 
+//       message: "Error creating project with AI",
+//       error: error.message
+//     });
+//   }
+// };
+
+
+
+exports.generateAISuggestions = async (req, res) => {
+  const { name, description, client, manager_id } = req.body;
+  try {
+    // Get AI prediction (as raw text)
+    const predictionText = await predictProjectFields(name, description);
+    
+    if (!predictionText) {
+      return res.status(400).json({ error: "Failed to generate project predictions" });
+    }
+
+    const cleaned = predictionText
+      .replace(/^```json\s*/i, '') 
+      .replace(/^```\s*/i, '')      
+      .replace(/```$/, '')          
+      .trim();
+
+    let prediction;
+    try {
+      prediction = JSON.parse(cleaned);
+    } catch (parseError) {
+      console.error("Failed to parse AI response:", parseError);
+      return res.status(400).json({ error: "Invalid AI response format" });
+    }
+
+    // Calculate dates
+    const startDate = new Date();
+    const endDate = new Date();
+    endDate.setMonth(startDate.getMonth() + (prediction.duration || 0));
+
+    // Handle risks - convert to array if it's a string
+    let risks = [];
+    if (prediction.Risks) {
+      risks = typeof prediction.Risks === 'string' 
+        ? prediction.Risks.split('\n').filter(r => r.trim()) 
+        : prediction.Risks;
+    }
+
+    // Return suggestions without saving to database
+    res.status(200).json({
+      budget: prediction.budget || 0,
+      start_date: startDate,
+      end_date: endDate,
+      estimated_duration: prediction.duration || 0,
+      priority: prediction.priority || 'Medium',
+      risk_level: prediction.risk_level || 'Medium',
+      team_member_count: prediction.team_member_count || 0,
+      total_tasks_count: prediction.task_count || 0,
+      tags: prediction.Tags || '',
+      ai_description: prediction["Ai-description"] || description,
+      risks: risks
+    });
+
+  } catch (error) {
+    console.error("Error in generateAISuggestions:", error);
+    res.status(500).json({ 
+      error: "Internal server error", 
+      details: error.message
+    });
+  }
+};
+
+exports.createProjectWithAI = async (req, res) => {
+
+
+  const token = req.headers.authorization;
+  if (!token) {
+    return res.status(401).json({ message: 'Authentication required' });
+  }
+
+  // Verify token and get user
+  const decoded = jwt.verify(token.replace('Bearer ', ''), process.env.JWT_SECRET);
+  const loggedInUser = await User.findById(decoded._id).populate('role');
+  
+  if (!loggedInUser) {
+    return res.status(401).json({ message: 'User not found' });
+  }
+
+
+  const {
+    name,
+    description,
+    client,
+    manager_id,
+    ProjectManager_id,
+    budget,
+    start_date,
+    end_date,
+    estimated_duration,
+    priority,
+    risk_level,
+    team_member_count,
+    total_tasks_count,
+    tags,
+    status,
+    ai_description
+  } = req.body;
+
+  try {
+    const predictionText = await predictProjectFields(name, description);
+    const cleaned = predictionText
+      .replace(/^```json\s*/i, '') 
+      .replace(/^```\s*/i, '')      
+      .replace(/```$/, '')          
+      .trim();
+
+    let prediction = {};
+    try {
+      prediction = JSON.parse(cleaned);
+    } catch (parseError) {
+      console.error("Failed to parse AI response:", parseError);
+      return res.status(400).json({ error: "Invalid AI response format" });
+    }
+
+    const aiDescription = prediction["Ai-description"] || description;
+    const aiRisks = prediction["Risks"] || "";
+    const aiRisksString = Array.isArray(aiRisks)
+      ? aiRisks.join(', ')
+      : aiRisks;
+
+    const newProject = new Project({
+      project_id: new mongoose.Types.ObjectId().toString(), 
+      name,
+      description: aiDescription, // 🧠 store AI description as main
+      budget: Number(budget),
+      manager_id,
+      ProjectManager_id: loggedInUser._id, // Set the TeamManager_id to the logged-in user's ID
+      client,
+      start_date: new Date(start_date),
+      end_date: new Date(end_date),
+      total_tasks_count: Number(total_tasks_count),
+      estimated_duration: Number(estimated_duration),
+      team_member_count: Number(team_member_count),
+      priority,
+      risk_level,
+      tags,
+      status: status || 'Not Started',
+      ai_predicted_completion: new Date(end_date),
+      ai_predicted_description: aiDescription,
+      risks: aiRisksString
+    });
+
+    await newProject.save();
+
+        // Create project history entry (same as in createProject)
+    const historyEntry = new ProjectHistory({
+      project_id: newProject._id,
+      change_type: 'Project Created',
+      old_value: 'N/A',
+      new_value: `Project "${newProject.name}" created with AI assistance.`, // Slightly different message
+    });
+
+
+    await historyEntry.save();
+
+
+    res.status(201).json(newProject);
+  } catch (error) {
+    console.error("Error in createProjectWithAI:", error);
+    res.status(500).json({ 
+      error: "Internal server error", 
+      details: error.message
+    });
+  } 
+};
+
+
+// exports.startProject = async (req, res) => {
+//   const { id } = req.params;
+
+//   try {
+//     const project = await Project.findById(id);
+//     if (!project) {
+//       return res.status(404).json({ message: 'Project not found' });
+//     }
+
+//     // Check if project can be started (must be "Not Started")
+//     if (project.status !== 'Not Started') {
+//       return res.status(400).json({ 
+//         message: 'Project can only be started if its status is "Not Started"' 
+//       });
+//     }
+
+//     // Update project status and start date
+//     const oldStatus = project.status;
+//     project.status = 'In Progress';
+//     project.start_date = new Date(); // Set to current date
+//     project.updated_at = new Date();
+    
+//     await project.save();
+
+//     // Create history entry
+//     const history = new ProjectHistory({
+//       project_id: project._id,
+//       change_type: 'Status Update',
+//       old_value: oldStatus,
+//       new_value: 'In Progress',
+//       changed_at: new Date(),
+//     });
+//     await history.save();
+
+//     res.status(200).json(project);
+
+//   } catch (error) {
+//     console.error('Error starting project:', error);
+//     res.status(500).json({ 
+//       message: 'Error starting project',
+//       error: error.message 
+//     });
+//   }
+// };
+
+
+// exports.startProject = async (req, res) => {
+//   const { id } = req.params;
+
+//   try {
+//     const project = await Project.findById(id).populate('manager_id');
+//     if (!project) {
+//       return res.status(404).json({ message: 'Project not found' });
+//     }
+
+//     // Check if project can be started
+//     if (project.status !== 'Not Started') {
+//       return res.status(400).json({ 
+//         message: 'Project can only be started if its status is "Not Started"' 
+//       });
+//     }
+
+//     const oldStatus = project.status;
+//     project.status = 'In Progress';
+//     project.start_date = new Date();
+//     project.updated_at = new Date();
+    
+//     await project.save();
+
+//     // Create history entry
+//     const history = new ProjectHistory({
+//       project_id: project._id,
+//       change_type: 'Status Update',
+//       old_value: oldStatus,
+//       new_value: 'In Progress',
+//       changed_at: new Date(),
+//     });
+//     await history.save();
+//     // Send notification to manager if one is assigned
+// if (project.manager_id) {
+//   try {
+//     const notificationText = `Project "${project.name}" has been started and is now In Progress`;
+    
+//     await createNotification(
+//       project.manager_id._id, 
+//       notificationText,
+//       'project_status_change',
+//       req.user._id // The user who triggered the action
+//     );
+//   } catch (notificationError) {
+//     console.error('Error sending notification:', notificationError);
+//   }
+
+//     }
+
+//     res.status(200).json(project);
+
+//   } catch (error) {
+//     console.error('Error starting project:', error);
+//     res.status(500).json({ 
+//       message: 'Error starting project',
+//       error: error.message 
+//     });
+//   }
+// };
+
+
+
+exports.startProject = async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const project = await Project.findById(id).populate('manager_id');
+    if (!project) {
+      return res.status(404).json({ message: 'Project not found' });
+    }
+
+    // Check if project can be started
+    if (project.status !== 'Not Started') {
+      return res.status(400).json({ 
+        message: 'Project can only be started if its status is "Not Started"' 
+      });
+    }
+
+    const oldStatus = project.status;
+    project.status = 'In Progress';
+    project.start_date = new Date();
+    project.updated_at = new Date();
+    
+    await project.save();
+
+    // Create history entry
+    const history = new ProjectHistory({
+      project_id: project._id,
+      change_type: 'Status Update',
+      old_value: oldStatus,
+      new_value: 'In Progress',
+      changed_at: new Date(),
+    });
+    await history.save();
+
+    // Send notification to manager if one is assigned
+    if (project.manager_id) {
+      try {
+        const notificationText = `Project "${project.name}" has been started and is now In Progress`;
+        
+        // Call the createNotification function correctly
+        await createNotification(
+          project.manager_id._id,  // The manager's user ID
+          notificationText,
+          'project_status_change'  // Notification type
+        );
+        
+        console.log('Notification created successfully');
+      } catch (notificationError) {
+        console.error('Error sending notification:', notificationError);
+      }
+    }
+
+    res.status(200).json(project);
+
+  } catch (error) {
+    console.error('Error starting project:', error);
+    res.status(500).json({ 
+      message: 'Error starting project',
+      error: error.message 
+    });
   }
 };

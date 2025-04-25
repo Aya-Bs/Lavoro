@@ -7,137 +7,75 @@ const fs = require('fs');
 const qrcode = require('qrcode');
 const speakeasy = require('speakeasy');
 
-
-// // Fonction pour mettre à jour le profil de l'utilisateur
-// exports.updateProfile = async (req, res) => {
-//   try {
-//     const userId = req.session.user._id;
-//     let imagePath = req.session.user.image; 
-//     const { currentPassword, newPassword, confirmNewPassword } = req.body;
-
-//     // Si une nouvelle image est téléchargée, mettre à jour le chemin de l'image
-//     if (req.file) {
-//       imagePath = '/imagesUser/' + req.file.filename; 
-//     }
-
-//     console.log("req.body:", req.body);
-//     console.log("req.file:", req.file);
-//     console.log("imagePath",req.session.user.image);
-
-//           // Handle base64 image (sent as req.body.image)
-//           if (req.body.image && req.body.image.startsWith("data:image")) {
-//             const base64Data = req.body.image.replace(/^data:image\/png;base64,/, "");
-//             const filename = `public/imagesUser/${Date.now()}-captured.png`;
-//             fs.writeFileSync(filename, base64Data, "base64");
-//             imagePath = filename.replace("public", "");
-//           }
-
-//           console.log("hello");
-//     const user = await User.findById(userId);
-//     if (!user) {
-//       return res.status(404).json({ message: 'Utilisateur non trouvé' });
-//     }
-
-//     if (currentPassword && newPassword && confirmNewPassword) {
-//       // Valider le mot de passe actuel
-//       const isPasswordValid = await bcrypt.compare(currentPassword, user.password_hash);
-//       if (!isPasswordValid) {
-//         return res.status(400).json({ message: 'Mot de passe actuel incorrect' });
-//       }
-
-//       // Vérifier que les nouveaux mots de passe correspondent
-//       if (newPassword !== confirmNewPassword) {
-//         return res.status(400).json({ message: 'Les nouveaux mots de passe ne correspondent pas' });
-//       }
-
-//       // Hacher le nouveau mot de passe
-//       const hashedPassword = await bcrypt.hash(newPassword, 10);
-//       user.password_hash = hashedPassword;
-//       await user.save();
-//     }
-
-//     // Préparer l'objet de mise à jour
-//     const updateData = {
-//       image: imagePath,
-//       firstName: req.body.firstName,
-//       lastName: req.body.lastName,
-//       phone_number: req.body.phoneNumber,
-//     };
-
-//     // Ajouter le mot de passe haché à l'objet de mise à jour uniquement si défini
-//     if (user.password_hash) {
-//       updateData.password_hash = user.password_hash;
-//     }
-
-//     console.log("updateData:", updateData);
-//     // Mettre à jour l'utilisateur dans la base de données
-//     const updatedUser = await User.findByIdAndUpdate(userId, updateData, { new: true });
-
-//     if (updatedUser) {
-//       req.session.user = updatedUser;
-//     } else {
-//       return res.status(404).json({ message: 'User not found' });
-//     }
-//     await AccountActivityLog.create({
-//                userId: updatedUser._id,
-//                action: 'User Updated Profile',
-//              });
-
-//     console.log("session user:", req.session.user);
-//     req.session.user = updatedUser;
-
-//     // Mettre à jour la session avec les nouvelles informations
-
-//     // 
-
-//     res.status(200).json({ message: 'Profil mis à jour avec succès' });
-//   } catch (error) {
-//     res.status(500).json({ message: error.message });
-//   }
-// };
+const jwt = require('jsonwebtoken');
 
 
 // Update user profile (without password handling)
 exports.updateProfile = async (req, res) => {
   try {
-    const userId = req.session.user._id;
-    let imagePath = req.session.user.image; 
+    const authHeader = req.headers['authorization'];
+    const token = authHeader && authHeader.split(' ')[1];
 
-    // Handle file upload
-    if (req.file) {
-      imagePath = '/imagesUser/' + req.file.filename; 
+    if (!token) {
+      return res.status(401).json({ message: 'No token provided' });
     }
 
-    // Handle base64 image
-    if (req.body.image && req.body.image.startsWith("data:image")) {
-      const base64Data = req.body.image.replace(/^data:image\/png;base64,/, "");
-      const filename = `public/imagesUser/${Date.now()}-captured.png`;
-      fs.writeFileSync(filename, base64Data, "base64");
-      imagePath = filename.replace("public", "");
+    let decoded;
+    try {
+      decoded = jwt.verify(token, process.env.JWT_SECRET);
+    } catch (err) {
+      return res.status(403).json({ message: 'Invalid or expired token' });
     }
 
+    const userId = decoded._id;
     const user = await User.findById(userId);
     if (!user) {
       return res.status(404).json({ message: 'Utilisateur non trouvé' });
     }
 
+    let imagePath = user.image; // Default to existing image
+
+    // Handle new file upload (from multer, if used)
+    if (req.file) {
+      imagePath = '/imagesUser/' + req.file.filename;
+    }
+
+    // Handle base64 image from FormData
+    if (req.body.image && req.body.image.startsWith("data:image")) {
+      const base64Data = req.body.image.replace(/^data:image\/png;base64,/, "");
+      const filename = `public/imagesUser/${Date.now()}-captured.png`;
+      try {
+        fs.writeFileSync(filename, base64Data, "base64");
+        imagePath = filename.replace("public", "");
+      } catch (err) {
+        console.error("Error writing image file:", err);
+        return res.status(500).json({ message: "Failed to save image" });
+      }
+    } else if (req.body.image === "") {
+      // Clear the image and delete the old file if it exists
+      if (user.image && fs.existsSync(`public/${user.image}`)) {
+        fs.unlinkSync(`public/${user.image}`);
+      }
+      imagePath = "";
+    }
+
     // Prepare update data
     const updateData = {
-      image: imagePath,
-      firstName: req.body.firstName,
-      lastName: req.body.lastName,
-      phone_number: req.body.phoneNumber,
+      firstName: req.body.firstName || user.firstName,
+      lastName: req.body.lastName || user.lastName,
+      phone_number: req.body.phoneNumber || user.phone_number,
     };
 
-    // Update user in database
+    if (imagePath !== user.image) {
+      updateData.image = imagePath;
+    }
+
     const updatedUser = await User.findByIdAndUpdate(userId, updateData, { new: true });
 
     if (!updatedUser) {
       return res.status(404).json({ message: 'User not found' });
     }
 
-    // Update session and log activity
-    req.session.user = updatedUser;
     await AccountActivityLog.create({
       userId: updatedUser._id,
       action: 'User Updated Profile',
@@ -145,9 +83,12 @@ exports.updateProfile = async (req, res) => {
 
     res.status(200).json({ message: 'Profil mis à jour avec succès' });
   } catch (error) {
+    console.error("Backend error:", error);
     res.status(500).json({ message: error.message });
   }
 };
+
+
 
 // Separate method for updating password
 exports.updatePassword = async (req, res) => {
