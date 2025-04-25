@@ -90,6 +90,99 @@ const ChatComponent = () => {
                 } else {
                     console.warn("Invalid chats response format or empty data, using mock data");
 
+                    // Créer des conversations fictives pour test
+                    const mockConversations = [
+                        {
+                            user: {
+                                _id: '101',
+                                name: 'Rashid Khan',
+                                email: 'rashid@example.com',
+                                profileImage: '../assets/images/faces/5.jpg',
+                                status: 'online'
+                            },
+                            lastMessage: {
+                                _id: '1001',
+                                sender_id: '101',
+                                receiver_id: userId,
+                                message: 'Hey!! you are there? 😊',
+                                sent_at: new Date(Date.now() - 3600000).toISOString(),
+                                is_read: false
+                            },
+                            unreadCount: 3
+                        },
+                        {
+                            user: {
+                                _id: '102',
+                                name: 'Jamison Jen',
+                                email: 'jamison@example.com',
+                                profileImage: '../assets/images/faces/2.jpg',
+                                status: 'online'
+                            },
+                            lastMessage: {
+                                _id: '1002',
+                                sender_id: '102',
+                                receiver_id: userId,
+                                message: 'Typing...',
+                                sent_at: new Date(Date.now() - 7200000).toISOString(),
+                                is_read: true
+                            },
+                            unreadCount: 0
+                        },
+                        {
+                            user: {
+                                _id: '103',
+                                name: 'Andy Max',
+                                email: 'andy@example.com',
+                                profileImage: '../assets/images/faces/10.jpg',
+                                status: 'online'
+                            },
+                            lastMessage: {
+                                _id: '1003',
+                                sender_id: userId,
+                                receiver_id: '103',
+                                message: 'Great! I am happy to here this from you. ☕',
+                                sent_at: new Date(Date.now() - 14400000).toISOString(),
+                                is_read: true
+                            },
+                            unreadCount: 0
+                        },
+                        {
+                            user: {
+                                _id: '104',
+                                name: 'Kerina Cherish',
+                                email: 'kerina@example.com',
+                                profileImage: '../assets/images/faces/6.jpg',
+                                status: 'online'
+                            },
+                            lastMessage: {
+                                _id: '1004',
+                                sender_id: '104',
+                                receiver_id: userId,
+                                message: 'Looking forward about the matter',
+                                sent_at: new Date(Date.now() - 28800000).toISOString(),
+                                is_read: true
+                            },
+                            unreadCount: 0
+                        },
+                        {
+                            user: {
+                                _id: '105',
+                                name: 'Rony Erick',
+                                email: 'rony@example.com',
+                                profileImage: '../assets/images/faces/11.jpg',
+                                status: 'offline'
+                            },
+                            lastMessage: {
+                                _id: '1005',
+                                sender_id: '105',
+                                receiver_id: userId,
+                                message: 'You should come definitely🎞️',
+                                sent_at: new Date(Date.now() - 86400000).toISOString(),
+                                is_read: true
+                            },
+                            unreadCount: 0
+                        }
+                    ];
 
                     setConversations(mockConversations);
                 }
@@ -661,10 +754,31 @@ const ChatComponent = () => {
     });
 
     return (
-        <div className="main-content app-content chat-theme-dark">
-            <div className="container-fluid p-0">
+        <div className="main-content app-content">
+            <div className="container-fluid">
+                {/* Page Header */}
+                <div className="d-flex align-items-center justify-content-between page-header-breadcrumb flex-wrap gap-2">
+                    <div>
+                        <nav>
+                            <ol className="breadcrumb mb-1">
+                                <li className="breadcrumb-item"><a href="javascript:void(0);">Pages</a></li>
+                                <li className="breadcrumb-item active" aria-current="page">Chat</li>
+                            </ol>
+                        </nav>
+                        <h1 className="page-title fw-medium fs-18 mb-0">Chat</h1>
+                    </div>
+                    <div className="btn-list">
+                        <button className="btn btn-white btn-wave">
+                            <i className="ri-filter-3-line align-middle me-1 lh-1"></i> Filter
+                        </button>
+                        <button className="btn btn-primary btn-wave me-0">
+                            <i className="ri-share-forward-line me-1"></i> Share
+                        </button>
+                    </div>
+                </div>
+                {/* Page Header Close */}
 
-                <div className="main-chart-wrapper gap-0 d-lg-flex">
+                <div className="main-chart-wrapper gap-lg-2 gap-0 mb-2 d-lg-flex">
                     {/* Chat Sidebar */}
                     <ChatSidebar
                         conversations={filteredConversations}
@@ -691,12 +805,8 @@ const ChatComponent = () => {
                     ) : (
                         <div className="chat-window-placeholder">
                             <div className="text-center">
-                                <i className="ri-chat-smile-3-line"></i>
-                                <h4 className="mt-3 mb-2">Bienvenue dans votre messagerie</h4>
-                                <p className="text-muted mb-4">Sélectionnez une conversation pour commencer à discuter</p>
-                                <button className="btn btn-primary btn-lg">
-                                    <i className="ri-user-add-line me-2"></i> Nouveau message
-                                </button>
+                                <i className="ri-chat-3-line fs-40 text-muted"></i>
+                                <h5 className="mt-3">Select a chat to start messaging</h5>
                             </div>
                         </div>
                     )}

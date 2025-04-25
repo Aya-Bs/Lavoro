@@ -2,7 +2,6 @@ import React, { useState, useEffect, useRef } from 'react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import * as chatService from './chatService.js';
-import EmojiPicker from 'emoji-picker-react';
 
 // API URL for file uploads
 const API_URL = 'http://localhost:3000';
@@ -12,10 +11,8 @@ const ChatWindow = ({ chat, messages, currentUser, onSendMessage, isLoading }) =
     const [attachment, setAttachment] = useState(null);
     const [isTyping, setIsTyping] = useState(false);
     const [typingTimeout, setTypingTimeout] = useState(null);
-    const [showEmojiPicker, setShowEmojiPicker] = useState(false);
     const chatContentRef = useRef(null);
     const fileInputRef = useRef(null);
-    const emojiPickerRef = useRef(null);
 
     // Scroll to bottom when messages change
     useEffect(() => {
@@ -23,30 +20,6 @@ const ChatWindow = ({ chat, messages, currentUser, onSendMessage, isLoading }) =
             chatContentRef.current.scrollTop = chatContentRef.current.scrollHeight;
         }
     }, [messages]);
-
-    // Handle clicks outside of emoji picker to close it
-    useEffect(() => {
-        const handleClickOutside = (event) => {
-            if (emojiPickerRef.current && !emojiPickerRef.current.contains(event.target)) {
-                setShowEmojiPicker(false);
-            }
-        };
-
-        document.addEventListener('mousedown', handleClickOutside);
-        return () => {
-            document.removeEventListener('mousedown', handleClickOutside);
-        };
-    }, []);
-
-    // Handle emoji click
-    const onEmojiClick = (emojiData) => {
-        setMessageText(prevText => prevText + emojiData.emoji);
-    };
-
-    // Toggle emoji picker
-    const toggleEmojiPicker = () => {
-        setShowEmojiPicker(prevState => !prevState);
-    };
 
     // Format timestamp to time (e.g., "14:30")
     const formatTime = (timestamp) => {
@@ -132,8 +105,8 @@ const ChatWindow = ({ chat, messages, currentUser, onSendMessage, isLoading }) =
     // Get chat name and image
     const chatName = chat.type === 'direct' ? chat.user.name : chat.name;
     const chatImage = chat.type === 'direct'
-        ? (chat.user.profileImage || chat.user.image || "https://ui-avatars.com/api/?name=" + encodeURIComponent(chatName) + "&background=4a6bff&color=fff")
-        : (chat.avatar || "https://ui-avatars.com/api/?name=" + encodeURIComponent(chatName) + "&background=4a6bff&color=fff");
+        ? (chat.user.profileImage || "../assets/images/faces/6.jpg")
+        : (chat.avatar || "../assets/images/faces/17.jpg");
     const chatStatus = chat.type === 'direct' ? chat.user.status || 'offline' : '';
 
     return (
@@ -142,15 +115,7 @@ const ChatWindow = ({ chat, messages, currentUser, onSendMessage, isLoading }) =
             <div className="chat-header d-flex align-items-center justify-content-between p-3 border-bottom">
                 <div className="d-flex align-items-center">
                     <span className={`avatar avatar-md ${chatStatus} me-2`}>
-                        <img
-                            className="chatimageperson"
-                            src={chatImage}
-                            alt={chatName}
-                            onError={(e) => {
-                                e.target.onerror = null;
-                                e.target.src = "https://ui-avatars.com/api/?name=" + encodeURIComponent(chatName) + "&background=4a6bff&color=fff";
-                            }}
-                        />
+                        <img className="chatimageperson" src={chatImage} alt={chatName} />
                     </span>
                     <div>
                         <p className="mb-0 fw-semibold chatnameperson">{chatName}</p>
@@ -214,14 +179,8 @@ const ChatWindow = ({ chat, messages, currentUser, onSendMessage, isLoading }) =
                                                     <div className="chat-user-profile">
                                                         <span className={`avatar avatar-md ${chat.type === 'direct' ? chatStatus : ''}`}>
                                                             <img
-                                                                src={chat.type === 'direct'
-                                                                    ? chatImage
-                                                                    : (message.sender?.profileImage || message.sender?.image || "https://ui-avatars.com/api/?name=" + encodeURIComponent(message.sender?.name || "User") + "&background=4a6bff&color=fff")}
+                                                                src={chat.type === 'direct' ? chatImage : (message.sender?.profileImage || "../assets/images/faces/6.jpg")}
                                                                 alt={chat.type === 'direct' ? chatName : message.sender?.name}
-                                                                onError={(e) => {
-                                                                    e.target.onerror = null;
-                                                                    e.target.src = "https://ui-avatars.com/api/?name=" + encodeURIComponent(chat.type === 'direct' ? chatName : message.sender?.name || "User") + "&background=4a6bff&color=fff";
-                                                                }}
                                                             />
                                                         </span>
                                                     </div>
@@ -290,31 +249,9 @@ const ChatWindow = ({ chat, messages, currentUser, onSendMessage, isLoading }) =
                     >
                         <i className="ri-attachment-2"></i>
                     </button>
-                    <div className="position-relative">
-                        <button
-                            type="button"
-                            className="btn btn-icon me-2 btn-primary2 emoji-picker"
-                            onClick={toggleEmojiPicker}
-                        >
-                            <i className="ri-emotion-line"></i>
-                        </button>
-                        {showEmojiPicker && (
-                            <div
-                                className="position-absolute bottom-100 start-0 mb-2"
-                                style={{ zIndex: 5 }}
-                                ref={emojiPickerRef}
-                            >
-                                <EmojiPicker
-                                    onEmojiClick={onEmojiClick}
-                                    searchDisabled={false}
-                                    width={300}
-                                    height={400}
-                                    theme="dark"
-                                    lazyLoadEmojis={true}
-                                />
-                            </div>
-                        )}
-                    </div>
+                    <button type="button" className="btn btn-icon me-2 btn-primary2 emoji-picker">
+                        <i className="ri-emotion-line"></i>
+                    </button>
                     <input
                         className="form-control chat-message-space"
                         placeholder="Tapez votre message ici..."

@@ -47,57 +47,20 @@ export const fetchAllUsers = async () => {
     try {
         console.log('Fetching all users from API...');
         const api = createAuthAxios();
+        const response = await api.get('/users/all');
 
-        // Essayer d'abord l'endpoint /chat/contacts/:userId
-        try {
-            const currentUser = JSON.parse(localStorage.getItem('user'));
-            if (currentUser && currentUser._id) {
-                console.log('Using /chat/contacts/:userId endpoint');
-                const response = await api.get(`/chat/contacts/${currentUser._id}`);
-                console.log('Contacts response:', response.data);
+        console.log('Users response:', response.data);
 
-                if (response.data && response.data.success && response.data.data) {
-                    // Cet endpoint renvoie déjà les contacts organisés par lettre
-                    return response.data.data;
-                }
-            }
-        } catch (contactsError) {
-            console.error('Error fetching contacts, trying alternative endpoint:', contactsError);
+        if (response.data && Array.isArray(response.data.users)) {
+            return response.data.users;
+        } else if (response.data && Array.isArray(response.data)) {
+            return response.data;
         }
 
-        // Si l'endpoint /chat/contacts/:userId échoue, essayer /admin/all-users
-        try {
-            console.log('Using /admin/all-users endpoint');
-            const response = await api.get('/admin/all-users');
-            console.log('Admin users response:', response.data);
-
-            if (response.data && Array.isArray(response.data.users)) {
-                return response.data.users;
-            } else if (response.data && Array.isArray(response.data)) {
-                return response.data;
-            }
-        } catch (adminError) {
-            console.error('Error fetching admin users:', adminError);
-        }
-
-        // Si les deux endpoints échouent, essayer un endpoint générique
-        try {
-            console.log('Using /users/me endpoint to get current user');
-            const meResponse = await api.get('/users/me');
-            console.log('Current user response:', meResponse.data);
-
-            // Créer un tableau avec l'utilisateur actuel
-            if (meResponse.data) {
-                return [meResponse.data];
-            }
-        } catch (meError) {
-            console.error('Error fetching current user:', meError);
-        }
-
-        console.warn('All attempts to fetch users failed');
+        console.warn('Invalid users response format:', response.data);
         return [];
     } catch (error) {
-        console.error('Error in fetchAllUsers:', error);
+        console.error('Error fetching all users:', error);
         return [];
     }
 };

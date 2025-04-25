@@ -9,22 +9,8 @@ const path = require('path');
 // Helper function to get user details
 const getUserDetails = async (userId) => {
     try {
-        const user = await User.findById(userId).select('firstName lastName email image role');
-
-        if (user) {
-            // Convert to plain object to allow adding properties
-            const userObj = user.toObject();
-
-            // Add name property for compatibility
-            userObj.name = `${userObj.firstName} ${userObj.lastName}`;
-
-            // Map image to profileImage for compatibility
-            userObj.profileImage = userObj.image;
-
-            return userObj;
-        }
-
-        return null;
+        const user = await User.findById(userId).select('name email profileImage');
+        return user;
     } catch (error) {
         console.error('Error fetching user details:', error);
         return null;
@@ -355,32 +341,22 @@ exports.sendGroupMessage = async (req, res) => {
 exports.getContacts = async (req, res) => {
     try {
         const userId = req.params.userId;
-        console.log(`Fetching contacts for user ID: ${userId}`);
 
         // Get all users except the current user
         const users = await User.find({ _id: { $ne: userId } })
-            .select('firstName lastName email image role')
-            .sort({ firstName: 1, lastName: 1 });
+            .select('name email profileImage')
+            .sort({ name: 1 });
 
-        console.log(`Found ${users.length} users`);
-
-        // Group users by first letter of firstName
+        // Group users by first letter of name
         const contacts = {};
 
         users.forEach(user => {
-            // Create a name property for compatibility with the frontend
-            user = user.toObject();
-            user.name = `${user.firstName} ${user.lastName}`;
-            user.profileImage = user.image; // Map image to profileImage for frontend compatibility
-
-            const firstLetter = user.firstName.charAt(0).toUpperCase();
+            const firstLetter = user.name.charAt(0).toUpperCase();
             if (!contacts[firstLetter]) {
                 contacts[firstLetter] = [];
             }
             contacts[firstLetter].push(user);
         });
-
-        console.log(`Grouped users into ${Object.keys(contacts).length} letter categories`);
 
         res.status(200).json({
             success: true,
