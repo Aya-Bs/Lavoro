@@ -112,46 +112,105 @@ exports.getConversation = async (req, res) => {
 // Send a message
 exports.sendMessage = async (req, res) => {
     try {
-        const { sender_id, receiver_id, message } = req.body;
+        console.log('Received message request:', req.body);
+        console.log('Received file:', req.file);
 
-        // Create new message
-        const newMessage = new Chat({
+        const { sender_id, receiver_id } = req.body;
+        let { message } = req.body;
+
+        // Ensure message is a string and not undefined or null
+        if (message === undefined || message === null) {
+            message = '';
+        }
+
+        console.log('Creating new message with:', { sender_id, receiver_id, message });
+
+        // Create message data object
+        const messageData = {
             sender_id,
             receiver_id,
-            message,
+            message: message,
             sent_at: new Date(),
             is_read: false
-        });
+        };
+
+        // If there's no message text but there is a file, set a default message
+        if ((!message || message.trim() === '') && req.file) {
+            messageData.message = 'Pièce jointe';
+        }
+
+        // Create new message
+        const newMessage = new Chat(messageData);
 
         // Handle file attachment if present
         if (req.file) {
+            console.log('Processing file attachment:', req.file);
+
             const fileType = req.file.mimetype.split('/')[0];
+            const fileExtension = req.file.originalname.split('.').pop().toLowerCase();
+
+            console.log('File type:', fileType, 'Extension:', fileExtension);
+
             newMessage.attachment = req.file.filename;
-            newMessage.attachment_type = fileType === 'image' ? 'image' :
-                                        fileType === 'video' ? 'video' : 'file';
+
+            // Determine attachment type based on mimetype and extension
+            if (fileType === 'image') {
+                newMessage.attachment_type = 'image';
+            } else if (fileType === 'video') {
+                newMessage.attachment_type = 'video';
+            } else if (fileExtension === 'pdf') {
+                newMessage.attachment_type = 'pdf';
+            } else if (['doc', 'docx'].includes(fileExtension)) {
+                newMessage.attachment_type = 'word';
+            } else if (['xls', 'xlsx'].includes(fileExtension)) {
+                newMessage.attachment_type = 'excel';
+            } else if (['zip', 'rar'].includes(fileExtension)) {
+                newMessage.attachment_type = 'archive';
+            } else {
+                newMessage.attachment_type = 'file';
+            }
+
+            console.log('Attachment type set to:', newMessage.attachment_type);
+        } else {
+            console.log('No file attachment found in request');
         }
 
-        await newMessage.save();
+        console.log('Saving message to database:', newMessage);
 
-        // Get the io instance
-        const io = req.app.get('io');
+        try {
+            await newMessage.save();
+            console.log('Message saved successfully');
 
-        // Emit the message to the receiver
-        io.to(receiver_id).emit('new_message', {
-            message: newMessage,
-            sender: await getUserDetails(sender_id)
-        });
+            // Get the io instance
+            const io = req.app.get('io');
 
-        res.status(201).json({
-            success: true,
-            data: newMessage
-        });
+            // Emit the message to the receiver
+            console.log('Emitting message to receiver:', receiver_id);
+            io.to(receiver_id).emit('new_message', {
+                message: newMessage,
+                sender: await getUserDetails(sender_id)
+            });
+
+            console.log('Sending success response');
+            res.status(201).json({
+                success: true,
+                data: newMessage
+            });
+        } catch (saveError) {
+            console.error('Error saving message:', saveError);
+            throw saveError;
+        }
     } catch (error) {
         console.error('Error sending message:', error);
+        console.error('Error stack:', error.stack);
+
+        // Send detailed error response
         res.status(500).json({
             success: false,
             message: 'Error sending message',
-            error: error.message
+            error: error.message,
+            stack: process.env.NODE_ENV === 'development' ? error.stack : undefined,
+            details: error.toString()
         });
     }
 };
@@ -284,23 +343,59 @@ exports.getGroupMessages = async (req, res) => {
 // Send a message to a group
 exports.sendGroupMessage = async (req, res) => {
     try {
-        const { group_id, sender_id, message } = req.body;
+        console.log('Received group message request:', req.body);
+        console.log('Received file for group:', req.file);
 
-        // Create new message
-        const newMessage = new GroupMessage({
+        const { group_id, sender_id } = req.body;
+        let { message } = req.body;
+
+        // Ensure message is a string and not undefined or null
+        if (message === undefined || message === null) {
+            message = '';
+        }
+
+        console.log('Creating new group message with:', { group_id, sender_id, message });
+
+        // Create message data object
+        const messageData = {
             group_id,
             sender_id,
-            message,
+            message: message,
             sent_at: new Date(),
             read_by: [sender_id] // Sender has read the message
-        });
+        };
+
+        // If there's no message text but there is a file, set a default message
+        if ((!message || message.trim() === '') && req.file) {
+            messageData.message = 'Pièce jointe';
+        }
+
+        // Create new message
+        const newMessage = new GroupMessage(messageData);
 
         // Handle file attachment if present
         if (req.file) {
             const fileType = req.file.mimetype.split('/')[0];
+            const fileExtension = req.file.originalname.split('.').pop().toLowerCase();
+
             newMessage.attachment = req.file.filename;
-            newMessage.attachment_type = fileType === 'image' ? 'image' :
-                                        fileType === 'video' ? 'video' : 'file';
+
+            // Determine attachment type based on mimetype and extension
+            if (fileType === 'image') {
+                newMessage.attachment_type = 'image';
+            } else if (fileType === 'video') {
+                newMessage.attachment_type = 'video';
+            } else if (fileExtension === 'pdf') {
+                newMessage.attachment_type = 'pdf';
+            } else if (['doc', 'docx'].includes(fileExtension)) {
+                newMessage.attachment_type = 'word';
+            } else if (['xls', 'xlsx'].includes(fileExtension)) {
+                newMessage.attachment_type = 'excel';
+            } else if (['zip', 'rar'].includes(fileExtension)) {
+                newMessage.attachment_type = 'archive';
+            } else {
+                newMessage.attachment_type = 'file';
+            }
         }
 
         await newMessage.save();

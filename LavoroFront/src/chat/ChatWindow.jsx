@@ -16,6 +16,7 @@ const ChatWindow = ({ chat, messages, currentUser, onSendMessage, isLoading }) =
     const chatContentRef = useRef(null);
     const fileInputRef = useRef(null);
     const emojiPickerRef = useRef(null);
+    const messageInputRef = useRef(null);
 
     // Scroll to bottom when messages change
     useEffect(() => {
@@ -94,22 +95,63 @@ const ChatWindow = ({ chat, messages, currentUser, onSendMessage, isLoading }) =
 
     const handleFileChange = (e) => {
         if (e.target.files && e.target.files[0]) {
-            setAttachment(e.target.files[0]);
+            const file = e.target.files[0];
+
+            // Check file size (max 19MB)
+            const maxSize = 19 * 1024 * 1024; // 19MB in bytes
+            if (file.size > maxSize) {
+                alert(`Le fichier est trop volumineux (${(file.size / (1024 * 1024)).toFixed(2)} MB). La taille maximale est de 19 MB.`);
+                e.target.value = ''; // Reset file input
+                return;
+            }
+
+            // Check file type
+            const acceptedTypes = [
+                'image/', 'video/', 'application/pdf', 'application/msword',
+                'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                'application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                'text/plain', 'application/zip', 'application/x-rar-compressed'
+            ];
+
+            const isAccepted = acceptedTypes.some(type => file.type.startsWith(type));
+            if (!isAccepted) {
+                alert(`Type de fichier non pris en charge: ${file.type}. Veuillez sélectionner une image, une vidéo, un PDF, un document Word/Excel, un fichier texte ou une archive.`);
+                e.target.value = ''; // Reset file input
+                return;
+            }
+
+            console.log('File selected:', file.name, 'Type:', file.type, 'Size:', (file.size / (1024 * 1024)).toFixed(2) + 'MB');
+            setAttachment(file);
         }
     };
 
     // Handle message submission
     const handleSubmit = (e) => {
         e.preventDefault();
-        if (messageText.trim() === '' && !attachment) return;
 
+        // Don't send if there's no message and no attachment
+        if (messageText.trim() === '' && !attachment) {
+            console.log('No message or attachment to send');
+            return;
+        }
+
+        console.log('Submitting message:', messageText.trim() || '(empty)', 'with attachment:', attachment ? attachment.name : 'none');
+
+        // Send message with or without attachment
         onSendMessage(messageText, attachment);
+
+        // Reset form
         setMessageText('');
         setAttachment(null);
 
         // Reset file input
         if (fileInputRef.current) {
             fileInputRef.current.value = '';
+        }
+
+        // Focus the input field for the next message
+        if (messageInputRef.current) {
+            messageInputRef.current.focus();
         }
     };
 
@@ -221,16 +263,61 @@ const ChatWindow = ({ chat, messages, currentUser, onSendMessage, isLoading }) =
                                                                 <div className="chat-attachment mt-2">
                                                                     {message.attachment_type === 'image' ? (
                                                                         <a href={`${API_URL}/uploads/chat/${message.attachment}`} className="glightbox" data-gallery="chat-gallery">
-                                                                            <img src={`${API_URL}/uploads/chat/${message.attachment}`} alt="attachment" className="img-fluid rounded" />
+                                                                            <img src={`${API_URL}/uploads/chat/${message.attachment}`} alt="attachment" className="img-fluid rounded" style={{ maxWidth: '200px', maxHeight: '200px' }} />
                                                                         </a>
                                                                     ) : message.attachment_type === 'video' ? (
                                                                         <a href={`${API_URL}/uploads/chat/${message.attachment}`} className="glightbox" data-gallery="chat-gallery">
-                                                                            <video src={`${API_URL}/uploads/chat/${message.attachment}`} className="img-fluid rounded" controls></video>
+                                                                            <video src={`${API_URL}/uploads/chat/${message.attachment}`} className="img-fluid rounded" controls style={{ maxWidth: '200px' }}></video>
+                                                                        </a>
+                                                                    ) : message.attachment_type === 'pdf' ? (
+                                                                        <a href={`${API_URL}/uploads/chat/${message.attachment}`} className="chat-file-attachment p-2 border rounded d-inline-block" download>
+                                                                            <div className="d-flex align-items-center">
+                                                                                <i className="ri-file-pdf-line fs-24 text-danger me-2"></i>
+                                                                                <div>
+                                                                                    <span className="d-block">{message.attachment.split('-').pop()}</span>
+                                                                                    <small className="text-muted">Cliquez pour télécharger</small>
+                                                                                </div>
+                                                                            </div>
+                                                                        </a>
+                                                                    ) : message.attachment_type === 'word' || message.attachment.endsWith('.doc') || message.attachment.endsWith('.docx') ? (
+                                                                        <a href={`${API_URL}/uploads/chat/${message.attachment}`} className="chat-file-attachment p-2 border rounded d-inline-block" download>
+                                                                            <div className="d-flex align-items-center">
+                                                                                <i className="ri-file-word-line fs-24 text-primary me-2"></i>
+                                                                                <div>
+                                                                                    <span className="d-block">{message.attachment.split('-').pop()}</span>
+                                                                                    <small className="text-muted">Cliquez pour télécharger</small>
+                                                                                </div>
+                                                                            </div>
+                                                                        </a>
+                                                                    ) : message.attachment_type === 'excel' || message.attachment.endsWith('.xls') || message.attachment.endsWith('.xlsx') ? (
+                                                                        <a href={`${API_URL}/uploads/chat/${message.attachment}`} className="chat-file-attachment p-2 border rounded d-inline-block" download>
+                                                                            <div className="d-flex align-items-center">
+                                                                                <i className="ri-file-excel-line fs-24 text-success me-2"></i>
+                                                                                <div>
+                                                                                    <span className="d-block">{message.attachment.split('-').pop()}</span>
+                                                                                    <small className="text-muted">Cliquez pour télécharger</small>
+                                                                                </div>
+                                                                            </div>
+                                                                        </a>
+                                                                    ) : message.attachment.endsWith('.zip') || message.attachment.endsWith('.rar') ? (
+                                                                        <a href={`${API_URL}/uploads/chat/${message.attachment}`} className="chat-file-attachment p-2 border rounded d-inline-block" download>
+                                                                            <div className="d-flex align-items-center">
+                                                                                <i className="ri-file-zip-line fs-24 text-warning me-2"></i>
+                                                                                <div>
+                                                                                    <span className="d-block">{message.attachment.split('-').pop()}</span>
+                                                                                    <small className="text-muted">Cliquez pour télécharger</small>
+                                                                                </div>
+                                                                            </div>
                                                                         </a>
                                                                     ) : (
-                                                                        <a href={`${API_URL}/uploads/chat/${message.attachment}`} className="chat-file-attachment" download>
-                                                                            <i className="ri-file-line me-1"></i>
-                                                                            {message.attachment.split('-').pop()}
+                                                                        <a href={`${API_URL}/uploads/chat/${message.attachment}`} className="chat-file-attachment p-2 border rounded d-inline-block" download>
+                                                                            <div className="d-flex align-items-center">
+                                                                                <i className="ri-file-line fs-24 text-muted me-2"></i>
+                                                                                <div>
+                                                                                    <span className="d-block">{message.attachment.split('-').pop()}</span>
+                                                                                    <small className="text-muted">Cliquez pour télécharger</small>
+                                                                                </div>
+                                                                            </div>
                                                                         </a>
                                                                     )}
                                                                 </div>
@@ -269,6 +356,7 @@ const ChatWindow = ({ chat, messages, currentUser, onSendMessage, isLoading }) =
                         ref={fileInputRef}
                         style={{ display: 'none' }}
                         onChange={handleFileChange}
+                        accept="image/*,video/*,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/plain,application/zip,application/x-rar-compressed"
                     />
                     <button
                         type="button"
@@ -306,6 +394,7 @@ const ChatWindow = ({ chat, messages, currentUser, onSendMessage, isLoading }) =
                         type="text"
                         value={messageText}
                         onChange={handleMessageChange}
+                        ref={messageInputRef}
                     />
                     <button type="submit" className="btn btn-primary ms-2 btn-icon btn-send">
                         <i className="ri-send-plane-2-line"></i>
@@ -315,8 +404,25 @@ const ChatWindow = ({ chat, messages, currentUser, onSendMessage, isLoading }) =
                     <div className="attachment-preview mt-2 p-2 border rounded">
                         <div className="d-flex align-items-center justify-content-between">
                             <div className="d-flex align-items-center">
-                                <i className="ri-file-line me-2"></i>
-                                <span>{attachment.name}</span>
+                                {attachment.type.startsWith('image/') ? (
+                                    <i className="ri-image-line me-2 text-success"></i>
+                                ) : attachment.type.startsWith('video/') ? (
+                                    <i className="ri-video-line me-2 text-danger"></i>
+                                ) : attachment.type.includes('pdf') ? (
+                                    <i className="ri-file-pdf-line me-2 text-danger"></i>
+                                ) : attachment.type.includes('word') || attachment.type.includes('document') ? (
+                                    <i className="ri-file-word-line me-2 text-primary"></i>
+                                ) : attachment.type.includes('excel') || attachment.type.includes('sheet') ? (
+                                    <i className="ri-file-excel-line me-2 text-success"></i>
+                                ) : attachment.type.includes('zip') || attachment.type.includes('compressed') ? (
+                                    <i className="ri-file-zip-line me-2 text-warning"></i>
+                                ) : (
+                                    <i className="ri-file-line me-2 text-muted"></i>
+                                )}
+                                <div>
+                                    <span className="d-block">{attachment.name}</span>
+                                    <small className="text-muted">{(attachment.size / 1024).toFixed(2)} KB</small>
+                                </div>
                             </div>
                             <button
                                 type="button"

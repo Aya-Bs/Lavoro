@@ -14,18 +14,39 @@ if (!fs.existsSync(uploadDir)) {
 // Configure multer for file uploads
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
+        // Log the destination directory
+        console.log('File destination directory:', uploadDir);
+
+        // Ensure the directory exists
+        if (!fs.existsSync(uploadDir)) {
+            console.log('Creating upload directory:', uploadDir);
+            fs.mkdirSync(uploadDir, { recursive: true });
+        }
+
         cb(null, uploadDir);
     },
     filename: function (req, file, cb) {
+        // Generate a unique filename
         const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-        cb(null, uniqueSuffix + path.extname(file.originalname));
+        const filename = uniqueSuffix + path.extname(file.originalname);
+
+        console.log('Generated filename for upload:', filename);
+        cb(null, filename);
     }
 });
 
-const upload = multer({ 
+// File filter function to accept all file types
+const fileFilter = (req, file, cb) => {
+    console.log('Received file:', file.originalname, 'mimetype:', file.mimetype);
+    // Accept all files
+    cb(null, true);
+};
+
+const upload = multer({
     storage: storage,
+    fileFilter: fileFilter,
     limits: {
-        fileSize: 10 * 1024 * 1024 // 10MB limit
+        fileSize: 20 * 1024 * 1024 // 20MB limit (increased from 10MB)
     }
 });
 

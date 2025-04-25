@@ -67,20 +67,83 @@ export const getConversation = async (userId, otherUserId) => {
 
 export const sendMessage = async (messageData, attachment = null) => {
     try {
+        // Ensure messageData has a message property
+        if (!messageData.message) {
+            messageData.message = attachment ? 'Pièce jointe' : '';
+        }
+
         // If there's an attachment, use FormData
         if (attachment) {
             const formData = new FormData();
             formData.append('sender_id', messageData.sender_id);
             formData.append('receiver_id', messageData.receiver_id);
-            formData.append('message', messageData.message);
+            formData.append('message', messageData.message); // This should now always have a value
+
+            // Check file size
+            const fileSizeInMB = attachment.size / (1024 * 1024);
+            console.log(`File size: ${fileSizeInMB.toFixed(2)} MB`);
+
+            if (fileSizeInMB > 19) {
+                throw new Error(`File size (${fileSizeInMB.toFixed(2)} MB) exceeds the 19 MB limit`);
+            }
+
+            // Add file to form data
             formData.append('attachment', attachment);
 
-            const response = await api.post('/message', formData, {
-                headers: {
-                    'Content-Type': 'multipart/form-data',
-                },
+            console.log('Sending message with attachment:', {
+                sender_id: messageData.sender_id,
+                receiver_id: messageData.receiver_id,
+                message: messageData.message,
+                attachment: attachment.name,
+                attachment_type: attachment.type,
+                attachment_size: `${fileSizeInMB.toFixed(2)} MB`
             });
-            return response.data;
+
+            // Log form data contents
+            for (let pair of formData.entries()) {
+                console.log(`Form data: ${pair[0]}: ${pair[1] instanceof File ? pair[1].name : pair[1]}`);
+            }
+
+            try {
+                // Set longer timeout for file uploads
+                const response = await api.post('/message', formData, {
+                    headers: {
+                        'Content-Type': 'multipart/form-data',
+                    },
+                    timeout: 30000, // 30 seconds timeout
+                });
+                console.log('File upload successful:', response.data);
+
+                // Update the response to include the attachment URL
+                if (response.data && response.data.data) {
+                    const message = response.data.data;
+
+                    // Log the message details for debugging
+                    console.log('Message details:', {
+                        id: message._id,
+                        message: message.message,
+                        attachment: message.attachment,
+                        attachment_type: message.attachment_type
+                    });
+                }
+
+                return response.data;
+            } catch (uploadError) {
+                console.error('Error uploading file:', uploadError);
+                console.error('Response:', uploadError.response?.data);
+
+                // Fall back to sending just the message without attachment
+                if (messageData.message && messageData.message.trim() !== '') {
+                    console.log('Falling back to sending message without attachment');
+                    const textResponse = await api.post('/message', {
+                        sender_id: messageData.sender_id,
+                        receiver_id: messageData.receiver_id,
+                        message: messageData.message
+                    });
+                    return textResponse.data;
+                }
+                throw uploadError;
+            }
         } else {
             // Regular JSON request without attachment
             const response = await api.post('/message', messageData);
@@ -166,20 +229,81 @@ export const getGroupMessages = async (groupId, userId) => {
 
 export const sendGroupMessage = async (messageData, attachment = null) => {
     try {
+        // Ensure messageData has a message property
+        if (!messageData.message) {
+            messageData.message = attachment ? 'Pièce jointe' : '';
+        }
+
         // If there's an attachment, use FormData
         if (attachment) {
             const formData = new FormData();
             formData.append('group_id', messageData.group_id);
             formData.append('sender_id', messageData.sender_id);
-            formData.append('message', messageData.message);
+            formData.append('message', messageData.message); // This should now always have a value
+
+            // Check file size
+            const fileSizeInMB = attachment.size / (1024 * 1024);
+            console.log(`Group file size: ${fileSizeInMB.toFixed(2)} MB`);
+
+            if (fileSizeInMB > 19) {
+                throw new Error(`File size (${fileSizeInMB.toFixed(2)} MB) exceeds the 19 MB limit`);
+            }
+
             formData.append('attachment', attachment);
 
-            const response = await api.post('/group/message', formData, {
-                headers: {
-                    'Content-Type': 'multipart/form-data',
-                },
+            console.log('Sending group message with attachment:', {
+                group_id: messageData.group_id,
+                sender_id: messageData.sender_id,
+                message: messageData.message,
+                attachment: attachment.name,
+                attachment_type: attachment.type,
+                attachment_size: `${fileSizeInMB.toFixed(2)} MB`
             });
-            return response.data;
+
+            // Log form data contents
+            for (let pair of formData.entries()) {
+                console.log(`Group form data: ${pair[0]}: ${pair[1] instanceof File ? pair[1].name : pair[1]}`);
+            }
+
+            try {
+                const response = await api.post('/group/message', formData, {
+                    headers: {
+                        'Content-Type': 'multipart/form-data',
+                    },
+                    timeout: 30000, // 30 seconds timeout
+                });
+                console.log('Group file upload successful:', response.data);
+
+                // Update the response to include the attachment URL
+                if (response.data && response.data.data) {
+                    const message = response.data.data;
+
+                    // Log the message details for debugging
+                    console.log('Group message details:', {
+                        id: message._id,
+                        message: message.message,
+                        attachment: message.attachment,
+                        attachment_type: message.attachment_type
+                    });
+                }
+
+                return response.data;
+            } catch (uploadError) {
+                console.error('Error uploading file to group:', uploadError);
+                console.error('Response:', uploadError.response?.data);
+
+                // Fall back to sending just the message without attachment
+                if (messageData.message && messageData.message.trim() !== '') {
+                    console.log('Falling back to sending group message without attachment');
+                    const textResponse = await api.post('/group/message', {
+                        group_id: messageData.group_id,
+                        sender_id: messageData.sender_id,
+                        message: messageData.message
+                    });
+                    return textResponse.data;
+                }
+                throw uploadError;
+            }
         } else {
             // Regular JSON request without attachment
             const response = await api.post('/group/message', messageData);

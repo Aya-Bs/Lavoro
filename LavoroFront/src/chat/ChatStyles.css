@@ -444,6 +444,35 @@ textarea::placeholder {
     color: var(--bs-body-color);
 }
 
+/* File attachment styles */
+.chat-file-attachment {
+    text-decoration: none;
+    transition: all 0.2s ease;
+    background-color: var(--bs-body-bg);
+    border-color: var(--bs-border-color);
+}
+
+.chat-file-attachment:hover {
+    background-color: rgba(var(--bs-primary-rgb), 0.05);
+    transform: translateY(-2px);
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+}
+
+.fs-24 {
+    font-size: 24px;
+}
+
+/* Force dark mode for file attachments */
+[data-theme-mode="dark"] .chat-file-attachment {
+    background-color: #212529 !important;
+    border-color: #495057 !important;
+    color: #dee2e6 !important;
+}
+
+[data-theme-mode="dark"] .chat-file-attachment:hover {
+    background-color: #343a40 !important;
+}
+
 /* Responsive */
 @media (max-width: 992px) {
     .main-chart-wrapper {

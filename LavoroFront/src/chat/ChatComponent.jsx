@@ -412,6 +412,18 @@ const ChatComponent = () => {
     useEffect(() => {
         if (activeChat && currentUser) {
             loadMessages();
+
+            // Set up a refresh interval to reload messages periodically
+            const refreshInterval = setInterval(() => {
+                if (activeChat) {
+                    console.log('Refreshing messages...');
+                    loadMessages(false); // Pass false to avoid showing loading indicator
+                }
+            }, 5000); // Refresh every 5 seconds
+
+            return () => {
+                clearInterval(refreshInterval);
+            };
         }
     }, [activeChat, currentUser]);
 
@@ -474,8 +486,10 @@ const ChatComponent = () => {
     };
 
     // Load messages for the active chat
-    const loadMessages = async () => {
-        setIsLoading(true);
+    const loadMessages = async (showLoading = true) => {
+        if (showLoading) {
+            setIsLoading(true);
+        }
         try {
             if (activeChat.type === 'direct') {
                 try {
@@ -530,35 +544,83 @@ const ChatComponent = () => {
     // Handle sending a message
     const handleSendMessage = async (message, attachment = null) => {
         try {
+            // Ensure message is a string
+            const messageText = message || '';
+
+            // If there's no message and no attachment, don't send anything
+            if (messageText.trim() === '' && !attachment) {
+                console.log('No message or attachment to send');
+                return;
+            }
+
+            // Set a default message if there's an attachment but no message
+            const finalMessage = messageText.trim() === '' && attachment ? 'Pièce jointe' : messageText;
+
             if (activeChat.type === 'direct') {
                 const messageData = {
                     sender_id: currentUser._id,
                     receiver_id: activeChat.user._id,
-                    message
+                    message: finalMessage
                 };
 
                 if (attachment) {
-                    await chatService.sendMessage(messageData, attachment);
+                    try {
+                        console.log('Sending direct message with attachment:', finalMessage);
+                        // Try to send with attachment
+                        const response = await chatService.sendMessage(messageData, attachment);
+
+                        // Add the message with attachment to the messages list
+                        if (response && response.success && response.data) {
+                            console.log('Message with attachment sent successfully:', response.data);
+                            // Add the message to the UI
+                            setMessages(prevMessages => [...prevMessages, response.data]);
+                        }
+                    } catch (attachmentError) {
+                        console.error('Failed to send message with attachment:', attachmentError);
+
+                        // Always try to send at least the text message
+                        chatService.emitPrivateMessage(messageData);
+                    }
                 } else {
                     // For faster UI update, emit through socket
+                    console.log('Sending direct message without attachment:', finalMessage);
                     chatService.emitPrivateMessage(messageData);
                 }
             } else if (activeChat.type === 'group') {
                 const messageData = {
                     group_id: activeChat._id,
                     sender_id: currentUser._id,
-                    message
+                    message: finalMessage
                 };
 
                 if (attachment) {
-                    await chatService.sendGroupMessage(messageData, attachment);
+                    try {
+                        console.log('Sending group message with attachment:', finalMessage);
+                        // Try to send with attachment
+                        const response = await chatService.sendGroupMessage(messageData, attachment);
+
+                        // Add the message with attachment to the messages list
+                        if (response && response.success && response.data) {
+                            console.log('Group message with attachment sent successfully:', response.data);
+                            // Add the message to the UI
+                            setMessages(prevMessages => [...prevMessages, response.data]);
+                        }
+                    } catch (attachmentError) {
+                        console.error('Failed to send group message with attachment:', attachmentError);
+
+                        // Always try to send at least the text message
+                        chatService.emitGroupMessage(messageData);
+                    }
                 } else {
                     // For faster UI update, emit through socket
+                    console.log('Sending group message without attachment:', finalMessage);
                     chatService.emitGroupMessage(messageData);
                 }
             }
         } catch (error) {
             console.error('Error sending message:', error);
+            // Show error notification to user
+            alert('Erreur lors de l\'envoi du message. Veuillez réessayer.');
         }
     };
 
