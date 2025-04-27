@@ -388,9 +388,8 @@ exports.getUpcomingDeadlines = async (req, res) => {
       details: error.message
     });
   }
+
 };
-
-
 exports.sendDeadlineReminder = async (req, res) => {
   try {
     const { projectId } = req.params;
