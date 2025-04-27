@@ -59,7 +59,7 @@ router.get('/checkTeamManager/:id', ProjectController.checkTeamManager);
 //check team manager projects
 router.get('/checkTeamManagerProjects/:id', ProjectController.checkTeamManagerProjects);
 
-
+router.get('/managed-by-me',  ProjectController.getManagedProjects);
 
 
 

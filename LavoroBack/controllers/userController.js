@@ -643,3 +643,35 @@ exports.getTeamManager = async (req, res) => {
     res.status(500).json({ error: "An error occurred while fetching team managers" });
   }
 };
+
+exports.getAllDevelopers = async (req, res) => {
+  try {
+    // First, find the developer role in the roles collection
+    const developerRole = await Role.findOne({ RoleName: 'Developer' });
+    
+    if (!developerRole) {
+      return res.status(404).json({ 
+        success: false, 
+        message: 'Developer role not found' 
+      });
+    }
+
+    // Then find all users with this role ID
+    const developers = await User.find({ 
+      role: developerRole._id 
+    }).populate('role', 'RoleName -_id'); // Populate role name but exclude its _id
+
+    res.status(200).json({ 
+      success: true, 
+      count: developers.length,
+      data: developers 
+    });
+  } catch (error) {
+    console.error('Error fetching developers:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Server error while fetching developers',
+      error: error.message 
+    });
+  }
+}
