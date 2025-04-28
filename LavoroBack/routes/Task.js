@@ -36,5 +36,4 @@ router.post('/test-points-system/:userId',
     auth, // Protection de la route
     taskController.testPointsSystem
 );
-
 module.exports = router;

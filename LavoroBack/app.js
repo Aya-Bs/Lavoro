@@ -18,7 +18,6 @@ const ChatGroup = require('./models/chatGroup');
 const GroupMessage = require('./models/groupMessage');
 const User = require('./models/user');
 
-
 // Connect to MongoDB
 mongo
   .connect(db.url)
@@ -35,7 +34,7 @@ const profileRouter = require('./routes/profile');
 const projectRouter = require('./routes/project');
 const notifroute = require('./routes/notification');
 const chatRouter = require('./routes/chat');
-
+const teamRouter = require('./routes/teams');
 // const homeRouter = require('./routes/home');
 const adminRouter = require('./routes/admin');
 
@@ -53,6 +52,7 @@ const io = socketIo(server, {
     credentials: true
   }
 });
+
 
 app.use(cors({
   origin: 'http://localhost:5173', // Frontend URL
@@ -100,12 +100,15 @@ app.use('/users', usersRouter);
 // app.use('/', homeRouter);
 app.use('/admin',adminRouter);
 app.set('io', io);
+
 app.use('/tasks',taskRouter);
 app.use('/chat', chatRouter);
+
 
 app.use('/project',projectRouter);
 
 app.use('/profiles', profileRouter);
+app.use('/teams', teamRouter);
 
 app.post("/translate", async (req, res) => {
   const { text, targetLanguage } = req.body;

@@ -29,14 +29,18 @@ import AllProject from "./project/AllProject";
 import Archieve from "./project/Archieve";
 import UserActivity from "./admin/UserActivity";
 import ArchiveOverview from "./project/ArchiveOverview";
+
 import UpdateProject from "./project/updateProject";
 import ProjectProgress from "./project/projetPorgress";
 import CreateWithAI from "./project/CreateProjectWithAI";
 import CreateProjectWithAI from "./project/CreateProjectWithAI";
+import CreateTeam from "./team/createTeam";
+import TeamCards from "./team/teamList";
+import TeamDetailsPage from "./team/teamDetails";
+import UpdateTeam from "./team/updateTeam";
 import BestPerformerPage from "./pages/BestPerformerPage";
 import ChatComponent from "./chat/ChatComponent";
 import ChatFloatingButton from "./chat/ChatFloatingButton";
-
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
@@ -78,10 +82,15 @@ function App() {
               <Route path="/archieve" element={< Archieve />} />
               <Route path="/updateProjects/:id" element={<UpdateProject />} />
 
-              <Route path="/ProjectProgress" element={<ProjectProgress/>} />
+<Route path="/ProjectProgress" element={<ProjectProgress/>} />
+<Route path="/createTeam" element={<CreateTeam/>} />
+<Route path="/teamsList" element={<TeamCards/>} />
+<Route path="/teams/teamDetails/:id" element={<TeamDetailsPage />} />
+<Route path="/teams/updateTeam/:id" element={<UpdateTeam />} />
 
-              <Route path="/best-performer" element={<BestPerformerPage />} />
+<Route path="/best-performer" element={<BestPerformerPage />} />
               <Route path="/chat" element={<ChatComponent />} />
+
 
             </Route>
         </Routes>

@@ -80,6 +80,7 @@ router.post('/github', GitHubLogin);
 router.get('/getData', getData);
 
 router.get('/getTeamManager', userController.getTeamManager);
+router.get('/getAllDevelopers', userController.getAllDevelopers);
 
 // Route pour récupérer le meilleur performeur
 router.get('/best-performer', authenticateToken, userController.getBestPerformer);

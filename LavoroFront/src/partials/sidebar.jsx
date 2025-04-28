@@ -2,9 +2,8 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 
 const Sidebar = ({ userRole }) => {
-  const [isMainMenuOpen, setIsMainMenuOpen] = useState(false);
-  const [isProjectsMenuOpen, setIsProjectsMenuOpen] = useState(false);
-  const [isTeamsMenuOpen, setIsTeamsMenuOpen] = useState(false);
+  const [isDashboardOpen, setIsDashboardOpen] = useState(false);
+  const [isPagesOpen, setIsPagesOpen] = useState(false);
 
   const getMenuItems = () => {
     switch(userRole) {
@@ -20,46 +19,26 @@ const Sidebar = ({ userRole }) => {
                 <span className="side-menu__label">Profile</span>
               </Link>
             </li>
-
-            <li className="slide__category">
-              <span className="category-name">Communication</span>
-            </li>
-            <li className="slide">
-              <Link to="/chat" className="side-menu__item">
-                <i className="ri-message-3-line side-menu__icon"></i>
-                <span className="side-menu__label">Messagerie</span>
-              </Link>
-            </li>
-
-            <li className="slide__category">
-              <span className="category-name">Performance</span>
-            </li>
-            <li className="slide">
-              <Link to="/best-performer" className="side-menu__item">
-                <i className="ri-award-line side-menu__icon"></i>
-                <span className="side-menu__label">Meilleur Performeur</span>
-              </Link>
-            </li>
           </>
         );
-
+        
       case 'Project Manager':
         return (
           <>
             <li className="slide__category">
               <span className="category-name">Main</span>
             </li>
-            <li className={`slide has-sub ${isMainMenuOpen ? "open" : ""}`}>
+            <li className={`slide has-sub ${isPagesOpen ? "open" : ""}`}>
               <button
                 className="side-menu__item"
-                onClick={() => setIsMainMenuOpen(!isMainMenuOpen)}
+                onClick={() => setIsPagesOpen(!isPagesOpen)}
                 style={{ background: "none", border: "none", cursor: "pointer", width: "100%", textAlign: "left" }}
               >
                 <i className="ri-arrow-down-s-line side-menu__angle"></i>
                 <i className="ri-home-line side-menu__icon"></i>
                 <span className="side-menu__label">Main</span>
               </button>
-              <ul className="slide-menu child1" style={{ display: isMainMenuOpen ? "block" : "none" }}>
+              <ul className="slide-menu child1" style={{ display: isPagesOpen ? "block" : "none" }}>
                 <li className="slide">
                   <Link to="/profile" className="side-menu__item">
                     Profile
@@ -70,15 +49,14 @@ const Sidebar = ({ userRole }) => {
                     Project dashboard
                   </Link>
                 </li>
-
+               
               </ul>
             </li>
-
+            
             <li className="slide__category">
               <span className="category-name">Projects</span>
             </li>
-
-            <li className={`slide has-sub ${isProjectsMenuOpen ? "open" : ""}`}>
+            <li className={`slide has-sub ${isPagesOpen ? "open" : ""}`}>
               <button
                 className="side-menu__item"
                 onClick={() => setIsProjectsMenuOpen(!isProjectsMenuOpen)}
@@ -111,58 +89,9 @@ const Sidebar = ({ userRole }) => {
                 </li>
               </ul>
             </li>
-
-            {/* Teams section - Maintenant comme section séparée */}
-            <li className="slide__category">
-              <span className="category-name">Teams</span>
-            </li>
-
-            <li className={`slide has-sub ${isTeamsMenuOpen ? "open" : ""}`}>
-              <button
-                className="side-menu__item"
-                onClick={() => setIsTeamsMenuOpen(!isTeamsMenuOpen)}
-                style={{ background: "none", border: "none", cursor: "pointer", width: "100%", textAlign: "left" }}
-              >
-                <i className="ri-arrow-down-s-line side-menu__angle"></i>
-                <i className="ri-team-line side-menu__icon"></i>
-                <span className="side-menu__label">Teams</span>
-              </button>
-              <ul className="slide-menu child1" style={{ display: isTeamsMenuOpen ? "block" : "none" }}>
-                <li className="slide">
-                  <Link to="/createTeam" className="side-menu__item">
-                    Create Team
-                  </Link>
-                </li>
-                <li className="slide">
-                  <Link to="/listTeams" className="side-menu__item">
-                    Teams List
-                  </Link>
-                </li>
-              </ul>
-            </li>
-
-            <li className="slide__category">
-              <span className="category-name">Communication</span>
-            </li>
-            <li className="slide">
-              <Link to="/chat" className="side-menu__item">
-                <i className="ri-message-3-line side-menu__icon"></i>
-                <span className="side-menu__label">Messagerie</span>
-              </Link>
-            </li>
-
-            <li className="slide__category">
-              <span className="category-name">Performance</span>
-            </li>
-            <li className="slide">
-              <Link to="/best-performer" className="side-menu__item">
-                <i className="ri-award-line side-menu__icon"></i>
-                <span className="side-menu__label">Meilleur Performeur</span>
-              </Link>
-            </li>
           </>
         );
-
+        
       case 'Team Manager':
         return (
           <>
@@ -175,7 +104,7 @@ const Sidebar = ({ userRole }) => {
                 <span className="side-menu__label">Profile</span>
               </Link>
             </li>
-
+            
             <li className="slide__category">
               <span className="category-name">Projects</span>
             </li>
@@ -185,32 +114,22 @@ const Sidebar = ({ userRole }) => {
                 <span className="side-menu__label">Projects List</span>
               </Link>
             </li>
-
             <li className="slide__category">
-              <span className="category-name">Communication</span>
+              <span className="category-name">Teams</span>
             </li>
             <li className="slide">
-              <Link to="/chat" className="side-menu__item">
-                <i className="ri-message-3-line side-menu__icon"></i>
-                <span className="side-menu__label">Messagerie</span>
+              <Link to="/teamsList" className="side-menu__item">
+                <i className="ri-file-list-line side-menu__icon"></i>
+                <span className="side-menu__label">Teams List</span>
               </Link>
             </li>
-
-            <li className="slide__category">
-              <span className="category-name">Performance</span>
-            </li>
-            <li className="slide">
-              <Link to="/best-performer" className="side-menu__item">
-                <i className="ri-award-line side-menu__icon"></i>
-                <span className="side-menu__label">Meilleur Performeur</span>
-              </Link>
-            </li>
+            
           </>
         );
 
 
 
-
+        
       case 'Admin':
         return (
           <>
@@ -224,17 +143,17 @@ const Sidebar = ({ userRole }) => {
             <li className="slide__category">
               <span className="category-name">Main</span>
             </li>
-            <li className={`slide has-sub ${isMainMenuOpen ? "open" : ""}`}>
+            <li className={`slide has-sub ${isPagesOpen ? "open" : ""}`}>
               <button
                 className="side-menu__item"
-                onClick={() => setIsMainMenuOpen(!isMainMenuOpen)}
+                onClick={() => setIsPagesOpen(!isPagesOpen)}
                 style={{ background: "none", border: "none", cursor: "pointer", width: "100%", textAlign: "left" }}
               >
                 <i className="ri-arrow-down-s-line side-menu__angle"></i>
                 <i className="ri-home-line side-menu__icon"></i>
                 <span className="side-menu__label">Main</span>
               </button>
-              <ul className="slide-menu child1" style={{ display: isMainMenuOpen ? "block" : "none" }}>
+              <ul className="slide-menu child1" style={{ display: isPagesOpen ? "block" : "none" }}>
                 <li className="slide">
                   <Link to="/profile" className="side-menu__item">
                     Profile
@@ -245,24 +164,24 @@ const Sidebar = ({ userRole }) => {
                     Project dashboard
                   </Link>
                 </li>
-
+               
               </ul>
             </li>
-
+            
             <li className="slide__category">
               <span className="category-name">Projects</span>
             </li>
-            <li className={`slide has-sub ${isProjectsMenuOpen ? "open" : ""}`}>
+            <li className={`slide has-sub ${isPagesOpen ? "open" : ""}`}>
               <button
                 className="side-menu__item"
-                onClick={() => setIsProjectsMenuOpen(!isProjectsMenuOpen)}
+                onClick={() => setIsPagesOpen(!isPagesOpen)}
                 style={{ background: "none", border: "none", cursor: "pointer", width: "100%", textAlign: "left" }}
               >
                 <i className="ri-arrow-down-s-line side-menu__angle"></i>
                 <i className="ri-file-list-line side-menu__icon"></i>
                 <span className="side-menu__label">Projects</span>
               </button>
-              <ul className="slide-menu child1" style={{ display: isProjectsMenuOpen ? "block" : "none" }}>
+              <ul className="slide-menu child1" style={{ display: isPagesOpen ? "block" : "none" }}>
                 <li className="slide">
                   <Link to="/createPro" className="side-menu__item">
                     Create Project
@@ -273,7 +192,7 @@ const Sidebar = ({ userRole }) => {
                     Projects List
                   </Link>
                 </li>
-
+                
                 <li className="slide">
                   <Link to="/archieve" className="side-menu__item">
                     Projects Archive
@@ -286,59 +205,19 @@ const Sidebar = ({ userRole }) => {
                 </li>
               </ul>
             </li>
-
-            {/* Teams section pour Admin */}
             <li className="slide__category">
               <span className="category-name">Teams</span>
             </li>
-
-            <li className={`slide has-sub ${isTeamsMenuOpen ? "open" : ""}`}>
-              <button
-                className="side-menu__item"
-                onClick={() => setIsTeamsMenuOpen(!isTeamsMenuOpen)}
-                style={{ background: "none", border: "none", cursor: "pointer", width: "100%", textAlign: "left" }}
-              >
-                <i className="ri-arrow-down-s-line side-menu__angle"></i>
-                <i className="ri-team-line side-menu__icon"></i>
-                <span className="side-menu__label">Teams</span>
-              </button>
-              <ul className="slide-menu child1" style={{ display: isTeamsMenuOpen ? "block" : "none" }}>
-                <li className="slide">
-                  <Link to="/createTeam" className="side-menu__item">
-                    Create Team
-                  </Link>
-                </li>
-                <li className="slide">
-                  <Link to="/listTeams" className="side-menu__item">
-                    Teams List
-                  </Link>
-                </li>
-              </ul>
-            </li>
-
-            <li className="slide__category">
-              <span className="category-name">Communication</span>
-            </li>
             <li className="slide">
-              <Link to="/chat" className="side-menu__item">
-                <i className="ri-message-3-line side-menu__icon"></i>
-                <span className="side-menu__label">Messagerie</span>
-              </Link>
-            </li>
-
-            <li className="slide__category">
-              <span className="category-name">Performance</span>
-            </li>
-            <li className="slide">
-              <Link to="/best-performer" className="side-menu__item">
-                <i className="ri-award-line side-menu__icon"></i>
-                <span className="side-menu__label">Meilleur Performeur</span>
+              <Link to="/teamsList" className="side-menu__item">
+                <i className="ri-file-list-line side-menu__icon"></i>
+                <span className="side-menu__label">Teams List</span>
               </Link>
             </li>
           </>
 
         );
-
+        
       // Add more roles as needed
       default:
         return (
