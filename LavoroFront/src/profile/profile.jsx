@@ -76,53 +76,28 @@ const Profile = () => {
       });
 
       console.log("Tasks response:", response.data); // Ajoutez ce log pour debug
-      const token = localStorage.getItem('token');
-      if (!token) {
-        console.error("No token found");
-        navigate('/auth');
-        return;
-      }
-
-      const response = await axios.get('http://localhost:3000/tasks/my-tasks', {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        withCredentials: true
-      });
-
-      console.log("Tasks response:", response.data); // Ajoutez ce log pour debug
       setTasks(response.data);
-      
-      
+
     } catch (err) {
       console.error("Full error:", err);
       console.error("Error response:", err.response?.data); // Debug détaillé
-      
-      if (err.response?.status === 401) {
-        localStorage.removeItem('token');
-        navigate('/signin');
-      console.error("Full error:", err);
-      console.error("Error response:", err.response?.data); // Debug détaillé
-      
+
       if (err.response?.status === 401) {
         localStorage.removeItem('token');
         navigate('/signin');
       } else {
         alert(`Error: ${err.response?.data?.message || err.message}`);
-        alert(`Error: ${err.response?.data?.message || err.message}`);
       }
-      setTasks([]);
       setTasks([]);
     }
   };
-  
-  
+
+
   // Charger les activités lorsque l'onglet est activé
   useEffect(() => {
     if (activeTab === "activities-tab-pane") {
       fetchActivities();
-    } 
+    }
   }, [activeTab]);
 
 
@@ -155,23 +130,18 @@ const Profile = () => {
   const handleVerify2FA = async () => {
     try {
       const authToken = localStorage.getItem('token');
-      const authToken = localStorage.getItem('token');
       if (!authToken) {
         throw new Error("No token found");
       }
 
       const userProvidedToken = token;
       console.log('Sending verify request with TOTP code:', userProvidedToken);
-      const userProvidedToken = token;
-      console.log('Sending verify request with TOTP code:', userProvidedToken);
 
       const response = await axios.post(
         "http://localhost:3000/profiles/verify-2fa",
         { token: userProvidedToken },
-        { token: userProvidedToken },
         {
           headers: {
-            Authorization: `Bearer ${authToken}`,
             Authorization: `Bearer ${authToken}`,
           },
           withCredentials: true,
@@ -179,10 +149,8 @@ const Profile = () => {
       );
 
       console.log('Verify response:', response.data);
-      console.log('Verify response:', response.data);
       setMessage(response.data.message);
     } catch (err) {
-      console.error('Error verifying 2FA:', err);
       console.error('Error verifying 2FA:', err);
       setMessage(err.response?.data?.error || "Error verifying 2FA");
     }
@@ -265,9 +233,6 @@ const Profile = () => {
                             onClick={() => {
                               setActiveTab("profile-about-tab-pane");
                             }}
-                            onClick={() => {
-                              setActiveTab("profile-about-tab-pane");
-                            }}
                             type="button"
                             role="tab"
                             aria-controls="profile-about-tab-pane"
@@ -300,19 +265,6 @@ const Profile = () => {
                             aria-selected={activeTab === "activities-tab-pane"}
                           >
                             See Activities
-                          </button>
-                        </li>
-                        <li className="nav-item" role="presentation">
-                          <button
-                            className={`nav-link w-100 text-start ${activeTab === "security-tab-pane" ? "active" : ""}`}
-                            id="security-tab"
-                            onClick={() => setActiveTab("security-tab-pane")}
-                            type="button"
-                            role="tab"
-                            aria-controls="security-tab-pane"
-                            aria-selected={activeTab === "security-tab-pane"}
-                          >
-                            Security
                           </button>
                         </li>
                         <li className="nav-item" role="presentation">
@@ -406,35 +358,16 @@ const Profile = () => {
                           aria-labelledby="security-tab"
                           tabIndex={0}
                         >
-                          <ProfileSecurity 
-                            user={user} 
-                            handleEnable2FA={handleEnable2FA} 
-                            handleVerify2FA={handleVerify2FA} 
-                            handleDisable2FA={handleDisable2FA} 
-                            qrCodeUrl={qrCodeUrl} 
-                            showQRCode={showQRCode} 
-                            token={token} 
-                            setToken={setToken} 
-                            message={message} 
-                          />
-                        </div>
-                        <div
-                          className={`tab-pane p-0 border-0 ${activeTab === "security-tab-pane" ? "show active" : ""}`}
-                          id="security-tab-pane"
-                          role="tabpanel"
-                          aria-labelledby="security-tab"
-                          tabIndex={0}
-                        >
-                          <ProfileSecurity 
-                            user={user} 
-                            handleEnable2FA={handleEnable2FA} 
-                            handleVerify2FA={handleVerify2FA} 
-                            handleDisable2FA={handleDisable2FA} 
-                            qrCodeUrl={qrCodeUrl} 
-                            showQRCode={showQRCode} 
-                            token={token} 
-                            setToken={setToken} 
-                            message={message} 
+                          <ProfileSecurity
+                            user={user}
+                            handleEnable2FA={handleEnable2FA}
+                            handleVerify2FA={handleVerify2FA}
+                            handleDisable2FA={handleDisable2FA}
+                            qrCodeUrl={qrCodeUrl}
+                            showQRCode={showQRCode}
+                            token={token}
+                            setToken={setToken}
+                            message={message}
                           />
                         </div>
                       </div>
@@ -467,48 +400,24 @@ const ProfileSidebar = ({ user }) => {
         <div className="text-center">
           <span className="avatar avatar-xxl avatar-rounded online mb-3">
             {user.image ? (
-            
-<img
-src={
-  user?.image
-    ? user.image.startsWith('http') || user.image.startsWith('https')
-      ? user.image // Use as-is if it's already a full URL
-      : `http://localhost:3000${user.image}` // Prepend server URL if relative
-    : "https://via.placeholder.com/100" // Fallback if no image
-}
-alt="Profile"
-style={{
-  width: "100px",
-  height: "100px",
-  borderRadius: "50%",
-  objectFit: "cover",
-  marginBottom: "10px"
-}}
-onError={(e) => {
-  e.target.src = "https://via.placeholder.com/100";
-}}
-/>
-            
-<img
-src={
-  user?.image
-    ? user.image.startsWith('http') || user.image.startsWith('https')
-      ? user.image // Use as-is if it's already a full URL
-      : `http://localhost:3000${user.image}` // Prepend server URL if relative
-    : "https://via.placeholder.com/100" // Fallback if no image
-}
-alt="Profile"
-style={{
-  width: "100px",
-  height: "100px",
-  borderRadius: "50%",
-  objectFit: "cover",
-  marginBottom: "10px"
-}}
-onError={(e) => {
-  e.target.src = "https://via.placeholder.com/100";
-}}
-/>
+              <img
+                src={
+                  user.image.startsWith('http') || user.image.startsWith('https')
+                    ? user.image // Use as-is if it's already a full URL
+                    : `http://localhost:3000${user.image}` // Prepend server URL if relative
+                }
+                alt="Profile"
+                style={{
+                  width: "100px",
+                  height: "100px",
+                  borderRadius: "50%",
+                  objectFit: "cover",
+                  marginBottom: "10px"
+                }}
+                onError={(e) => {
+                  e.target.src = "https://via.placeholder.com/100";
+                }}
+              />
             ) : (
               <p>No profile image uploaded.</p>
             )}

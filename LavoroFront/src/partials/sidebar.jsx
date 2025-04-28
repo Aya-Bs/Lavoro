@@ -21,7 +21,7 @@ const Sidebar = ({ userRole }) => {
             </li>
           </>
         );
-        
+
       case 'Project Manager':
         return (
           <>
@@ -49,10 +49,10 @@ const Sidebar = ({ userRole }) => {
                     Project dashboard
                   </Link>
                 </li>
-               
+
               </ul>
             </li>
-            
+
             <li className="slide__category">
               <span className="category-name">Projects</span>
             </li>
@@ -91,7 +91,7 @@ const Sidebar = ({ userRole }) => {
             </li>
           </>
         );
-        
+
       case 'Team Manager':
         return (
           <>
@@ -104,7 +104,7 @@ const Sidebar = ({ userRole }) => {
                 <span className="side-menu__label">Profile</span>
               </Link>
             </li>
-            
+
             <li className="slide__category">
               <span className="category-name">Projects</span>
             </li>
@@ -119,17 +119,33 @@ const Sidebar = ({ userRole }) => {
             </li>
             <li className="slide">
               <Link to="/teamsList" className="side-menu__item">
-                <i className="ri-file-list-line side-menu__icon"></i>
+                <i className="ri-team-line side-menu__icon"></i>
                 <span className="side-menu__label">Teams List</span>
               </Link>
             </li>
-            
+            <li className="slide">
+              <Link to="/best-performer" className="side-menu__item">
+                <i className="ri-award-line side-menu__icon"></i>
+                <span className="side-menu__label">Best Performance</span>
+              </Link>
+            </li>
+
+            <li className="slide__category">
+              <span className="category-name">Communication</span>
+            </li>
+            <li className="slide">
+              <Link to="/chat" className="side-menu__item">
+                <i className="ri-message-3-line side-menu__icon"></i>
+                <span className="side-menu__label">Messagerie</span>
+              </Link>
+            </li>
+
           </>
         );
 
 
 
-        
+
       case 'Admin':
         return (
           <>
@@ -164,10 +180,10 @@ const Sidebar = ({ userRole }) => {
                     Project dashboard
                   </Link>
                 </li>
-               
+
               </ul>
             </li>
-            
+
             <li className="slide__category">
               <span className="category-name">Projects</span>
             </li>
@@ -192,7 +208,7 @@ const Sidebar = ({ userRole }) => {
                     Projects List
                   </Link>
                 </li>
-                
+
                 <li className="slide">
                   <Link to="/archieve" className="side-menu__item">
                     Projects Archive
@@ -210,14 +226,30 @@ const Sidebar = ({ userRole }) => {
             </li>
             <li className="slide">
               <Link to="/teamsList" className="side-menu__item">
-                <i className="ri-file-list-line side-menu__icon"></i>
+                <i className="ri-team-line side-menu__icon"></i>
                 <span className="side-menu__label">Teams List</span>
+              </Link>
+            </li>
+            <li className="slide">
+              <Link to="/best-performer" className="side-menu__item">
+                <i className="ri-award-line side-menu__icon"></i>
+                <span className="side-menu__label">Best Performance</span>
+              </Link>
+            </li>
+
+            <li className="slide__category">
+              <span className="category-name">Communication</span>
+            </li>
+            <li className="slide">
+              <Link to="/chat" className="side-menu__item">
+                <i className="ri-message-3-line side-menu__icon"></i>
+                <span className="side-menu__label">Messagerie</span>
               </Link>
             </li>
           </>
 
         );
-        
+
       // Add more roles as needed
       default:
         return (

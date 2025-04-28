@@ -4,7 +4,6 @@ const Task = require('../models/Task');
 
 const TaskHistory = require('../models/TaskHistory');
 const User = require('../models/user');
-const TaskHistory = require('../models/TaskHistory');
 
 const ObjectId = mongoose.Types.ObjectId;
 

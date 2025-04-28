@@ -11,30 +11,30 @@ const Project = new Schema({
     client: { type: String },
     start_date: { type: Date },
     end_date: { type: Date },
-    total_tasks_count: { type: Number, default: 0 }, 
-    estimated_duration: { type: Number, default: 0 }, 
-    team_member_count: { type: Number, default: 0 }, 
-    priority: { type: String }, 
-    status: { 
-        type: String, 
-        enum: ['Not Started', 'In Progress', 'Completed', 'Archived'], 
-        default: 'Not Started' 
+    total_tasks_count: { type: Number, default: 0 },
+    estimated_duration: { type: Number, default: 0 },
+    team_member_count: { type: Number, default: 0 },
+    priority: { type: String },
+    status: {
+        type: String,
+        enum: ['Not Started', 'In Progress', 'Completed', 'Archived'],
+        default: 'Not Started'
     },
     risk_level: {
         type: String,
         enum: ['Low', 'Medium', 'High'],
-        default: 'Medium', 
+        default: 'Medium',
     },
-    risks: { type: String, default: 'None' }, 
+    risks: { type: String, default: 'None' },
     tags: { type: String },
     ai_predicted_completion: { type: Date },
     ai_predicted_description: { type: String },
     created_at: { type: Date, default: Date.now },
     updated_at: { type: Date, default: Date.now }
-    
+
 });
 Project.index({ name: 'text' });
-module.exports = mongo.model('project', Project);
+module.exports = mongo.model('Project', Project);
 
 
 /*
