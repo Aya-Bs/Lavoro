@@ -1,448 +1,326 @@
-import React, { useState, useEffect, useRef } from 'react';
-import moment from 'moment';
-import FullCalendar from '@fullcalendar/react';
-import dayGridPlugin from '@fullcalendar/daygrid';
-import timeGridPlugin from '@fullcalendar/timegrid';
-import interactionPlugin from '@fullcalendar/interaction';
-import SimpleBar from 'simplebar-react';
-import 'simplebar-react/dist/simplebar.min.css';
-import { Helmet } from 'react-helmet';
-import { Tooltip, Popover } from 'bootstrap';
-import { Draggable } from '@fullcalendar/interaction';
+import React, { useState } from "react";
+import { Calendar, momentLocalizer } from "react-big-calendar";
+import moment from "moment";
+import "react-big-calendar/lib/css/react-big-calendar.css";
 
-const Calendar = () => {
-    const [events, setEvents] = useState([]);
-    const [birthdayEvents, setBirthdayEvents] = useState([]);
-    const [holidayEvents, setHolidayEvents] = useState([]);
-    const [otherEvents, setOtherEvents] = useState([]);
-    const [activities, setActivities] = useState([]);
-    const [isLoading, setIsLoading] = useState(true);
-    const [isDarkMode, setIsDarkMode] = useState(false);
-    const calendarRef = useRef(null);
+// Initialize the localizer for the calendar
+const localizer = momentLocalizer(moment);
 
-  // Initialize events
-  useEffect(() => {
-    // Dark mode detection
-    const darkModeMediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-    setIsDarkMode(darkModeMediaQuery.matches);
-    const handler = (e) => setIsDarkMode(e.matches);
-    darkModeMediaQuery.addListener(handler);
-    const curYear = moment().format('YYYY');
-    const curMonth = moment().format('MM');
+function FullCalendar() {
+  const [currentDate, setCurrentDate] = useState(new Date());
+  const [view, setView] = useState("month");
 
-    // Calendar Events
-    const calendarEvents = {
-      id: 1,
-      events: [
-        {
-          id: '1',
-          start: `${curYear}-${curMonth}-02`,
-          end: `${curYear}-${curMonth}-03`,
-          title: 'Spruko Meetup',
-          className: "bg-secondary-transparent",
-          description: 'All the Lorem Ipsum generators on the Internet tend to repeat predefined chunks as necessary'
-        },
-        {
-          id: '2',
-          start: `${curYear}-${curMonth}-17`,
-          end: `${curYear}-${curMonth}-17`,
-          title: 'Design Review',
-          className: "bg-info-transparent",
-          description: 'All the Lorem Ipsum generators on the Internet tend to repeat predefined chunks as necessary'
-        },
-        {
-          id: '3',
-          start: `${curYear}-${curMonth}-13`,
-          end: `${curYear}-${curMonth}-13`,
-          title: 'Lifestyle Conference',
-          className: "bg-primary-transparent",
-          description: 'All the Lorem Ipsum generators on the Internet tend to repeat predefined chunks as necessary'
-        }
-      ]
-    };
-
-    // Birthday Events
-    const bdayEvents = {
-      id: 2,
-      className: "bg-info-transparent",
-      textColor: '#fff',
-      events: [
-        {
-          id: '7',
-          start: `${curYear}-${curMonth}-04`,
-          end: `${curYear}-${curMonth}-04`,
-          title: 'Harcates Birthday',
-          description: 'All the Lorem Ipsum generators on the Internet tend to repeat predefined chunks as necessary'
-        },
-        {
-          id: '8',
-          start: `${curYear}-${curMonth}-28`,
-          end: `${curYear}-${curMonth}-28`,
-          title: 'Bunnysin\'s Birthday',
-          description: 'All the Lorem Ipsum generators on the Internet tend to repeat predefined chunks as necessary'
-        }
-      ]
-    };
-
-    // Holiday Events
-    const hdayEvents = {
-      id: 3,
-      className: "bg-danger-transparent",
-      textColor: '#fff',
-      events: [
-        {
-          id: '10',
-          start: `${curYear}-${curMonth}-05`,
-          end: `${curYear}-${curMonth}-08`,
-          title: 'Festival Day'
-        },
-        {
-          id: '11',
-          start: `${curYear}-${curMonth}-18`,
-          end: `${curYear}-${curMonth}-19`,
-          title: 'Memorial Day'
-        },
-        {
-          id: '12',
-          start: `${curYear}-${curMonth}-25`,
-          end: `${curYear}-${curMonth}-26`,
-          title: 'Diwali'
-        }
-      ]
-    };
-
-    // Other Events
-    const othEvents = {
-      id: 4,
-      className: "bg-info-transparent",
-      textColor: '#fff',
-      events: [
-        {
-          id: '13',
-          start: `${curYear}-${curMonth}-07`,
-          end: `${curYear}-${curMonth}-09`,
-          title: 'My Rest Day'
-        },
-        {
-          id: '13',
-          start: `${curYear}-${curMonth}-29`,
-          end: `${curYear}-${curMonth}-31`,
-          title: 'My Rest Day'
-        }
-      ]
-    };
-
-    // Activities
-    const actList = [
-      {
-        date: 'Tuesday, Feb 5, 2024',
-        time: '10:00AM - 11:00AM',
-        description: 'Discussion with team on project updates.'
-      },
-      {
-        date: 'Monday, Jan 2, 2023',
-        status: 'Completed',
-        description: 'Review and finalize budget proposal.'
-      },
-      {
-        date: 'Thursday, Mar 8, 2024',
-        status: 'Reminder',
-        description: 'Prepare presentation slides for client meeting.'
-      },
-      {
-        date: 'Friday, Apr 12, 2024',
-        time: '2:00PM - 4:00PM',
-        description: 'Training session on new software tools.'
-      }
-    ];
-
-    setEvents(calendarEvents.events);
-    setBirthdayEvents(bdayEvents.events);
-    setHolidayEvents(hdayEvents.events);
-    setOtherEvents(othEvents.events);
-    setActivities(actList);
-    setIsLoading(false);
-
-    // Initialize tooltips and popovers
-    const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
-    tooltipTriggerList.map(function (tooltipTriggerEl) {
-      return new Tooltip(tooltipTriggerEl);
-    });
-
-    const popoverTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="popover"]'));
-    popoverTriggerList.map(function (popoverTriggerEl) {
-      return new Popover(popoverTriggerEl);
-    });
-
-    setIsLoading(false);
-
-    return () => darkModeMediaQuery.removeListener(handler);
-
-  }, []);
-
-
-  const handleEventReceive = (eventInfo) => {
-    const newEvent = {
-      id: createEventId(),
-      title: eventInfo.event.title,
-      start: eventInfo.event.startStr,
-      end: eventInfo.event.endStr || moment(eventInfo.event.startStr).add(1, 'hour').toISOString(),
-      className: eventInfo.event.classNames[0] || 'bg-primary-transparent',
-      durationEditable: true, // Permet de modifier la durée
-      startEditable: true,   // Permet de modifier le début
-      allDay: true           // Rend l'événement sur toute la journée
-    };
-    
-    setEvents(prev => [...prev, newEvent]);
-  };
-
-  const handleEventResize = (resizeInfo) => {
-    // Mettez à jour votre état avec la nouvelle durée
-    const updatedEvents = allEvents.map(event => {
-      if (event.id === resizeInfo.event.id) {
-        return {
-          ...event,
-          start: resizeInfo.event.startStr,
-          end: resizeInfo.event.endStr
-        };
-      }
-      return event;
-    });
-    
-    // Mettez à jour l'état global si nécessaire
-    // (adaptez selon comment vous gérez vos événements)
-    setEvents(updatedEvents.filter(e => events.some(ev => ev.id === e.id)));
-    setBirthdayEvents(updatedEvents.filter(e => birthdayEvents.some(ev => ev.id === e.id)));
-    // ... autres catégories d'événements
-  };
-
-  useEffect(() => {
-    let draggable;
-    if (!isLoading) {
-      const containerEl = document.getElementById('external-events');
-      if (containerEl) {
-        new Draggable(containerEl, {
-          itemSelector: '.fc-event',
-          eventData: function(eventEl) {
-            return {
-              title: eventEl.innerText,
-              className: eventEl.getAttribute('data-class'),
-              duration: '1:00', // Durée initiale
-              durationEditable: true,
-              startEditable: true,
-              allDay: true
-            };
-          }
-        });
-      }
-    }
-    return () => {
-      if (draggable) {
-        draggable.destroy();
-      }
-    };
-  }, [isLoading]);
-
-  const handleEventClick = (clickInfo) => {
-    if (window.confirm(`Are you sure you want to delete the event '${clickInfo.event.title}'?`)) {
-      clickInfo.event.remove();
-    }
-  };
-
-  const handleDateSelect = (selectInfo) => {
-    const title = prompt('Please enter a new title for your event');
-    const calendarApi = selectInfo.view.calendar;
-
-    calendarApi.unselect(); // clear date selection
-
-    if (title) {
-      calendarApi.addEvent({
-        id: createEventId(),
-        title,
-        start: selectInfo.startStr,
-        end: selectInfo.endStr,
-        allDay: selectInfo.allDay,
-        className: 'bg-primary-transparent'
-      });
-    }
-  };
-
-  const createEventId = () => {
-    return String(Date.now());
-  };
-
-  const allEvents = [
-    ...events,
-    ...birthdayEvents,
-    ...holidayEvents,
-    ...otherEvents
+  // Sample events data
+  const events = [
+    {
+      title: "Spruko Meetup",
+      start: new Date(2025, 3, 2),
+      end: new Date(2025, 3, 2),
+      className: "bg-purple-600",
+    },
+    {
+      title: "Harcates Birthday",
+      start: new Date(2025, 3, 3),
+      end: new Date(2025, 3, 3),
+      className: "bg-blue-500",
+    },
+    {
+      title: "Music Festival",
+      start: new Date(2025, 3, 3),
+      end: new Date(2025, 3, 3),
+      className: "bg-green-500",
+    },
+    {
+      title: "Festival Day",
+      start: new Date(2025, 3, 4),
+      end: new Date(2025, 3, 4),
+      className: "bg-red-500",
+    },
+    {
+      title: "Music Festival",
+      start: new Date(2025, 3, 6),
+      end: new Date(2025, 3, 6),
+      className: "bg-green-500",
+    },
+    {
+      title: "Festival Day",
+      start: new Date(2025, 3, 6),
+      end: new Date(2025, 3, 6),
+      className: "bg-red-500",
+    },
+    {
+      title: "My Rest Day",
+      start: new Date(2025, 3, 7),
+      end: new Date(2025, 3, 7),
+      className: "bg-blue-500",
+    },
+    {
+      title: "Lifestyle Conference",
+      start: new Date(2025, 3, 13),
+      end: new Date(2025, 3, 13),
+      className: "bg-indigo-500",
+    },
+    {
+      title: "Design Review",
+      start: new Date(2025, 3, 17),
+      end: new Date(2025, 3, 17),
+      className: "bg-blue-500",
+    },
+    {
+      title: "Memorial Day",
+      start: new Date(2025, 3, 18),
+      end: new Date(2025, 3, 18),
+      className: "bg-red-500",
+    },
+    {
+      title: "Team Weekly Brownbag",
+      start: new Date(2025, 3, 21),
+      end: new Date(2025, 3, 21),
+      className: "bg-yellow-500",
+    },
+    {
+      title: "Attend Lea's Wedding",
+      start: new Date(2025, 3, 23),
+      end: new Date(2025, 3, 23),
+      className: "bg-green-500",
+    },
+    {
+      title: "Diwali",
+      start: new Date(2025, 3, 24),
+      end: new Date(2025, 3, 24),
+      className: "bg-red-500",
+    },
+    {
+      title: "Bunnysin's Birthday",
+      start: new Date(2025, 3, 27),
+      end: new Date(2025, 3, 27),
+      className: "bg-blue-500",
+    },
+    {
+      title: "My Rest Day",
+      start: new Date(2025, 3, 28),
+      end: new Date(2025, 3, 28),
+      className: "bg-blue-500",
+    },
+    {
+      title: "Lee shin's Birthday",
+      start: new Date(2025, 3, 30),
+      end: new Date(2025, 3, 30),
+      className: "bg-blue-500",
+    },
   ];
 
-  if (isLoading) {
-    return (
-      <div id="loader" className="d-flex justify-content-center align-items-center vh-100">
-        <div className="spinner-border text-primary" role="status">
-          <span className="visually-hidden">Loading...</span>
-        </div>
-      </div>
-    );
-  }
+  // Event categories
+  const eventCategories = [
+    { name: "Calendar Events", color: "event-primary" },
+    { name: "Birthday Events", color: "event-pink" },
+    { name: "Holiday Calendar", color: "event-purple" },
+    { name: "Office Events", color: "event-orange" },
+    { name: "Other Events", color: "event-gray" },
+    { name: "Festival Events", color: "event-red" },
+    { name: "Timeline Events", color: "event-green" },
+    { name: "Others Events", color: "event-blue" },
+  ];
+
+  // Activity data
+  const activities = [
+    {
+      date: "Tuesday, Feb 5, 2024",
+      time: "10:00AM - 11:00AM",
+      description: "Discussion with team on project updates.",
+      status: { type: "time", label: "10:00AM - 11:00AM" },
+    },
+    {
+      date: "Monday, Jan 2, 2023",
+      time: "",
+      description: "Review and finalize budget proposal.",
+      status: { type: "completed", label: "Completed" },
+    },
+    {
+      date: "Thursday, Mar 8, 2024",
+      time: "",
+      description: "Prepare presentation slides for client meeting.",
+      status: { type: "reminder", label: "Reminder" },
+    },
+    {
+      date: "Friday, Apr 12, 2024",
+      time: "2:00PM - 4:00PM",
+      description: "Training session on new software tools.",
+      status: { type: "time", label: "2:00PM - 4:00PM" },
+    },
+    {
+      date: "Saturday, Mar 16, 2024",
+      time: "",
+      description: "Submit quarterly report to management.",
+      status: { type: "due", label: "Due Date" },
+    },
+  ];
+
+  const getStatusClass = (type) => {
+    switch (type) {
+      case "completed":
+        return "badge-success";
+      case "reminder":
+        return "badge-warning";
+      case "due":
+        return "badge-danger";
+      default:
+        return "badge-light";
+    }
+  };
 
   return (
-    <div className={`page ${isDarkMode ? 'dark-mode' : ''}`}>
-      <Helmet>
-        <title>Full Calendar</title>
-      </Helmet>
+    <div className="page-container">
+      {/* Page Header */}
+      <div className="page-header">
+        <div className="breadcrumb-container">
+          <nav>
+            <ol className="breadcrumb">
+              <li className="breadcrumb-item"><a href="#">Apps</a></li>
+              <li className="breadcrumb-item active">Full Calendar</li>
+            </ol>
+          </nav>
+          <h1 className="page-title">Full Calendar</h1>
+        </div>
+        <div className="btn-list">
+          <button className="btn btn-white">
+            <i className="ri-filter-3-line"></i> Filter
+          </button>
+          <button className="btn btn-primary">
+            <i className="ri-share-forward-line"></i> Share
+          </button>
+        </div>
+      </div>
 
-        <div className="container-fluid">
-          {/* Page Header */}
-          <div className="d-flex align-items-center justify-content-between page-header-breadcrumb flex-wrap gap-2">
-            <div>
-              <nav>
-                <ol className="breadcrumb mb-1">
-                  <li className="breadcrumb-item"><a href="javascript:void(0);">Apps</a></li>
-                  <li className="breadcrumb-item active" aria-current="page">Full Calendar</li>
-                </ol>
-              </nav>
-              <h1 className="page-title fw-medium fs-18 mb-0">Full Calendar</h1>
-            </div>
-            <div className="btn-list">
-              <button className="btn btn-white btn-wave" data-bs-toggle="tooltip" title="Filter events">
-                <i className="ri-filter-3-line align-middle me-1 lh-1"></i> Filter
-              </button>
-              <button className="btn btn-primary btn-wave me-0" data-bs-toggle="tooltip" title="Share calendar">
-                <i className="ri-share-forward-line me-1"></i> Share
-              </button>
+      {/* Main Content */}
+      <div className="main-content">
+        <div className="row">
+          {/* Calendar Section */}
+          <div className="col-xl-9">
+            <div className="card">
+              <div className="card-header">
+                <div className="card-title">Full Calendar</div>
+              </div>
+              <div className="card-body">
+                <div className="calendar-controls">
+                  <div className="calendar-nav">
+                    <button 
+                      className="btn btn-sm btn-outline-secondary"
+                      onClick={() => setCurrentDate(moment(currentDate).subtract(1, "month").toDate())}
+                    >
+                      <i className="ri-arrow-left-s-line"></i>
+                    </button>
+                    <button 
+                      className="btn btn-sm btn-outline-secondary"
+                      onClick={() => setCurrentDate(moment(currentDate).add(1, "month").toDate())}
+                    >
+                      <i className="ri-arrow-right-s-line"></i>
+                    </button>
+                    <button 
+                      className="btn btn-sm btn-outline-secondary"
+                      onClick={() => setCurrentDate(new Date())}
+                    >
+                      today
+                    </button>
+                  </div>
+                  
+                  <h2 className="calendar-title">{moment(currentDate).format("MMMM YYYY")}</h2>
+                  
+                  <div className="calendar-views">
+                    <button 
+                      className={`btn btn-sm ${view === "month" ? "btn-primary" : "btn-outline-secondary"}`}
+                      onClick={() => setView("month")}
+                    >
+                      month
+                    </button>
+                    <button 
+                      className={`btn btn-sm ${view === "week" ? "btn-primary" : "btn-outline-secondary"}`}
+                      onClick={() => setView("week")}
+                    >
+                      week
+                    </button>
+                    <button 
+                      className={`btn btn-sm ${view === "day" ? "btn-primary" : "btn-outline-secondary"}`}
+                      onClick={() => setView("day")}
+                    >
+                      day
+                    </button>
+                    <button 
+                      className={`btn btn-sm ${view === "agenda" ? "btn-primary" : "btn-outline-secondary"}`}
+                      onClick={() => setView("agenda")}
+                    >
+                      list
+                    </button>
+                  </div>
+                </div>
+
+                <div className="calendar-container">
+                  <Calendar
+                    localizer={localizer}
+                    events={events}
+                    startAccessor="start"
+                    endAccessor="end"
+                    view={view}
+                    onView={setView}
+                    date={currentDate}
+                    onNavigate={(date) => setCurrentDate(date)}
+                    eventPropGetter={(event) => ({
+                      className: event.className,
+                    })}
+                  />
+                </div>
+              </div>
             </div>
           </div>
-          {/* End Page Header */}
 
-          <div className="row">
-            <div className="col-xl-9">
-              <div className="card custom-card">
-                <div className="card-header">
-                  <div className="card-title">Full Calendar</div>
-                </div>
-                <div className="card-body">
-                <FullCalendar
-                  ref={calendarRef}
-                  plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
-                  initialView="dayGridMonth"
-                  headerToolbar={{
-                    left: 'prev,next today',
-                    center: 'title',
-                    right: 'dayGridMonth,timeGridWeek,timeGridDay,listWeek'
-                  }}
-                  editable={true}
-                  selectable={true}
-                  droppable={true}
-                  eventResizableFromStart={true}
-                  selectMirror={true}
-                  dayMaxEvents={true}
-                  events={allEvents}
-                  eventClick={handleEventClick}
-                  select={handleDateSelect}
-                  eventDurationEditable={true}
-                  eventReceive={handleEventReceive}
-                  eventResize={handleEventResize}
-                  height="auto"
-                />
-                </div>
+          {/* Sidebar */}
+          <div className="col-xl-3">
+            {/* All Events */}
+            <div className="card">
+              <div className="card-header">
+                <div className="card-title">All Events</div>
+                <button className="btn btn-primary">
+                  <i className="ri-add-line"></i> Create New Event
+                </button>
+              </div>
+              <div className="card-body">
+                <ul id="external-events" className="event-list">
+                  {eventCategories.map((category, index) => (
+                    <li key={index} className={`event-item ${category.color}`}>
+                      <div className="event-content">{category.name}</div>
+                    </li>
+                  ))}
+                </ul>
               </div>
             </div>
-            
-            <div className="col-xl-3">
-              {/* All Events Card */}
-              <div className="card custom-card">
-                <div className="card-header justify-content-between">
-                  <div className="card-title">All Events</div>
-                  <button className="btn btn-primary btn-wave">
-                    <i className="ri-add-line align-middle me-1 fw-medium d-inline-block"></i>
-                    Create New Event
-                  </button>
-                </div>
-                <div className="card-body p-0">
-                  <div id="external-events" className="mb-0 p-3 list-unstyled column-list">
-                    {events.map((event, index) => (
-                      <div 
-                        key={`event-${index}`}
-                        className={`fc-event fc-h-event fc-daygrid-event fc-daygrid-block-event mb-1 ${event.className}`}
-                        data-class={event.className}
-                      >
-                        <div className="fc-event-main">{event.title}</div>
-                      </div>
-                    ))}
-                    {birthdayEvents.map((event, index) => (
-                      <div 
-                        key={`bday-${index}`}
-                        className="fc-event fc-h-event fc-daygrid-event fc-daygrid-block-event mb-1 bg-primary1-transparent"
-                        data-class="bg-primary1-transparent"
-                      >
-                        <div className="fc-event-main text-primary1">{event.title}</div>
-                      </div>
-                    ))}
-                    {holidayEvents.map((event, index) => (
-                      <div 
-                        key={`holiday-${index}`}
-                        className="fc-event fc-h-event fc-daygrid-event fc-daygrid-block-event mb-1 bg-primary2-transparent"
-                        data-class="bg-primary2-transparent text-primary2"
-                      >
-                        <div className="fc-event-main text-primary2">{event.title}</div>
-                      </div>
-                    ))}
-                    {otherEvents.map((event, index) => (
-                      <div 
-                        key={`other-${index}`}
-                        className="fc-event fc-h-event fc-daygrid-event fc-daygrid-block-event mb-1 bg-primary3-transparent"
-                        data-class="bg-primary3-transparent text-primary3"
-                      >
-                        <div className="fc-event-main text-primary3">{event.title}</div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
+
+            {/* Activity */}
+            <div className="card">
+              <div className="card-header">
+                <div className="card-title">Activity :</div>
+                <button className="btn btn-link">View All</button>
               </div>
-              
-              {/* Activity Card */}
-              <div className="card custom-card">
-                <div className="card-header justify-content-between pb-1">
-                  <div className="card-title">Activity :</div>
-                  <button className="btn btn-primary-light btn-sm btn-wave">View All</button>
-                </div>
-                <div className="card-body p-0">
-                  <div className="p-3 border-bottom" id="full-calendar-activity">
-                    <SimpleBar style={{ maxHeight: '300px' }} autoHide={true}>
-                      <ul className="list-unstyled mb-0 fullcalendar-events-activity">
-                        {activities.map((activity, index) => (
-                          <li key={`activity-${index}`} className="mb-3">
-                            <div className="d-flex align-items-center justify-content-between flex-wrap">
-                              <p className="mb-1 fw-medium">{activity.date}</p>
-                              {activity.time && (
-                                <span className="badge bg-light text-default mb-1">{activity.time}</span>
-                              )}
-                              {activity.status && (
-                                <span className={`badge ${
-                                  activity.status === 'Completed' ? 'bg-success' : 
-                                  activity.status === 'Reminder' ? 'bg-warning-transparent' : 
-                                  'bg-danger-transparent'
-                                } mb-1`}>
-                                  {activity.status}
-                                </span>
-                              )}
-                            </div>
-                            <p className="mb-0 text-muted fs-12">{activity.description}</p>
-                          </li>
-                        ))}
-                      </ul>
-                    </SimpleBar>
-                  </div>
-                </div>
+              <div className="card-body">
+                <ul className="activity-list">
+                  {activities.map((activity, index) => (
+                    <li key={index} className="activity-item">
+                      <div className="activity-header">
+                        <p className="activity-date">{activity.date}</p>
+                        <span className={`badge ${getStatusClass(activity.status.type)}`}>
+                          {activity.status.label}
+                        </span>
+                      </div>
+                      <p className="activity-description">{activity.description}</p>
+                    </li>
+                  ))}
+                </ul>
               </div>
             </div>
           </div>
         </div>
+      </div>
     </div>
   );
-};
+}
 
-export default Calendar;
+export default FullCalendar;

@@ -3,16 +3,66 @@ const User = require('../models/user');
 const Skills = require('../models/skills');
 const mongoose = require('mongoose');
 
+// exports.getTeamMemberById = async (req, res) => {
+//   try {
+//     const { id } = req.params;
+
+//     const teamMember = await TeamMember.findById(id)
+//       .populate('user_id')
+//       .populate('skills');
+
+//     if (!teamMember) {
+//       return res.status(404).json({ success: false, message: 'Team member not found' });
+//     }
+
+//     // Construction de la réponse
+//     const responseData = {
+//       id: teamMember._id,
+//       teamId: teamMember.team_id,
+//       name: teamMember.user_id 
+//         ? `${teamMember.user_id.firstName || ''} ${teamMember.user_id.lastName || ''}`.trim()
+//         : 'Unknown',
+//       role: teamMember.role,
+//       email: teamMember.user_id?.email || '',
+//       image: teamMember.user_id?.image || '',
+//       phone: teamMember.user_id?.phone_number || '',
+//       skills: teamMember.skills?.map(skill => ({
+//         id: skill._id,
+//         name: skill.name || 'Unnamed Skill',
+//         description: skill.description || ''
+//       })) || [],
+//       performance_score: teamMember.performance_score,
+//       completed_tasks_count: teamMember.completed_tasks_count,
+//       joined_at: teamMember.joined_at
+//     };
+
+//     res.status(200).json({ success: true, data: responseData });
+
+//   } catch (error) {
+//     console.error('Error:', error);
+//     res.status(500).json({ 
+//       success: false, 
+//       message: 'Server error',
+//       error: error.message 
+//     });
+//   }
+// };
+
+
 exports.getTeamMemberById = async (req, res) => {
   try {
-    const { id } = req.params;
+    const { id } = req.params; // Maintenant on utilise l'ID direct du User
 
-    const teamMember = await TeamMember.findById(id)
+    // Recherche le TeamMember par l'ID du User
+    const teamMember = await TeamMember.findOne({ user_id: id })
       .populate('user_id')
       .populate('skills');
 
     if (!teamMember) {
-      return res.status(404).json({ success: false, message: 'Team member not found' });
+      return res.status(404).json({ 
+        success: false, 
+        message: 'Team member not found for this user ID' 
+      });
     }
 
     // Construction de la réponse
@@ -39,16 +89,14 @@ exports.getTeamMemberById = async (req, res) => {
     res.status(200).json({ success: true, data: responseData });
 
   } catch (error) {
-    console.error('Error:', error);
+    console.error('Error fetching team member by user ID:', error);
     res.status(500).json({ 
       success: false, 
-      message: 'Server error',
+      message: 'Server error while fetching team member',
       error: error.message 
     });
   }
 };
-
-
 
 exports.getTeamMembersByTeamId = async (req, res) => {
   try {

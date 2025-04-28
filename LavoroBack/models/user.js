@@ -45,6 +45,8 @@ const userSchema = new mongoose.Schema({
   },
   twoFactorSecret: { type: String }, 
   twoFactorEnabled: { type: Boolean, default: false }, 
+  performancePoints: { type: Number, default: 0 }, 
+
 
 });
 
