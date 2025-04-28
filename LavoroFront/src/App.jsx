@@ -35,6 +35,8 @@ import CreateWithAI from "./project/CreateProjectWithAI";
 import CreateProjectWithAI from "./project/CreateProjectWithAI";
 import MemberDetails from "./team/memberDetails";
 import SearchMember from "./team/searchMember";
+//import { Calendar } from "lucide-react";
+import FullCalendar from "./team/calendar";
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -79,6 +81,7 @@ function App() {
 
               <Route path="/member-details/:id" element={<MemberDetails/>} />
               <Route path="/searchMember" element={<SearchMember/>} />
+              <Route path="/calendar" element={<FullCalendar />} />
 
             </Route>
         </Routes>
