@@ -249,8 +249,16 @@ const ChatWindow = ({ chat, messages, currentUser, onSendMessage, isLoading }) =
                                                     <div className="chat-user-profile">
                                                         <span className={`avatar avatar-md ${chat.type === 'direct' ? chatStatus : ''}`}>
                                                             <img
-                                                                src={chat.type === 'direct' ? chatImage : (message.sender?.profileImage || "../assets/images/faces/6.jpg")}
-                                                                alt={chat.type === 'direct' ? chatName : message.sender?.name}
+                                                                src={chat.type === 'direct' ?
+                                                                    chatImage :
+                                                                    (message.sender?.profileImage ||
+                                                                     message.sender?.image ||
+                                                                     "../assets/images/faces/6.jpg")}
+                                                                alt={chat.type === 'direct' ?
+                                                                    chatName :
+                                                                    (message.sender?.name ||
+                                                                     `${message.sender?.firstName || ''} ${message.sender?.lastName || ''}`.trim() ||
+                                                                     'Utilisateur')}
                                                             />
                                                         </span>
                                                     </div>
@@ -326,7 +334,11 @@ const ChatWindow = ({ chat, messages, currentUser, onSendMessage, isLoading }) =
                                                     </div>
                                                     <span className="chatting-user-info">
                                                         {chat.type === 'group' && !isCurrentUser ? (
-                                                            <span>{message.sender?.name || 'Utilisateur'}</span>
+                                                            <span>
+                                                                {message.sender?.name ||
+                                                                 `${message.sender?.firstName || ''} ${message.sender?.lastName || ''}`.trim() ||
+                                                                 'Utilisateur'}
+                                                            </span>
                                                         ) : (
                                                             <span>{isCurrentUser ? 'Vous' : chatName}</span>
                                                         )}

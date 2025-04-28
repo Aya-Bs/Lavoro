@@ -4,7 +4,10 @@ import * as chatService from './chatService.js';
 import * as userService from './userService.js';
 import ChatSidebar from './ChatSidebar';
 import ChatWindow from './ChatWindow';
+import ChatFloatingButton from './ChatFloatingButton';
+import ChatPopup from './ChatPopup';
 import './ChatStyles.css';
+import './ChatFullScreen.css';
 
 const ChatComponent = () => {
     const navigate = useNavigate();
@@ -17,6 +20,8 @@ const ChatComponent = () => {
     const [isLoading, setIsLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
     const [activeTab, setActiveTab] = useState('users'); // 'users', 'groups', 'contacts'
+    const [viewMode, setViewMode] = useState('fullscreen'); // 'fullscreen', 'popup', or 'floating'
+    const [showPopup, setShowPopup] = useState(false);
 
     // Get current user from localStorage or fetch from API
     useEffect(() => {
@@ -815,67 +820,97 @@ const ChatComponent = () => {
         }
     });
 
-    return (
-        <div className="main-content app-content">
-            <div className="container-fluid">
-                {/* Page Header */}
-                <div className="d-flex align-items-center justify-content-between page-header-breadcrumb flex-wrap gap-2">
-                    <div>
-                        <nav>
-                            <ol className="breadcrumb mb-1">
-                                <li className="breadcrumb-item"><a href="javascript:void(0);">Pages</a></li>
-                                <li className="breadcrumb-item active" aria-current="page">Chat</li>
-                            </ol>
-                        </nav>
-                        <h1 className="page-title fw-medium fs-18 mb-0">Chat</h1>
-                    </div>
-                    <div className="btn-list">
-                        <button className="btn btn-white btn-wave">
-                            <i className="ri-filter-3-line align-middle me-1 lh-1"></i> Filter
-                        </button>
-                        <button className="btn btn-primary btn-wave me-0">
-                            <i className="ri-share-forward-line me-1"></i> Share
-                        </button>
-                    </div>
-                </div>
-                {/* Page Header Close */}
+    // Toggle view mode
+    const toggleViewMode = () => {
+        if (viewMode === 'fullscreen') {
+            setViewMode('popup');
+            setShowPopup(true);
+        } else {
+            setViewMode('fullscreen');
+            setShowPopup(false);
+        }
+    };
 
-                <div className="main-chart-wrapper gap-lg-2 gap-0 mb-2 d-lg-flex">
-                    {/* Chat Sidebar */}
-                    <ChatSidebar
-                        conversations={filteredConversations}
-                        groups={filteredGroups}
-                        contacts={filteredContacts}
-                        activeChat={activeChat}
-                        activeTab={activeTab}
-                        setActiveTab={setActiveTab}
-                        onChatSelect={handleChatSelect}
-                        searchQuery={searchQuery}
-                        onSearch={handleSearch}
-                        currentUser={currentUser}
-                    />
+    // Close popup
+    const closePopup = () => {
+        setShowPopup(false);
+    };
 
-                    {/* Chat Window */}
-                    {activeChat ? (
-                        <ChatWindow
-                            chat={activeChat}
-                            messages={messages}
-                            currentUser={currentUser}
-                            onSendMessage={handleSendMessage}
-                            isLoading={isLoading}
-                        />
-                    ) : (
-                        <div className="chat-window-placeholder">
-                            <div className="text-center">
-                                <i className="ri-chat-3-line fs-40 text-muted"></i>
-                                <h5 className="mt-3">Select a chat to start messaging</h5>
-                            </div>
+    // Render based on view mode
+    if (viewMode === 'fullscreen') {
+        return (
+            <div className="main-content app-content">
+                <div className="container-fluid">
+                    {/* Page Header */}
+                    <div className="d-flex align-items-center justify-content-between page-header-breadcrumb flex-wrap gap-2">
+                        <div>
+                            <nav>
+                                <ol className="breadcrumb mb-1">
+                                    <li className="breadcrumb-item"><a href="javascript:void(0);">Pages</a></li>
+                                    <li className="breadcrumb-item active" aria-current="page">Chat</li>
+                                </ol>
+                            </nav>
+                            <h1 className="page-title fw-medium fs-18 mb-0">Chat</h1>
                         </div>
-                    )}
+                        <div className="btn-list">
+                            <button className="btn btn-white btn-wave" onClick={toggleViewMode}>
+                                <i className="ri-contract-left-right-line align-middle me-1 lh-1"></i> Mode Popup
+                            </button>
+                            <button className="btn btn-primary btn-wave me-0">
+                                <i className="ri-share-forward-line me-1"></i> Share
+                            </button>
+                        </div>
+                    </div>
+                    {/* Page Header Close */}
+
+                    <div className="main-chart-wrapper gap-lg-2 gap-0 mb-2 d-lg-flex">
+                        {/* Chat Sidebar */}
+                        <ChatSidebar
+                            conversations={filteredConversations}
+                            groups={filteredGroups}
+                            contacts={filteredContacts}
+                            activeChat={activeChat}
+                            activeTab={activeTab}
+                            setActiveTab={setActiveTab}
+                            onChatSelect={handleChatSelect}
+                            searchQuery={searchQuery}
+                            onSearch={handleSearch}
+                            currentUser={currentUser}
+                        />
+
+                        {/* Chat Window */}
+                        {activeChat ? (
+                            <ChatWindow
+                                chat={activeChat}
+                                messages={messages}
+                                currentUser={currentUser}
+                                onSendMessage={handleSendMessage}
+                                isLoading={isLoading}
+                            />
+                        ) : (
+                            <div className="chat-window-placeholder">
+                                <div className="text-center">
+                                    <i className="ri-chat-3-line fs-40 text-muted"></i>
+                                    <h5 className="mt-3">Sélectionnez une conversation pour commencer</h5>
+                                </div>
+                            </div>
+                        )}
+                    </div>
                 </div>
             </div>
-        </div>
-    );
+        );
+    } else if (showPopup) {
+        return (
+            <>
+                <ChatPopup
+                    onClose={closePopup}
+                    currentUser={currentUser}
+                />
+            </>
+        );
+    } else {
+        return <ChatFloatingButton onClick={() => setShowPopup(true)} />;
+    }
 };
 
 export default ChatComponent;

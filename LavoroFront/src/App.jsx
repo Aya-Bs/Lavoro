@@ -35,9 +35,12 @@ import CreateWithAI from "./project/CreateProjectWithAI";
 import CreateProjectWithAI from "./project/CreateProjectWithAI";
 import BestPerformerPage from "./pages/BestPerformerPage";
 import ChatComponent from "./chat/ChatComponent";
+import ChatFloatingButton from "./chat/ChatFloatingButton";
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+
+  const [showChatPopup, setShowChatPopup] = useState(false);
 
   return (
     <>
@@ -82,6 +85,12 @@ function App() {
 
             </Route>
         </Routes>
+
+        {/* Floating chat button on all pages except chat page */}
+        {isAuthenticated && window.location.pathname !== '/chat' && (
+          <ChatFloatingButton />
+        )}
+
       </BrowserRouter>
       </GoogleOAuthProvider>
     </>

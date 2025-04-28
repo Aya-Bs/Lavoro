@@ -76,7 +76,7 @@ exports.getConversation = async (req, res) => {
         const { userId, otherUserId } = req.params;
 
         // Find all messages between the two users
-        const messages = await Chat.find({
+        let messages = await Chat.find({
             $or: [
                 { sender_id: userId, receiver_id: otherUserId },
                 { sender_id: otherUserId, receiver_id: userId }
@@ -91,6 +91,21 @@ exports.getConversation = async (req, res) => {
 
         // Get user details
         const otherUser = await getUserDetails(otherUserId);
+        const currentUser = await getUserDetails(userId);
+
+        // Add sender information to each message
+        messages = await Promise.all(messages.map(async (message) => {
+            const messageObj = message.toObject();
+
+            // Add sender information to the message
+            if (message.sender_id.toString() === userId) {
+                messageObj.sender = currentUser;
+            } else {
+                messageObj.sender = otherUser;
+            }
+
+            return messageObj;
+        }));
 
         res.status(200).json({
             success: true,
@@ -191,10 +206,19 @@ exports.sendMessage = async (req, res) => {
                 sender: await getUserDetails(sender_id)
             });
 
-            console.log('Sending success response');
+            // Get sender details to include in the response
+            const senderDetails = await getUserDetails(sender_id);
+
+            // Create a response object with sender information
+            const responseMessage = {
+                ...newMessage.toObject(),
+                sender: senderDetails
+            };
+
+            console.log('Sending success response with sender details');
             res.status(201).json({
                 success: true,
-                data: newMessage
+                data: responseMessage
             });
         } catch (saveError) {
             console.error('Error saving message:', saveError);
@@ -425,9 +449,16 @@ exports.sendGroupMessage = async (req, res) => {
             }
         }
 
+        // Create a response object with sender information
+        const responseMessage = {
+            ...newMessage.toObject(),
+            sender: senderInfo
+        };
+
+        console.log('Sending group message success response with sender details');
         res.status(201).json({
             success: true,
-            data: newMessage
+            data: responseMessage
         });
     } catch (error) {
         console.error('Error sending group message:', error);
