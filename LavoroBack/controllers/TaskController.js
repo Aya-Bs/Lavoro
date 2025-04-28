@@ -140,7 +140,6 @@ exports.getTasksByUser = async (req, res) => {
     }
 };
 
-ction des points
 exports.updateTaskStatus = async (req, res) => {
     const { taskId } = req.params;
     const { status } = req.body;
