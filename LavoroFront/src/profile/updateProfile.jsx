@@ -171,6 +171,34 @@ const UpdateProfile = () => {
     const value = e.target.value;
     setDescription(value);
     validateField('description', value);
+
+    // Define a list of known skills (could be expanded or loaded from elsewhere)
+    const knownSkills = [
+      'javascript', 'nodejs', 'node', 'react', 'express', 'expressjs', 'docker', 'flutter', 'python', 'java', 'c++', 'c#', 'php', 'html', 'css', 'mongodb', 'sql', 'typescript', 'angular', 'vue', 'django', 'spring', 'swift', 'kotlin', 'go', 'rust', 'aws', 'azure', 'gcp', 'firebase', 'graphql', 'redux', 'sass', 'less', 'bootstrap', 'tailwind', 'git', 'github', 'jira', 'linux', 'bash', 'shell', 'matlab', 'r', 'scala', 'perl', 'ruby', 'laravel', 'symfony', 'dotnet', 'android', 'ios', 'xamarin', 'ionic', 'cordova', 'unity', 'unreal', 'threejs', 'nextjs', 'nestjs', 'fastify', 'hapi', 'mocha', 'jest', 'chai', 'enzyme', 'testing-library', 'cypress', 'puppeteer', 'storybook'
+    ];
+
+    // Combine with current skills (case-insensitive)
+    const currentSkills = Array.isArray(skills) ? skills : [];
+    const lowerSkills = currentSkills.map(s => s.toLowerCase());
+
+    // Normalize description: remove punctuation, lowercase, and split into words
+    const normalizedDesc = value
+      .replace(/[.,\/#!$%^&*;:{}=\-_`~()\[\]"]/g, ' ')
+      .toLowerCase();
+    const descWords = normalizedDesc.split(/\s+/).filter(Boolean);
+
+    // Find new skills in the description (case-insensitive, punctuation-insensitive)
+    const foundSkills = knownSkills.filter(skill => {
+      const normalizedSkill = skill.toLowerCase();
+      return descWords.includes(normalizedSkill) && !lowerSkills.includes(normalizedSkill);
+    });
+
+    if (foundSkills.length > 0) {
+      const newSkills = [...currentSkills, ...foundSkills];
+      setSkills(newSkills);
+      setSkillsInputValue(newSkills.join(','));
+      validateField('skills', newSkills);
+    }
   };
 
   const handleSkillsChange = (e) => {
