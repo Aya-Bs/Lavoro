@@ -208,5 +208,8 @@
   "engines": {
     "node": ">= 4.7.0"
   },
-  "releaseDate": "July 26, 2024"
+  "releaseDate": "July 26, 2024",
+  "dependencies": {
+    "swiper": "file:"
+  }
 }

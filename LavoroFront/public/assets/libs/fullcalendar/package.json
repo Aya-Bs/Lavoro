@@ -10,7 +10,8 @@
     "@fullcalendar/interaction": "~6.1.15",
     "@fullcalendar/list": "~6.1.15",
     "@fullcalendar/multimonth": "~6.1.15",
-    "@fullcalendar/timegrid": "~6.1.15"
+    "@fullcalendar/timegrid": "~6.1.15",
+    "fullcalendar": "file:"
   },
   "type": "module",
   "keywords": [
