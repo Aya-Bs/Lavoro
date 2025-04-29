@@ -46,7 +46,7 @@ import MemberDetails from "./team/memberDetails";
 import FullCalendar from "./team/calendar";
 import WinnersPodium from "./team/podium";
 import Mail from "./user/mail"
-
+import 'bootstrap/dist/css/bootstrap.min.css';
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
