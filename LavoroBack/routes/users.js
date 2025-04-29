@@ -77,6 +77,7 @@ router.post('/github', GitHubLogin);
 router.get('/getData', getData);
 
 router.get('/getTeamManager', userController.getTeamManager);
+router.get('/getAllDevelopers', userController.getAllDevelopers);
 
 
 module.exports = router;

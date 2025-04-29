@@ -30,6 +30,7 @@ const taskRouter=require('./routes/Task')
 const profileRouter = require('./routes/profile');
 const projectRouter = require('./routes/project');
 const notifroute = require('./routes/notification');
+const teamRouter = require('./routes/teams');
 
 // const homeRouter = require('./routes/home');
 const adminRouter = require('./routes/admin');
@@ -92,6 +93,7 @@ app.use('/tasks',taskRouter);
 app.use('/project',projectRouter);
 
 app.use('/profiles', profileRouter);
+app.use('/teams', teamRouter);
 
 app.post("/translate", async (req, res) => {
   const { text, targetLanguage } = req.body;

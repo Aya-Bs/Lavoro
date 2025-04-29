@@ -52,43 +52,7 @@ const sendProjectAssignmentEmail = async (email, projectDetails) => {
 
 
 
-// Updated getAllProjects function
-// exports.getAllProjects = async (req, res) => {
-//   try {
-//     // Get token from headers
-//     const token = req.headers.authorization;
-//     if (!token) {
-//       return res.status(401).json({ message: 'Authentication required' });
-//     }
 
-//     // Verify token and get user
-//     const decoded = jwt.verify(token.replace('Bearer ', ''), process.env.JWT_SECRET);
-//     const user = await User.findById(decoded._id).populate('role');
-    
-//     if (!user) {
-//       return res.status(401).json({ message: 'User not found' });
-//     }
-
-//     // Build query based on role
-//     let query = {};
-//     if (user.role?.RoleName === 'Team Manager') {
-//       query = { manager_id: user._id }; // Only show projects assigned to this manager
-//     }
-
-
-//     const projects = await Project.find(query)
-//       .sort({ created_at: -1 })
-//       .populate('manager_id', 'firstName lastName email');
-
-//     res.status(200).json(projects);
-//   } catch (error) {
-//     console.error('Error fetching projects:', error);
-//     res.status(500).json({ 
-//       message: "Error fetching projects",
-//       error: error.message 
-//     });
-//   }
-// };
 
 // Updated getAllProjects function
 exports.getAllProjects = async (req, res) => {
@@ -846,141 +810,6 @@ exports.getProjectsByStatus = async () => {
 };
 
 
-// exports.generateAISuggestions = async (req, res) => {
-//   const { name, description, client, manager_id } = req.body;
-//   try {
-//     // Get AI prediction (as raw text)
-//     const predictionText = await predictProjectFields(name, description);
-    
-//     if (!predictionText) {
-//       return res.status(400).json({ error: "Failed to generate project predictions" });
-//     }
-
-//     const cleaned = predictionText
-//       .replace(/^```json\s*/i, '') 
-//       .replace(/^```\s*/i, '')      
-//       .replace(/```$/, '')          
-//       .trim();
-
-//     let prediction;
-//     try {
-//       prediction = JSON.parse(cleaned);
-//     } catch (parseError) {
-//       console.error("Failed to parse AI response:", parseError);
-//       return res.status(400).json({ error: "Invalid AI response format" });
-//     }
-
-//     // Calculate dates
-//     const startDate = new Date();
-//     const endDate = new Date();
-//     endDate.setMonth(startDate.getMonth() + (prediction.duration || 0));
-//     console.log("********************************************risk level:", prediction["Risks"] );
-//     // Return suggestions without saving to database
-//     res.status(200).json({
-//       budget: prediction.budget || 0,
-//       start_date: startDate,
-//       end_date: endDate,
-//       estimated_duration: prediction.duration || 0,
-//       priority: prediction.priority || 'Medium',
-//       risk_level: prediction.risk_level || 'Medium',
-//       team_member_count: prediction.team_member_count || 0,
-//       total_tasks_count: prediction.task_count || 0,
-//       tags: prediction.Tags || '',
-//       ai_description: prediction["Ai-description"] || description,
-//       risks: prediction["Risks"] || []
-//     });
-
-//   } catch (error) {
-//     console.error("Error in generateAISuggestions:", error);
-//     res.status(500).json({ 
-//       error: "Internal server error", 
-//       details: error.message
-//     });
-//   }
-// };
-
-  
-// exports.createProjectWithAI = async (req, res) => {
-//   const {
-//     name,
-//     description,
-//     client,
-//     manager_id,
-//     budget,
-//     start_date,
-//     end_date,
-//     estimated_duration,
-//     priority,
-//     risk_level,
-//     team_member_count,
-//     total_tasks_count,
-//     tags,
-//     status
-//   } = req.body;
-
-//   try {
-//     // Create project using the provided fields
-//     const newProject = new Project({
-//       project_id: new mongoose.Types.ObjectId().toString(), 
-//       name,
-//       description,
-//       budget: Number(budget),
-//       manager_id,
-//       client,
-//       start_date: new Date(start_date),
-//       end_date: new Date(end_date),
-//       total_tasks_count: Number(total_tasks_count),
-//       estimated_duration: Number(estimated_duration),
-//       team_member_count: Number(team_member_count),
-//       risks,
-//       priority,
-//       risk_level,
-//       tags,
-//       status: status || 'Not Started',
-//       ai_predicted_completion: new Date(end_date),
-//       ai_predicted_description: description
-//     });
-
-//     await newProject.save();
-
-//     // Create project history entry (same as in createProject)
-//     const historyEntry = new ProjectHistory({
-//       project_id: newProject._id,
-//       change_type: 'Project Created',
-//       old_value: 'N/A',
-//       new_value: `Project "${newProject.name}" created with AI assistance.`, // Slightly different message
-//     });
-//     await historyEntry.save();
-
-//     // Get manager and send email notification (optional)
-//     const manager = await User.findById(manager_id);
-//     if (manager) {
-//       await sendProjectAssignmentEmail(manager.email, newProject);
-//     }
-
-//     res.status(201).json({
-//       message: 'Project created successfully with AI',
-//       project: newProject,
-//       history: historyEntry
-//     });
-
-//   } catch (error) {
-//     console.error("Error in createProjectWithAI:", error);
-    
-//     // Handle validation errors specifically
-//      if (error.name === 'ValidationError') {
-//       return res.status(400).json({
-//         message: "Validation Error",
-//         errors: error.errors
-//       });
-//     }
-
-//     res.status(500).json({ 
-//       message: "Error creating project with AI",
-//       error: error.message
-//     });
-//   }
-// };
 
 
 
@@ -1150,112 +979,6 @@ exports.createProjectWithAI = async (req, res) => {
 };
 
 
-// exports.startProject = async (req, res) => {
-//   const { id } = req.params;
-
-//   try {
-//     const project = await Project.findById(id);
-//     if (!project) {
-//       return res.status(404).json({ message: 'Project not found' });
-//     }
-
-//     // Check if project can be started (must be "Not Started")
-//     if (project.status !== 'Not Started') {
-//       return res.status(400).json({ 
-//         message: 'Project can only be started if its status is "Not Started"' 
-//       });
-//     }
-
-//     // Update project status and start date
-//     const oldStatus = project.status;
-//     project.status = 'In Progress';
-//     project.start_date = new Date(); // Set to current date
-//     project.updated_at = new Date();
-    
-//     await project.save();
-
-//     // Create history entry
-//     const history = new ProjectHistory({
-//       project_id: project._id,
-//       change_type: 'Status Update',
-//       old_value: oldStatus,
-//       new_value: 'In Progress',
-//       changed_at: new Date(),
-//     });
-//     await history.save();
-
-//     res.status(200).json(project);
-
-//   } catch (error) {
-//     console.error('Error starting project:', error);
-//     res.status(500).json({ 
-//       message: 'Error starting project',
-//       error: error.message 
-//     });
-//   }
-// };
-
-
-// exports.startProject = async (req, res) => {
-//   const { id } = req.params;
-
-//   try {
-//     const project = await Project.findById(id).populate('manager_id');
-//     if (!project) {
-//       return res.status(404).json({ message: 'Project not found' });
-//     }
-
-//     // Check if project can be started
-//     if (project.status !== 'Not Started') {
-//       return res.status(400).json({ 
-//         message: 'Project can only be started if its status is "Not Started"' 
-//       });
-//     }
-
-//     const oldStatus = project.status;
-//     project.status = 'In Progress';
-//     project.start_date = new Date();
-//     project.updated_at = new Date();
-    
-//     await project.save();
-
-//     // Create history entry
-//     const history = new ProjectHistory({
-//       project_id: project._id,
-//       change_type: 'Status Update',
-//       old_value: oldStatus,
-//       new_value: 'In Progress',
-//       changed_at: new Date(),
-//     });
-//     await history.save();
-//     // Send notification to manager if one is assigned
-// if (project.manager_id) {
-//   try {
-//     const notificationText = `Project "${project.name}" has been started and is now In Progress`;
-    
-//     await createNotification(
-//       project.manager_id._id, 
-//       notificationText,
-//       'project_status_change',
-//       req.user._id // The user who triggered the action
-//     );
-//   } catch (notificationError) {
-//     console.error('Error sending notification:', notificationError);
-//   }
-
-//     }
-
-//     res.status(200).json(project);
-
-//   } catch (error) {
-//     console.error('Error starting project:', error);
-//     res.status(500).json({ 
-//       message: 'Error starting project',
-//       error: error.message 
-//     });
-//   }
-// };
-
 
 
 exports.startProject = async (req, res) => {
@@ -1316,6 +1039,45 @@ exports.startProject = async (req, res) => {
     res.status(500).json({ 
       message: 'Error starting project',
       error: error.message 
+    });
+  }
+};
+
+exports.getManagedProjects = async (req, res) => {
+  try {
+    // Verify user is authenticated
+    if (!req.session.user || !req.session.user._id) {
+      return res.status(401).json({
+        success: false,
+        message: 'Not authenticated'
+      });
+    }
+
+    // Verify user exists in database
+    const user = await User.findById(req.session.user._id);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+
+    // Get projects where current user is manager
+    const projects = await Project.find({ manager_id: req.session.user._id })
+      .select('_id name description status')
+      .lean();
+
+    res.json({
+      success: true,
+      data: projects
+    });
+
+  } catch (error) {
+    console.error('Error in getManagedProjects:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Internal server error',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
   }
 };

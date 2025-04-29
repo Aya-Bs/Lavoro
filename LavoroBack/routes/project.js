@@ -42,7 +42,7 @@ router.get('/countArchive', ProjectController.getArchiveCount);
 
 router.get('/archived-projects', ProjectController.getAllArchivedProjects);
 router.get('/export-archived', ProjectController.exportArchivedProjects);
-
+router.get('/managed-by-me',  ProjectController.getManagedProjects);
 
 
 
