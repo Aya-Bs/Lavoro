@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 
-export const Mail = () => {
+const Mail = () => {
   const [emails, setEmails] = useState([]);
   const [selectedEmail, setSelectedEmail] = useState(null);
   
@@ -446,3 +446,4 @@ export const Mail = () => {
   )
 }
   
+export default Mail;

@@ -1,13 +1,15 @@
-
-const mongoose = require('mongoose');
-const Schema = mongoose.Schema;
+const mongo = require('mongoose');
+const Schema = mongo.Schema;
 
 const TeamMember = new Schema({
-    team_id: { type: mongoose.Schema.Types.ObjectId, required: false },
-    user_id: { type: mongoose.Schema.Types.ObjectId, required: true ,ref: 'user' },
-    role: { type: String, enum: ['Developer', 'Tester', 'Analyst', 'Designer'], required: true },
-    skills: [{ type: mongoose.Schema.Types.ObjectId }],
+
+    team_id: { type: mongo.Schema.Types.ObjectId, required: true, ref: 'team' },
+    user_id: { type: mongo.Schema.Types.ObjectId, required: true, ref: 'user' },
+    role: { type: String, enum: ['Developer', 'Tester', 'Analyst', 'Designer'], required: true , default: 'Developer' },
+    skills: [{ type: mongo.Schema.Types.ObjectId, ref: 'skills' }],
+    completed_tasks_count: { type: Number, default: 0 },
     joined_at: { type: Date, default: Date.now },
+
     tasks: [{
         task_id: { type: String, default: () => `TASK-${Math.random().toString(36).substr(2, 9).toUpperCase()}` },
         complexity: { type: Number, min: 1, max: 10 },
@@ -31,4 +33,5 @@ const TeamMember = new Schema({
 
 
 
-module.exports = mongoose.model('TeamMember', TeamMember);
+    
+module.exports = mongo.model('teamMember', TeamMember);

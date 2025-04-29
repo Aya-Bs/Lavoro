@@ -12,6 +12,7 @@ export default function ProjectOverview(){
 
   const [currentPage, setCurrentPage] = useState(1); // Current page
   const [itemsPerPage] = useState(7); // Number of items per page
+  const [showAddTeamButton, setShowAddTeamButton] = useState(false);
   const navigate = useNavigate(); // Initialize the navigate function
   const { state } = useLocation(); // Get the navigation state
 
@@ -203,6 +204,7 @@ const handleDelete = async (projectId) => {
       const data = await response.json();
       if (response.ok) {
         setProject(data); // Set project details
+        setShowAddTeamButton(!data.team_id);
   
         // Manager details are already included in the response
         if (data.manager_id) {
@@ -226,6 +228,15 @@ const handleDelete = async (projectId) => {
 
   const handleEditClick = (projectId) => {
     navigate(`/updateProjects/${projectId}`);
+  };
+
+  const handleAddTeam = () => {
+    navigate(`/createTeam`, { 
+      state: { 
+        projectId: id,
+        projectName: project.name 
+      } 
+    });
   };
 
 
@@ -316,6 +327,14 @@ const handleDelete = async (projectId) => {
   <i className="ri-play-line align-middle me-1 lh-1" /> Start Project
 </button>
 )}
+    {showAddTeamButton && (
+                <button 
+                  className="btn btn-primary btn-wave"
+                  onClick={handleAddTeam}
+                >
+                  <i className="ri-team-line align-middle me-1 lh-1" /> Add Team
+                </button>
+              )}
         </div>
       </div>
   

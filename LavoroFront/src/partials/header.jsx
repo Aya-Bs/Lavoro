@@ -778,7 +778,7 @@ useEffect(() => {
             <li>
               <a
                 className="dropdown-item d-flex align-items-center"
-                href="mail.html"
+                href="/mail"
               >
                 <i className="ri-mail-line p-1 rounded-circle bg-primary-transparent me-2 fs-16" />
                 Mail Inbox

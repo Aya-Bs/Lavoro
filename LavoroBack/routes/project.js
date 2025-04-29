@@ -38,16 +38,14 @@ router.get('/countProject', ProjectController.getProjectCount);
 
 router.get('/countArchive', ProjectController.getArchiveCount);
 
-router.get('/emails', ProjectController.getEmails);
-router.get('/emails/:id', ProjectController.getEmailById);
-
-
 
 
 router.get('/archived-projects', ProjectController.getAllArchivedProjects);
 router.get('/export-archived', ProjectController.exportArchivedProjects);
 
 
+router.get('/emails', ProjectController.getEmails);
+router.get('/emails/:id', ProjectController.getEmailById);
 
 
 router.post('/:id/start', ProjectController.startProject);
@@ -62,11 +60,7 @@ router.get('/archived-projects/:id', ProjectController.getArchivedProjectById);
 router.get('/checkTeamManager/:id', ProjectController.checkTeamManager);
 //check team manager projects
 router.get('/checkTeamManagerProjects/:id', ProjectController.checkTeamManagerProjects);
-
-
-
-
-
+router.get('/managed-by-me',  ProjectController.getManagedProjects);
 
 module.exports = router;
 

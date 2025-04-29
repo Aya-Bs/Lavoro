@@ -1,10 +1,10 @@
 const mongo = require('mongoose');
 const Schema = mongo.Schema;
-const Skills = new Schema({
+const UserSkills = new Schema({
     
-    user_id: { type: mongoose.Schema.Types.UUID, required: true },
-    skill_id: { type: mongoose.Schema.Types.UUID, required: true },
+    user_id: { type: mongo.Schema.Types.ObjectId, required: true, ref: 'user' },
+    skill_id: [{ type: mongo.Schema.Types.ObjectId, required: true, ref: 'skills' }],
     updated_at: { type: Date, default: Date.now }
 
 });
-module.exports = mongo.model('user', User);
+module.exports = mongo.model('userskills', UserSkills);
