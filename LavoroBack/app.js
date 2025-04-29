@@ -31,6 +31,7 @@ const profileRouter = require('./routes/profile');
 const projectRouter = require('./routes/project');
 const notifroute = require('./routes/notification');
 
+
 // const homeRouter = require('./routes/home');
 const adminRouter = require('./routes/admin');
 
@@ -92,6 +93,8 @@ app.use('/tasks',taskRouter);
 app.use('/project',projectRouter);
 
 app.use('/profiles', profileRouter);
+
+
 
 app.post("/translate", async (req, res) => {
   const { text, targetLanguage } = req.body;

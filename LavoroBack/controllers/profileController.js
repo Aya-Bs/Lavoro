@@ -10,6 +10,8 @@ const speakeasy = require('speakeasy');
 const jwt = require('jsonwebtoken');
 
 
+
+
 // Update user profile (without password handling)
 exports.updateProfile = async (req, res) => {
   try {
@@ -64,7 +66,12 @@ exports.updateProfile = async (req, res) => {
       firstName: req.body.firstName || user.firstName,
       lastName: req.body.lastName || user.lastName,
       phone_number: req.body.phoneNumber || user.phone_number,
-    };
+      description: req.body.description || user.description,
+      skills: req.body.skills || user.skills,
+    
+    ...(imagePath !== user.image && { image: imagePath })
+  };
+  
 
     if (imagePath !== user.image) {
       updateData.image = imagePath;

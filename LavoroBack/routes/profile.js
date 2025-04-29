@@ -20,8 +20,6 @@ router.get('/profile', async (req, res) => {
   // Update user profile
   router.post('/update', upload.single('image'), profileController.updateProfile);
   router.put('/update-password', profileController.updatePassword);
-
-
   router.get('/update', async (req, res) => {
     try {
         const user = req.session.user;
@@ -39,6 +37,7 @@ router.post('/request-delete', profileController.requestDelete);
 router.post('/enable-2fa', profileController.enable2FA);
 router.post('/verify-2fa', profileController.verify2FA);
 router.post('/disable-2fa', profileController.disable2FA);
+
 
 
 module.exports = router;

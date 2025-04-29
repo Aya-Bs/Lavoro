@@ -16,6 +16,10 @@ const userSchema = new mongoose.Schema({
 
   phone_number: { type: Number },
 
+  skills: { type: [String], default: [] },
+  
+  description: { type: String, default: '' },
+  
   created_at: { type: Date, default: Date.now },
 
   updated_at: { type: Date, default: Date.now },
