@@ -43,7 +43,7 @@ import ChatComponent from "./chat/ChatComponent";
 import ChatFloatingButton from "./chat/ChatFloatingButton";
 import SearchMember from "./team/searchMember";
 import MemberDetails from "./team/memberDetails";
-import FullCalendar from "./team/calendar";
+import FullCalendar from "./Tasks/calendar";
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
@@ -94,7 +94,7 @@ function App() {
 <Route path="/best-performer" element={<BestPerformerPage />} />
               <Route path="/chat" element={<ChatComponent />} />
               <Route path="/member-details/:id" element={<MemberDetails/>} />
-              <Route path="/searchMember" element={<SearchMember/>} />
+              <Route path="/searchMember/:id" element={<SearchMember/>} />
               <Route path="/calendar" element={<FullCalendar/>} />
 
 

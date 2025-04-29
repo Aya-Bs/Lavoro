@@ -121,7 +121,7 @@ exports.seedTaskHistory = async () => {
 
 
 // Fonction pour récupérer les tâches assignées à un utilisateur spécifique
-exports.getTasksByUser = async (req, res) => {
+exports.getTasks = async (req, res) => {
     try {
         const userId = req.params.userId;
 
@@ -364,3 +364,62 @@ exports.testPointsSystem = async (req, res) => {
   }
 };
 
+
+
+
+
+
+exports.getTasksList = async (req, res) => {
+    try {
+      console.log("User ID from params:", req.params.userId); // Debug
+
+        const tasks = await Task.find({assigned_to: req.params.userId })
+
+        res.status(200).json({
+            success: true,
+            count: tasks.length,
+            data: tasks
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: 'Server Error',
+            error: error.message
+        });
+    }
+};
+
+
+exports.deleteTask = async (req, res) => {
+    try {
+        const task = await Task.findById(req.params.id);
+
+        if (!task) {
+            return res.status(404).json({
+                success: false,
+                message: 'Task not found'
+            });
+        }
+
+        // Check if user is task creator or admin
+        if (task.created_by.toString() !== req.user.id && req.user.role !== 'admin') {
+            return res.status(403).json({
+                success: false,
+                message: 'Not authorized to delete this task'
+            });
+        }
+
+        await task.remove();
+
+        res.status(200).json({
+            success: true,
+            data: {}
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: 'Server Error',
+            error: error.message
+        });
+    }
+};

@@ -139,29 +139,6 @@ const Sidebar = ({ userRole }) => {
                 <span className="side-menu__label">Messagerie</span>
               </Link>
             </li>
-            <li className={`slide has-sub ${isPagesOpen ? "open" : ""}`}>
-              <button
-                className="side-menu__item"
-                onClick={() => setIsPagesOpen(!isPagesOpen)}
-                style={{ background: "none", border: "none", cursor: "pointer", width: "100%", textAlign: "left" }}
-              >
-                <i className="ri-arrow-down-s-line side-menu__angle"></i>
-                <i className="ri-file-list-line side-menu__icon"></i>
-                <span className="side-menu__label">Team</span>
-              </button>
-              <ul className="slide-menu child1" style={{ display: isPagesOpen ? "block" : "none" }}>
-                <li className="slide">
-                  <Link to="/member-details/67ffe958abcdc7b19d4edb98" className="side-menu__item">
-                    member details
-                  </Link>
-                </li>
-                <li className="slide">
-                  <Link to="/searchMember" className="side-menu__item">
-                    search member
-                  </Link>
-                </li>
-              </ul>
-            </li>
 
           </>
         );

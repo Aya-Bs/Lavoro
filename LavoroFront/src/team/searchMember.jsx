@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Helmet } from 'react-helmet';
 import axios from 'axios';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate , useParams } from 'react-router-dom';
 import { useDebounce } from 'use-debounce';
 
 const SearchMember = () => {
@@ -18,6 +18,7 @@ const SearchMember = () => {
   const [usersPerPage] = useState(6);
   const [sortOption, setSortOption] = useState('alphabetical');
   const [filterOption, setFilterOption] = useState('all');
+  const { id } = useParams();
 
   // Pagination logic
   const indexOfLastUser = currentPage * usersPerPage;
@@ -127,7 +128,7 @@ const SearchMember = () => {
       const response = await axios.post(
         'http://localhost:3000/teamMember/addTeamMembers',
         {
-          team_id: "67ffe92eabcdc7b19d4edb96",
+          team_id: id,
           user_id: userId,
           skills: userSkills[userId]?.map(skill => skill._id) || [],
           role: 'Developer'
@@ -362,7 +363,7 @@ const TabNavigation = () => (
       </li>
       <li className="nav-item" role="presentation">
         <a className="nav-link fw-medium" data-bs-toggle="tab" role="tab" href="#search-news">
-          <i className="ri-newspaper-line me-2"></i>News
+          <i className="ri-newspaper-line me-2"></i>Available Members
         </a>
       </li>
     </ul>

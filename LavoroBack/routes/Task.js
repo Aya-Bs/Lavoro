@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { seedTasks, seedTaskHistory,getTasksByUser } = require('../controllers/TaskController');
+const { seedTasks, seedTaskHistory, getTasksByUser } = require('../controllers/TaskController');
 const auth = require('../middleware/authenticatedToken');
 
 const taskController = require('../controllers/TaskController')
@@ -36,4 +36,9 @@ router.post('/test-points-system/:userId',
     auth, // Protection de la route
     taskController.testPointsSystem
 );
+
+router.get('/getTasksList/:userId', taskController.getTasksList);
+router.delete('/deleteTask/:id', taskController.deleteTask);
+
+
 module.exports = router;

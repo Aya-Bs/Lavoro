@@ -465,7 +465,7 @@ const TeamDetailsPage = () => {
                 <h6 className="fw-medium mb-3">Quick Actions</h6>
                 <button
                   className="btn btn-outline-primary btn-wave w-100 mb-2"
-                  onClick={() => navigate(`/teams/${team._id}/add-member`)}
+                  onClick={() => navigate(`/searchMember/${team._id}`)}
                 >
                   <i className="ri-user-add-line me-2"></i> Add Member
                 </button>
