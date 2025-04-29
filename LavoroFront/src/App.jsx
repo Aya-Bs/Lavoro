@@ -29,7 +29,6 @@ import AllProject from "./project/AllProject";
 import Archieve from "./project/Archieve";
 import UserActivity from "./admin/UserActivity";
 import ArchiveOverview from "./project/ArchiveOverview";
-
 import UpdateProject from "./project/updateProject";
 import ProjectProgress from "./project/projetPorgress";
 import CreateWithAI from "./project/CreateProjectWithAI";
@@ -38,16 +37,12 @@ import CreateTeam from "./team/createTeam";
 import TeamCards from "./team/teamList";
 import TeamDetailsPage from "./team/teamDetails";
 import UpdateTeam from "./team/updateTeam";
-import BestPerformerPage from "./pages/BestPerformerPage";
-import ChatComponent from "./chat/ChatComponent";
-import ChatFloatingButton from "./chat/ChatFloatingButton";
-import SearchMember from "./team/searchMember";
-import MemberDetails from "./team/memberDetails";
-import FullCalendar from "./Tasks/calendar";
+import { SearchSlashIcon } from "lucide-react";
+import SearchTeam from "./team/searchTeam";
+
+
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-
-  const [showChatPopup, setShowChatPopup] = useState(false);
 
   return (
     <>
@@ -85,27 +80,14 @@ function App() {
               <Route path="/archieve" element={< Archieve />} />
               <Route path="/updateProjects/:id" element={<UpdateProject />} />
 
-<Route path="/ProjectProgress" element={<ProjectProgress/>} />
-<Route path="/createTeam" element={<CreateTeam/>} />
-<Route path="/teamsList" element={<TeamCards/>} />
-<Route path="/teams/teamDetails/:id" element={<TeamDetailsPage />} />
-<Route path="/teams/updateTeam/:id" element={<UpdateTeam />} />
-
-<Route path="/best-performer" element={<BestPerformerPage />} />
-              <Route path="/chat" element={<ChatComponent />} />
-              <Route path="/member-details/:id" element={<MemberDetails/>} />
-              <Route path="/searchMember/:id" element={<SearchMember/>} />
-              <Route path="/calendar" element={<FullCalendar/>} />
-
-
+              <Route path="/ProjectProgress" element={<ProjectProgress/>} />
+              <Route path="/createTeam" element={<CreateTeam/>} />
+              <Route path="/teamsList" element={<TeamCards/>} />
+              <Route path="/teams/teamDetails/:id" element={<TeamDetailsPage />} />
+              <Route path="/teams/updateTeam/:id" element={<UpdateTeam />} />
+              <Route path="/teams/searchTeam" element={<SearchTeam />} />
             </Route>
         </Routes>
-
-        {/* Floating chat button on all pages except chat page */}
-        {isAuthenticated && window.location.pathname !== '/chat' && (
-          <ChatFloatingButton />
-        )}
-
       </BrowserRouter>
       </GoogleOAuthProvider>
     </>

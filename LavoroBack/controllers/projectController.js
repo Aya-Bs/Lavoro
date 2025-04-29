@@ -1045,8 +1045,8 @@ exports.startProject = async (req, res) => {
 
 exports.getManagedProjects = async (req, res) => {
   try {
-    // Verify session exists
-    if (!req.session.user) {
+    // Verify user is authenticated
+    if (!req.session.user || !req.session.user._id) {
       return res.status(401).json({
         success: false,
         message: 'Not authenticated'
@@ -1062,7 +1062,7 @@ exports.getManagedProjects = async (req, res) => {
       });
     }
 
-    // Get projects where user is manager
+    // Get projects where current user is manager
     const projects = await Project.find({ manager_id: req.session.user._id })
       .select('_id name description status')
       .lean();

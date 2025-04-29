@@ -81,7 +81,7 @@ const TeamCards = () => {
           <div className="btn-list">
             <button
               className="btn btn-outline-primary me-2"
-              onClick={() => navigate('/teams/search')}
+              onClick={() => navigate('/teams/searchTeam')}
             >
               <i className="ri-search-line me-1"></i> Search Teams
             </button>
