@@ -301,3 +301,65 @@ exports.getTeamById = async (req, res) => {
       });
     }
   };
+  exports.searchTeams = async (req, res) => {
+    try {
+      const { status, project, tags, sort, page = 1, limit = 8 } = req.query;
+      
+      // Build the query
+      const query = {};
+      
+      // Status filter
+      if (status) {
+        const statusArray = status.split(',');
+        query.status = { $in: statusArray };
+      }
+      
+      // Project filter
+      if (project) {
+        const projectArray = project.split(',');
+        query.project_id = { $in: projectArray };
+      }
+      
+      // Tags filter - using $all to match teams that have ALL selected tags
+      if (tags) {
+        const tagsArray = tags.split(',');
+        query.tags = { $all: tagsArray };
+      }
+      
+      // Sort options
+      let sortOption = { createdAt: -1 }; // Default: newest first
+      if (sort === 'oldest') sortOption = { createdAt: 1 };
+      else if (sort === 'name-asc') sortOption = { name: 1 };
+      else if (sort === 'name-desc') sortOption = { name: -1 };
+      
+      // Pagination
+      const skip = (page - 1) * limit;
+      
+      // Get teams with populated fields
+      const teams = await Team.find(query)
+        .populate('manager_id', 'firstName lastName email image')
+        .populate('project_id', 'name description')
+        .populate('members', 'firstName lastName role status')
+        .sort(sortOption)
+        .skip(skip)
+        .limit(parseInt(limit));
+      
+      // Count total teams for pagination
+      const total = await Team.countDocuments(query);
+      
+      res.status(200).json({
+        success: true,
+        data: teams,
+        total,
+        page: parseInt(page),
+        pages: Math.ceil(total / limit)
+      });
+    } catch (error) {
+      console.error('Team search error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to search teams',
+        error: error.message
+      });
+    }
+  };

@@ -42,7 +42,7 @@ router.get('/countArchive', ProjectController.getArchiveCount);
 
 router.get('/archived-projects', ProjectController.getAllArchivedProjects);
 router.get('/export-archived', ProjectController.exportArchivedProjects);
-
+router.get('/managed-by-me',  ProjectController.getManagedProjects);
 
 
 
@@ -59,7 +59,7 @@ router.get('/checkTeamManager/:id', ProjectController.checkTeamManager);
 //check team manager projects
 router.get('/checkTeamManagerProjects/:id', ProjectController.checkTeamManagerProjects);
 
-router.get('/managed-by-me',  ProjectController.getManagedProjects);
+
 
 
 

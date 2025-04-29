@@ -230,8 +230,16 @@ const TeamDetailsPage = () => {
                                   Manager: {team.manager_id?.firstName} {team.manager_id?.lastName}
                                 </p>
                               </div>
+                              
 
                             </div>
+                            <div className="popular-tags">
+                  <span className={`badge rounded-pill ${team.status === 'Active' ? 'bg-success-transparent' : 'bg-secondary-transparent'}`}>
+                    <i className="bi bi-circle-fill me-1"></i> {team.status}
+                  </span>
+                 
+                  
+                </div>
 
                           </div>
                         </div>
@@ -280,9 +288,7 @@ const TeamDetailsPage = () => {
                   {team.description || 'No description available for this team.'}
                 </p>
                 <div className="popular-tags">
-                  <span className={`badge rounded-pill ${team.status === 'Active' ? 'bg-success-transparent' : 'bg-secondary-transparent'}`}>
-                    <i className="bi bi-circle-fill me-1"></i> {team.status}
-                  </span>
+                  
                   {team.tags?.map((tag, index) => (
                     <span key={index} className="badge rounded-pill bg-primary-transparent me-1">
                       {tag}
