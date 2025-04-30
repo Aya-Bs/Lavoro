@@ -23,7 +23,7 @@ import ProjectDash from "./project/ProjectDash";
 import "../public/assets/css/icons.css";
 import "../public/assets/css/remixicon.css";
 import 'remixicon/fonts/remixicon.css';
-import DashTeam from "./project/DashTeam";
+
 import ProjectOverview from "./project/ProjectOverview";
 import AllProject from "./project/AllProject";
 import Archieve from "./project/Archieve";
@@ -33,9 +33,6 @@ import UpdateProject from "./project/updateProject";
 import ProjectProgress from "./project/projetPorgress";
 import CreateWithAI from "./project/CreateProjectWithAI";
 import CreateProjectWithAI from "./project/CreateProjectWithAI";
-import FullCalendarView from "./meets/MeetingCalendar";
-import MeetingScheduler from "./meets/MeetingCalendar";
-import MeetingCalendar from "./meets/MeetingCalendar";
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -67,7 +64,6 @@ function App() {
               <Route path="/createPro" element ={<CreateProject />} />
               <Route path="/createProWithAI" element ={<CreateProjectWithAI />} />
               <Route path="/ProjectDash" element={<ProjectDash />} />
-              <Route path="/DashTeam" element={<DashTeam />} />
               <Route path="/AllProject" element={<AllProject />} />
 
               <Route path="/overviewPro/:id" element={<ProjectOverview />} />
@@ -76,7 +72,7 @@ function App() {
               <Route path="/ListPro" element={<ListPro />} />
               <Route path="/archieve" element={< Archieve />} />
               <Route path="/updateProjects/:id" element={<UpdateProject />} />
-              <Route path="/CalendarView" element={<MeetingCalendar />} />
+
               <Route path="/ProjectProgress" element={<ProjectProgress/>} />
 
             </Route>

@@ -42,7 +42,7 @@ router.get('/countArchive', ProjectController.getArchiveCount);
 
 router.get('/archived-projects', ProjectController.getAllArchivedProjects);
 router.get('/export-archived', ProjectController.exportArchivedProjects);
-
+router.get('/managed-by-me',  ProjectController.getManagedProjects);
 
 
 
@@ -64,4 +64,8 @@ router.get('/checkTeamManagerProjects/:id', ProjectController.checkTeamManagerPr
 
 
 
+<<<<<<< HEAD
 module.exports = router;
+=======
+module.exports = router;
+>>>>>>> 8647190604792e0205db434045897cd666615976
