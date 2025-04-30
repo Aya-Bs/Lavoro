@@ -64,8 +64,5 @@ router.get('/checkTeamManagerProjects/:id', ProjectController.checkTeamManagerPr
 
 
 
-<<<<<<< HEAD
 module.exports = router;
-=======
-module.exports = router;
->>>>>>> 8647190604792e0205db434045897cd666615976
+
