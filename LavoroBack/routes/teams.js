@@ -11,4 +11,3 @@ router.delete('/deleteTeam/:id', teamController.deleteTeam);
 // Team search route
 router.get('/search',  teamController.searchTeams);
 module.exports = router;
-

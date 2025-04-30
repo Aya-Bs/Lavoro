@@ -406,7 +406,7 @@ const TeamDetailsPage = () => {
                             <a
                               href="javascript:void(0);"
                               className="fw-semibold"
-                              onClick={() => navigate(`/member-details/${member._id}`)}
+                              onClick={() => navigate(`/members/${member._id}`)}
                             >
                               {member.firstName} {member.lastName}
                             </a>

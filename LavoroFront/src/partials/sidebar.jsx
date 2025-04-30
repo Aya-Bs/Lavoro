@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 const Sidebar = ({ userRole }) => {
   const [isDashboardOpen, setIsDashboardOpen] = useState(false);
   const [isPagesOpen, setIsPagesOpen] = useState(false);
+  const [isProjectsMenuOpen, setIsProjectsMenuOpen] = useState(false);
 
   const getMenuItems = () => {
     switch(userRole) {
@@ -114,22 +115,39 @@ const Sidebar = ({ userRole }) => {
                 <span className="side-menu__label">Projects List</span>
               </Link>
             </li>
+             <li className={`slide has-sub ${isPagesOpen ? "open" : ""}`}>
             <li className="slide__category">
               <span className="category-name">Teams</span>
             </li>
-            <li className="slide">
-              <Link to="/teamsList" className="side-menu__item">
+              <button
+                className="side-menu__item"
+                onClick={() => setIsPagesOpen(!isPagesOpen)}
+                style={{ background: "none", border: "none", cursor: "pointer", width: "100%", textAlign: "left" }}
+              >
+                <i className="ri-arrow-down-s-line side-menu__angle"></i>
                 <i className="ri-team-line side-menu__icon"></i>
-                <span className="side-menu__label">Teams List</span>
-              </Link>
-            </li>
-            <li className="slide">
-              <Link to="/best-performer" className="side-menu__item">
-                <i className="ri-award-line side-menu__icon"></i>
-                <span className="side-menu__label">Best Performance</span>
-              </Link>
-            </li>
+                <span className="side-menu__label">Team</span>
+              </button>
+              <ul className="slide-menu child1" style={{ display: isPagesOpen ? "block" : "none" }}>
+              <li className="slide">
+                  <Link to="/podium" className="side-menu__item">
+Member of the year                  </Link>
+                </li>
+              <li className="slide">
+                  <Link to="/best-performer" className="side-menu__item">
+                  Best Performance
+                  </Link>
+                </li>
+              
+                <li className="slide">
+                  <Link to="/teamsList" className="side-menu__item">
+                  Teams List
+                  </Link>
+                </li>
 
+
+              </ul>
+            </li>
             <li className="slide__category">
               <span className="category-name">Communication</span>
             </li>
@@ -139,6 +157,7 @@ const Sidebar = ({ userRole }) => {
                 <span className="side-menu__label">Messagerie</span>
               </Link>
             </li>
+           
 
           </>
         );

@@ -10,40 +10,40 @@ const predictionCache = new NodeCache({ stdTTL: 3600 });
 class TaskAssignmentService {
     constructor() {
         this.pythonShell = null;
-        this.initPythonShell();
+       // this.initPythonShell();
     }
 
-    initPythonShell() {
-        try {
-            this.pythonShell = new PythonShell('predict.py', {
-                mode: 'json',
-                pythonPath: 'C:\\Users\\LENOVO\\Desktop\\pidev\\LAVORO\\LavoroBack\\ml_model\\.venv\\Scripts\\python.exe', 
-                scriptPath: path.join(__dirname, '../ml_model'),
-                pythonOptions: ['-u']
-            });
+//    // initPythonShell() {
+//         try {
+//             this.pythonShell = new PythonShell('predict.py', {
+//                 mode: 'json',
+//                // pythonPath: 'C:\\Users\\LENOVO\\ \\pidev\\LAVORO\\LavoroBack\\ml_model\\.venv\\Scripts\\python.exe', 
+//                 scriptPath: path.join(__dirname, '../ml_model'),
+//                 pythonOptions: ['-u']
+//             });
 
-            this.pythonShell.on('error', (err) => {
-                console.error('PythonShell Error:', err);
-                this.reconnectPythonShell();
-            });
+//             this.pythonShell.on('error', (err) => {
+//                 console.error('PythonShell Error:', err);
+//                 this.reconnectPythonShell();
+//             });
 
-            this.pythonShell.on('close', () => {
-                console.log('PythonShell closed, reconnecting...');
-                this.reconnectPythonShell();
-            });
+//             this.pythonShell.on('close', () => {
+//                 console.log('PythonShell closed, reconnecting...');
+//                 this.reconnectPythonShell();
+//             });
 
-            console.log('PythonShell initialized successfully');
-        } catch (err) {
-            console.error('Failed to initialize PythonShell:', err);
-        }
-    }
+//             console.log('PythonShell initialized successfully');
+//         } catch (err) {
+//             console.error('Failed to initialize PythonShell:', err);
+//         }
+//     }
 
-    reconnectPythonShell() {
-        if (this.reconnectTimer) clearTimeout(this.reconnectTimer);
-        this.reconnectTimer = setTimeout(() => {
-            this.initPythonShell();
-        }, 5000);
-    }
+    // reconnectPythonShell() {
+    //     if (this.reconnectTimer) clearTimeout(this.reconnectTimer);
+    //     this.reconnectTimer = setTimeout(() => {
+    //         this.initPythonShell();
+    //     }, 5000);
+    // }
 
     async predictMatch(requiredSkills, memberSkills) {
         const cacheKey = JSON.stringify({
