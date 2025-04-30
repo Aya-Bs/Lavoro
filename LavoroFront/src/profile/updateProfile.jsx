@@ -174,7 +174,8 @@ const UpdateProfile = () => {
 
     // Define a list of known skills (could be expanded or loaded from elsewhere)
     const knownSkills = [
-      'javascript', 'nodejs', 'node', 'react', 'express', 'expressjs', 'docker', 'flutter', 'python', 'java', 'c++', 'c#', 'php', 'html', 'css', 'mongodb', 'sql', 'typescript', 'angular', 'vue', 'django', 'spring', 'swift', 'kotlin', 'go', 'rust', 'aws', 'azure', 'gcp', 'firebase', 'graphql', 'redux', 'sass', 'less', 'bootstrap', 'tailwind', 'git', 'github', 'jira', 'linux', 'bash', 'shell', 'matlab', 'r', 'scala', 'perl', 'ruby', 'laravel', 'symfony', 'dotnet', 'android', 'ios', 'xamarin', 'ionic', 'cordova', 'unity', 'unreal', 'threejs', 'nextjs', 'nestjs', 'fastify', 'hapi', 'mocha', 'jest', 'chai', 'enzyme', 'testing-library', 'cypress', 'puppeteer', 'storybook'
+      'javascript', 'nodejs', 'node', 'react', 'express', 'expressjs', 'docker', 'flutter', 'python', 'java', 'c++', 'c#', 'php', 'html', 'css', 'mongodb', 'sql', 'typescript', 'angular', 'vue', 'django', 'spring', 'swift', 'kotlin', 'go', 'rust', 'aws', 'azure', 'gcp', 'firebase', 'graphql', 'redux', 'sass', 'less', 'bootstrap', 'tailwind', 'git', 'github', 'jira', 'linux', 'bash', 'shell', 'matlab', 'r', 'scala', 'perl', 'ruby', 'laravel', 'symfony', 'dotnet', 'android', 'ios', 'xamarin', 'ionic', 'cordova', 'unity', 'unreal', 'threejs', 'nextjs', 'nestjs', 'fastify', 'hapi', 'mocha', 'jest', 'chai', 'enzyme', 'testing-library', 'cypress', 'puppeteer', 'storybook', 
+      'CI/CD','DevOps', 'Nexus', 'Jenkins', 'JUnit', 'SonarQube', 'GitHubAction'
     ];
 
     // Combine with current skills (case-insensitive)
