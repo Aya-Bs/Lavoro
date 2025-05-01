@@ -13,133 +13,118 @@ const transporter = require('../utils/emailConfig');
 const { createNotification } = require('../utils/notification');
 const { predictProjectFields } = require('../utils/predict'); 
 
-const Email = require('../models/email');
 
+const {storeEmail} = require('../controllers/emailController');
 
-
-
-const storeEmail = async (emailData) => {
+const sendProjectAssignmentEmail = async (email, projectDetails, senderUserId, receiverUserId) => {
   try {
-    const newEmail = new Email({
-      from: emailData.from,
-      to: emailData.to,
-      subject: emailData.subject,
-      text: emailData.text,
-      relatedProject: emailData.projectId || null
-    });
-    
-    await newEmail.save();
-    return newEmail;
+    const mailData = {
+      from: `LAVORO <${process.env.EMAIL_USER || 'no-reply@example.com'}>`,
+      to: email,
+      subject: `🚀 New Project Assigned: ${projectDetails.name} 🗂️`,
+      text: `Hello 👋,\n\nA new project has been assigned to you! 🎉\n\nHere are the project details:\n- 📌 Title: ${projectDetails.name}\n- 📝 Description: ${projectDetails.description}\n- 💰 Budget: ${projectDetails.budget}\n- 🏢 Client: ${projectDetails.client}\n- 📅 Start Date: ${new Date(projectDetails.start_date).toLocaleDateString()}\n- 🗓️ End Date: ${new Date(projectDetails.end_date).toLocaleDateString()}\n- ⚠️ Risk Level: ${projectDetails.risk_level}\n\nPlease take a moment to review the details. ✔️\n\nBest regards,\nThe Project Management Team 💼`,
+      projectId: projectDetails._id,
+      direction: 'sent',
+      senderUserId: senderUserId,
+      receiverUserId: receiverUserId
+    };
+
+    // Store sender's copy
+    const sentEmail = await storeEmail(mailData);
+
+    // Store receiver's copy (with direction 'received')
+    const receivedEmailData = {
+      ...mailData,
+      direction: 'received'
+    };
+    await storeEmail(receivedEmailData);
+
+    return sentEmail;
   } catch (error) {
-    console.error('Error storing email:', error);
+    console.error('Error sending project assignment email:', error);
     throw error;
   }
 };
 
-// Modify your sendProjectAssignmentEmail function
-const sendProjectAssignmentEmail = async (email, projectDetails) => {
-  const mailData = {
-    from: `LAVORO <${process.env.EMAIL_USER || 'no-reply@example.com'}>`,
-    to: email,
-    subject: `🚀 New Project Assigned: ${projectDetails.name} 🗂️`,
-    text: ` Hello 👋,
-
-       A new project has been assigned to you! 🎉
-
-       Here are the project details:
-       - 📌 Title:  ${projectDetails.name}
-       - 📝 Description: ${projectDetails.description}
-       - 💰 Budget: ${projectDetails.budget}
-       - 🏢 Client: ${projectDetails.client}
-      - 📅 Start Date: ${projectDetails.start_date}
-      - 🗓️ End Date: ${projectDetails.end_date}
-       - ⚠️ Risk Level: ${projectDetails.risk_level}
-
-      Please take a moment to review the details. ✔️
-
-Best regards,  
-      The Project Management Team 💼
-`,
-    projectId: projectDetails._id
-  };
-
-  // Store instead of sending
-  return await storeEmail(mailData);
-};
 
 
-
-
-
-// In your controller
-exports.getEmails = async (req, res) => {
+exports.createProject = async (req, res) => {
   try {
-    const emails = await Email.find()
-      .sort({ createdAt: -1 })
-      .populate('relatedProject', 'name');
+    const token = req.headers.authorization;
+    if (!token) {
+      return res.status(401).json({ message: 'Authentication required' });
+    }
+
+    const decoded = jwt.verify(token.replace('Bearer ', ''), process.env.JWT_SECRET);
+    const loggedInUser = await User.findById(decoded._id).populate('role');
     
-    res.status(200).json(emails);
+    if (!loggedInUser) {
+      return res.status(401).json({ message: 'User not found' });
+    }
+
+    const projectData = {
+      name: req.body.name,
+      description: req.body.description,
+      budget: req.body.budget || 0,
+      manager_id: req.body.manager_id,
+      ProjectManager_id: loggedInUser._id,
+      team_id: req.body.team_id,
+      client: req.body.client,
+      start_date: req.body.start_date ? new Date(req.body.start_date) : null,
+      end_date: req.body.end_date ? new Date(req.body.end_date) : null,
+      status: req.body.status || 'Not Started',
+      risk_level: req.body.risk_level || 'Medium',
+      tags: req.body.tags
+    };
+
+    const newProject = new Project(projectData);
+    await newProject.save();
+
+    // Create project history entry
+    const historyEntry = new ProjectHistory({
+      project_id: newProject._id,
+      change_type: 'Project Created',
+      old_value: 'N/A',
+      new_value: `Project "${newProject.name}" created by Project Manager ${loggedInUser.firstName} ${loggedInUser.lastName}.`,
+    });
+    await historyEntry.save();
+
+    // Get manager and send email notification
+    const manager = await User.findById(req.body.manager_id);
+    if (!manager) {
+      return res.status(404).json({ message: 'Manager not found' });
+    }
+
+    // Send email with both sender and receiver IDs
+    await sendProjectAssignmentEmail(
+      manager.email, 
+      newProject, 
+      loggedInUser._id,  // senderUserId
+      manager._id        // receiverUserId
+    );
+
+    return res.status(201).json({
+      message: 'Project created successfully',
+      project: newProject,
+      history: historyEntry
+    });
+
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error("Error creating project:", error);
+    
+    if (error.name === 'ValidationError') {
+      return res.status(400).json({
+        message: "Validation Error",
+        errors: error.errors
+      });
+    }
+
+    return res.status(500).json({
+      message: "Error creating project",
+      error: error.message
+    });
   }
 };
-
-exports.getEmailById = async (req, res) => {
-  try {
-    const email = await Email.findById(req.params.id)
-      .populate('relatedProject');
-    
-    if (!email) {
-      return res.status(404).json({ message: 'Email not found' });
-    }
-    
-    // Mark as read when fetched
-    if (!email.isRead) {
-      email.isRead = true;
-      await email.save();
-    }
-    
-    res.status(200).json(email);
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-};
-
-
-// Define the sendProjectAssignmentEmail function
-// const sendProjectAssignmentEmail = async (email, projectDetails) => {
-//   const mailOptions = {
-//     from: `LAVORO <${process.env.EMAIL_USER || 'no-reply@example.com'}>`,
-//     to: email,
-//     subject: `🚀 New Project Assigned: ${projectDetails.name} 🗂️`,
-//     text: `
-//       Hello 👋,
-
-//       A new project has been assigned to you! 🎉
-
-//       Here are the project details:
-//       - 📌 Title:  ${projectDetails.name}
-//       - 📝 Description: ${projectDetails.description}
-//       - 💰 Budget: ${projectDetails.budget}
-//       - 🏢 Client: ${projectDetails.client}
-//       - 📅 Start Date: ${projectDetails.start_date}
-//       - 🗓️ End Date: ${projectDetails.end_date}
-//       - ⚠️ Risk Level: ${projectDetails.risk_level}
-
-//       Please take a moment to review the details. ✔️
-
-//       Best regards,  
-//       The Project Management Team 💼
-//     `,
-//   };
-
-//   try {
-//     await transporter.sendMail(mailOptions);
-//     console.log('Email sent successfully! 🎉');
-//   } catch (error) {
-//     console.error('Error sending email: 😞', error);
-//   }
-// };
 
 
 
@@ -186,83 +171,6 @@ exports.getAllProjects = async (req, res) => {
 };
 
 
-exports.createProject = async (req, res) => {
-  try {
-    // Get the logged-in user from the token
-    const token = req.headers.authorization;
-    if (!token) {
-      return res.status(401).json({ message: 'Authentication required' });
-    }
-
-    // Verify token and get user
-    const decoded = jwt.verify(token.replace('Bearer ', ''), process.env.JWT_SECRET);
-    const loggedInUser = await User.findById(decoded._id).populate('role');
-    
-    if (!loggedInUser) {
-      return res.status(401).json({ message: 'User not found' });
-    }
-    // Create the project with proper date handling
-    const projectData = {
-      name: req.body.name,
-      description: req.body.description,
-      budget: req.body.budget || 0,
-      manager_id: req.body.manager_id,
-      ProjectManager_id: loggedInUser._id, // Set the TeamManager_id to the logged-in user's ID
-      team_id: req.body.team_id,
-      client: req.body.client,
-      start_date: req.body.start_date ? new Date(req.body.start_date) : null,
-      end_date: req.body.end_date ? new Date(req.body.end_date) : null,
-      status: req.body.status || 'Not Started',
-      risk_level: req.body.risk_level || 'Medium',
-      tags: req.body.tags
-    };
-
-    const newProject = new Project(projectData);
-    await newProject.save();
-
-    console.log("New project created:", newProject);
-
-    // Create project history entry
-    const historyEntry = new ProjectHistory({
-      project_id: newProject._id,
-      change_type: 'Project Created',
-      old_value: 'N/A',
-      new_value: `Project "${newProject.name}" created by Project Manager ${loggedInUser.firstName} ${loggedInUser.lastName}.`,
-    });
-    await historyEntry.save();
-
-    // Get manager and send email notification
-    const manager = await User.findById(req.body.manager_id);
-    if (!manager) {
-      return res.status(404).json({ message: 'Manager not found' });
-    }
-
-    await sendProjectAssignmentEmail(manager.email, newProject);
-
-    return res.status(201).json({
-      message: 'Project created successfully',
-      project: newProject,
-      history: historyEntry
-    });
-
-  } catch (error) {
-    console.error("Error creating project:", error);
-    
-    // Handle validation errors specifically
-    if (error.name === 'ValidationError') {
-      return res.status(400).json({
-        message: "Validation Error",
-        errors: error.errors
-      });
-    }
-
-    // Handle other errors
-    return res.status(500).json({
-      message: "Error creating project",
-      error: error.message
-    });
-  }
-};
 
 
 // Récupérer un projet par son nom (exact match)

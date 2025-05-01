@@ -787,7 +787,7 @@ useEffect(() => {
             <li>
               <a
                 className="dropdown-item d-flex align-items-center"
-                href="file-manager.html"
+                href="/file"
               >
                 <i className="ri-database-line p-1 rounded-circle bg-primary-transparent klist me-2 fs-16" />
                 File Manger

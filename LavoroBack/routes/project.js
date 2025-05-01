@@ -8,6 +8,7 @@ const Project = require('../models/Project');
 
 
 
+
 router.get('/', ProjectController.getAllProjects);
 
 
@@ -27,6 +28,8 @@ router.get('/projetStatus', async (req, res) => {
 });
 
 
+
+
 router.post('/createProject', ProjectController.createProject);
 router.post('/createProjectWithAI', ProjectController.createProjectWithAI);
 router.post('/generateAISuggestions', ProjectController.generateAISuggestions);
@@ -44,8 +47,7 @@ router.get('/archived-projects', ProjectController.getAllArchivedProjects);
 router.get('/export-archived', ProjectController.exportArchivedProjects);
 
 
-router.get('/emails', ProjectController.getEmails);
-router.get('/emails/:id', ProjectController.getEmailById);
+
 
 
 router.post('/:id/start', ProjectController.startProject);
