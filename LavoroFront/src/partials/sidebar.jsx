@@ -105,6 +105,12 @@ const Sidebar = ({ userRole }) => {
                 <span className="side-menu__label">Profile</span>
               </Link>
             </li>
+            <li className="slide">
+              <Link to="/DashTeam" className="side-menu__item">
+                <i className="ri-user-line side-menu__icon"></i>
+                <span className="side-menu__label">Dashboard</span>
+              </Link>
+            </li>
 
             <li className="slide__category">
               <span className="category-name">Projects</span>

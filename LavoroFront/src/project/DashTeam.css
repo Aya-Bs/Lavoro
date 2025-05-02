@@ -1,0 +1,269 @@
+/* TeamDash.css */
+
+/* Styles généraux */
+.amazing-table-card {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 16px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+}
+
+.amazing-table-card .card-header {
+    background: #6c5ffc;
+    border-bottom: none;
+    padding: 20px;
+}
+
+.amazing-table-card .card-title {
+    color: #000000;
+    font-size: 1.25rem;
+    font-weight: 700;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+/* Styles pour le tableau */
+.amazing-table {
+    background: linear-gradient(180deg, #ffffff 0%, #f8f9fa 100%);
+    border-collapse: separate;
+    border-spacing: 0 12px;
+}
+
+.amazing-table tr {
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    animation: fadeIn 0.5s ease forwards;
+}
+
+.amazing-table tr:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
+}
+
+.amazing-table td {
+    padding: 16px;
+    vertical-align: middle;
+    border: none;
+}
+
+/* Styles pour les éléments du tableau */
+.team-name {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 600;
+    color: #2d3436;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.team-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.5), 0 0 8px rgba(0, 0, 0, 0.2);
+    transition: transform 0.2s ease;
+}
+
+.team-avatar:hover {
+    transform: scale(1.1);
+}
+
+.members {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.9rem;
+    color: #636e72;
+}
+
+.members-badge {
+    background: #e9ecef;
+    color: #495057;
+    font-size: 0.8rem;
+    padding: 4px 10px;
+    border-radius: 12px;
+    transition: transform 0.2s ease;
+}
+
+.members-badge:hover {
+    transform: scale(1.05);
+}
+
+.description {
+    max-width: 200px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: #636e72;
+    background: rgba(0, 0, 0, 0.02);
+    padding: 6px 10px;
+    border-radius: 8px;
+}
+
+.status-badge {
+    padding: 6px 14px;
+    border-radius: 16px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+.status-badge.active {
+    background: linear-gradient(135deg, #00e396 0%, #00b894 100%);
+    color: #fff;
+}
+
+.status-badge.archived {
+    background: #fd7e14;
+    color: #fff;
+}
+
+.status-badge:hover {
+    transform: scale(1.05);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* Animation */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Styles pour le calendrier */
+.amazing-calendar-container {
+    padding: 20px;
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 350px;
+}
+
+.flatpickr-calendar {
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+    border: 1px solid rgba(108, 95, 252, 0.2);
+    font-family: 'Poppins', sans-serif;
+    width: 100%;
+    max-width: 320px;
+}
+
+.flatpickr-day {
+    border-radius: 8px;
+    transition: all 0.2s ease;
+    color: #2d3436;
+    font-weight: 500;
+}
+
+.flatpickr-day:hover {
+    background: #6c5ffc;
+    color: #fff;
+    transform: scale(1.1);
+}
+
+.flatpickr-day.today-highlight {
+    background: #6c5ffc !important;
+    color: #fff !important;
+    box-shadow: 0 0 0 3px rgba(108, 95, 252, 0.3);
+    transform: scale(1.1);
+    font-weight: 700;
+}
+
+.flatpickr-day.selected {
+    background: #00e396;
+    color: #fff;
+    border: none;
+}
+
+.flatpickr-month {
+    background: #6c5ffc;
+    color: #fff;
+    border-radius: 12px 12px 0 0;
+    padding: 10px;
+}
+
+.flatpickr-current-month {
+    color: #fff;
+    font-weight: 600;
+    font-size: 1.1rem;
+}
+
+.flatpickr-weekdays {
+    background: #f8f9fa;
+    border-radius: 0;
+}
+
+.flatpickr-weekday {
+    color: #2d3436;
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+.numInputWrapper {
+    display: none;
+}
+
+.flatpickr-prev-month,
+.flatpickr-next-month {
+    color: #fff;
+    font-size: 1.2rem;
+    padding: 8px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.flatpickr-prev-month:hover,
+.flatpickr-next-month:hover {
+    background: rgba(255, 255, 255, 0.4);
+}
+
+@keyframes calendarFadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.flatpickr-calendar {
+    animation: calendarFadeIn 0.5s ease forwards;
+}
+
+/* Styles pour le loading spinner */
+.loading-spinner {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+}
+
+/* Styles pour les cartes de statistiques */
+.main-content-card {
+    transition: transform 0.3s ease;
+}
+
+.main-content-card:hover {
+    transform: translateY(-5px);
+}
+
+/* Styles pour la pagination */
+.pagination-container {
+    display: flex;
+    justify-content: center;
+    margin-top: 20px;
+}
+
+/* Styles responsives */
+@media (max-width: 768px) {
+    .amazing-table-card {
+        margin-bottom: 20px;
+    }
+    
+    .amazing-calendar-container {
+        margin-bottom: 20px;
+    }
+}
