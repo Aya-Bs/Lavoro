@@ -156,8 +156,35 @@ Member of the year                  </Link>
                   </Link>
                 </li>
 
-
               </ul>
+            </li>
+
+            <li className={`slide has-sub ${isPagesOpen ? "open" : ""}`}>
+            <li className="slide__category">
+              <span className="category-name">Tasks</span>
+            </li>
+              <button
+                className="side-menu__item"
+                onClick={() => setIsPagesOpen(!isPagesOpen)}
+                style={{ background: "none", border: "none", cursor: "pointer", width: "100%", textAlign: "left" }}
+              >
+                <i className="ri-arrow-down-s-line side-menu__angle"></i>
+                <i className="ri-list-check-3 side-menu__icon"></i>
+                <span className="side-menu__label">Tasks</span>
+              </button>
+              <ul className="slide-menu child1" style={{ display: isPagesOpen ? "block" : "none" }}>
+             
+                <li className="slide">
+                  <Link to="/createTask" className="side-menu__item">
+                  Create Task
+                  </Link>
+                </li>
+                <li className="slide">
+                  <Link to="/listTask" className="side-menu__item">
+                   Task List
+                  </Link>
+                </li>
+             </ul>
             </li>
             <li className="slide__category">
               <span className="category-name">Communication</span>

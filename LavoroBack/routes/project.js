@@ -28,6 +28,7 @@ router.get('/projetStatus', async (req, res) => {
 });
 
 
+router.get('/managed-by-me',  ProjectController.getManagedProjects);
 
 
 router.post('/createProject', ProjectController.createProject);
@@ -62,7 +63,6 @@ router.get('/archived-projects/:id', ProjectController.getArchivedProjectById);
 router.get('/checkTeamManager/:id', ProjectController.checkTeamManager);
 //check team manager projects
 router.get('/checkTeamManagerProjects/:id', ProjectController.checkTeamManagerProjects);
-router.get('/managed-by-me',  ProjectController.getManagedProjects);
 
 module.exports = router;
 

@@ -170,6 +170,8 @@ import Mail from "./user/mail";
 import 'bootstrap/dist/css/bootstrap.min.css';
 import { File } from "./fileManager/file";
 import axios from "axios";
+import { CreateTask } from "./Tasks/createTask";
+import { TaskList } from "./Tasks/tasksList";
 
 // ProtectedRoute component to check authentication and roles
 const ProtectedRoute = ({ children, allowedRoles }) => {
@@ -426,6 +428,21 @@ function App() {
                 <File />
               </ProtectedRoute>
             } />
+
+<Route path="/createTask" element={
+              <ProtectedRoute allowedRoles={['Team Manager', 'Admin']}>
+                <CreateTask />
+              </ProtectedRoute>
+            } />
+
+
+
+<Route path="/listTask" element={
+              <ProtectedRoute allowedRoles={['Team Manager', 'Admin']}>
+                <TaskList />
+              </ProtectedRoute>
+            } />
+
 
             {/* Sales - example route */}
             <Route path="/sales" element={

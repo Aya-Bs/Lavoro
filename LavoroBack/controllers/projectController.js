@@ -233,7 +233,9 @@ exports.deleteProject = async (req, res) => {
       // Populate both manager_id and ProjectManager_id in a single query
       const project = await Project.findById(id)
         .populate('manager_id', 'firstName lastName email image')
+        .populate('tasks', 'title') 
         .populate('ProjectManager_id', 'firstName lastName email image');
+
   
       if (!project) {
         return res.status(404).json({ message: 'Project not found' });
@@ -375,6 +377,7 @@ exports.deleteProject = async (req, res) => {
     try {
       const archivedProject = await Archive.findById(id)
       .populate('manager_id', 'firstName lastName email image')
+      .populate('tasks', 'title') 
       .populate('ProjectManager_id', 'firstName lastName email image');
       // Fetch the archived project by ID
       if (!archivedProject) {

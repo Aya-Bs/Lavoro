@@ -13,6 +13,8 @@ const PredictMember = require("../models/PredictMember"); // Import the PredictM
 const User = require("../models/user");
 
 
+router.get('/getAllMembers', teamMemberController.getAllMembers);
+router.get('/getAllMemberTasks', teamMemberController.getAllMemberTask);
 
 router.get("/predict-all", async (req, res) => {
     try {

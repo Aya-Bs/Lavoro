@@ -5,6 +5,17 @@ const auth = require('../middleware/authenticatedToken');
 
 const taskController = require('../controllers/TaskController')
 
+router.post('/createTask', taskController.addTask);
+// Get all tasks with filtering
+router.get('/',  taskController.getAllTasks);
+  
+  // Delete a task
+  router.delete('/:taskId', taskController.deleteTask);
+  
+  // Assign task to team members
+  router.patch('/:taskId/assign', taskController.assignTask);
+  router.patch('/:taskId/unassign', taskController.unassignTask);
+
 router.post('/seedtasks', async (req, res) => {
     try {
         await seedTasks();
@@ -36,4 +47,8 @@ router.post('/test-points-system/:userId',
     auth, // Protection de la route
     taskController.testPointsSystem
 );
+
+
+
+
 module.exports = router;
