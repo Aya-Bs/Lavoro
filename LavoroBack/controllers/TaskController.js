@@ -4,6 +4,7 @@ const Task = require('../models/Task');
 
 const TaskHistory = require('../models/TaskHistory');
 const User = require('../models/user');
+const Role = require('../models/role'); 
 
 const ObjectId = mongoose.Types.ObjectId;
 
@@ -369,57 +370,190 @@ exports.testPointsSystem = async (req, res) => {
 
 
 
+// exports.getTasksList = async (req, res) => {
+//     try {
+//       console.log("User ID from params:", req.params.userId); // Debug
+
+//         const tasks = await Task.find({assigned_to: req.params.userId })
+//         res.status(200).json({
+//             success: true,
+//             count: tasks.length,
+//             data: tasks
+//         });
+//     } catch (error) {
+//         res.status(500).json({
+//             success: false,
+//             message: 'Server Error',
+//             error: error.message
+//         });
+//     }
+// };
+
+
+
+
+// exports.updateTaskCalendarDates = async (req, res) => {
+//   try {
+//     const { taskId } = req.params;
+//     const { start, end } = req.body;
+
+//     // Si start et end sont null, supprimer complètement calendar_dates
+//     if (start === null && end === null) {
+//       const updatedTask = await Task.findByIdAndUpdate(
+//         taskId,
+//         { $unset: { calendar_dates: 1 } },
+//         { new: true }
+//       );
+//       return res.status(200).json({ success: true, data: updatedTask });
+//     }
+
+//     // Sinon, faire la mise à jour normale
+//     const updateData = {};
+//     if (start !== undefined) updateData['calendar_dates.start'] = start;
+//     if (end !== undefined) updateData['calendar_dates.end'] = end;
+
+//     const updatedTask = await Task.findByIdAndUpdate(
+//       taskId,
+//       { $set: updateData },
+//       { new: true, runValidators: true }
+//     );
+
+//     res.status(200).json({ success: true, data: updatedTask });
+//   } catch (error) {
+//     console.error("Error updating calendar dates:", error);
+//     res.status(500).json({
+//       success: false,
+//       error: 'Internal server error',
+//       details: error.message
+//     });
+//   }
+// };
+
+
+
+
+
 exports.getTasksList = async (req, res) => {
-    try {
-      console.log("User ID from params:", req.params.userId); // Debug
-
-        const tasks = await Task.find({assigned_to: req.params.userId })
-
-        res.status(200).json({
-            success: true,
-            count: tasks.length,
-            data: tasks
-        });
-    } catch (error) {
-        res.status(500).json({
-            success: false,
-            message: 'Server Error',
-            error: error.message
-        });
+  try {
+    const userId = req.params.userId;
+    
+    // Récupérer l'utilisateur avec son rôle peuplé
+    const user = await User.findById(userId).populate('role');
+    
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
     }
+
+    // Récupérer les rôles une seule fois
+    const [teamManager, developer] = await Promise.all([
+      Role.findOne({ RoleName: 'Team Manager' }),
+      Role.findOne({ RoleName: 'Developer' })
+    ]);
+
+    console.log("User role:", user.role._id);
+    console.log("Team Manager ID:", teamManager._id);
+    console.log("Developer ID:", developer._id);
+
+    let tasks;
+    console.log("User ID:", userId);
+    
+    if (user.role.equals(teamManager._id)) {
+      tasks = await Task.find({ created_by: userId });
+    } else if (user.role.equals(developer._id)) {
+      tasks = await Task.find({ assigned_to: userId });
+      console.log("Tasks for developer:", tasks);
+    } else {
+      // Rôle non reconnu
+      return res.status(403).json({ 
+        success: false, 
+        message: 'Unauthorized role',
+        details: {
+          userRole: user.role._id,
+          allowedRoles: [teamManager._id, developer._id]
+        }
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      count: tasks.length,
+      data: tasks
+    });
+  } catch (error) {
+    console.error("Error in getTasksList:", error);
+    res.status(500).json({
+      success: false,
+      message: 'Server Error',
+      error: error.message,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
+  }
 };
 
+exports.updateTaskCalendarDates = async (req, res) => {
+  try {
+    const { taskId } = req.params;
+    const { start, end ,userId} = req.body;
+    const user = await User.findById(userId);
+    const team_manager = await Role.findOne({ RoleName: 'Team Manager' });
+    const developer = await Role.findOne({ RoleName: 'Developer' });
 
-exports.deleteTask = async (req, res) => {
-    try {
-        const task = await Task.findById(req.params.id);
 
-        if (!task) {
-            return res.status(404).json({
-                success: false,
-                message: 'Task not found'
-            });
-        }
+    console.log("User ID from params:", userId); // Debug
+    console.log("User :", user);
+    
 
-        // Check if user is task creator or admin
-        if (task.created_by.toString() !== req.user.id && req.user.role !== 'admin') {
-            return res.status(403).json({
-                success: false,
-                message: 'Not authorized to delete this task'
-            });
-        }
-
-        await task.remove();
-
-        res.status(200).json({
-            success: true,
-            data: {}
-        });
-    } catch (error) {
-        res.status(500).json({
-            success: false,
-            message: 'Server Error',
-            error: error.message
-        });
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
     }
+
+    const task = await Task.findById(taskId);
+    console.log("Task :", task);
+    if (!task) {
+      return res.status(404).json({ success: false, message: 'Task not found' });
+    }
+
+    // Vérifier les permissions
+    if (user.role.equals(developer._id) && task.assigned_to.toString() !== userId.toString()) {
+      return res.status(403).json({ success: false, message: 'Not authorized to update this task' });
+    }
+
+    if (user.role.equals(team_manager._id) && task.created_by.toString() !== userId.toString()) {
+      return res.status(403).json({ success: false, message: 'Not authorized to update this task' });
+    }
+
+    let updateData = {};
+    
+    if (user.role.equals(team_manager._id)) {
+      // Mise à jour des dates principales pour les managers
+      if (start !== undefined) updateData.start_date = start;
+      if (end !== undefined) updateData.deadline = end;
+    } else if (user.role.equals(developer._id)) {
+      // Mise à jour des dates du calendrier pour les développeurs
+      if (start === null && end === null) {
+        // Supprimer les dates du calendrier
+        updateData = { $unset: { calendar_dates: 1 } };
+      } else {
+        // Mettre à jour les dates du calendrier
+        updateData = { $set: {} };
+        if (start !== undefined) updateData.$set['calendar_dates.start'] = start;
+        if (end !== undefined) updateData.$set['calendar_dates.end'] = end;
+      }
+    }
+
+    const updatedTask = await Task.findByIdAndUpdate(
+      taskId,
+      updateData,
+      { new: true, runValidators: true }
+    );
+
+    res.status(200).json({ success: true, data: updatedTask });
+  } catch (error) {
+    console.error("Error updating calendar dates:", error);
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      details: error.message
+    });
+  }
 };

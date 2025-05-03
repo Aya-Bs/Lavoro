@@ -13,6 +13,10 @@ const PredictMember = require("../models/PredictMember"); // Import the PredictM
 const User = require("../models/user");
 
 
+//Récupérer un membre d'équipe par ID
+router.get('/getTeamMember/:id', teamMemberController.getTeamMemberById);
+router.get('/getAllTeamMembers/:teamId', teamMemberController.getTeamMembersByTeamId);
+router.post('/addTeamMembers', teamMemberController.addTeamMember);
 
 router.get("/predict-all", async (req, res) => {
     try {
@@ -223,10 +227,7 @@ router.get("/predict/:id", async (req, res) => {
 
 
 
-//Récupérer un membre d'équipe par ID
-router.get('/getTeamMember/:id', teamMemberController.getTeamMemberById);
-router.get('/getAllTeamMembers/:teamId', teamMemberController.getTeamMembersByTeamId);
-router.post('/addTeamMembers', teamMemberController.addTeamMember);
+
 
 
 module.exports = router;

@@ -19,6 +19,8 @@ const SearchMember = () => {
   const [sortOption, setSortOption] = useState('alphabetical');
   const [filterOption, setFilterOption] = useState('all');
   const { id } = useParams();
+  const [alert, setAlert] = useState({ show: false, message: '', type: '' });
+
 
   // Pagination logic
   const indexOfLastUser = currentPage * usersPerPage;
@@ -122,6 +124,16 @@ const SearchMember = () => {
     setCurrentPage(1); // Reset to first page when filters change
   }, [users, userSkills, debouncedSearchTerm, selectedSkills, sortOption, filterOption]);
 
+  useEffect(() => {
+    let timer;
+    if (alert.show) {
+      timer = setTimeout(() => {
+        setAlert({ show: false, message: '', type: '' });
+      }, 5000); // 5000 ms = 5 secondes
+    }
+    return () => clearTimeout(timer); // Nettoyage du timer
+  }, [alert.show]);
+  
   const handleAddTeamMember = async (userId) => {
     try {
       const token = localStorage.getItem('token');
@@ -135,11 +147,23 @@ const SearchMember = () => {
         },
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      alert('Member added successfully!');
+      // Afficher l'alerte de succès
+      setAlert({
+        show: true,
+        message: 'Member added successfully!',
+        type: 'success'
+      });
+      
       console.log('Response:', response.data);
     } catch (error) {
       console.error('Error:', error);
-      alert('Failed to add member');
+      
+      // Afficher l'alerte d'erreur
+      setAlert({
+        show: true,
+        message: error.response?.data?.message || 'Failed to add member',
+        type: 'danger'
+      });
     }
   };
 
@@ -156,6 +180,8 @@ const SearchMember = () => {
   return (
     <>
       <Helmet><title>Explore</title></Helmet>
+
+
       <div className="container-fluid">
         <div className="d-flex align-items-center justify-content-between page-header-breadcrumb flex-wrap gap-2">
           <div>
@@ -168,6 +194,19 @@ const SearchMember = () => {
             <h1 className="page-title fw-medium fs-18 mb-0">Explore</h1>
           </div>
         </div>
+
+
+      {/* Ajout de l'alerte en haut de la page */}
+      {alert.show && (
+        <div className={`alert alert-${alert.type} alert-dismissible fade show`} role="alert">
+          {alert.message}
+          <button 
+            type="button" 
+            className="btn-close" 
+            onClick={() => setAlert({ show: false, message: '', type: '' })}
+          ></button>
+        </div>
+      )}
 
         <div className="row">
           <div className="col-xl-12">
@@ -410,14 +449,20 @@ const AllResults = ({ users = [], userSkills = {}, onAddTeamMember }) => (
                   <div className="d-flex align-items-center">
                     <div>
                       <span className="avatar avatar-xl bg-primary bg-opacity-10 border">
-                        <img 
-                          src={user.image?.startsWith('http') ? user.image : `http://localhost:3000${user.image}`}
-                          alt={`${user.firstName} ${user.lastName}`}
+                      <img 
+                          src={
+                            user.image?.startsWith('http') || 
+                            user.image?.startsWith('//')
+                              ? user.image
+                              : `http://localhost:3000${user.image}`
+                          }
+                          alt={user.name}
+                          referrerPolicy="no-referrer"
                           onError={(e) => {
                             e.target.src = '';
                             e.target.onerror = null;
                           }}
-                          className="avatar-img"
+                          className="user-avatar"
                         />
                       </span>
                     </div>
@@ -431,7 +476,7 @@ const AllResults = ({ users = [], userSkills = {}, onAddTeamMember }) => (
                   <div className="btn-list">
                     <button 
                       className="btn btn-sm btn-icon btn-warning-light me-0" 
-                      title="Add User"
+                      title="Add Member"
                       onClick={() => onAddTeamMember(user._id)}
                     >
                       <i className="ri-user-add-line"></i>

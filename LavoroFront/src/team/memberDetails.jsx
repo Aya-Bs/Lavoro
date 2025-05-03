@@ -1,16 +1,18 @@
 import React, { useState, useEffect } from 'react';
+import { Doughnut } from 'react-chartjs-2';
+import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js';
 import RelatedProfiles from './relatedProfiles';
 import axios from 'axios';
 import { useParams, useNavigate } from 'react-router-dom';
 
+// Enregistrer les composants nécessaires de Chart.js
+ChartJS.register(ArcElement, Tooltip, Legend);
+
 const MemberDetails = () => {
     const [member, setMember] = useState(null);
     const [loading, setLoading] = useState(true);
-    const navigate = useNavigate(); // Initialisation ajoutée
+    const navigate = useNavigate();
     const { id } = useParams();
-
-    //const staticId = "67ffe958abcdc7b19d4edb98"; // ID statique
-
 
     useEffect(() => {
         const timeout = setTimeout(() => {
@@ -83,6 +85,54 @@ const MemberDetails = () => {
     if (!member) {
         return <div className="text-center py-4">Member not found</div>;
     }
+
+    // Fonction pour déterminer le niveau d'expérience
+    const getExperienceLevel = (level) => {
+        switch(level) {
+            case 1: return { text: 'Junior', color: 'danger' };
+            case 2: return { text: 'Mid-level', color: 'warning' };
+            case 3: return { text: 'Senior', color: 'success' };
+            default: return { text: 'Unknown', color: 'secondary' };
+        }
+    };
+
+    const experienceInfo = getExperienceLevel(member.experience_level);
+
+    // Données pour les graphiques
+    const performanceData = {
+        labels: ['Performance', 'Remaining'],
+        datasets: [
+            {
+                data: [member.performance_score, 100 - member.performance_score],
+                backgroundColor: ['#4b7bec', '#f1f2f6'],
+                borderWidth: 0,
+            },
+        ],
+    };
+
+    const tasksData = {
+        labels: ['Completed', 'Missed'],
+        datasets: [
+            {
+                data: [member.total_tasks_completed, member.missed_deadlines],
+                backgroundColor: ['#26de81', '#fc5c65'],
+                borderWidth: 0,
+            },
+        ],
+    };
+
+    const chartOptions = {
+        cutout: '70%',
+        plugins: {
+            legend: {
+                display: false,
+            },
+            tooltip: {
+                enabled: false,
+            },
+        },
+    };
+
     return (
         <div className="container-fluid">
             {/* Page Header */}
@@ -132,27 +182,23 @@ const MemberDetails = () => {
                                         <p className="mb-0">Ratings: </p>
                                         <div className="min-w-fit-content ms-2">
                                             {[...Array(5)].map((_, i) => (
-                                                <span key={i} className={i < 4 ? "text-warning" : "text-muted"}>
-                                                    <i className={i < 4 ? "ri-star-fill" : "ri-star-half-fill"}></i>
+                                                <span key={i} className={i < Math.floor(member.performance_score / 20) ? "text-warning" : "text-muted"}>
+                                                    <i className={i < Math.floor(member.performance_score / 20) ? "ri-star-fill" : "ri-star-line"}></i>
                                                 </span>
                                             ))}
                                         </div>
-                                        <a href="#!" className="ms-1 min-w-fit-content text-muted">
-                                            <span>(245)</span>
-                                            <span>Ratings</span>
-                                        </a>
+                                        <span className="ms-1 min-w-fit-content text-muted">
+                                            ({member.performance_score}%)
+                                        </span>
                                     </div>
                                     <div className="d-flex fs-14 mt-3 gap-2 flex-wrap">
                                         <div className="me-3">
-                                            <p className="mb-1"><i className="ri-map-pin-line me-2 text-muted"></i>{member.location}</p>
-                                            <p className="mb-0"><i className="ri-briefcase-line me-2 text-muted"></i>{member.experience} Experience</p>
+                                            <p className="mb-1"><i className="ri-task-line me-2 text-muted"></i>Completed Tasks: <span className="fw-medium">{member.total_tasks_completed}</span></p>
+                                            <p className="mb-0"><i className="ri-alarm-warning-line me-2 text-muted"></i>Missed Deadlines: <span className="fw-medium">{member.missed_deadlines}</span></p>
                                         </div>
                                         <div className="me-3">
-                                            <p className="mb-1"><i className="ri-currency-line me-2 text-muted"></i>Annual Pay: <span className="fw-medium">{member.salary}</span></p>
-                                            <p className="mb-0"><i className="ri-graduation-cap-line me-2 text-muted"></i>{member.education}</p>
-                                        </div>
-                                        <div>
                                             <p className="mb-1"><i className="ri-mail-line me-2 text-muted"></i>Mail: <span className="fw-medium">{member.email}</span></p>
+                                            <p className="mb-0"><i className="ri-calendar-line me-2 text-muted"></i>Joined: <span className="fw-medium">{new Date(member.joined_at).toLocaleDateString()}</span></p>
                                         </div>
                                     </div>
                                 </div>
@@ -168,11 +214,11 @@ const MemberDetails = () => {
                                     </button>
                                 </div>
                             </div>
-                            <div className="d-flex gap-3 align-items-center flex-wrap">
+                            <div className="d-flex gap-3 align-items-center flex-wrap mb-3">
                                 <h6 className="mb-0">Availability:</h6>
                                 <div className="popular-tags d-flex gap-2 flex-wrap">
                                     <span className="badge rounded-pill fs-11 bg-info-transparent">
-                                        <i className="ri-remote-control-line me-1"></i>workType
+                                        <i className="ri-remote-control-line me-1"></i>Full-time
                                     </span>
                                     <span className="badge rounded-pill fs-11 bg-danger-transparent">
                                         <i className="ri-time-line me-1"></i>Immediate Joinee
@@ -181,6 +227,14 @@ const MemberDetails = () => {
                                 <a href="#!" className="ms-auto text-secondary px-2 py-1 rounded-pill fs-12 bg-secondary-transparent">
                                     <i className="ri-chat-1-line me-1"></i> Message Now
                                 </a>
+                            </div>
+                            <div className="d-flex gap-3 align-items-center flex-wrap">
+                                <h6 className="mb-0">Experience Level:</h6>
+                                <div className="popular-tags d-flex gap-2 flex-wrap">
+                                    <span className={`badge rounded-pill fs-11 bg-${experienceInfo.color}-transparent`}>
+                                        <i className="ri-user-line me-1"></i>{experienceInfo.text}
+                                    </span>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -206,65 +260,43 @@ const MemberDetails = () => {
                         <div className="col-xl-6">
                             <div className="card custom-card">
                                 <div className="card-header">
-                                    <div className="card-title">Languages</div>
+                                    <div className="card-title">Performance Statistics</div>
                                 </div>
                                 <div className="card-body">
-                                    <p className="mb-0 fs-14">
-                                        <span className="fw-medium me-2">Known: </span>
-                                        {/* {member.languages.join(', ')} */}
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Profile Information */}
-                    <div className="card custom-card">
-                        <div className="card-header">
-                            <div className="card-title">Candidate Profile Information</div>
-                        </div>
-                        <div className="card-body p-0 candidate-edu-timeline">
-                            <div className="p-3 border-bottom">
-                                <h5 className="fw-medium fs-17 d-flex align-items-center gap-2">
-                                    <span className="avatar avatar-rounded bg-primary avatar-sm">
-                                        <i className="ri-briefcase-4-line fs-13"></i>
-                                    </span>
-                                    Career Objective:
-                                </h5>
-                                <div className="ms-4 ps-3">
-                                    <p className="op-9">Passionate {member.role} with a performance score of {member.performance_score}. <br />Completed {member.completed_tasks_count} tasks successfully.</p>
-                                </div>
-                            </div>
-                            
-                            {/* Education */}
-                            <div className="p-3 border-bottom">
-                                <h5 className="fw-medium fs-17 d-flex align-items-center gap-2">
-                                    <span className="avatar avatar-rounded bg-primary avatar-sm">
-                                        <i className="ri-graduation-cap-line fs-13"></i>
-                                    </span>
-                                    Education:
-                                </h5>
-                                <div className="ms-4 ps-3">
-                                    <p className="fw-medium fs-14 mb-0">{member.education}</p>
-                                    <p className="mb-3 text-muted">Dwayne University (2020 - 2024)</p>
-                                </div>
-                            </div>
-                            
-                            {/* Experience */}
-                            <div className="p-3">
-                                <h5 className="fw-medium fs-17 d-flex align-items-center gap-2">
-                                    <span className="avatar avatar-rounded bg-primary avatar-sm">
-                                        <i className="ri-briefcase-line fs-13"></i>
-                                    </span>
-                                    Experience:
-                                </h5>
-                                <div className="ms-4 ps-3">
-                                    <p className="fw-medium fs-14 mb-0">{member.role} at InnovateZ Solutions</p>
-                                    <p className="mb-2 text-muted">2019 - Present</p>
-                                    <ul className="list-group border-0 list-bullets">
-                                        <li className="border-0 py-1">Designed user interfaces for web applications</li>
-                                        <li className="border-0 py-1">Collaborated with development teams</li>
-                                    </ul>
+                                    <div className="row">
+                                        <div className="col-6">
+                                            <div className="text-center">
+                                                <div style={{ width: '100px', height: '100px', margin: '0 auto' }}>
+                                                    <Doughnut data={performanceData} options={chartOptions} />
+                                                </div>
+                                                <div className="mt-2">
+                                                    <h6 className="mb-0">Performance</h6>
+                                                    <span className="text-muted fs-12">{member.performance_score}%</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div className="col-6">
+                                            <div className="text-center">
+                                                <div style={{ width: '100px', height: '100px', margin: '0 auto' }}>
+                                                    <Doughnut data={tasksData} options={chartOptions} />
+                                                </div>
+                                                <div className="mt-2">
+                                                    <h6 className="mb-0">Tasks</h6>
+                                                    <span className="text-muted fs-12">
+                                                        {member.total_tasks_completed} done / {member.missed_deadlines} missed
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div className="mt-3">
+                                        <div className="d-flex align-items-center justify-content-between">
+                                            <span className="fw-medium">Experience Level:</span>
+                                            <span className={`badge bg-${experienceInfo.color}-transparent text-${experienceInfo.color}`}>
+                                                {experienceInfo.text}
+                                            </span>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -273,56 +305,7 @@ const MemberDetails = () => {
 
                 {/* Right Sidebar */}
                 <div className="col-xxl-4">
-                    {/* Tools Used */}
-                    <div className="card custom-card overflow-hidden">
-                        <div className="card-header">
-                            <div className="card-title">Tools Used</div>
-                        </div>
-                        <div className="card-body d-flex flex-wrap gap-2">
-                            {[1, 2, 3, 4, 5, 6].map(tool => (
-                                <span key={tool} className="avatar avatar-rounded bg-primary-transparent border p-2">
-                                    <img src={`../assets/images/company-logos/${tool}.png`} alt={`Tool ${tool}`} />
-                                </span>
-                            ))}
-                        </div>
-                    </div>
-
-                    {/* Related Profiles */}
                     <RelatedProfiles teamId={member.teamId} currentMemberId={id} />
-
-
-                    {/* Personal Information */}
-                    <div className="card custom-card overflow-hidden">
-                        <div className="card-header">
-                            <div className="card-title">Personal Information</div>
-                        </div>
-                        <div className="card-body p-0">
-                            <table className="table table-responsive">
-                                <tbody>
-                                    <tr>
-                                        <td className="w-50 fw-medium">Full Name</td>
-                                        <td>{member.name}</td>
-                                    </tr>
-                                    <tr>
-                                        <td className="w-50 fw-medium">Email</td>
-                                        <td>{member.email}</td>
-                                    </tr>
-                                    <tr>
-                                        <td className="w-50 fw-medium">Phone</td>
-                                        <td>{member.phone}</td>
-                                    </tr>
-                                    <tr>
-                                        <td className="w-50 fw-medium">Location</td>
-                                        <td>{member.location}</td>
-                                    </tr>
-                                    <tr>
-                                        <td className="w-50 fw-medium">Experience</td>
-                                        <td>{member.experience}</td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
                 </div>
             </div>
         </div>
