@@ -20,6 +20,8 @@ const SearchMember = () => {
   const [filterOption, setFilterOption] = useState('all');
   const { id } = useParams();
 
+
+
   // Pagination logic
   const indexOfLastUser = currentPage * usersPerPage;
   const indexOfFirstUser = indexOfLastUser - usersPerPage;
@@ -129,6 +131,9 @@ const SearchMember = () => {
         'http://localhost:3000/teamMember/addTeamMembers',
         {
           team_id: id,
+
+          team_id: "67ffe92eabcdc7b19d4edb96",
+
           user_id: userId,
           skills: userSkills[userId]?.map(skill => skill._id) || [],
           role: 'Developer'
@@ -363,7 +368,11 @@ const TabNavigation = () => (
       </li>
       <li className="nav-item" role="presentation">
         <a className="nav-link fw-medium" data-bs-toggle="tab" role="tab" href="#search-news">
+
           <i className="ri-newspaper-line me-2"></i>Available Members
+
+          <i className="ri-newspaper-line me-2"></i>News
+
         </a>
       </li>
     </ul>

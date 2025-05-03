@@ -6,18 +6,8 @@ import flatpickr from 'flatpickr';
 import 'flatpickr/dist/flatpickr.min.css';
 import Choices from 'choices.js';
 import 'choices.js/public/assets/styles/choices.min.css';
-import Quill from 'quill';
 import 'quill/dist/quill.snow.css';
-import { FilePond, registerPlugin } from 'react-filepond';
-import FilePondPluginImagePreview from 'filepond-plugin-image-preview';
-import FilePondPluginImageExifOrientation from 'filepond-plugin-image-exif-orientation';
-import FilePondPluginFileValidateSize from 'filepond-plugin-file-validate-size';
-import FilePondPluginFileEncode from 'filepond-plugin-file-encode';
-import FilePondPluginImageEdit from 'filepond-plugin-image-edit';
-import FilePondPluginFileValidateType from 'filepond-plugin-file-validate-type';
-import FilePondPluginImageCrop from 'filepond-plugin-image-crop';
-import FilePondPluginImageResize from 'filepond-plugin-image-resize';
-import FilePondPluginImageTransform from 'filepond-plugin-image-transform';
+
 import 'filepond-plugin-image-preview/dist/filepond-plugin-image-preview.css';
 import 'filepond/dist/filepond.min.css';
 
@@ -46,6 +36,125 @@ const CreateProject = () => {
   const startDateRef = useRef(null);
   const endDateRef = useRef(null);
   const tagsRef = useRef(null);
+
+  // Add this near your other state declarations
+const [currentUser, setCurrentUser] = useState(null);
+
+// Add this useEffect to fetch the current user when the component mounts
+useEffect(() => {
+  const fetchCurrentUser = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error("No token found");
+      }
+
+      const response = await axios.get("http://localhost:3000/users/me", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        withCredentials: true,
+      });
+
+      if (response.data) {
+        setCurrentUser(response.data);
+      }
+    } catch (err) {
+      console.error("Error fetching current user:", err);
+    }
+  };
+
+  fetchCurrentUser();
+}, []);
+
+// Modify your handleSubmit function to include both sender and receiver users
+const handleSubmit = async (e) => {
+  e.preventDefault();
+  
+  if (!validateForm()) {
+    Swal.fire('Validation Error', 'Please fix all errors before submitting', 'error');
+    return;
+  }
+
+  try {
+    setLoading(true);
+    
+    const dataToSend = {
+      ...projectData,
+      budget: Number(projectData.budget),
+      start_date: new Date(projectData.start_date).toISOString(),
+      end_date: new Date(projectData.end_date).toISOString(),
+      ...(selectedManager && { 
+        manager_id: selectedManager._id,
+        teamManager: `${selectedManager.firstName} ${selectedManager.lastName}`
+      }),
+      // Include the current user as the sender in the project data
+      senderUser: currentUser?._id
+    };
+
+    const token = localStorage.getItem('token');
+    const response = await axios.post(
+      'http://localhost:3000/project/createProject',
+      dataToSend,
+      {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      }
+    );
+
+    // If there's a team manager assigned, send them an email
+    if (selectedManager && currentUser) {
+      try {
+        await axios.post(
+          'http://localhost:3000/project/sendProjectAssignmentEmail',
+          {
+            email: selectedManager.email,
+            projectDetails: response.data,
+            senderUserId: currentUser._id,
+            receiverUserId: selectedManager._id  // Add the team manager as receiver
+          },
+          {
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json'
+            }
+          }
+        );
+      } catch (emailError) {
+        console.error('Error sending project assignment email:', emailError);
+        // Optionally show a warning that email failed but project was created
+        Swal.fire({
+          title: 'Project Created',
+          text: 'Project was created but email notification failed',
+          icon: 'warning',
+          timer: 2000,
+          timerProgressBar: true
+        });
+      }
+    }
+
+    await Swal.fire({
+      title: 'Success!',
+      text: 'Project created successfully',
+      icon: 'success',
+      confirmButtonText: 'OK',
+      timer: 2000,
+      timerProgressBar: true
+    });
+    
+    navigate('/ListPro');
+    
+  } catch (error) {
+    const errorMessage = error.response?.data?.message || 'Error creating project';
+    Swal.fire('Error', errorMessage, 'error');
+  } finally {
+    setLoading(false);
+  }
+};
+
+
 
   // Initialize date pickers and choices
   useEffect(() => {
@@ -192,59 +301,7 @@ const CreateProject = () => {
     return Object.keys(newErrors).length === 0;
   };
 
-  // Form submission
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    
-    if (!validateForm()) {
-      Swal.fire('Validation Error', 'Please fix all errors before submitting', 'error');
-      return;
-    }
-
-    try {
-      setLoading(true);
-      
-      const dataToSend = {
-        ...projectData,
-        budget: Number(projectData.budget),
-        start_date: new Date(projectData.start_date).toISOString(),
-        end_date: new Date(projectData.end_date).toISOString(),
-        ...(selectedManager && { 
-          manager_id: selectedManager._id,
-          teamManager: `${selectedManager.firstName} ${selectedManager.lastName}`
-        })
-      };
-
-      const token = localStorage.getItem('token');
-      await axios.post(
-        'http://localhost:3000/project/createProject',
-        dataToSend,
-        {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
-        }
-      );
-
-      await Swal.fire({
-        title: 'Success!',
-        text: 'Project created successfully',
-        icon: 'success',
-        confirmButtonText: 'OK',
-        timer: 2000,
-        timerProgressBar: true
-      });
-      
-      navigate('/ListPro');
-      
-    } catch (error) {
-      const errorMessage = error.response?.data?.message || 'Error creating project';
-      Swal.fire('Error', errorMessage, 'error');
-    } finally {
-      setLoading(false);
-    }
-  };
+  
 
   return (
     <div className="container-fluid">

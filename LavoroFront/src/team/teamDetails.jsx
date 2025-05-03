@@ -230,16 +230,8 @@ const TeamDetailsPage = () => {
                                   Manager: {team.manager_id?.firstName} {team.manager_id?.lastName}
                                 </p>
                               </div>
-                              
 
                             </div>
-                            <div className="popular-tags">
-                  <span className={`badge rounded-pill ${team.status === 'Active' ? 'bg-success-transparent' : 'bg-secondary-transparent'}`}>
-                    <i className="bi bi-circle-fill me-1"></i> {team.status}
-                  </span>
-                 
-                  
-                </div>
 
                           </div>
                         </div>
@@ -288,7 +280,9 @@ const TeamDetailsPage = () => {
                   {team.description || 'No description available for this team.'}
                 </p>
                 <div className="popular-tags">
-                  
+                  <span className={`badge rounded-pill ${team.status === 'Active' ? 'bg-success-transparent' : 'bg-secondary-transparent'}`}>
+                    <i className="bi bi-circle-fill me-1"></i> {team.status}
+                  </span>
                   {team.tags?.map((tag, index) => (
                     <span key={index} className="badge rounded-pill bg-primary-transparent me-1">
                       {tag}
@@ -406,7 +400,7 @@ const TeamDetailsPage = () => {
                             <a
                               href="javascript:void(0);"
                               className="fw-semibold"
-                              onClick={() => navigate(`/members/${member._id}`)}
+                              onClick={() => navigate(`/member-details/${member._id}`)}
                             >
                               {member.firstName} {member.lastName}
                             </a>
@@ -471,7 +465,7 @@ const TeamDetailsPage = () => {
                 <h6 className="fw-medium mb-3">Quick Actions</h6>
                 <button
                   className="btn btn-outline-primary btn-wave w-100 mb-2"
-                  onClick={() => navigate(`/searchMember/${team._id}`)}
+                  onClick={() => navigate(`/teams/${team._id}/add-member`)}
                 >
                   <i className="ri-user-add-line me-2"></i> Add Member
                 </button>

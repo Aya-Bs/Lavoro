@@ -18,6 +18,7 @@ const ChatGroup = require('./models/chatGroup');
 const GroupMessage = require('./models/groupMessage');
 const User = require('./models/user');
 
+
 // Connect to MongoDB
 mongo
   .connect(db.url)
@@ -34,7 +35,6 @@ const profileRouter = require('./routes/profile');
 const projectRouter = require('./routes/project');
 const notifroute = require('./routes/notification');
 const meetRouter = require('./routes/meets');
-
 const chatRouter = require('./routes/chat');
 const teamRouter = require('./routes/teams');
 const teamMemberRouter = require('./routes/teamMember');
@@ -43,6 +43,7 @@ const userSkillsRouter = require('./routes/userSkills');
 const taskAssignmentRoutes = require('./routes/taskAssignmentRoutes');
 // const homeRouter = require('./routes/home');
 const adminRouter = require('./routes/admin');
+const emailRouter = require('./routes/emails');
 
 
 const app = express();
@@ -105,6 +106,8 @@ app.use('/notifications',notifroute);
 app.use('/users', usersRouter);
 // app.use('/', homeRouter);
 app.use('/admin',adminRouter);
+app.use('/email',emailRouter);
+
 app.set('io', io);
 
 app.use('/tasks',taskRouter);
@@ -116,9 +119,9 @@ app.use('/teamMember', teamMemberRouter);
 app.use('/skills', skillsRouter);
 app.use('/userSkills', userSkillsRouter);
 app.use('/ai-assignment', taskAssignmentRoutes);
-
 app.use('/profiles', profileRouter);
 app.use('/meet', meetRouter);
+app.use('/teams', teamRouter);
 app.use('/teams', teamRouter);
 
 

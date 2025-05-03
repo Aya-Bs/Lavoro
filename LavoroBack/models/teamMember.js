@@ -11,11 +11,9 @@ const TeamMember = new Schema({
     joined_at: { type: Date, default: Date.now },
 
     tasks: [{
-        task_id: { type: String, default: () => `TASK-${Math.random().toString(36).substr(2, 9).toUpperCase()}` },
-        complexity: { type: Number, min: 1, max: 10 },
-        duration: { type: Number, min: 0.5, max: 40 }, // in hours
-        completed_on_time: Boolean,
-        quality_rating: { type: Number, min: 0, max: 100 }
+        type: mongo.Schema.Types.ObjectId,
+        ref: 'Task',
+        required: false
     }],
     
     // Performance metrics

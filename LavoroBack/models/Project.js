@@ -3,6 +3,7 @@ const Schema = mongo.Schema;
 
 const Project = new Schema({
     name: { type: String, required: true , index: true },// index pour optimiser les recherches,
+    description: { type: String },
     budget: { type: Number, default: 0 },
     manager_id: { type: mongo.Schema.Types.ObjectId, ref: 'user' }, // Reference to User model
     ProjectManager_id: { type: mongo.Schema.Types.ObjectId, ref: 'user' }, // Reference to User model
@@ -29,9 +30,9 @@ const Project = new Schema({
     ai_predicted_completion: { type: Date },
     ai_predicted_description: { type: String },
     created_at: { type: Date, default: Date.now },
-    updated_at: { type: Date, default: Date.now }
+    updated_at: { type: Date, default: Date.now },
+    tasks: [{type : mongo.Schema.Types.ObjectId, ref: 'Task', required:false }], 
 
 });
 Project.index({ name: 'text' });
-
 module.exports = mongo.model('Project', Project);

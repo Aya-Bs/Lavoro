@@ -699,7 +699,6 @@ exports.getTeamManager = async (req, res) => {
   }
 };
 
-
 exports.getAllDevelopers = async (req, res) => {
   try {
     // First, find the developer role in the roles collection
@@ -774,4 +773,3 @@ exports.searchDevsByName = async (req, res) => {
     });
   }
 };
-
