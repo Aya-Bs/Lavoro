@@ -120,8 +120,11 @@ app.use('/skills', skillsRouter);
 app.use('/userSkills', userSkillsRouter);
 app.use('/ai-assignment', taskAssignmentRoutes);
 app.use('/profiles', profileRouter);
+
 app.use('/meet', meetRouter);
 app.use('/teams', teamRouter);
+app.use('/teams', teamRouter);
+
 app.use('/teams', teamRouter);
 
 

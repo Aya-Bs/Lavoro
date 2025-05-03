@@ -190,6 +190,7 @@ exports.addTeamMember = async (req, res) => {
             error: error.message
         });
     }
+
 };
 
 
@@ -250,4 +251,5 @@ exports.getAllMembers = async (req, res) => {
       message: 'Error fetching team members'
     });
   }
+
 };

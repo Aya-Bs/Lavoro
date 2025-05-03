@@ -1,11 +1,12 @@
 
 const mongoose = require('mongoose');
 const Task = require('../models/Task');
+
 const TaskHistory = require('../models/TaskHistory');
 const User = require('../models/user');
+
 const Project = require('../models/Project');
 const TeamMember = require('../models/teamMember');
-
 
 
 const ObjectId = mongoose.Types.ObjectId;
@@ -124,10 +125,7 @@ exports.seedTaskHistory = async () => {
 
 
 // Fonction pour récupérer les tâches assignées à un utilisateur spécifique
-
-
 exports.getTasksByUser = async (req, res) => {
-
     try {
         const userId = req.params.userId;
 
@@ -372,64 +370,105 @@ exports.testPointsSystem = async (req, res) => {
 
 
 
+// exports.addTask = async (req, res) => {
+//   try {
+//     const {
+//       title,
+//       description,
+//       project_id,
+//       assigned_to,
+//       status,
+//       priority,
+//       deadline,
+//       start_date,
+//       estimated_duration,
+//       tags
+//     } = req.body;
+
+//     // Optional: Validate that project exists
+//     const project = await Project.findById(project_id);
+//     if (!project) {
+//       return res.status(404).json({ message: 'Project not found' });
+//     }
+
+//     const newTask = new Task({
+//       title,
+//       description,
+//       project_id,
+//       assigned_to,
+//       status,
+//       priority,
+//       deadline,
+//       start_date,
+//       estimated_duration,
+//       tags
+//     });
+
+//     const savedTask = await newTask.save();
 
 
 
-
-exports.getTasksList = async (req, res) => {
-    try {
-      console.log("User ID from params:", req.params.userId); // Debug
-
-        const tasks = await Task.find({assigned_to: req.params.userId })
-
-        res.status(200).json({
-            success: true,
-            count: tasks.length,
-            data: tasks
-        });
-    } catch (error) {
-        res.status(500).json({
-            success: false,
-            message: 'Server Error',
-            error: error.message
-        });
-    }
-};
+//     res.status(201).json(savedTask);
+//   } catch (error) {
+//     console.error('Error creating task:', error);
+//     res.status(500).json({ message: 'Error creating task' });
+//   }
+// };
 
 
-exports.deleteTask = async (req, res) => {
-    try {
-        const task = await Task.findById(req.params.id);
+// exports.addTask = async (req, res) => {
+//   try {
+//     const {
+//       title,
+//       description,
+//       project_id,
+//       assigned_to,
+//       status,
+//       priority,
+//       deadline,
+//       start_date,
+//       estimated_duration,
+//       tags
+//     } = req.body;
 
-        if (!task) {
-            return res.status(404).json({
-                success: false,
-                message: 'Task not found'
-            });
-        }
+//     // Validate that project exists
+//     const project = await Project.findById(project_id);
+//     if (!project) {
+//       return res.status(404).json({ 
+//         success: false,
+//         message: 'Project not found' 
+//       });
+//     }
 
-        // Check if user is task creator or admin
-        if (task.created_by.toString() !== req.user.id && req.user.role !== 'admin') {
-            return res.status(403).json({
-                success: false,
-                message: 'Not authorized to delete this task'
-            });
-        }
+//     const newTask = new Task({
+//       title,
+//       description,
+//       project_id,
+//       assigned_to,
+//       status,
+//       priority,
+//       deadline,
+//       start_date,
+//       estimated_duration,
+//       tags
+//     });
 
-        await task.remove();
+//     const savedTask = await newTask.save();
 
-        res.status(200).json({
-            success: true,
-            data: {}
-        });
-    } catch (error) {
-        res.status(500).json({
-            success: false,
-            message: 'Server Error',
-            error: error.message
-        });
-    }
-}
+//     res.status(201).json({
+//       success: true,
+//       message: 'Task created successfully',
+//       data: savedTask
+//     });
+//   } catch (error) {
+//     console.error('Error creating task:', error);
+//     res.status(500).json({ 
+//       success: false,
+//       message: 'Error creating task',
+//       error: process.env.NODE_ENV === 'development' ? error.message : undefined
+//     });
+//   }
+// };
 
 
 exports.addTask = async (req, res) => {
@@ -790,5 +829,4 @@ exports.unassignTask = async (req, res) => {
       error: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
   }
-
 };

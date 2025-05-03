@@ -159,6 +159,7 @@ import CreateTeam from "./team/createTeam";
 import TeamCards from "./team/teamList";
 import TeamDetailsPage from "./team/teamDetails";
 import UpdateTeam from "./team/updateTeam";
+import DashTeam from "./team/DashTeam";
 import BestPerformerPage from "./pages/BestPerformerPage";
 import ChatComponent from "./chat/ChatComponent";
 import ChatFloatingButton from "./chat/ChatFloatingButton";
@@ -172,7 +173,7 @@ import { File } from "./fileManager/file";
 import axios from "axios";
 import { CreateTask } from "./Tasks/createTask";
 import { TaskList } from "./Tasks/tasksList";
-import DashTeam from "./project/DashTeam";
+
 // ProtectedRoute component to check authentication and roles
 const ProtectedRoute = ({ children, allowedRoles }) => {
   const [isLoading, setIsLoading] = useState(true);
@@ -342,7 +343,7 @@ function App() {
               </ProtectedRoute>
             } />
 
-            <Route path="/DashTeam" element={
+           <Route path="/DashTeam" element={
               <ProtectedRoute allowedRoles={['Team Manager']}>
                 <DashTeam />
               </ProtectedRoute>

@@ -19,5 +19,3 @@ router.get('/getDeveloper', teamController.getDeveloper);
 //router.get('/getTeamMember', teamController.getAllMembers);
 module.exports = router;
 
-
-
