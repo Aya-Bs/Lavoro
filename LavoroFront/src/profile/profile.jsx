@@ -39,26 +39,7 @@ const [showAward, setShowAward] = useState(false);
         });
 
         if (response.data) {
-          // Parse the skills field to handle any potential stringified data
-          let fetchedSkills = response.data.skills;
-          console.log("Raw skills from API in Profile:", fetchedSkills);
-
-          if (typeof fetchedSkills === 'string') {
-            try {
-              fetchedSkills = JSON.parse(fetchedSkills);
-              if (typeof fetchedSkills === 'string') {
-                fetchedSkills = JSON.parse(fetchedSkills);
-              }
-            } catch (e) {
-              console.error("Error parsing skills in Profile:", e);
-              fetchedSkills = [];
-            }
-          }
-
-          fetchedSkills = Array.isArray(fetchedSkills) ? fetchedSkills : [];
-          console.log("Parsed skills in Profile:", fetchedSkills);
-
-          setUser({ ...response.data, skills: fetchedSkills });
+          setUser(response.data);
         } else {
           navigate("/signin");
         }
@@ -97,15 +78,12 @@ const [showAward, setShowAward] = useState(false);
         withCredentials: true
       });
 
-      console.log("Tasks response:", response.data);
+      console.log("Tasks response:", response.data); // Ajoutez ce log pour debug
       setTasks(response.data);
 
     } catch (err) {
       console.error("Full error:", err);
-      console.error("Error response:", err.response?.data);
-
       console.error("Error response:", err.response?.data); // Debug détaillé
-
 
       if (err.response?.status === 401) {
         localStorage.removeItem('token');
@@ -607,13 +585,6 @@ const ProfileSidebar = ({ user }) => {
             {user.image ? (
               <img
                 src={
-
-                  user?.image
-                    ? user.image.startsWith('http') || user.image.startsWith('https')
-                      ? user.image
-                      : `http://localhost:3000${user.image}`
-                    : "https://via.placeholder.com/100"
-
                   user.image.startsWith('http') || user.image.startsWith('https')
                     ? user.image // Use as-is if it's already a full URL
                     : `http://localhost:3000${user.image}` // Prepend server URL if relative
@@ -696,54 +667,6 @@ const ProfileSidebar = ({ user }) => {
 
 // AboutTab Component
 const AboutTab = ({ user }) => {
-  // Robustly parse skills for display (like in UpdateProfile)
-  let skillsToDisplay = [];
-  if (user.skills) {
-    let fetchedSkills = user.skills;
-    if (Array.isArray(fetchedSkills) && fetchedSkills.length === 1 && typeof fetchedSkills[0] === 'string') {
-      const first = fetchedSkills[0].trim();
-      if (first.startsWith('[') && first.endsWith(']')) {
-        try {
-          fetchedSkills = JSON.parse(first);
-        } catch (e) {
-          fetchedSkills = [];
-        }
-      } else {
-        fetchedSkills = first.split(',').map(s => s.trim()).filter(Boolean);
-      }
-    } else if (typeof fetchedSkills === 'string') {
-      try {
-        fetchedSkills = JSON.parse(fetchedSkills);
-        if (typeof fetchedSkills === 'string') {
-          fetchedSkills = JSON.parse(fetchedSkills);
-        }
-      } catch (e) {
-        fetchedSkills = [];
-      }
-    }
-    skillsToDisplay = Array.isArray(fetchedSkills) ? fetchedSkills : [];
-  }
-
-  // Debug the skills being displayed
-  console.log("Skills to display in AboutTab:", skillsToDisplay);
-
-  // Color palette for badges
-  const colorPalette = [
-    '#e57373', // red
-    '#64b5f6', // blue
-    '#81c784', // green
-    '#ffd54f', // yellow
-    '#ba68c8', // purple
-    '#4dd0e1', // teal
-    '#ffb74d', // orange
-    '#a1887f', // brown
-    '#90a4ae', // grey
-    '#f06292', // pink
-  ];
-
-  // Get a color for each skill by index
-  const getSkillColor = (index) => colorPalette[index % colorPalette.length];
-
   return (
     <ul className="list-group list-group-flush border rounded-3">
       <li className="list-group-item p-3">
@@ -776,33 +699,26 @@ const AboutTab = ({ user }) => {
         </div>
       </li>
       <li className="list-group-item p-3">
-        <span className="fw-medium fs-15 d-block mb-3">Description :</span>
-        <div className="text-muted">
-          {user.description ? (
-            <p>{user.description}</p>
-          ) : (
-            <span className="text-muted">No description available.</span>
-          )}
-        </div>
-      </li>
-      <li className="list-group-item p-3">
         <span className="fw-medium fs-15 d-block mb-3">Skills :</span>
-        <p className="text-muted mb-3">Here are the key skills that define my expertise:</p>
-        <div className="w-75 d-flex flex-wrap">
-          {skillsToDisplay && skillsToDisplay.length > 0 ? (
-            skillsToDisplay.map((skill, index) => (
-              <a href="#" onClick={(e) => e.preventDefault()} key={index}>
-                <span
-                  className="badge text-white m-1 border"
-                  style={{ backgroundColor: getSkillColor(index), border: 'none' }}
-                >
-                  {skill}
-                </span>
-              </a>
-            ))
-          ) : (
-            <span className="text-muted">No skills available.</span>
-          )}
+        <div className="w-75">
+          {[
+            "Leadership",
+            "Project Management",
+            "Technical Proficiency",
+            "Communication",
+            "Team Building",
+            "Problem-Solving",
+            "Strategic Thinking",
+            "Decision Making",
+            "Adaptability",
+            "Stakeholder Management",
+            "Conflict Resolution",
+            "Continuous Improvement",
+          ].map((skill, index) => (
+            <a href="#" onClick={(e) => e.preventDefault()} key={index}>
+              <span className="badge bg-light text-muted m-1 border">{skill}</span>
+            </a>
+          ))}
         </div>
       </li>
       <li className="list-group-item p-3">
@@ -857,6 +773,5 @@ const AboutTab = ({ user }) => {
     </ul>
   );
 };
-
 
 export default Profile;

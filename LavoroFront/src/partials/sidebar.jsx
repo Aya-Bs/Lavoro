@@ -104,16 +104,11 @@ const Sidebar = ({ userRole }) => {
                 <i className="ri-user-line side-menu__icon"></i>
                 <span className="side-menu__label">Profile</span>
               </Link>
-            </li>
-<<<<<<< HEAD
-            <li className="slide">
               <Link to="/DashTeam" className="side-menu__item">
                 <i className="ri-user-line side-menu__icon"></i>
                 <span className="side-menu__label">Dashboard</span>
               </Link>
             </li>
-=======
->>>>>>> 75cb67597b77ba6d3d3c2d791cefc5eff07667a2
 
             <li className="slide__category">
               <span className="category-name">Projects</span>
@@ -153,12 +148,6 @@ Member of the year                  </Link>
                   Teams List
                   </Link>
                 </li>
-<<<<<<< HEAD
-
-
-              </ul>
-            </li>
-=======
           
                 <li className="slide">
                   <Link to="/member-details/67ffe958abcdc7b19d4edb98" className="side-menu__item">
@@ -201,7 +190,6 @@ Member of the year                  </Link>
                 </li>
              </ul>
             </li>
->>>>>>> 75cb67597b77ba6d3d3c2d791cefc5eff07667a2
             <li className="slide__category">
               <span className="category-name">Communication</span>
             </li>

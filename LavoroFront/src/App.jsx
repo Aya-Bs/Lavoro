@@ -152,16 +152,8 @@ import AllProject from "./project/AllProject";
 import Archieve from "./project/Archieve";
 import UserActivity from "./admin/UserActivity";
 import ArchiveOverview from "./project/ArchiveOverview";
-
 import UpdateProject from "./project/updateProject";
 import ProjectProgress from "./project/projetPorgress";
-
-import CreateWithAI from "./project/CreateProjectWithAI";
-import CreateProjectWithAI from "./project/CreateProjectWithAI";
-import CreateTeam from "./team/createTeam";
-import TeamCards from "./team/teamList";
-import DashTeam from "./project/DashTeam";
-
 import CreateProjectWithAI from "./project/CreateProjectWithAI";
 import CreateTeam from "./team/createTeam";
 import TeamCards from "./team/teamList";
@@ -172,12 +164,6 @@ import ChatComponent from "./chat/ChatComponent";
 import ChatFloatingButton from "./chat/ChatFloatingButton";
 import SearchMember from "./team/searchMember";
 import MemberDetails from "./team/memberDetails";
-
-import FullCalendar from "./Tasks/calendar";
-import WinnersPodium from "./team/podium";
-import Mail from "./user/mail"
-import 'bootstrap/dist/css/bootstrap.min.css';
-
 import FullCalendar from "./team/calendar";
 import WinnersPodium from "./team/podium";
 import Mail from "./user/mail";
@@ -186,7 +172,7 @@ import { File } from "./fileManager/file";
 import axios from "axios";
 import { CreateTask } from "./Tasks/createTask";
 import { TaskList } from "./Tasks/tasksList";
-
+import DashTeam from "./team/DashTeam";
 // ProtectedRoute component to check authentication and roles
 const ProtectedRoute = ({ children, allowedRoles }) => {
   const [isLoading, setIsLoading] = useState(true);
@@ -248,11 +234,8 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
   return children;
 };
 
-
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [showChatPopup, setShowChatPopup] = useState(false);
-
   const [showChatPopup, setShowChatPopup] = useState(false);
 
   return (
@@ -268,21 +251,6 @@ function App() {
           <Route path="/verify-email" element={<VerifyEmail />} />
           <Route path="/" element={<Navigate to="/signin" />} />
           <Route path="*" element={<Navigate to="/signin" />} />
-
-
-            {/* Routes with Layout */}
-            <Route element={<Layout />}>
-              <Route path="/home" element={<Home />} />
-              <Route path="/admin-dashboard" element={<AdminDashboard />} />
-              <Route path="/user-activity/:userId" element={<UserActivity />} />
-              <Route path="/profile" element={<Profile />} />
-              <Route path="/update-profile" element={<UpdateProfile />} />
-              <Route path="/activities" element={<ActivitiesPage />} />
-              <Route path="/sales" element={<Sales />} />
-              <Route path="/createPro" element ={<CreateProject />} />
-              <Route path="/createProWithAI" element ={<CreateProjectWithAI />} />
-              <Route path="/ProjectDash" element={<ProjectDash />} />
-              <Route path="/AllProject" element={<AllProject />} />
 
           {/* Protected routes with role-based access */}
           <Route element={<Layout />}>
@@ -310,7 +278,6 @@ function App() {
                 <ActivitiesPage />
               </ProtectedRoute>
             } />
-
 
             {/* Admin-only routes */}
             <Route path="/admin-dashboard" element={
@@ -350,24 +317,6 @@ function App() {
               </ProtectedRoute>
             } />
 
-
-<Route path="/ProjectProgress" element={<ProjectProgress/>} />
-<Route path="/createTeam" element={<CreateTeam/>} />
-<Route path="/DashTeam" element={<DashTeam/>} />
-<Route path="/teamsList" element={<TeamCards/>} />
-<Route path="/teams/teamDetails/:id" element={<TeamDetailsPage />} />
-<Route path="/teams/updateTeam/:id" element={<UpdateTeam />} />
-
-
-<Route path="/best-performer" element={<BestPerformerPage />} />
-              <Route path="/chat" element={<ChatComponent />} />
-              <Route path="/member-details/:id" element={<MemberDetails/>} />
-              <Route path="/searchMember/:id" element={<SearchMember/>} />
-              <Route path="/calendar" element={<FullCalendar/>} />
-              <Route path="/podium" element={<WinnersPodium />} />
-              <Route path ="mail" element={< Mail />} />
-
-
             <Route path="/AllProject" element={
               <ProtectedRoute allowedRoles={['Project Manager', 'Admin']}>
                 <AllProject />
@@ -396,6 +345,12 @@ function App() {
             <Route path="/teamsList" element={
               <ProtectedRoute allowedRoles={['Team Manager', 'Admin', 'Project Manager']}>
                 <TeamCards />
+              </ProtectedRoute>
+            } />
+
+            <Route path="/DashTeeam" element={
+              <ProtectedRoute allowedRoles={['Team Manager']}>
+                <DashTeam />
               </ProtectedRoute>
             } />
 
@@ -503,13 +458,6 @@ function App() {
             } />
           </Route>
         </Routes>
-
-
-        {/* Floating chat button on all pages except chat page */}
-        {isAuthenticated && window.location.pathname !== '/chat' && (
-          <ChatFloatingButton />
-        )}
-
 
         {/* Floating chat button */}
         {isAuthenticated && window.location.pathname !== '/chat' && (

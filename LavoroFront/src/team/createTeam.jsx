@@ -25,47 +25,10 @@ const CreateTeam = () => {
     setLoadingProjects(true);
     setError('');
     try {
-<<<<<<< HEAD
-      console.log('Fetching projects from /project/managed-by-me');
-=======
->>>>>>> 75cb67597b77ba6d3d3c2d791cefc5eff07667a2
       const response = await axios.get('http://localhost:3000/project/managed-by-me', {
         withCredentials: true
       });
   
-<<<<<<< HEAD
-      console.log('API Response:', response);
-      
-      if (response.data.success) {
-        console.log('Successfully fetched projects:', response.data.data);
-        setProjects(response.data.data || []);
-      } else {
-        console.warn('API returned unsuccessful response:', response.data);
-        throw new Error(response.data.message || 'Failed to fetch projects');
-      }
-    } catch (error) {
-      console.error('Error in fetchManagedProjects:');
-      console.error('Error name:', error.name);
-      console.error('Error message:', error.message);
-      console.error('Error response:', error.response);
-      
-      const errorMsg = error.response?.data?.message || error.message || 'Failed to load projects';
-      console.error('Displaying error to user:', errorMsg);
-      setError(errorMsg);
-    } finally {
-      console.log('Finished projects fetch attempt');
-      setLoadingProjects(false);
-    }
-  };
-  // Add this useEffect hook near your other useEffect hooks
-useEffect(() => {
-  // Only fetch projects if not coming from project details
-  if (!location.state?.projectId) {
-    console.log('Initial fetch of managed projects');
-    fetchManagedProjects();
-  }
-}, [location.state]);
-=======
       if (!response.data.success) {
         throw new Error(response.data.message || 'Failed to fetch projects');
       }
@@ -88,7 +51,6 @@ useEffect(() => {
       setLoadingProjects(false);
     }
   };
->>>>>>> 75cb67597b77ba6d3d3c2d791cefc5eff07667a2
   const projectSelectionSection = location.state?.projectId ? (
     <>
       <input
@@ -336,11 +298,7 @@ useEffect(() => {
       });
 
       if (response.data.success) {
-<<<<<<< HEAD
-        navigate(`/teamsList`);
-=======
         navigate(`/overviewPro/${formData.project_id}`);
->>>>>>> 75cb67597b77ba6d3d3c2d791cefc5eff07667a2
       }
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to create team');
@@ -784,8 +742,4 @@ useEffect(() => {
   );
 };
 
-<<<<<<< HEAD
 export default CreateTeam;
-=======
-export default CreateTeam;
->>>>>>> 75cb67597b77ba6d3d3c2d791cefc5eff07667a2
