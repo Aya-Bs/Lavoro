@@ -11,7 +11,7 @@ const EmailSchema = new mongoose.Schema({
   isRead: { type: Boolean, default: false },
 
   createdAt: { type: Date, default: Date.now },
-  relatedProject: { type: mongoose.Schema.Types.ObjectId, ref: 'Project' }
+  relatedProject: { type: mongoose.Schema.Types.ObjectId, ref: 'Project' },
 
   isArchived: { type: Boolean, default: false }, // New field to indicate if the email is archived
   isStarred: { type: Boolean, default: false }, // New field to indicate if the email is starred

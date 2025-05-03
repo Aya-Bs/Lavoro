@@ -314,7 +314,7 @@ exports.deleteProject = async (req, res) => {
       const project = await Project.findById(id)
         .populate('manager_id', 'firstName lastName email image')
 
-        .populate('ProjectManager_id', 'firstName lastName email image');
+        .populate('ProjectManager_id', 'firstName lastName email image')
 
         .populate('tasks', 'title') 
         .populate('ProjectManager_id', 'firstName lastName email image');
@@ -1131,49 +1131,4 @@ exports.startProject = async (req, res) => {
 };
 
 exports.getManagedProjects = async (req, res) => {
-  try {
-
-    // Verify user is authenticated
-    if (!req.session.user || !req.session.user._id) {
-
-    // Verify session exists
-    if (!req.session.user) {
-
-      return res.status(401).json({
-        success: false,
-        message: 'Not authenticated'
-      });
-    }
-
-    // Verify user exists in database
-    const user = await User.findById(req.session.user._id);
-    if (!user) {
-      return res.status(404).json({
-        success: false,
-        message: 'User not found'
-      });
-    }
-
-
-    // Get projects where current user is manager
-
-    // Get projects where user is manager
-
-    const projects = await Project.find({ manager_id: req.session.user._id })
-      .select('_id name description status')
-      .lean();
-
-    res.json({
-      success: true,
-      data: projects
-    });
-
-  } catch (error) {
-    console.error('Error in getManagedProjects:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Internal server error',
-      error: process.env.NODE_ENV === 'development' ? error.message : undefined
-    });
-  }
 };

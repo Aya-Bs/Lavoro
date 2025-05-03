@@ -16,7 +16,7 @@ const TeamMember = new Schema({
         complexity: { type: Number, min: 1, max: 10 },
         duration: { type: Number, min: 0.5, max: 40 }, // in hours
         completed_on_time: Boolean,
-        quality_rating: { type: Number, min: 0, max: 100 }
+        quality_rating: { type: Number, min: 0, max: 100 },
 
         type: mongo.Schema.Types.ObjectId,
         ref: 'Task',
