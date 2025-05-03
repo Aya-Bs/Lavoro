@@ -1,38 +1,211 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Offcanvas } from 'react-bootstrap';
+import { useNavigate } from 'react-router-dom';
 
 const Mail = () => {
-  const [emails, setEmails] = useState([]);
+  const [allEmails, setAllEmails] = useState([]); // Store ALL emails
   const [selectedEmail, setSelectedEmail] = useState(null);
   const [showOffcanvas, setShowOffcanvas] = useState(false);
+  const [user, setUser] = useState(null);
+  const [activeTab, setActiveTab] = useState('inbox');
+  const [loading, setLoading] = useState(true);
+  const [loadingAction, setLoadingAction] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const navigate = useNavigate();
 
   useEffect(() => {
-    fetchEmails();
-  }, []);
+    const fetchUserInfo = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        if (!token) {
+          throw new Error("No token found");
+        }
 
-  const fetchEmails = async () => {
-    try {
-      const response = await axios.get('http://localhost:3000/project/emails');
-      const data = response.data;
-      if (Array.isArray(data)) {
-        setEmails(data);
-      } else {
-        console.error('Expected an array but got:', data);
-        setEmails([]);
+        const response = await axios.get("http://localhost:3000/users/me", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+          withCredentials: true,
+        });
+
+        if (response.data) {
+          setUser(response.data);
+          fetchEmails(response.data._id);
+        }
+      } catch (err) {
+        console.error("Error fetching user info:", err);
+        if (err.response?.status === 401) {
+          localStorage.removeItem('token');
+          navigate("/signin");
+        }
+      } finally {
+        setLoading(false);
       }
+    };
+
+    fetchUserInfo();
+  }, [navigate]);
+
+  const fetchEmails = async (userId) => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.get('http://localhost:3000/email/emails', {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!Array.isArray(response.data)) {
+        throw new Error('Invalid response format');
+      }
+
+      // Store ALL emails belonging to this user
+      const userEmails = response.data.filter(email => 
+        (email.senderUser?._id === userId) || 
+        (email.receiverUser?._id === userId)
+      );
+
+      setAllEmails(userEmails);
     } catch (error) {
       console.error('Error fetching emails:', error);
     }
   };
 
+  const getFilteredEmails = () => {
+    if (!user || !allEmails.length) return [];
+
+    let filtered = allEmails;
+
+    // Apply search filter first
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter(email => 
+        (email.subject && email.subject.toLowerCase().includes(query)) ||
+        (email.text && email.text.toLowerCase().includes(query)) ||
+        (email.from && email.from.toLowerCase().includes(query)) ||
+        (email.to && email.to.toLowerCase().includes(query))
+      );
+    }
+
+    // Then apply tab filter
+    switch(activeTab) {
+      case 'inbox':
+        return filtered.filter(email => 
+          email.receiverUser?._id === user._id && 
+          !email.isArchived
+        );
+      case 'sent':
+        return filtered.filter(email => 
+          email.senderUser?._id === user._id && 
+          !email.isArchived
+        );
+      case 'starred':
+        return filtered.filter(email => 
+          email.isStarred && 
+          !email.isArchived
+        );
+      case 'archive':
+        return filtered.filter(email => 
+          email.isArchived
+        );
+      default:
+        return filtered.filter(email => 
+          !email.isArchived
+        );
+    }
+  };
+
+  const handleTabChange = (tab) => {
+    setActiveTab(tab);
+  };
+
   const handleEmailClick = async (emailId) => {
     try {
-      const response = await axios.get(`http://localhost:3000/project/emails/${emailId}`);
+      const token = localStorage.getItem('token');
+      const response = await axios.get(
+        `http://localhost:3000/email/emails/${emailId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
       setSelectedEmail(response.data);
       setShowOffcanvas(true);
     } catch (error) {
       console.error('Error fetching email details:', error);
+    }
+  };
+
+  const handleSearch = (e) => {
+    e.preventDefault();
+    // No need to fetch, we already have all emails
+  };
+
+  const toggleStarEmail = async (emailId) => {
+    try {
+      setLoadingAction(true);
+      const token = localStorage.getItem('token');
+      await axios.patch(
+        `http://localhost:3000/email/emails/${emailId}/star`,
+        {},
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      // Refresh emails after update
+      if (user) fetchEmails(user._id);
+    } catch (error) {
+      console.error('Error toggling star:', error);
+    } finally {
+      setLoadingAction(false);
+    }
+  };
+
+  const toggleArchiveEmail = async (emailId) => {
+    try {
+      setLoadingAction(true);
+      const token = localStorage.getItem('token');
+      await axios.patch(
+        `http://localhost:3000/email/emails/${emailId}/archive`,
+        {},
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      // Refresh emails after update
+      if (user) fetchEmails(user._id);
+    } catch (error) {
+      console.error('Error toggling archive:', error);
+    } finally {
+      setLoadingAction(false);
+    }
+  };
+
+  const deleteEmail = async (emailId) => {
+    try {
+      setLoadingAction(true);
+      const token = localStorage.getItem('token');
+      await axios.delete(
+        `http://localhost:3000/email/emails/${emailId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      // Refresh emails after delete
+      if (user) fetchEmails(user._id);
+      setShowOffcanvas(false);
+    } catch (error) {
+      console.error('Error deleting email:', error);
+    } finally {
+      setLoadingAction(false);
     }
   };
 
@@ -48,6 +221,7 @@ const Mail = () => {
   };
 
   const extractEmailAddress = (emailString) => {
+    if (!emailString) return '';
     const matches = emailString.match(/<([^>]+)>/);
     return matches ? matches[1] : emailString;
   };
@@ -60,256 +234,220 @@ const Mail = () => {
     ));
   };
 
+  if (loading) {
+    return (
+      <div className="d-flex justify-content-center align-items-center" style={{ height: '80vh' }}>
+        <div className="spinner-border text-primary" role="status">
+          <span className="visually-hidden">Loading...</span>
+        </div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <div className="alert alert-danger">Please sign in to view your emails</div>;
+  }
+
+  const filteredEmails = getFilteredEmails();
+
   return (
     <>
-    
-          
-
-    <br />
-            <div className="main-mail-container mb-2 gap-2 d-flex">
-              <div className="mail-navigation border">
-                <div className="d-grid align-items-top p-3 border-bottom border-block-end-dashed">
-                  <button
-                    className="btn btn-primary d-flex align-items-center justify-content-center"
-                    data-bs-toggle="modal"
-                    data-bs-target="#mail-Compose"
-                  >
-                    <i className="ri-add-circle-line fs-16 align-middle me-1" />
-                    Compose Mail
-                  </button>
-                </div>
-                <div>
-                  <ul className="list-unstyled mail-main-nav" id="mail-main-nav">
-                    <li className="px-0 pt-0">
-                      <span className="fs-11 text-muted op-7 fw-medium">
-                        MAILS
-                      </span>
-                    </li>
-                    <li className="active mail-type">
-                      <a href="javascript:void(0);">
-                        <div className="d-flex align-items-center">
-                          <span className="me-2 lh-1">
-                            <i className="ti ti-mail align-middle fs-16" />
-                          </span>
-                          <span className="flex-fill text-nowrap">All Mails</span>
-                          <span className="badge bg-primary1 rounded-pill">
-                            {emails.length}
-                          </span>
-                        </div>
-                      </a>
-                    </li>
-                    <li className="mail-type">
-                      <a href="javascript:void(0);">
-                        <div className="d-flex align-items-center">
-                          <span className="me-2 lh-1">
-                            <i className="ti ti-inbox align-middle fs-16" />
-                          </span>
-                          <span className="flex-fill text-nowrap">Inbox</span>
-                          <span className="badge bg-primary2 rounded-pill">
-                            {emails.filter(e => !e.isRead).length}
-                          </span>
-                        </div>
-                      </a>
-                    </li>
-                    <li className="mail-type">
-                      <a href="javascript:void(0);">
-                        <div className="d-flex align-items-center">
-                          <span className="me-2 lh-1">
-                            <i className="ti ti-send align-middle fs-16" />
-                          </span>
-                          <span className="flex-fill text-nowrap">Sent</span>
-                        </div>
-                      </a>
-                    </li>
-                    <li className="mail-type">
-                      <a href="javascript:void(0);">
-                        <div className="d-flex align-items-center">
-                          <span className="me-2 lh-1">
-                            <i className="ti ti-notes align-middle fs-16" />
-                          </span>
-                          <span className="flex-fill text-nowrap">Drafts</span>
-                        </div>
-                      </a>
-                    </li>
-                    <li className="mail-type">
-                      <a href="javascript:void(0);">
-                        <div className="d-flex align-items-center">
-                          <span className="me-2 lh-1">
-                            <i className="ti ti-alert-circle align-middle fs-16" />
-                          </span>
-                          <span className="flex-fill text-nowrap">Spam</span>
-                        </div>
-                      </a>
-                    </li>
-                    <li className="mail-type">
-                      <a href="javascript:void(0);">
-                        <div className="d-flex align-items-center">
-                          <span className="me-2 lh-1">
-                            <i className="ti ti-archive align-middle fs-16" />
-                          </span>
-                          <span className="flex-fill text-nowrap">Archive</span>
-                        </div>
-                      </a>
-                    </li>
-                    <li className="mail-type">
-                      <a href="javascript:void(0);">
-                        <div className="d-flex align-items-center">
-                          <span className="me-2 lh-1">
-                            <i className="ti ti-bookmark align-middle fs-16" />
-                          </span>
-                          <span className="flex-fill text-nowrap">Important</span>
-                        </div>
-                      </a>
-                    </li>
-                    <li className="mail-type">
-                      <a href="javascript:void(0);">
-                        <div className="d-flex align-items-center">
-                          <span className="me-2 lh-1">
-                            <i className="ti ti-trash align-middle fs-16" />
-                          </span>
-                          <span className="flex-fill text-nowrap">Trash</span>
-                        </div>
-                      </a>
-                    </li>
-                    <li className="mail-type">
-                      <a href="javascript:void(0);">
-                        <div className="d-flex align-items-center">
-                          <span className="me-2 lh-1">
-                            <i className="ti ti-star align-middle fs-16" />
-                          </span>
-                          <span className="flex-fill text-nowrap">Starred</span>
-                        </div>
-                      </a>
-                    </li>
-                  </ul>
-                </div>
+      <br />
+      <div className="main-mail-container mb-2 gap-2 d-flex">
+        <div className="mail-navigation border">
+          <div className="d-grid align-items-top p-3 border-bottom border-block-end-dashed">
+            <button
+              className="btn btn-primary d-flex align-items-center justify-content-center"
+              data-bs-toggle="modal"
+              data-bs-target="#mail-Compose"
+            >
+              <i className="ri-add-circle-line fs-16 align-middle me-1" />
+              Compose Mail
+            </button>
+          </div>
+          <div>
+            <ul className="list-unstyled mail-main-nav" id="mail-main-nav">
+              <li className="px-0 pt-0">
+                <span className="fs-11 text-muted op-7 fw-medium">
+                  MAILS
+                </span>
+              </li>
+              <li className={activeTab === 'inbox' ? 'active mail-type' : 'mail-type'}>
+                <a onClick={() => handleTabChange('inbox')}>
+                  <div className="d-flex align-items-center">
+                    <span className="me-2 lh-1">
+                      <i className="ri-inbox-line align-middle fs-16" />
+                    </span>
+                    <span className="flex-fill text-nowrap">Inbox</span>
+                    <span className="badge bg-primary2 rounded-pill">
+                      {allEmails.filter(e => 
+                        e.receiverUser?._id === user._id && 
+                        !e.isArchived 
+                      ).length}
+                    </span>
+                  </div>
+                </a>
+              </li>
+              <li className={activeTab === 'sent' ? 'active mail-type' : 'mail-type'}>
+                <a onClick={() => handleTabChange('sent')}>
+                  <div className="d-flex align-items-center">
+                    <span className="me-2 lh-1">
+                      <i className="ri-send-plane-line align-middle fs-16" />
+                    </span>
+                    <span className="flex-fill text-nowrap">Sent</span>
+                    <span className="badge bg-primary1 rounded-pill">
+                      {allEmails.filter(e => 
+                        e.senderUser?._id === user._id && 
+                        !e.isArchived
+                      ).length}
+                    </span>
+                  </div>
+                </a>
+              </li>
+              <li className={activeTab === 'starred' ? 'active mail-type' : 'mail-type'}>
+                <a onClick={() => handleTabChange('starred')}>
+                  <div className="d-flex align-items-center">
+                    <span className="me-2 lh-1">
+                      <i className="ri-star-line align-middle fs-16" />
+                    </span>
+                    <span className="flex-fill text-nowrap">Starred</span>
+                    <span className="badge bg-primary1 rounded-pill">
+                      {allEmails.filter(e => e.isStarred && !e.isArchived).length}
+                    </span>
+                  </div>
+                </a>
+              </li>
+              <li className={activeTab === 'archive' ? 'active mail-type' : 'mail-type'}>
+                <a onClick={() => handleTabChange('archive')}>
+                  <div className="d-flex align-items-center">
+                    <span className="me-2 lh-1">
+                      <i className="ri-archive-line align-middle fs-16" />
+                    </span>
+                    <span className="flex-fill text-nowrap">Archive</span>
+                    <span className="badge bg-primary1 rounded-pill">
+                      {allEmails.filter(e => e.isArchived).length}
+                    </span>
+                  </div>
+                </a>
+              </li>
+            </ul>
+          </div>
+        </div>
+        
+        <div className="total-mails border">
+          <div className="p-3 d-flex align-items-center border-bottom border-block-end-dashed flex-wrap gap-2">
+            <form onSubmit={handleSearch} className="input-group">
+              <input
+                type="text"
+                className="form-control shadow-none"
+                placeholder="Search Email"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+              <button
+                className="btn btn-primary"
+                type="submit"
+              >
+                <i className="ri-search-line me-1" /> Search
+              </button>
+            </form>
+          </div>
+          <div className="px-3 p-2 d-flex align-items-center border-bottom flex-wrap gap-2">
+            <div className="me-3">
+              <input
+                className="form-check-input check-all"
+                type="checkbox"
+                id="checkAll"
+                defaultValue=""
+                aria-label="..."
+              />
+            </div>
+            <div className="flex-fill">
+              <h6 className="fw-medium mb-0">
+                {activeTab === 'inbox' ? 'Inbox' : 
+                 activeTab === 'sent' ? 'Sent' : 
+                 activeTab === 'starred' ? 'Starred' :
+                 activeTab === 'archive' ? 'Archive' : 'All Mails'}
+              </h6>
+            </div>
+            <div className="d-flex gap-2">
+              <button className="btn btn-icon btn-light me-1 d-lg-none d-block total-mails-close btn-sm">
+                <i className="ri-close-line" />
+              </button>
+            </div>
+          </div>
+          <div className="mail-messages" id="mail-messages">
+            {filteredEmails.length === 0 ? (
+              <div className="text-center py-5">
+                <i className="ri-mail-forbid-line fs-40 text-muted mb-3"></i>
+                <h5>No emails found</h5>
+                <p className="text-muted">
+                  {activeTab === 'inbox' 
+                    ? "Your inbox is empty" 
+                    : activeTab === 'sent' 
+                      ? "You haven't sent any emails yet" 
+                      : activeTab === 'starred'
+                        ? "No starred emails"
+                        : activeTab === 'archive'
+                          ? "Archive is empty"
+                          : "No emails to display"}
+                </p>
               </div>
-              
-              <div className="total-mails border">
-                <div className="p-3 d-flex align-items-center border-bottom border-block-end-dashed flex-wrap gap-2">
-                  <div className="input-group">
-                    <input
-                      type="text"
-                      className="form-control shadow-none"
-                      placeholder="Search Email"
-                      aria-describedby="button-addon"
-                    />
-                    <button
-                      className="btn btn-primary"
-                      type="button"
-                      id="button-addon"
+            ) : (
+              <ul className="list-unstyled mb-0 mail-messages-container">
+                {filteredEmails.map(email => {
+                  const isSent = email.senderUser?._id === user._id;
+                  const isReceived = email.receiverUser?._id === user._id;
+                  
+                  return (
+                    <li 
+                      key={email._id} 
+                      className={`${selectedEmail?._id === email._id ? 'active' : ''} ${email.isStarred ? 'starred-email' : ''}`}
+                      onClick={() => handleEmailClick(email._id)}
                     >
-                      <i className="ri-search-line me-1" /> Search
-                    </button>
-                  </div>
-                </div>
-                <div className="px-3 p-2 d-flex align-items-center border-bottom flex-wrap gap-2">
-                  <div className="me-3">
-                    <input
-                      className="form-check-input check-all"
-                      type="checkbox"
-                      id="checkAll"
-                      defaultValue=""
-                      aria-label="..."
-                    />
-                  </div>
-                  <div className="flex-fill">
-                    <h6 className="fw-medium mb-0">All Mails</h6>
-                  </div>
-                  <div className="d-flex gap-2">
-                    <button className="btn btn-icon btn-light me-1 d-lg-none d-block total-mails-close btn-sm">
-                      <i className="ri-close-line" />
-                    </button>
-                    <div className="dropdown">
-                      <button
-                        className="btn btn-sm btn-primary1-light btn-wave"
-                        type="button"
-                        aria-expanded="false"
-                      >
-                        <i className="ri-inbox-archive-line me-1" /> Archive
-                      </button>
-                      <button
-                        className="btn btn-sm btn-primary2-light btn-wave"
-                        type="button"
-                        aria-expanded="false"
-                      >
-                        <i className="ri-error-warning-line me-1" /> Spam
-                      </button>
-                      <button
-                        className="btn btn-sm btn-icon btn-primary3-light btn-wave"
-                        type="button"
-                        data-bs-toggle="dropdown"
-                        aria-expanded="false"
-                      >
-                        <i className="ti ti-dots-vertical" />
-                      </button>
-                      <ul className="dropdown-menu">
-                        <li>
-                          <a className="dropdown-item" href="javascript:void(0);">
-                            Recent
-                          </a>
-                        </li>
-                        <li>
-                          <a className="dropdown-item" href="javascript:void(0);">
-                            Unread
-                          </a>
-                        </li>
-                        <li>
-                          <a className="dropdown-item" href="javascript:void(0);">
-                            Mark All Read
-                          </a>
-                        </li>
-                        <li>
-                          <a className="dropdown-item" href="javascript:void(0);">
-                            Delete All
-                          </a>
-                        </li>
-                      </ul>
-                    </div>
-                  </div>
-                </div>
-                <div className="mail-messages" id="mail-messages">
-                  <ul className="list-unstyled mb-0 mail-messages-container">
-                    {emails.map(email => (
-                      <li 
-                        key={email._id} 
-                        className={selectedEmail?._id === email._id ? 'active' : ''}
-                        onClick={() => handleEmailClick(email._id)}
-                      >
-                        <div className="d-flex align-items-top">
-                          <div className="me-3 mt-1">
-                            <input
-                              className="form-check-input"
-                              type="checkbox"
-                              id={`checkbox-${email._id}`}
-                            />
-                          </div>
-                          <div className="flex-fill text-truncate">
-                            <p className="mb-1 fs-12 fw-medium">
-                              {email.from.split('<')[0].trim()}{' '}
-                              {!email.isRead && <span className="badge bg-primary rounded-pill">New</span>}
-                              <span className="float-end text-muted fw-normal fs-11">
-                                {formatEmailDate(email.createdAt)}
-                              </span>
-                            </p>
-                            <div className="mail-msg mb-0">
-                              <span className="d-block mb-0 fw-medium text-truncate w-75">
-                                {email.subject}
-                              </span>
-                              <div className="fs-12 text-muted w-75 text-truncate mail-msg-content">
-                                {email.text.substring(0, 100)}...
-                              </div>
+                      <div className="d-flex align-items-top">
+                        <div className="me-3 mt-1">
+                          <input
+                            className="form-check-input"
+                            type="checkbox"
+                            id={`checkbox-${email._id}`}
+                          />
+                        </div>
+                        <div className="flex-fill text-truncate">
+                          <p className="mb-1 fs-12 fw-medium">
+                            {isSent ? `To: ${extractEmailAddress(email.to)}` : `From: ${extractEmailAddress(email.senderUser?.email)}`}
+                            {!email.isRead && isReceived && (
+                              <span className="badge bg-primary rounded-pill ms-2">New</span>
+                            )}
+                            {email.isStarred && (
+                              <i className="ri-star-fill text-warning ms-2"></i>
+                            )}
+                            {email.isArchived && (
+                              <i className="ri-archive-line text-primary ms-2"></i>
+                            )}
+                            <span className="float-end text-muted fw-normal fs-11">
+                              {formatEmailDate(email.createdAt)}
+                            </span>
+                          </p>
+                          <div className="mail-msg mb-0">
+                            <span className="d-block mb-0 fw-medium text-truncate w-75">
+                              {email.subject}
+                            </span>
+                            <div className="fs-12 text-muted w-75 text-truncate mail-msg-content">
+                              {email.text.substring(0, 100)}...
                             </div>
                           </div>
                         </div>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              </div>
-          
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </div>
+        </div>
 
-        {/* Email Details Offcanvas using React-Bootstrap */}
+        {/* Email Details Offcanvas */}
         <Offcanvas 
           show={showOffcanvas} 
           onHide={() => setShowOffcanvas(false)} 
@@ -319,29 +457,38 @@ const Mail = () => {
           <Offcanvas.Body className="p-0">
             {selectedEmail && (
               <div className="mails-information">
-                <div className="mail-info-header d-flex flex-wrap gap-2 align-items-center">
+                <div className="mail-info-header d-flex flex-wrap gap-2 align-items-center p-3">
                   <span className="avatar avatar-md me-2 avatar-rounded mail-msg-avatar me-1">
-                    {selectedEmail.from.charAt(0).toUpperCase()}
+                    {selectedEmail.from?.charAt(0).toUpperCase()}
                   </span>
                   <div className="flex-fill">
-                    <h6 className="mb-0 fw-medium">{selectedEmail.from.split('<')[0].trim()}</h6>
+                    <h6 className="mb-0 fw-medium">{selectedEmail.from?.split('<')[0].trim()}</h6>
                     <span className="text-muted fs-11">{extractEmailAddress(selectedEmail.from)}</span>
                   </div>
                   <div className="mail-action-icons">
-                    <button className="btn btn-icon btn-outline-light border" data-bs-toggle="tooltip" data-bs-placement="top" title="Starred">
-                      <i className="ri-star-line"></i>
+                    <button 
+                      className={`btn btn-icon btn-outline-light border ${selectedEmail.isStarred ? 'text-warning' : ''}`} 
+                      title="Starred"
+                      onClick={() => toggleStarEmail(selectedEmail._id)}
+                      disabled={loadingAction}
+                    >
+                      <i className={`ri-star-${selectedEmail.isStarred ? 'fill' : 'line'}`}></i>
                     </button>
-                    <button className="btn btn-icon btn-outline-light border ms-1" data-bs-toggle="tooltip" data-bs-placement="top" title="Archive">
-                      <i className="ri-inbox-archive-line"></i>
+                    <button 
+                      className={`btn btn-icon btn-outline-light border ms-1 ${selectedEmail.isArchived ? 'text-primary' : ''}`} 
+                      title={selectedEmail.isArchived ? "Unarchive" : "Archive"}
+                      onClick={() => toggleArchiveEmail(selectedEmail._id)}
+                      disabled={loadingAction}
+                    >
+                      <i className="ri-archive-line"></i>
                     </button>
-                    <button className="btn btn-icon btn-outline-light border ms-1" data-bs-toggle="tooltip" data-bs-placement="top" title="Report spam">
-                      <i className="ri-spam-2-line"></i>
-                    </button>
-                    <button className="btn btn-icon btn-outline-light border ms-1" data-bs-toggle="tooltip" data-bs-placement="top" title="Delete">
+                    <button 
+                      className="btn btn-icon btn-outline-light border ms-1" 
+                      title="Delete"
+                      onClick={() => deleteEmail(selectedEmail._id)}
+                      disabled={loadingAction}
+                    >
                       <i className="ri-delete-bin-line"></i>
-                    </button>
-                    <button className="btn btn-icon btn-outline-light border ms-1" data-bs-toggle="tooltip" data-bs-placement="top" title="Reply">
-                      <i className="ri-reply-line"></i>
                     </button>
                     <button 
                       type="button" 
@@ -356,6 +503,9 @@ const Mail = () => {
                   <div className="d-sm-flex d-block align-items-center justify-content-between mb-3">
                     <div>
                       <p className="fs-20 fw-medium mb-0">{selectedEmail.subject}</p>
+                      <p className="text-muted mb-0 fs-12">
+                        To: {extractEmailAddress(selectedEmail.to)}
+                      </p>
                     </div>
                     <div className="float-end">
                       <span className="fs-12 text-muted">
@@ -366,22 +516,18 @@ const Mail = () => {
                   
                   <div className="main-mail-content mb-3">
                     {formatEmailText(selectedEmail.text)}
-                    
-                    
                   </div>
-                  
-              
                 </div>
                 
                 <div className="mail-info-footer d-flex flex-wrap gap-2 align-items-center justify-content-between p-3 border-top">
                   <div>
-                    <button className="btn btn-icon btn-primary-light" data-bs-toggle="tooltip" data-bs-placement="top" title="Print">
+                    <button className="btn btn-icon btn-primary-light" title="Print">
                       <i className="ri-printer-line"></i>
                     </button>
-                    <button className="btn btn-icon btn-secondary-light ms-1" data-bs-toggle="tooltip" data-bs-placement="top" title="Mark as read">
+                    <button className="btn btn-icon btn-secondary-light ms-1" title="Mark as read">
                       <i className="ri-mail-open-line"></i>
                     </button>
-                    <button className="btn btn-icon btn-success-light ms-1" data-bs-toggle="tooltip" data-bs-placement="top" title="Reload">
+                    <button className="btn btn-icon btn-success-light ms-1" title="Reload">
                       <i className="ri-refresh-line"></i>
                     </button>
                   </div>
@@ -398,107 +544,6 @@ const Mail = () => {
             )}
           </Offcanvas.Body>
         </Offcanvas>
-
-        {/* Compose Mail Modal */}
-        <div className="modal modal-lg fade" id="mail-Compose" tabIndex={-1} aria-labelledby="mail-ComposeLabel" aria-hidden="true">
-          <div className="modal-dialog">
-            <div className="modal-content">
-              <div className="modal-header">
-                <h6 className="modal-title" id="mail-ComposeLabel">Compose Mail</h6>
-                <button
-                  type="button"
-                  className="btn-close"
-                  data-bs-dismiss="modal"
-                  aria-label="Close"
-                />
-              </div>
-              <div className="modal-body">
-                <div className="row">
-                  <div className="col-xl-6 mb-2">
-                    <label htmlFor="fromMail" className="form-label">
-                      From
-                      <sup>
-                        <i className="ri-star-s-fill text-success fs-8" />
-                      </sup>
-                    </label>
-                    <input
-                      type="email"
-                      className="form-control"
-                      id="fromMail"
-                      defaultValue="user@example.com"
-                    />
-                  </div>
-                  <div className="col-xl-6 mb-2">
-                    <label htmlFor="toMail" className="form-label">
-                      To
-                      <sup>
-                        <i className="ri-star-s-fill text-success fs-8" />
-                      </sup>
-                    </label>
-                    <select
-                      className="form-control"
-                      name="toMail"
-                      id="toMail"
-                      multiple=""
-                    >
-                      <option value="Choice 1" selected="">
-                        recipient1@example.com
-                      </option>
-                      <option value="Choice 2">recipient2@example.com</option>
-                    </select>
-                  </div>
-                  <div className="col-xl-6 mb-2">
-                    <label
-                      htmlFor="mailCC"
-                      className="form-label text-dark fw-medium"
-                    >
-                      Cc
-                    </label>
-                    <input type="email" className="form-control" id="mailCC" />
-                  </div>
-                  <div className="col-xl-6 mb-2">
-                    <label
-                      htmlFor="mailBcc"
-                      className="form-label text-dark fw-medium"
-                    >
-                      Bcc
-                    </label>
-                    <input type="email" className="form-control" id="mailBcc" />
-                  </div>
-                  <div className="col-xl-12 mb-2">
-                    <label htmlFor="Subject" className="form-label">
-                      Subject
-                    </label>
-                    <input
-                      type="text"
-                      className="form-control"
-                      id="Subject"
-                      placeholder="Subject"
-                    />
-                  </div>
-                  <div className="col-xl-12">
-                    <label className="col-form-label">Content :</label>
-                    <div className="mail-compose">
-                      <textarea className="form-control" rows="10" placeholder="Write your email content here..."></textarea>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div className="modal-footer">
-                <button
-                  type="button"
-                  className="btn btn-light"
-                  data-bs-dismiss="modal"
-                >
-                  Cancel
-                </button>
-                <button type="button" className="btn btn-primary">
-                  Send
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
       </div>
     </>
   );

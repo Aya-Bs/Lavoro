@@ -8,6 +8,7 @@ const Project = require('../models/Project');
 
 
 
+
 router.get('/', ProjectController.getAllProjects);
 
 
@@ -25,6 +26,9 @@ router.get('/projetStatus', async (req, res) => {
         res.status(500).json({ message: 'Internal server error' });
     }
 });
+
+
+router.get('/managed-by-me',  ProjectController.getManagedProjects);
 
 
 router.post('/createProject', ProjectController.createProject);
@@ -46,6 +50,7 @@ router.get('/managed-by-me',  ProjectController.getManagedProjects);
 
 
 
+
 router.post('/:id/start', ProjectController.startProject);
 router.get('/:id/history', ProjectController.getProjectHistory); // Add this route
 router.get('/:id', ProjectController.getProjectById); // Add this route
@@ -58,11 +63,6 @@ router.get('/archived-projects/:id', ProjectController.getArchivedProjectById);
 router.get('/checkTeamManager/:id', ProjectController.checkTeamManager);
 //check team manager projects
 router.get('/checkTeamManagerProjects/:id', ProjectController.checkTeamManagerProjects);
-
-
-
-
-
 
 module.exports = router;
 

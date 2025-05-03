@@ -25,11 +25,15 @@ const CreateTeam = () => {
     setLoadingProjects(true);
     setError('');
     try {
+<<<<<<< HEAD
       console.log('Fetching projects from /project/managed-by-me');
+=======
+>>>>>>> 75cb67597b77ba6d3d3c2d791cefc5eff07667a2
       const response = await axios.get('http://localhost:3000/project/managed-by-me', {
         withCredentials: true
       });
   
+<<<<<<< HEAD
       console.log('API Response:', response);
       
       if (response.data.success) {
@@ -61,6 +65,30 @@ useEffect(() => {
     fetchManagedProjects();
   }
 }, [location.state]);
+=======
+      if (!response.data.success) {
+        throw new Error(response.data.message || 'Failed to fetch projects');
+      }
+  
+      setProjects(response.data.data);
+    } catch (error) {
+      console.error('Error fetching managed projects:', error);
+      setError(error.response?.data?.message || error.message || 'Failed to load projects');
+      
+      // Show more detailed error in development
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Full error details:', {
+          config: error.config,
+          response: error.response,
+          stack: error.stack
+        });
+      }
+    }
+    finally {
+      setLoadingProjects(false);
+    }
+  };
+>>>>>>> 75cb67597b77ba6d3d3c2d791cefc5eff07667a2
   const projectSelectionSection = location.state?.projectId ? (
     <>
       <input
@@ -308,7 +336,11 @@ useEffect(() => {
       });
 
       if (response.data.success) {
+<<<<<<< HEAD
         navigate(`/teamsList`);
+=======
+        navigate(`/overviewPro/${formData.project_id}`);
+>>>>>>> 75cb67597b77ba6d3d3c2d791cefc5eff07667a2
       }
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to create team');
@@ -752,4 +784,8 @@ useEffect(() => {
   );
 };
 
+<<<<<<< HEAD
 export default CreateTeam;
+=======
+export default CreateTeam;
+>>>>>>> 75cb67597b77ba6d3d3c2d791cefc5eff07667a2

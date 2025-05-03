@@ -5,6 +5,11 @@ const Task = require('../models/Task');
 const TaskHistory = require('../models/TaskHistory');
 const User = require('../models/user');
 
+
+const Project = require('../models/Project');
+const TeamMember = require('../models/teamMember');
+
+
 const ObjectId = mongoose.Types.ObjectId;
 
 exports.getTasksByUser = async (req, res) => {
@@ -121,7 +126,10 @@ exports.seedTaskHistory = async () => {
 
 
 // Fonction pour récupérer les tâches assignées à un utilisateur spécifique
+
 exports.getTasks = async (req, res) => {
+
+exports.getTasksByUser = async (req, res) => {
     try {
         const userId = req.params.userId;
 
@@ -366,9 +374,6 @@ exports.testPointsSystem = async (req, res) => {
 
 
 
-
-
-
 exports.getTasksList = async (req, res) => {
     try {
       console.log("User ID from params:", req.params.userId); // Debug
@@ -422,4 +427,464 @@ exports.deleteTask = async (req, res) => {
             error: error.message
         });
     }
+
+// exports.addTask = async (req, res) => {
+//   try {
+//     const {
+//       title,
+//       description,
+//       project_id,
+//       assigned_to,
+//       status,
+//       priority,
+//       deadline,
+//       start_date,
+//       estimated_duration,
+//       tags
+//     } = req.body;
+
+//     // Optional: Validate that project exists
+//     const project = await Project.findById(project_id);
+//     if (!project) {
+//       return res.status(404).json({ message: 'Project not found' });
+//     }
+
+//     const newTask = new Task({
+//       title,
+//       description,
+//       project_id,
+//       assigned_to,
+//       status,
+//       priority,
+//       deadline,
+//       start_date,
+//       estimated_duration,
+//       tags
+//     });
+
+//     const savedTask = await newTask.save();
+
+
+
+//     res.status(201).json(savedTask);
+//   } catch (error) {
+//     console.error('Error creating task:', error);
+//     res.status(500).json({ message: 'Error creating task' });
+//   }
+// };
+
+
+// exports.addTask = async (req, res) => {
+//   try {
+//     const {
+//       title,
+//       description,
+//       project_id,
+//       assigned_to,
+//       status,
+//       priority,
+//       deadline,
+//       start_date,
+//       estimated_duration,
+//       tags
+//     } = req.body;
+
+//     // Validate that project exists
+//     const project = await Project.findById(project_id);
+//     if (!project) {
+//       return res.status(404).json({ 
+//         success: false,
+//         message: 'Project not found' 
+//       });
+//     }
+
+//     const newTask = new Task({
+//       title,
+//       description,
+//       project_id,
+//       assigned_to,
+//       status,
+//       priority,
+//       deadline,
+//       start_date,
+//       estimated_duration,
+//       tags
+//     });
+
+//     const savedTask = await newTask.save();
+
+//     res.status(201).json({
+//       success: true,
+//       message: 'Task created successfully',
+//       data: savedTask
+//     });
+//   } catch (error) {
+//     console.error('Error creating task:', error);
+//     res.status(500).json({ 
+//       success: false,
+//       message: 'Error creating task',
+//       error: process.env.NODE_ENV === 'development' ? error.message : undefined
+//     });
+//   }
+// };
+
+
+exports.addTask = async (req, res) => {
+  try {
+    const {
+      title,
+      description,
+      project_id,
+      assigned_to,
+      status,
+      priority,
+      deadline,
+      start_date,
+      estimated_duration,
+      tags
+    } = req.body;
+
+    // Validate that project exists
+    const project = await Project.findById(project_id);
+    if (!project) {
+      return res.status(404).json({ 
+        success: false,
+        message: 'Project not found' 
+      });
+    }
+
+    // Validate that team member exists if assigned
+    if (assigned_to) {
+      const teamMember = await TeamMember.findById(assigned_to);
+      if (!teamMember) {
+        return res.status(404).json({
+          success: false,
+          message: 'Team member not found'
+        });
+      }
+    }
+
+    const newTask = new Task({
+      title,
+      description,
+      project_id,
+      assigned_to,
+      status,
+      priority,
+      deadline,
+      start_date,
+      estimated_duration,
+      tags
+    });
+
+    const savedTask = await newTask.save();
+
+    // 1. Add task to project's tasks array
+    await Project.findByIdAndUpdate(
+      project_id,
+      {
+        $push: { tasks: savedTask._id },
+        $inc: { total_tasks_count: 1 }
+      },
+      { new: true }
+    );
+
+    // 2. If assigned to a team member, add task to their tasks array
+    if (assigned_to) {
+      await TeamMember.findByIdAndUpdate(
+        assigned_to,
+        {
+          $push: { tasks: savedTask._id }
+        },
+        { new: true }
+      );
+    }
+
+    res.status(201).json({
+      success: true,
+      message: 'Task created successfully',
+      data: savedTask
+    });
+  } catch (error) {
+    console.error('Error creating task:', error);
+    res.status(500).json({ 
+      success: false,
+      message: 'Error creating task',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+};
+
+
+
+
+// In your TaskController.js
+
+exports.getAllTasks = async (req, res) => {
+  try {
+    // Extract query parameters
+    const { 
+      status, 
+      priority, 
+      project_id, 
+      assigned_to, 
+      page = 1, 
+      limit = 10 
+    } = req.query;
+
+    // Build filter object
+    const filter = {};
+    
+    if (status) filter.status = status;
+    if (priority) filter.priority = priority;
+    if (project_id) filter.project_id = project_id;
+    if (assigned_to) filter.assigned_to = assigned_to;
+
+    // Calculate pagination
+    const skip = (page - 1) * limit;
+
+    // Get tasks with population and pagination
+    const tasks = await Task.find(filter)
+  .populate('project_id', 'name status')
+  .populate({
+    path: 'assigned_to',
+    select: 'role', // Fields from TeamMember
+    populate: {
+      path: 'user_id',
+      select: 'firstName lastName image' // Fields from User
+    }
+  })
+  .skip(skip)
+  .limit(parseInt(limit))
+  .sort({ deadline: 1 });
+    // Get total count for pagination info
+    const totalTasks = await Task.countDocuments(filter);
+
+    res.status(200).json({
+      success: true,
+      data: tasks,
+      pagination: {
+        currentPage: parseInt(page),
+        totalPages: Math.ceil(totalTasks / limit),
+        totalTasks,
+        tasksPerPage: parseInt(limit)
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching tasks:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching tasks',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+};
+
+
+// In your TaskController.js
+
+exports.deleteTask = async (req, res) => {
+  try {
+    const { taskId } = req.params;
+
+    // 1. Find the task first to check status
+    const task = await Task.findById(taskId);
+    
+    if (!task) {
+      return res.status(404).json({
+        success: false,
+        message: 'Task not found'
+      });
+    }
+
+    // 2. Check if task can be deleted (only "Not Started" status)
+    if (task.status !== 'Not Started') {
+      return res.status(400).json({
+        success: false,
+        message: 'Only tasks with "Not Started" status can be deleted'
+      });
+    }
+
+    // 3. Remove task from project's tasks array
+    await Project.findByIdAndUpdate(
+      task.project_id,
+      { $pull: { tasks: taskId }, $inc: { total_tasks_count: -1 } }
+    );
+
+    // 4. Remove task from assigned team member's tasks array (if assigned)
+    if (task.assigned_to) {
+      await TeamMember.updateMany(
+        { _id: { $in: task.assigned_to } },
+        { $pull: { tasks: taskId } }
+      );
+    }
+
+    // 5. Delete the task
+    await Task.findByIdAndDelete(taskId);
+
+    res.status(200).json({
+      success: true,
+      message: 'Task deleted successfully'
+    });
+  } catch (error) {
+    console.error('Error deleting task:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error deleting task',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+};
+
+
+
+exports.assignTask = async (req, res) => {
+  try {
+    const { taskId } = req.params;
+    const { memberIds } = req.body;
+
+    // Validate input
+    if (!memberIds || !Array.isArray(memberIds)) {
+      return res.status(400).json({
+        success: false,
+        message: 'memberIds must be an array'
+      });
+    }
+
+    // Filter out invalid IDs
+    const validMemberIds = memberIds.filter(id => mongoose.Types.ObjectId.isValid(id));
+    
+    if (validMemberIds.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'No valid team member IDs provided'
+      });
+    }
+
+    // Check if task exists
+    const task = await Task.findById(taskId);
+    if (!task) {
+      return res.status(404).json({
+        success: false,
+        message: 'Task not found'
+      });
+    }
+
+    // Verify all team members exist
+    const existingMembers = await TeamMember.find({ 
+      _id: { $in: validMemberIds } 
+    }).populate('user_id', 'firstName lastName');
+
+    if (existingMembers.length !== validMemberIds.length) {
+      const foundIds = existingMembers.map(m => m._id.toString());
+      const missingIds = validMemberIds.filter(id => !foundIds.includes(id.toString()));
+      return res.status(404).json({
+        success: false,
+        message: `Team members not found: ${missingIds.join(', ')}`
+      });
+    }
+
+    // Update the task with new assignments
+    const updatedTask = await Task.findByIdAndUpdate(
+      taskId,
+      { $addToSet: { assigned_to: { $each: validMemberIds } } }, // Use $addToSet to avoid duplicates
+      { new: true }
+    ).populate({
+      path: 'assigned_to',
+      select: 'role user_id',
+      populate: {
+        path: 'user_id',
+        select: 'firstName lastName image'
+      }
+    });
+
+    // Add task to team members' task arrays
+    await TeamMember.updateMany(
+      { _id: { $in: validMemberIds } },
+      { $addToSet: { tasks: taskId } }
+    );
+
+    res.status(200).json({
+      success: true,
+      message: 'Task assigned successfully',
+      data: updatedTask
+    });
+
+  } catch (error) {
+    console.error('Error assigning task:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error assigning task',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+};
+
+
+exports.unassignTask = async (req, res) => {
+  try {
+    const { taskId } = req.params;
+    const { memberIds } = req.body;
+
+    // Validate input
+    if (!memberIds || !Array.isArray(memberIds)) {
+      return res.status(400).json({
+        success: false,
+        message: 'memberIds must be an array'
+      });
+    }
+
+    // Filter out invalid IDs
+    const validMemberIds = memberIds.filter(id => mongoose.Types.ObjectId.isValid(id));
+    
+    if (validMemberIds.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'No valid team member IDs provided'
+      });
+    }
+
+    // Check if task exists
+    const task = await Task.findById(taskId);
+    if (!task) {
+      return res.status(404).json({
+        success: false,
+        message: 'Task not found'
+      });
+    }
+
+    // Update the task by removing the members
+    const updatedTask = await Task.findByIdAndUpdate(
+      taskId,
+      { $pull: { assigned_to: { $in: validMemberIds } } },
+      { new: true }
+    ).populate({
+      path: 'assigned_to',
+      select: 'role user_id',
+      populate: {
+        path: 'user_id',
+        select: 'firstName lastName image'
+      }
+    });
+
+    // Remove task from team members' task arrays
+    await TeamMember.updateMany(
+      { _id: { $in: validMemberIds } },
+      { $pull: { tasks: taskId } }
+    );
+
+    res.status(200).json({
+      success: true,
+      message: 'Members unassigned successfully',
+      data: updatedTask
+    });
+
+  } catch (error) {
+    console.error('Error unassigning task:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error unassigning task',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
 };

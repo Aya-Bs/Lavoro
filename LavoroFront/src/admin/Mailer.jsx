@@ -5,6 +5,10 @@ import { Modal, Button, Form } from 'react-bootstrap';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
 
+import ReactQuill from "react-quill";
+import "quill/dist/quill.snow.css"; 
+
+
 const Mailer = ({ show, handleClose, adminEmail }) => {
   const [users, setUsers] = useState([]);
   const [selectedUsers, setSelectedUsers] = useState([]);

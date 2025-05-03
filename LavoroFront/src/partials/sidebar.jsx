@@ -105,12 +105,15 @@ const Sidebar = ({ userRole }) => {
                 <span className="side-menu__label">Profile</span>
               </Link>
             </li>
+<<<<<<< HEAD
             <li className="slide">
               <Link to="/DashTeam" className="side-menu__item">
                 <i className="ri-user-line side-menu__icon"></i>
                 <span className="side-menu__label">Dashboard</span>
               </Link>
             </li>
+=======
+>>>>>>> 75cb67597b77ba6d3d3c2d791cefc5eff07667a2
 
             <li className="slide__category">
               <span className="category-name">Projects</span>
@@ -150,10 +153,55 @@ Member of the year                  </Link>
                   Teams List
                   </Link>
                 </li>
+<<<<<<< HEAD
 
 
               </ul>
             </li>
+=======
+          
+                <li className="slide">
+                  <Link to="/member-details/67ffe958abcdc7b19d4edb98" className="side-menu__item">
+                    member details
+                  </Link>
+                </li>
+                <li className="slide">
+                  <Link to="/searchMember" className="side-menu__item">
+                    search member
+                  </Link>
+                </li>
+
+              </ul>
+            </li>
+
+            <li className={`slide has-sub ${isPagesOpen ? "open" : ""}`}>
+            <li className="slide__category">
+              <span className="category-name">Tasks</span>
+            </li>
+              <button
+                className="side-menu__item"
+                onClick={() => setIsPagesOpen(!isPagesOpen)}
+                style={{ background: "none", border: "none", cursor: "pointer", width: "100%", textAlign: "left" }}
+              >
+                <i className="ri-arrow-down-s-line side-menu__angle"></i>
+                <i className="ri-list-check-3 side-menu__icon"></i>
+                <span className="side-menu__label">Tasks</span>
+              </button>
+              <ul className="slide-menu child1" style={{ display: isPagesOpen ? "block" : "none" }}>
+             
+                <li className="slide">
+                  <Link to="/createTask" className="side-menu__item">
+                  Create Task
+                  </Link>
+                </li>
+                <li className="slide">
+                  <Link to="/listTask" className="side-menu__item">
+                   Task List
+                  </Link>
+                </li>
+             </ul>
+            </li>
+>>>>>>> 75cb67597b77ba6d3d3c2d791cefc5eff07667a2
             <li className="slide__category">
               <span className="category-name">Communication</span>
             </li>

@@ -1,3 +1,4 @@
+
 const TeamMember = require('../models/teamMember');
 const User = require('../models/user');
 const Skills = require('../models/skills');
@@ -189,4 +190,66 @@ exports.addTeamMember = async (req, res) => {
             error: error.message
         });
     }
+
+};
+
+
+
+// In your backend controller
+exports.getAllMemberTask = async (req, res) => {
+  try {
+    const members = await TeamMember.find({})
+      .populate('user_id', 'firstName lastName image')
+      .lean();
+    
+    // Filter out any invalid members
+    const validMembers = members.filter(member => member?._id);
+    
+    res.status(200).json({
+      success: true,
+      data: validMembers
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching team members'
+    });
+  }
+};
+
+
+
+exports.getAllMembers = async (req, res) => {
+  try {
+    const members = await TeamMember.find()
+      .populate('user_id', 'firstName lastName image')
+      .populate('skills', 'name');
+
+    if (!members) {
+      return res.status(404).json({ success: false, message: 'No team members found' });
+    }
+
+    const result = members.map(member => ({
+      id: member._id,
+      name: member.user_id ? `${member.user_id.firstName} ${member.user_id.lastName}` : 'Unknown',
+      image: member.user_id?.image || '',
+      role: member.role,
+      skills: member.skills?.map(s => s.name) || [],
+      performance: member.performance_score,
+      tasksCompleted: member.completed_tasks_count
+    }));
+
+    res.status(200).json({
+      success: true,
+      data: result
+    });
+
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching team members'
+    });
+  }
+
 };

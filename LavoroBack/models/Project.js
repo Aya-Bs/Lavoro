@@ -29,7 +29,12 @@ const Project = new Schema({
     ai_predicted_completion: { type: Date },
     ai_predicted_description: { type: String },
     created_at: { type: Date, default: Date.now },
+
     updated_at: { type: Date, default: Date.now }
+
+    updated_at: { type: Date, default: Date.now },
+    tasks: [{type : mongo.Schema.Types.ObjectId, ref: 'Task', required:false }], 
+
 
 });
 Project.index({ name: 'text' });

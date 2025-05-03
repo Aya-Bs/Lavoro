@@ -14,6 +14,9 @@ const Profile = () => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("profile-about-tab-pane");
   const [tasks, setTasks] = useState([]);
+  
+const [predictMember, setPredictMember] = useState(null);
+const [showAward, setShowAward] = useState(false);
 
   // Fetch user info on component mount
   useEffect(() => {
@@ -96,11 +99,14 @@ const Profile = () => {
 
       console.log("Tasks response:", response.data);
       setTasks(response.data);
-      
+
     } catch (err) {
       console.error("Full error:", err);
       console.error("Error response:", err.response?.data);
-      
+
+      console.error("Error response:", err.response?.data); // Debug détaillé
+
+
       if (err.response?.status === 401) {
         localStorage.removeItem('token');
         navigate('/signin');
@@ -110,13 +116,15 @@ const Profile = () => {
       setTasks([]);
     }
   };
-  
+
+
   // Charger les activités lorsque l'onglet est activé
   useEffect(() => {
     if (activeTab === "activities-tab-pane") {
       fetchActivities();
     }
   }, [activeTab]);
+
 
   // Enable 2FA
   const handleEnable2FA = async () => {
@@ -197,6 +205,27 @@ const Profile = () => {
       setMessage(err.response?.data?.error || "Error disabling 2FA");
     }
   };
+
+  useEffect(() => {
+    const fetchPredictMember = async () => {
+      try {
+        // Get current user's ID (you'll need to implement this based on your auth system)
+        const userId = fetchUserInfo(); 
+        const response = await axios.get(`http://localhost:3000/teamMember/award/${userId}`);
+        setPredictMember(response.data);
+        
+        // Check URL state for award
+        if (location.state?.showAward && response.data?.rank === 1) {
+          setShowAward(true);
+          window.history.replaceState({}, '');
+        }
+      } catch (error) {
+        console.error("Failed to fetch predict member:", error);
+      }
+    };
+
+    fetchPredictMember();
+  }, []);
 
   if (loading) {
     return <p>Loading...</p>;
@@ -375,16 +404,16 @@ const Profile = () => {
                           aria-labelledby="security-tab"
                           tabIndex={0}
                         >
-                          <ProfileSecurity 
-                            user={user} 
-                            handleEnable2FA={handleEnable2FA} 
-                            handleVerify2FA={handleVerify2FA} 
-                            handleDisable2FA={handleDisable2FA} 
-                            qrCodeUrl={qrCodeUrl} 
-                            showQRCode={showQRCode} 
-                            token={token} 
-                            setToken={setToken} 
-                            message={message} 
+                          <ProfileSecurity
+                            user={user}
+                            handleEnable2FA={handleEnable2FA}
+                            handleVerify2FA={handleVerify2FA}
+                            handleDisable2FA={handleDisable2FA}
+                            qrCodeUrl={qrCodeUrl}
+                            showQRCode={showQRCode}
+                            token={token}
+                            setToken={setToken}
+                            message={message}
                           />
                         </div>
                       </div>
@@ -400,14 +429,173 @@ const Profile = () => {
   );
 };
 
+
+
+  
 // ProfileBanner Component
-const ProfileBanner = () => {
-  return (
+// const ProfileBanner = () => {
+//   return (
+//     <div className="profile-banner-img">
+//       <img src="/assets/images/media/media-3.jpg" className="card-img-top" alt="..." />
+//     </div>
+//   );
+// };
+
+const ProfileBanner = ({ showAward, setShowAward, isTopPerformer }) => {
+  if (!isTopPerformer) {
+    // Regular banner for non-top performers
+    return (
+      <div className="profile-banner-img">
+        <img src="/assets/images/media/media-3.jpg" className="card-img-top" alt="..." />
+      </div>
+    );
+  }
+
+  return showAward ? (
+    // Golden award banner
+    <div className="profile-banner-img" style={{
+      background: 'linear-gradient(135deg, #FFD700 0%, #D4AF37 100%)',
+      position: 'relative',
+      overflow: 'hidden',
+      height: '250px',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      boxShadow: '0 4px 20px rgba(0,0,0,0.15)'
+    }}>
+      {/* Gold particles background */}
+      <div style={{
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        backgroundImage: 'radial-gradient(circle at center, rgba(255,215,0,0.3) 0%, transparent 70%)',
+        animation: 'particles 10s linear infinite'
+      }}></div>
+      
+      {/* Envelope container */}
+      <div style={{
+        position: 'relative',
+        zIndex: 2,
+        perspective: '1000px'
+      }}>
+        {/* Envelope */}
+        <div className="envelope" style={{
+          width: '220px',
+          height: '140px',
+          backgroundColor: '#FFF8E1',
+          borderRadius: '8px',
+          position: 'relative',
+          boxShadow: '0 10px 25px rgba(0,0,0,0.2)',
+          transformStyle: 'preserve-3d',
+          animation: 'envelopeFloat 3s ease-in-out infinite',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '25px'
+        }}>
+          {/* Envelope flap */}
+          <div style={{
+            position: 'absolute',
+            top: '-40px',
+            width: '0',
+            height: '0',
+            borderLeft: '110px solid transparent',
+            borderRight: '110px solid transparent',
+            borderBottom: '70px solid #FFECB3',
+            transformOrigin: 'top',
+            animation: 'flapMove 3s ease-in-out infinite',
+            filter: 'drop-shadow(0 -5px 5px rgba(0,0,0,0.1))'
+          }}></div>
+          
+          {/* Inner content */}
+          <div style={{
+            zIndex: 3,
+            textAlign: 'center',
+            transform: 'translateZ(20px)'
+          }}>
+            <div style={{
+              color: '#5D4037',
+              fontWeight: 'bold',
+              fontSize: '18px',
+              marginBottom: '15px',
+              textShadow: '0 1px 2px rgba(0,0,0,0.1)'
+            }}>
+              Congratulations!
+            </div>
+            
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
+            }}>
+              <i className="ri-number-1" style={{
+                fontSize: '40px',
+                color: '#FF9800',
+                animation: 'cupShine 2s ease-in-out infinite',
+                filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.2))'
+              }}></i>
+              <i className="ri-medal-line" style={{
+                fontSize: '40px',
+                color: '#FFC107',
+                marginLeft: '15px',
+                animation: 'medalSpin 4s linear infinite',
+                filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.2))'
+              }}></i>
+            </div>
+            
+            <div style={{
+              marginTop: '15px',
+              color: '#795548',
+              fontSize: '14px'
+            }}>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* CSS animations */}
+      <style jsx>{`
+        @keyframes envelopeFloat {
+          0%, 100% { transform: translateY(0) rotate(0deg); }
+          50% { transform: translateY(-15px) rotate(3deg); }
+        }
+        
+        @keyframes flapMove {
+          0%, 100% { transform: rotateX(0deg); }
+          50% { transform: rotateX(30deg); }
+        }
+        
+        @keyframes cupShine {
+          0% { filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2)); }
+          50% { filter: drop-shadow(0 0 10px rgba(255,152,0,0.5)); }
+          100% { filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2)); }
+        }
+        
+        @keyframes medalSpin {
+          0% { transform: rotateY(0deg); }
+          100% { transform: rotateY(360deg); }
+        }
+        
+        @keyframes particles {
+          0% { transform: scale(1); opacity: 0.5; }
+          50% { transform: scale(1.2); opacity: 0.8; }
+          100% { transform: scale(1); opacity: 0.5; }
+        }
+      `}</style>
+    </div>
+  ) : (
+    // Regular banner (but for top performer)
     <div className="profile-banner-img">
       <img src="/assets/images/media/media-3.jpg" className="card-img-top" alt="..." />
     </div>
   );
 };
+
+
+
 
 // ProfileSidebar Component
 const ProfileSidebar = ({ user }) => {
@@ -419,11 +607,16 @@ const ProfileSidebar = ({ user }) => {
             {user.image ? (
               <img
                 src={
+
                   user?.image
                     ? user.image.startsWith('http') || user.image.startsWith('https')
                       ? user.image
                       : `http://localhost:3000${user.image}`
                     : "https://via.placeholder.com/100"
+
+                  user.image.startsWith('http') || user.image.startsWith('https')
+                    ? user.image // Use as-is if it's already a full URL
+                    : `http://localhost:3000${user.image}` // Prepend server URL if relative
                 }
                 alt="Profile"
                 style={{
@@ -664,5 +857,6 @@ const AboutTab = ({ user }) => {
     </ul>
   );
 };
+
 
 export default Profile;
