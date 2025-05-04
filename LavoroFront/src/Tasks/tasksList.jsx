@@ -384,11 +384,9 @@ useEffect(() => {
                 <div>
                     <nav>
                         <ol className="breadcrumb mb-1">
+                            
                             <li className="breadcrumb-item">
-                                <a href="javascript:void(0);">Apps</a>
-                            </li>
-                            <li className="breadcrumb-item">
-                                <a href="javascript:void(0);">Task</a>
+                                <a href="javascript:void(0);">Tasks</a>
                             </li>
                             <li className="breadcrumb-item active" aria-current="page">
                                 Task List View

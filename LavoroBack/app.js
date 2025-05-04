@@ -43,6 +43,7 @@ const taskAssignmentRoutes = require('./routes/taskAssignmentRoutes');
 // const homeRouter = require('./routes/home');
 const adminRouter = require('./routes/admin');
 const emailRouter = require('./routes/emails');
+const predictRouter = require('./routes/predictMember');
 
 
 const app = express();
@@ -112,6 +113,7 @@ app.set('io', io);
 app.use('/tasks',taskRouter);
 app.use('/chat', chatRouter);
 
+app.use('/predict', predictRouter);
 
 app.use('/project',projectRouter);
 app.use('/teamMember', teamMemberRouter);
