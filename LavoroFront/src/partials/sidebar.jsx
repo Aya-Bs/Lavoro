@@ -123,6 +123,12 @@ const Sidebar = ({ userRole }) => {
                 <span className="side-menu__label">Teams List</span>
               </Link>
             </li>
+            <li className="slide">
+              <Link to="/teams/teamArchive" className="side-menu__item">
+                <i className="ri-file-list-line side-menu__icon"></i>
+                <span className="side-menu__label">Teams Archive</span>
+              </Link>
+            </li>
             
           </>
         );
@@ -212,6 +218,12 @@ const Sidebar = ({ userRole }) => {
               <Link to="/teamsList" className="side-menu__item">
                 <i className="ri-file-list-line side-menu__icon"></i>
                 <span className="side-menu__label">Teams List</span>
+              </Link>
+            </li>
+            <li className="slide">
+              <Link to="/teams/teamArchive" className="side-menu__item">
+                <i className="ri-file-list-line side-menu__icon"></i>
+                <span className="side-menu__label">Teams Archive</span>
               </Link>
             </li>
           </>

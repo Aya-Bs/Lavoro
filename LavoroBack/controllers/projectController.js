@@ -388,10 +388,56 @@ exports.deleteProject = async (req, res) => {
     }
   };
 
+  exports.exportArchivedProjects = async (req, res) => {
+    try {
+      console.log("🔍 Fetching archived projects...");
+      const archives = await Archive.find();
+      
+      if (!archives.length) {
+        return res.status(404).json({ message: 'No archived projects found.' });
+      }
+  
+      console.log("✅ Archived projects found:", archives.length);
+  
+      const workbook = new ExcelJS.Workbook();
+      const worksheet = workbook.addWorksheet('Archived Projects');
+  
+      worksheet.columns = [
+        { header: 'Name', key: 'name', width: 30 },
+        { header: 'Original Status', key: 'originalStatus', width: 20 },
+        { header: 'Budget (TND)', key: 'budget', width: 15 },
+        { header: 'Last Updated', key: 'updated_at', width: 20 }
+      ];
+  
+      archives.forEach((archive) => {
+        console.log("📌 Adding row:", archive.name);
+        worksheet.addRow({
+          name: archive.name,
+          originalStatus: archive.originalStatus,
+          budget: archive.budget,
+          updated_at: archive.updated_at ? new Date(archive.updated_at).toLocaleDateString() : 'N/A',
+        });
+      });
+  
+      res.setHeader(
+        'Content-Type',
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+      );
+      res.setHeader(
+        'Content-Disposition',
+        'attachment; filename=archived-projects.xlsx'
+      );
+  
+      console.log("📤 Sending Excel file...");
+      await workbook.xlsx.write(res);
+      res.end();
+    } catch (err) {
+      console.error('❌ Excel export error:', err);
+      res.status(500).json({ message: 'Failed to export Excel file.', error: err.message });
+    }
+  };
 
 
-  
-  
     exports.getProjectHistory = async (req, res) => {
       const { id } = req.params; // Project ID
     
@@ -613,54 +659,7 @@ function getChangeType(field) {
 
 
 
-exports.exportArchivedProjects = async (req, res) => {
-  try {
-    console.log("🔍 Fetching archived projects...");
-    const archives = await Archive.find();
-    
-    if (!archives.length) {
-      return res.status(404).json({ message: 'No archived projects found.' });
-    }
 
-    console.log("✅ Archived projects found:", archives.length);
-
-    const workbook = new ExcelJS.Workbook();
-    const worksheet = workbook.addWorksheet('Archived Projects');
-
-    worksheet.columns = [
-      { header: 'Name', key: 'name', width: 30 },
-      { header: 'Original Status', key: 'originalStatus', width: 20 },
-      { header: 'Budget (TND)', key: 'budget', width: 15 },
-      { header: 'Last Updated', key: 'updated_at', width: 20 }
-    ];
-
-    archives.forEach((archive) => {
-      console.log("📌 Adding row:", archive.name);
-      worksheet.addRow({
-        name: archive.name,
-        originalStatus: archive.originalStatus,
-        budget: archive.budget,
-        updated_at: archive.updated_at ? new Date(archive.updated_at).toLocaleDateString() : 'N/A',
-      });
-    });
-
-    res.setHeader(
-      'Content-Type',
-      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-    );
-    res.setHeader(
-      'Content-Disposition',
-      'attachment; filename=archived-projects.xlsx'
-    );
-
-    console.log("📤 Sending Excel file...");
-    await workbook.xlsx.write(res);
-    res.end();
-  } catch (err) {
-    console.error('❌ Excel export error:', err);
-    res.status(500).json({ message: 'Failed to export Excel file.', error: err.message });
-  }
-};
 
 
 

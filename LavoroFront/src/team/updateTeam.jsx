@@ -21,6 +21,7 @@ const UpdateTeam = () => {
   const [filteredMembers, setFilteredMembers] = useState([]);
   const [allMembers, setAllMembers] = useState([]);
   const [tagInput, setTagInput] = useState('');
+  // Removed unused validation errors state
 
   // Predefined colors
   const predefinedColors = [
@@ -41,45 +42,110 @@ const UpdateTeam = () => {
     const fetchTeamAndMembers = async () => {
       try {
         setLoading(true);
-        
-        // Fetch team data
+        setError('');
+
+        // Get the token for authentication
+        const token = localStorage.getItem('token');
+        if (!token) {
+          setError('Authentication token not found. Please log in again.');
+          setLoading(false);
+          return;
+        }
+
+        // Fetch team data first to get the correct member IDs
+        console.log(`Fetching team details for ID: ${id}`);
         const teamResponse = await axios.get(`http://localhost:3000/teams/teamDetails/${id}`, {
           headers: {
-            'Authorization': `Bearer ${localStorage.getItem('token')}`
-          }
+            'Authorization': `Bearer ${token}`
+          },
+          withCredentials: true
         });
 
-        if (teamResponse.data.success) {
-          const team = teamResponse.data.data;
-          setFormData({
-            name: team.name,
-            description: team.description || '',
-            tags: team.tags || [],
-            members: team.members.map(m => m._id),
-            color: team.color || '#3755e6',
-            status: team.status || 'Active'
-          });
+        console.log('Team fetch response:', teamResponse.data);
+
+        if (!teamResponse.data.success) {
+          throw new Error(teamResponse.data.message || 'Failed to fetch team data');
+        }
+
+        const team = teamResponse.data.data;
+
+        // Ensure members are valid MongoDB ObjectIds
+        let memberIds = team.members
+          .filter(m => m && m._id) // Filter out any null or undefined members
+          .map(m => m._id.toString()) // Convert to string
+          .filter(id => /^[0-9a-fA-F]{24}$/.test(id)); // Validate MongoDB ObjectId format
+
+        console.log('Initial member IDs from API:', memberIds);
+
+        // Now fetch all developers to populate the dropdown
+        console.log('Fetching all developers');
+        const membersResponse = await axios.get('http://localhost:3000/users/getAllDevelopers', {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          },
+          withCredentials: true
+        });
+
+        if (!membersResponse.data.data) {
+          throw new Error('Failed to fetch developers data');
+        }
+
+        // Format and validate member data
+        const formattedMembers = membersResponse.data.data
+          .filter(dev => dev && dev._id) // Filter out any null or undefined members
+          .map(dev => ({
+            _id: dev._id.toString(), // Ensure string IDs
+            firstName: dev.firstName || '',
+            lastName: dev.lastName || '',
+            role: dev.role?.RoleName || 'Developer',
+            image: dev.image || '',
+            email: dev.email || ''
+          }))
+          .filter(member => /^[0-9a-fA-F]{24}$/.test(member._id)); // Validate MongoDB ObjectId format
+
+        console.log(`Formatted ${formattedMembers.length} developers`);
+
+        // Check if any members from the team are missing in the allMembers list
+        // This could happen if a member was removed from the system but still in the team
+        const missingMemberIds = memberIds.filter(memberId =>
+          !formattedMembers.some(m => m._id === memberId)
+        );
+
+        if (missingMemberIds.length > 0) {
+          console.log(`Found ${missingMemberIds.length} missing member IDs:`, missingMemberIds);
+
+          // Filter out the missing members from the memberIds array
+          // This will remove any members that don't exist in the database
+          memberIds = memberIds.filter(id => !missingMemberIds.includes(id));
+          console.log('Filtered member IDs (removed missing members):', memberIds);
+        }
+
+        // Set all members - only use the valid members from the database
+        setAllMembers(formattedMembers);
+        setFilteredMembers(formattedMembers);
+
+        // Set form data
+        setFormData({
+          name: team.name,
+          description: team.description || '',
+          tags: team.tags || [],
+          members: memberIds,
+          color: team.color || '#3755e6',
+          status: team.status || 'Active'
+        });
+
+        // Set project info
+        if (team.project_id) {
           setProjectInfo({
             id: team.project_id._id,
             name: team.project_id.name
           });
         }
 
-        // Fetch all members
-        const membersResponse = await axios.get('http://localhost:3000/users/getAllDevelopers');
-        const formattedMembers = membersResponse.data.data.map(dev => ({
-          _id: dev._id,
-          firstName: dev.firstName,
-          lastName: dev.lastName,
-          role: dev.role?.RoleName || 'Developer',
-          image: dev.image,
-          email: dev.email
-        }));
-
-        setAllMembers(formattedMembers);
-        setFilteredMembers(formattedMembers);
+        console.log('Team data loaded successfully');
       } catch (error) {
-        setError('Failed to load team data');
+        console.error('Error fetching team data:', error);
+        setError(error.message || 'Failed to load team data');
       } finally {
         setLoading(false);
       }
@@ -134,27 +200,119 @@ const UpdateTeam = () => {
   };
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    setError('');
-
+    e.preventDefault(); // Prevent default form submission
     try {
-      const response = await axios.put(
-        `http://localhost:3000/teams/updateTeam/${id}`,
-        formData,
-        {
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${localStorage.getItem('token')}`
-          }
-        }
-      );
+      setLoading(true);
+      setError('');
 
-      if (response.data.success) {
-        navigate(`/teams/teamDetails/${id}`);
+      // Get authentication token - we don't need to explicitly get the user ID
+      // as the backend will use the authenticated user from the token
+      const token = localStorage.getItem('token');
+
+      // Ensure we have a valid token
+      if (!token) {
+        setError('No authentication token found. Please log in again.');
+        setLoading(false);
+        return;
+      }
+
+      // We'll get the user ID from the token on the server side
+
+      // Ensure members is an array of valid MongoDB ObjectId strings
+      const memberIds = formData.members
+        .filter(id => id && id.toString().trim() !== '' && /^[0-9a-fA-F]{24}$/.test(id.toString().trim()))
+        .map(id => id.toString().trim());
+
+      console.log('Submitting with members:', memberIds);
+      console.log('Original members array:', formData.members);
+
+      // Make sure we have at least one member
+      if (memberIds.length === 0) {
+        setError('Team must have at least one member with valid ID');
+        setLoading(false);
+        return;
+      }
+
+      // Ensure name is not empty
+      const trimmedName = formData.name.trim();
+      if (!trimmedName) {
+        setError('Team name cannot be empty');
+        setLoading(false);
+        return;
+      }
+
+      const payload = {
+        name: trimmedName,
+        description: formData.description?.trim() || '',
+        tags: formData.tags || [],
+        members: memberIds,
+        color: formData.color,
+        status: formData.status
+        // The server will get the user ID from the token
+      };
+
+      console.log('Sending payload:', payload);
+
+      // Check if the team ID is valid
+      if (!/^[0-9a-fA-F]{24}$/.test(id)) {
+        setError(`Invalid team ID format: ${id}`);
+        setLoading(false);
+        return;
+      }
+
+      // Token validation already done above
+
+      // Make the API request
+      try {
+        console.log('Making API request to:', `http://localhost:3000/teams/updateTeam/${id}`);
+
+        console.log('Sending update request with payload:', payload);
+
+        const response = await axios.put(
+          `http://localhost:3000/teams/updateTeam/${id}`,
+          payload,
+          {
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+            },
+            withCredentials: true
+          }
+        );
+
+        console.log('Update response received:', response.data);
+
+        if (response.data.success) {
+          navigate(`/teams/teamDetails/${id}`, {
+            state: { message: 'Team updated successfully!' }
+          });
+        } else {
+          // Handle non-success response
+          setError(response.data.message || 'Failed to update team');
+        }
+      } catch (apiError) {
+        console.error('API error:', apiError);
+
+        if (apiError.response) {
+          console.error('Error response status:', apiError.response.status);
+          console.error('Error response data:', apiError.response.data);
+
+          if (apiError.response.data?.message) {
+            setError(apiError.response.data.message);
+          } else {
+            setError(`Server error: ${apiError.response.status}`);
+          }
+        } else if (apiError.request) {
+          console.error('Error request:', apiError.request);
+          setError('No response received from server. Please check your network connection.');
+        } else {
+          console.error('Error message:', apiError.message);
+          setError(`Error: ${apiError.message}`);
+        }
       }
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to update team');
+      console.error('Update error:', err);
+      setError(`Error: ${err.message}`);
     } finally {
       setLoading(false);
     }
@@ -313,9 +471,9 @@ const UpdateTeam = () => {
                         <span
                           key={index}
                           className="badge d-flex align-items-center me-1 mb-1"
-                          style={{ 
+                          style={{
                             padding: '6px 10px',
-                            backgroundColor: formData.color 
+                            backgroundColor: formData.color
                           }}
                         >
                           {tag}
@@ -360,6 +518,12 @@ const UpdateTeam = () => {
                   Save Changes
                 </button>
               </div>
+              {/* Hidden input to ensure members are included in form submission */}
+              <input
+                type="hidden"
+                name="members"
+                value={formData.members.join(',')}
+              />
             </form>
           </div>
         </div>
@@ -378,36 +542,56 @@ const UpdateTeam = () => {
                     className="form-control"
                     placeholder="Search members..."
                     value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
+                    onChange={(e) => {
+                      setSearchTerm(e.target.value);
+                      setIsDropdownOpen(true); // Keep dropdown open when typing
+                    }}
                     onFocus={() => setIsDropdownOpen(true)}
-                    onBlur={() => setTimeout(() => setIsDropdownOpen(false), 200)}
+                    onBlur={() => setTimeout(() => setIsDropdownOpen(false), 300)} // Increased timeout
                   />
                   <div className={`dropdown-menu w-100 ${isDropdownOpen ? 'show' : ''}`}>
-                    {filteredMembers.map(member => (
-                      <a
-                        key={member._id}
-                        className="dropdown-item d-flex align-items-center"
-                        href="#"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          if (!formData.members.includes(member._id)) {
-                            setFormData(prev => ({
-                              ...prev,
-                              members: [...prev.members, member._id]
-                            }));
-                          }
-                          setSearchTerm('');
-                          setIsDropdownOpen(false);
-                        }}
-                      >
-                        <img
-                          src={member.image || '/assets/images/faces/1.jpg'}
-                          alt={member.firstName}
-                          className="avatar avatar-xs rounded-circle me-2"
-                        />
-                        {member.firstName} {member.lastName}
-                      </a>
-                    ))}
+                    {filteredMembers
+                      // Only show members that aren't already selected
+                      .filter(member => !formData.members.some(id => id === member._id || id === member._id.toString()))
+                      .map(member => (
+                        <a
+                          key={member._id}
+                          className="dropdown-item d-flex align-items-center"
+                          href="#"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            const memberId = member._id.toString();
+                            // Validate MongoDB ObjectId format
+                            if (!/^[0-9a-fA-F]{24}$/.test(memberId)) {
+                              console.error('Invalid member ID format:', memberId);
+                              return;
+                            }
+
+                            console.log('Adding member to team:', member);
+                            setFormData(prev => {
+                              const updatedMembers = [...prev.members, memberId];
+                              console.log('Updated members array:', updatedMembers);
+                              return {
+                                ...prev,
+                                members: updatedMembers
+                              };
+                            });
+                            setSearchTerm('');
+                            // Keep dropdown open to allow selecting multiple members
+                            // setIsDropdownOpen(false);
+                          }}
+                        >
+                          <img
+                            src={member.image || '/assets/images/faces/1.jpg'}
+                            alt={member.firstName}
+                            className="avatar avatar-xs rounded-circle me-2"
+                          />
+                          {member.firstName} {member.lastName}
+                        </a>
+                      ))}
+                    {filteredMembers.filter(member => !formData.members.some(id => id === member._id || id === member._id.toString())).length === 0 && (
+                      <div className="dropdown-item text-muted">No more members available</div>
+                    )}
                   </div>
                 </div>
               </div>
@@ -416,19 +600,42 @@ const UpdateTeam = () => {
                 <label className="form-label">Current Members ({formData.members.length})</label>
                 <div className="member-list" style={{ maxHeight: '300px', overflowY: 'auto' }}>
                   {formData.members.map(memberId => {
-                    const member = allMembers.find(m => m._id === memberId);
-                    if (!member) return null;
+                    // Convert to string for comparison
+                    const memberIdStr = memberId.toString();
+                    const member = allMembers.find(m => m._id.toString() === memberIdStr);
 
+                    // If member not found, skip it - we've already filtered out non-existent members
+                    if (!member) {
+                      console.log(`Member with ID ${memberIdStr} not found in allMembers, skipping`);
+                      // Remove this member from formData.members
+                      setTimeout(() => {
+                        setFormData(prev => ({
+                          ...prev,
+                          members: prev.members.filter(id => id !== memberIdStr)
+                        }));
+                      }, 0);
+                      return null; // Don't render anything for this member
+                    }
+
+                    // Normal member display
                     return (
-                      <div key={member._id} className="d-flex align-items-center justify-content-between mb-2 p-2 border rounded">
+                      <div key={memberIdStr} className="d-flex align-items-center justify-content-between mb-2 p-2 border rounded">
                         <div className="d-flex align-items-center">
-                          <img
-                            src={member.image || '/assets/images/faces/1.jpg'}
-                            alt={member.firstName}
-                            className="avatar avatar-xs rounded-circle me-2"
-                          />
+                          {member.image ? (
+                            <img
+                              src={member.image || '/assets/images/faces/1.jpg'}
+                              alt={member.firstName}
+                              className="avatar avatar-xs rounded-circle me-2"
+                            />
+                          ) : (
+                            <span className="avatar avatar-xs bg-primary text-white rounded-circle me-2">
+                              {(member.firstName || '').charAt(0)}
+                            </span>
+                          )}
                           <div>
-                            <div>{member.firstName} {member.lastName}</div>
+                            <div>
+                              {member.firstName} {member.lastName}
+                            </div>
                             <small className="text-muted">{member.role}</small>
                           </div>
                         </div>
@@ -436,10 +643,16 @@ const UpdateTeam = () => {
                           type="button"
                           className="btn btn-sm btn-danger"
                           onClick={() => {
-                            setFormData(prev => ({
-                              ...prev,
-                              members: prev.members.filter(id => id !== member._id)
-                            }));
+                            const memberId = member._id.toString();
+                            console.log('Removing member:', memberId);
+                            setFormData(prev => {
+                              const updatedMembers = prev.members.filter(id => id !== memberId);
+                              console.log('Updated members after removal:', updatedMembers);
+                              return {
+                                ...prev,
+                                members: updatedMembers
+                              };
+                            });
                           }}
                         >
                           <i className="ri-close-line"></i>
@@ -464,7 +677,7 @@ const UpdateTeam = () => {
                   </div>
                   <div>
                     <h6 className="mb-0">{projectInfo.name}</h6>
-                    <small className="text-muted">Project ID: {projectInfo.id}</small>
+
                   </div>
                 </div>
               ) : (

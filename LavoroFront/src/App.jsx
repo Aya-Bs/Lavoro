@@ -39,6 +39,8 @@ import TeamDetailsPage from "./team/teamDetails";
 import UpdateTeam from "./team/updateTeam";
 import { SearchSlashIcon } from "lucide-react";
 import SearchTeam from "./team/searchTeam";
+import TeamArchive from "./team/teamArchiveList";
+import TeamArchiveDetailsPage from "./team/teamArchiveDetails";
 
 
 function App() {
@@ -86,6 +88,8 @@ function App() {
               <Route path="/teams/teamDetails/:id" element={<TeamDetailsPage />} />
               <Route path="/teams/updateTeam/:id" element={<UpdateTeam />} />
               <Route path="/teams/searchTeam" element={<SearchTeam />} />
+              <Route path="/teams/teamArchive" element={<TeamArchive />} />
+              <Route path="/teams/teamArchiveDetails/:id" element={<TeamArchiveDetailsPage />} />
             </Route>
         </Routes>
       </BrowserRouter>

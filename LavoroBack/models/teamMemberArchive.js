@@ -1,24 +1,18 @@
-const mongo = require('mongoose');
-const Schema = mongo.Schema;
+const mongoose = require('mongoose');
+const Schema = mongoose.Schema;
 
-const TeamMember = new Schema({
-
-    team_id: { type: mongo.Schema.Types.ObjectId, required: true, ref: 'team' },
-    user_id: { type: mongo.Schema.Types.ObjectId, required: true, ref: 'user' },
+const TeamMemberArchive = new Schema({
+    team_id: { type: mongoose.Schema.Types.ObjectId, required: true, ref: 'TeamArchive' },
+    user_id: { type: mongoose.Schema.Types.ObjectId, required: true, ref: 'user' },
     role: { 
         type: Schema.Types.ObjectId, 
-        ref: 'role', required: true , default: 'Developer' },
-    skills: [{ type: mongo.Schema.Types.ObjectId, ref: 'skills' }],
+        ref: 'role', required: true, default: 'Developer' },
+    skills: [{ type: mongoose.Schema.Types.ObjectId, ref: 'skills' }],
     completed_tasks_count: { type: Number, default: 0 },
     joined_at: { type: Date, default: Date.now },
-
-    tasks: [{
-        type: mongo.Schema.Types.ObjectId,
-        ref: 'Task',
-        required: false
-    }],
+    archived_at: { type: Date, default: Date.now },
     
-    // Performance metrics
+    // Performance metrics (copied from TeamMember model)
     experience_level: { type: Number, min: 1, max: 3, default: 1 }, // 1=Junior, 2=Mid, 3=Senior
     total_tasks_completed: { type: Number, default: 0 },
     missed_deadlines: { type: Number, default: 0 },
@@ -31,7 +25,4 @@ const TeamMember = new Schema({
     performance_score: { type: Number, min: 0, max: 100, default: 0 }
 }, { timestamps: true });
 
-
-
-    
-module.exports = mongo.model('teamMember', TeamMember);
+module.exports = mongoose.model('TeamMemberArchive', TeamMemberArchive);

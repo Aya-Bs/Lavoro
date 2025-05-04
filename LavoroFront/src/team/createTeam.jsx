@@ -29,9 +29,9 @@ const CreateTeam = () => {
       const response = await axios.get('http://localhost:3000/project/managed-by-me', {
         withCredentials: true
       });
-  
+
       console.log('API Response:', response);
-      
+
       if (response.data.success) {
         console.log('Successfully fetched projects:', response.data.data);
         setProjects(response.data.data || []);
@@ -44,7 +44,7 @@ const CreateTeam = () => {
       console.error('Error name:', error.name);
       console.error('Error message:', error.message);
       console.error('Error response:', error.response);
-      
+
       const errorMsg = error.response?.data?.message || error.message || 'Failed to load projects';
       console.error('Displaying error to user:', errorMsg);
       setError(errorMsg);
@@ -83,7 +83,7 @@ useEffect(() => {
         className="form-control"
         id="project-id"
         placeholder="Select a project"
-        value={formData.project_id 
+        value={formData.project_id
           ? projects.find(p => p._id === formData.project_id)?.name || 'Selected Project'
           : 'Select a project'
         }
@@ -91,7 +91,7 @@ useEffect(() => {
         readOnly
       />
       {showProjectsDropdown && (
-        <div 
+        <div
           className="dropdown-menu w-100 show"
           style={{
             position: 'absolute',
@@ -208,9 +208,16 @@ useEffect(() => {
   useEffect(() => {
     if (allMembers.length > 0) {
       console.log('All members loaded:', allMembers.length);
+      console.log('First few members:', allMembers.slice(0, 3));
       setFilteredMembers(allMembers);
     }
   }, [allMembers]);
+
+  // Debug formData changes
+  useEffect(() => {
+    console.log('formData updated:', formData);
+    console.log('Current members count:', formData.members.length);
+  }, [formData]);
 
   // Member selection is now handled directly in the click handlers
 
@@ -291,28 +298,41 @@ useEffect(() => {
       return;
     }
 
+    // Validate that we have members
+    if (formData.members.length === 0) {
+      setError('Please add at least one team member.');
+      setLoading(false);
+      return;
+    }
+
     try {
-      // Make sure color is included in the submission
-      const teamData = {
+      console.log('Submitting team with members:', formData.members);
+
+      // Create payload with string IDs
+      const payload = {
         ...formData,
-        color: formData.color || '#3755e6' // Ensure color is always sent
+        members: formData.members.map(id => id.toString()) // Ensure all IDs are strings
       };
 
-      console.log('Submitting team data:', teamData);
+      console.log('Sending payload to server:', payload);
 
-      const response = await axios.post('http://localhost:3000/teams/createTeam', teamData, {
+      const response = await axios.post('http://localhost:3000/teams/createTeam', payload, {
         headers: {
           'Content-Type': 'application/json'
         },
         withCredentials: true
       });
 
+      console.log('Server response:', response.data);
+
       if (response.data.success) {
         navigate(`/teamsList`);
+      } else {
+        setError(response.data.message || 'Failed to create team');
       }
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to create team');
       console.error('Team creation error:', err);
+      setError(err.response?.data?.message || 'Failed to create team');
     } finally {
       setLoading(false);
     }
@@ -540,103 +560,57 @@ useEffect(() => {
           <div className="card-body">
             <div className="col-xl-12">
               <label className="form-label">Team Member</label>
-              <div className="position-relative">
-                <div className="position-relative">
-                  <input
-                    type="text"
-                    className="form-control"
-                    placeholder="Search members..."
-                    value={searchTerm}
-                    onChange={(e) => {
-                      setSearchTerm(e.target.value);
-                      setIsDropdownOpen(true);
-                    }}
-                    onFocus={() => {
-                      // Only show dropdown if we have members
-                      if (filteredMembers.length > 0) {
-                        setIsDropdownOpen(true);
-                      }
-                    }}
-                    onBlur={() => {
-                      // Delay hiding dropdown to allow for click events
-                      setTimeout(() => setIsDropdownOpen(false), 300);
-                    }}
-                    onClick={() => {
-                      // Toggle dropdown on click
-                      if (filteredMembers.length > 0) {
-                        setIsDropdownOpen(prev => !prev);
-                      }
-                    }}
-                    style={{
-                      marginBottom: '0',
-                      paddingRight: '30px'
-                    }}
-                  />
-                  <i
-                    className="ri-arrow-down-s-line"
-                    style={{
-                      position: 'absolute',
-                      right: '10px',
-                      top: '50%',
-                      transform: 'translateY(-50%)',
-                      cursor: 'pointer'
-                    }}
-                    onClick={() => {
-                      if (filteredMembers.length > 0) {
-                        console.log('Toggling dropdown, filtered members:', filteredMembers.length);
-                        setIsDropdownOpen(prev => !prev);
-                      } else {
-                        console.log('No filtered members available');
-                      }
-                    }}
-                  ></i>
-                </div>
-                <div
-                  className={`dropdown-menu w-100 ${isDropdownOpen && filteredMembers.length > 0 ? 'show' : ''}`}
-                  style={{
-                    display: isDropdownOpen && filteredMembers.length > 0 ? 'block' : 'none',
-                    position: 'absolute',
-                    maxHeight: '200px',
-                    overflowY: 'auto',
-                    zIndex: 1000,
-                    width: '100%',
-                    marginTop: '2px',
-                    border: '1px solid #dee2e6',
-                    boxShadow: '0 0.5rem 1rem rgba(0, 0, 0, 0.15)'
-                  }}
-                >
-                  {filteredMembers.length > 0 ? (
-                    filteredMembers.map(member => (
-                      <a
-                        key={member._id}
-                        className="dropdown-item"
-                        href="#"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation(); // Prevent event bubbling
-                          // Directly update the formData state to avoid needing to click twice
-                          setFormData(prev => {
-                            // Always add the member (don't toggle)
-                            if (!prev.members.includes(member._id)) {
-                              return { ...prev, members: [...prev.members, member._id] };
-                            }
-                            return prev; // No change if already selected
-                          });
-                          setSearchTerm('');
-                          setIsDropdownOpen(false);
-                        }}
-                        style={{
-                          padding: '8px 12px'
-                        }}
-                      >
-                        {member.firstName || ''} {member.lastName || ''}
-                      </a>
-                    ))
-                  ) : (
-                    <span className="dropdown-item disabled">No members found</span>
-                  )}
-                </div>
-              </div>
+              {/* In your member dropdown section */}
+<div className="position-relative">
+  <input
+    type="text"
+    className="form-control"
+    placeholder="Search members..."
+    value={searchTerm}
+    onChange={(e) => setSearchTerm(e.target.value)}
+    onFocus={() => setIsDropdownOpen(true)}
+    // Increase timeout to give more time to select a member
+    onBlur={() => setTimeout(() => setIsDropdownOpen(false), 500)}
+  />
+  <div className={`dropdown-menu w-100 ${isDropdownOpen ? 'show' : ''}`}>
+    {filteredMembers
+      .filter(member => {
+        // Handle both string and object IDs
+        return !formData.members.some(id =>
+          id === member._id || id === member._id.toString()
+        );
+      })
+      .map(member => (
+        <a
+          key={member._id}
+          className="dropdown-item d-flex align-items-center"
+          href="#"
+          onClick={(e) => {
+            e.preventDefault();
+            console.log('Adding member to team:', member);
+            setFormData(prev => {
+              const updatedMembers = [...prev.members, member._id];
+              console.log('Updated members array:', updatedMembers);
+              return {
+                ...prev,
+                members: updatedMembers
+              };
+            });
+            setSearchTerm('');
+            // Keep dropdown open to allow selecting multiple members
+            // setIsDropdownOpen(false);
+          }}
+        >
+          <img
+            src={member.image || '/assets/images/faces/1.jpg'}
+            alt={member.firstName}
+            className="avatar avatar-xs rounded-circle me-2"
+          />
+          {member.firstName} {member.lastName}
+        </a>
+      ))}
+  </div>
+</div>
               <select
                 className="form-control mt-2"
                 data-trigger
@@ -668,55 +642,59 @@ useEffect(() => {
               </select>
 
               {formData.members.length > 0 && (
-                <div className="selected-members mt-4">
-                  <label className="form-label">Selected Members</label>
-                  <div className="member-list" style={{ maxHeight: '200px', overflowY: 'auto' }}>
-                    {formData.members.map(memberId => {
-                      const member = allMembers.find(m => m._id === memberId);
-                      if (!member) return null;
+  <div className="selected-members mt-4">
+    <label className="form-label">Selected Members ({formData.members.length})</label>
+    <div className="member-list" style={{ maxHeight: '200px', overflowY: 'auto' }}>
+      {formData.members.map(memberId => {
+        const member = allMembers.find(m => m._id === memberId);
+        console.log('Rendering member:', memberId, member);
+        if (!member) {
+          console.warn('Member not found:', memberId);
+          return null;
+        }
 
-                      return (
-                        <div key={member._id} className="d-flex align-items-center justify-content-between mb-2 p-2 border rounded">
-                          <div className="d-flex align-items-center">
-                            {member.image ? (
-                              <img
-                                src={member.image}
-                                alt={`${member.firstName} ${member.lastName}`}
-                                className="avatar avatar-xs rounded-circle me-2"
-                                style={{ width: '24px', height: '24px', objectFit: 'cover' }}
-                              />
-                            ) : (
-                              <span className="avatar avatar-xs bg-primary text-white rounded-circle me-2">
-                                {(member.firstName || '').charAt(0)}{(member.lastName || '').charAt(0) || 'U'}
-                              </span>
-                            )}
-                            <div>
-                              <span>{member.firstName || ''} {member.lastName || ''}</span>
-                              <small className="text-muted d-block">{member.role}</small>
-                            </div>
-                          </div>
-                          <button
-                            type="button"
-                            className="btn btn-sm btn-danger"
-                            onClick={() => {
-                              // Directly update the formData state to avoid needing to click twice
-                              setFormData(prev => ({
-                                ...prev,
-                                members: prev.members.filter(id => id !== member._id)
-                              }));
-                            }}
-                          >
-                            <i className="ri-close-line"></i>
-                          </button>
-                        </div>
-                      );
-                    })}
-                  </div>
-                  <small className="text-muted d-block mt-2">
-                    {formData.members.length} member(s) selected
-                  </small>
-                </div>
+        return (
+          <div key={memberId} className="d-flex align-items-center justify-content-between mb-2 p-2 border rounded">
+            <div className="d-flex align-items-center">
+              {member.image ? (
+                <img
+                  src={member.image}
+                  alt={`${member.firstName} ${member.lastName}`}
+                  className="avatar avatar-xs rounded-circle me-2"
+                />
+              ) : (
+                <span className="avatar avatar-xs bg-primary text-white rounded-circle me-2">
+                  {(member.firstName || '').charAt(0)}
+                </span>
               )}
+              <div>
+                <div>{member.firstName} {member.lastName}</div>
+                <small className="text-muted">{member.role}</small>
+              </div>
+            </div>
+            <button
+              type="button"
+              className="btn btn-sm btn-danger"
+              onClick={() => {
+                console.log('Removing member:', memberId);
+                setFormData(prev => {
+                  const updatedMembers = prev.members.filter(id => id !== memberId);
+                  console.log('Updated members after removal:', updatedMembers);
+                  return {
+                    ...prev,
+                    members: updatedMembers
+                  };
+                });
+              }}
+            >
+              <i className="ri-close-line"></i>
+            </button>
+          </div>
+        );
+      })}
+    </div>
+  </div>
+)}
             </div>
           </div>
         </div>
