@@ -285,3 +285,44 @@ exports.addTeamMember = async (req, res) => {
       });
   }
 };
+
+
+exports.getAllMembers = async (req, res) => {
+  try {
+      // Récupérer tous les membres d'équipe avec les informations utilisateur associées
+      const members = await TeamMember.find()
+          .populate({
+              path: 'user_id',
+              select: 'name email image firstName lastName', // Sélectionnez les champs que vous voulez de l'utilisateur
+              model: User
+          })
+          .populate('skills');
+
+      // Formater la réponse pour inclure l'image et autres détails
+      const formattedMembers = members.map(member => ({
+          _id: member._id,
+          team_id: member.team_id,
+          user: {
+              _id: member.user_id._id,
+              firstName: member.user_id.firstName,
+              lastName: member.user_id.lastName,
+              image: member.user_id.image // URL de l'image du membre
+          },
+          role: member.role,
+          skills: member.skills,
+          performance_score: member.performance_score,
+          completed_tasks_count: member.completed_tasks_count
+      }));
+
+      res.status(200).json({
+          success: true,
+          data: formattedMembers
+      });
+  } catch (error) {
+      console.error("Erreur lors de la récupération des membres:", error);
+      res.status(500).json({
+          success: false,
+          message: "Erreur serveur lors de la récupération des membres"
+      });
+  }
+};

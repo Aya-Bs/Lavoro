@@ -557,3 +557,58 @@ exports.updateTaskCalendarDates = async (req, res) => {
     });
   }
 };
+
+
+exports.getTaskById = async (req, res) => {
+  try {
+      const taskId = req.params.id;
+
+      // Vérifier si l'ID est valide
+      if (!mongoose.Types.ObjectId.isValid(taskId)) {
+          return res.status(400).json({
+              success: false,
+              message: "ID de tâche invalide"
+          });
+      }
+
+      // Récupérer la tâche avec les informations du projet associé
+      const task = await Task.findById(taskId)
+          .populate('created_by', 'name email')
+          .populate('assigned_to', 'name email');
+
+      if (!task) {
+          return res.status(404).json({
+              success: false,
+              message: "Tâche non trouvée"
+          });
+      }
+
+      // Formater la réponse
+      const response = {
+          _id: task._id,
+          taskTitle: task.title,
+          description: task.description,  
+          created_by: task.created_by,
+          assigned_to: task.assigned_to ,
+          status: task.status,
+          priority: task.priority,
+          deadline: task.deadline,
+          start_date: task.start_date,
+          estimated_duration: task.estimated_duration,
+          tags: task.tags,
+          requiredSkills: task.requiredSkills,
+          created_at: task.created_at
+      };
+
+      res.status(200).json({
+          success: true,
+          data: response
+      });
+  } catch (error) {
+      console.error("Erreur lors de la récupération de la tâche:", error);
+      res.status(500).json({
+          success: false,
+          message: "Erreur serveur lors de la récupération de la tâche"
+      });
+  }
+};

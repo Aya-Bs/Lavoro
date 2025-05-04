@@ -39,6 +39,7 @@ router.post('/test-points-system/:userId',
 
 router.get('/getTasksList/:userId', taskController.getTasksList);
 router.put('/updateCalendarDates/:taskId', taskController.updateTaskCalendarDates);
+router.get('/getTaskById/:id', taskController.getTaskById);
 
 
 module.exports = router;
