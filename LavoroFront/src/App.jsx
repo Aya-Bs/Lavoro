@@ -40,7 +40,6 @@ import UpdateTeam from "./team/updateTeam";
 import DashTeam from "./team/DashTeam";
 import BestPerformerPage from "./pages/BestPerformerPage";
 import ChatComponent from "./chat/ChatComponent";
-import ChatFloatingButton from "./chat/ChatFloatingButton";
 import SearchMember from "./team/searchMember";
 import MemberDetails from "./team/memberDetails";
 import FullCalendar from "./team/calendar";
@@ -53,6 +52,8 @@ import { CreateTask } from "./Tasks/createTask";
 import { TaskList } from "./Tasks/tasksList";
 import { TaskDetail } from "./Tasks/taskDetail";
 import { MyTasks } from "./Tasks/myTasks";
+import ReportsList from "./reports/ReportsList";
+import PrioritizedTasks from "./Tasks/PrioritizedTasks";
 
 
 // ProtectedRoute component to check authentication and roles
@@ -79,7 +80,7 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
 
         if (response.data) {
           setUserRole(response.data.role?.RoleName);
-          
+
           // If no specific roles required or user has one of the allowed roles
           if (!allowedRoles || allowedRoles.includes(response.data.role?.RoleName)) {
             setIsAuthorized(true);
@@ -118,7 +119,6 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [showChatPopup, setShowChatPopup] = useState(false);
 
   return (
     <GoogleOAuthProvider clientId="893053722717-a3eudc815ujr6ne3tf5q3dlrvkbmls6d.apps.googleusercontent.com">
@@ -126,6 +126,7 @@ function App() {
         <RefreshHandler setIsAuthenticated={setIsAuthenticated} />
         <Routes>
           {/* Public routes */}
+
           <Route path="/signin" element={<SignIn />} />
           <Route path="/signup" element={<SignUp />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
@@ -142,13 +143,13 @@ function App() {
                 <Home />
               </ProtectedRoute>
             } />
-            
+
             <Route path="/profile" element={
               <ProtectedRoute>
                 <Profile />
               </ProtectedRoute>
             } />
-              
+
 
 
             <Route path="/update-profile" element={
@@ -156,7 +157,7 @@ function App() {
                 <UpdateProfile />
               </ProtectedRoute>
             } />
-            
+
             <Route path="/activities" element={
               <ProtectedRoute>
                 <ActivitiesPage />
@@ -169,7 +170,7 @@ function App() {
                 <AdminDashboard />
               </ProtectedRoute>
             } />
-            
+
             <Route path="/user-activity/:userId" element={
               <ProtectedRoute allowedRoles={['Admin']}>
                 <UserActivity />
@@ -182,19 +183,19 @@ function App() {
                 <CreateProject />
               </ProtectedRoute>
             } />
-            
+
             <Route path="/createProWithAI" element={
               <ProtectedRoute allowedRoles={['Project Manager', 'Admin']}>
                 <CreateProjectWithAI />
               </ProtectedRoute>
             } />
-            
+
             <Route path="/ProjectDash" element={
               <ProtectedRoute allowedRoles={['Project Manager', 'Admin']}>
                 <ProjectDash />
               </ProtectedRoute>
             } />
-            
+
             <Route path="/updateProjects/:id" element={
               <ProtectedRoute allowedRoles={['Project Manager', 'Admin']}>
                 <UpdateProject />
@@ -227,12 +228,14 @@ function App() {
               </ProtectedRoute>
             } />
 
+
            <Route path="/DashTeam" element={
               <ProtectedRoute allowedRoles={['Team Manager']}>
                 <DashTeam />
               </ProtectedRoute>
             } />
             
+
             <Route path="/teamsList" element={
               <ProtectedRoute allowedRoles={['Team Manager', 'Admin', 'Project Manager']}>
                 <TeamCards />
@@ -287,7 +290,7 @@ function App() {
                 <ListPro />
               </ProtectedRoute>
             } />
-            
+
             <Route path="/overviewPro/:id" element={
               <ProtectedRoute allowedRoles={['Project Manager', 'Admin', 'Team Manager']}>
                 <ProjectOverview />
@@ -320,14 +323,14 @@ function App() {
               </ProtectedRoute>
             } />
 
-            
-<Route path="/mytasks" element={
+
+            <Route path="/mytasks" element={
               <ProtectedRoute allowedRoles={['Developer']}>
                 <MyTasks />
               </ProtectedRoute>
             } />
 
-<Route path="/createTask" element={
+            <Route path="/createTask" element={
               <ProtectedRoute allowedRoles={['Team Manager', 'Admin']}>
                 <CreateTask />
               </ProtectedRoute>
@@ -335,17 +338,17 @@ function App() {
 
 
 
-<Route path="/listTask" element={
+            <Route path="/listTask" element={
               <ProtectedRoute allowedRoles={['Team Manager', 'Admin']}>
                 <TaskList />
               </ProtectedRoute>
             } />
 
-<Route path="/taskdetails/:taskId" element={
-  <ProtectedRoute allowedRoles={['Team Manager', 'Admin']}>
-    <TaskDetail />
-  </ProtectedRoute>
-} />
+            <Route path="/taskdetails/:taskId" element={
+              <ProtectedRoute allowedRoles={['Team Manager', 'Admin']}>
+                <TaskDetail />
+              </ProtectedRoute>
+            } />
 
 
 
@@ -355,13 +358,22 @@ function App() {
                 <Sales />
               </ProtectedRoute>
             } />
+
+            {/* Reports route */}
+            <Route path="/reports" element={
+              <ProtectedRoute allowedRoles={['Team Manager', 'Admin']}>
+                <ReportsList />
+              </ProtectedRoute>
+            } />
+
+            {/* Prioritized Tasks route */}
+            <Route path="/prioritized-tasks" element={
+              <ProtectedRoute allowedRoles={['Developer']}>
+                <PrioritizedTasks />
+              </ProtectedRoute>
+            } />
           </Route>
         </Routes>
-
-        {/* Floating chat button */}
-        {isAuthenticated && window.location.pathname !== '/chat' && (
-          <ChatFloatingButton />
-        )}
       </BrowserRouter>
     </GoogleOAuthProvider>
   );

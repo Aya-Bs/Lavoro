@@ -35,14 +35,23 @@ const Sidebar = ({ userRole }) => {
                 <span className="side-menu__label">Tasks</span>
               </button>
               <ul className="slide-menu child1" style={{ display: isPagesOpen ? "block" : "none" }}>
-             
+
                 <li className="slide">
                   <Link to="/mytasks" className="side-menu__item">
                   My Tasks
                   </Link>
                 </li>
-                
+
              </ul>
+            </li>
+            <li className="slide__category">
+              <span className="category-name">Communication</span>
+            </li>
+            <li className="slide">
+              <Link to="/chat" className="side-menu__item">
+                <i className="ri-message-3-line side-menu__icon"></i>
+                <span className="side-menu__label">Messagerie</span>
+              </Link>
             </li>
           </>
         );
@@ -114,6 +123,15 @@ const Sidebar = ({ userRole }) => {
                 </li>
               </ul>
             </li>
+            <li className="slide__category">
+              <span className="category-name">Communication</span>
+            </li>
+            <li className="slide">
+              <Link to="/chat" className="side-menu__item">
+                <i className="ri-message-3-line side-menu__icon"></i>
+                <span className="side-menu__label">Messagerie</span>
+              </Link>
+            </li>
           </>
         );
 
@@ -166,13 +184,13 @@ Member of the year                  </Link>
                   Best Performance
                   </Link>
                 </li>
-              
+
                 <li className="slide">
                   <Link to="/teamsList" className="side-menu__item">
                   Teams List
                   </Link>
                 </li>
-          
+
                 <li className="slide">
                   <Link to="/member-details/67ffe958abcdc7b19d4edb98" className="side-menu__item">
                     member details
@@ -181,6 +199,12 @@ Member of the year                  </Link>
                 <li className="slide">
                   <Link to="/searchMember" className="side-menu__item">
                     search member
+                  </Link>
+                </li>
+                <li className="slide">
+                  <Link to="/reports" className="side-menu__item">
+                    <i className="ri-file-warning-line side-menu__icon"></i>
+                    Reports
                   </Link>
                 </li>
 
@@ -201,7 +225,7 @@ Member of the year                  </Link>
                 <span className="side-menu__label">Tasks</span>
               </button>
               <ul className="slide-menu child1" style={{ display: isPagesOpen ? "block" : "none" }}>
-             
+
                 <li className="slide">
                   <Link to="/createTask" className="side-menu__item">
                   Create Task
@@ -223,7 +247,7 @@ Member of the year                  </Link>
                 <span className="side-menu__label">Messagerie</span>
               </Link>
             </li>
-           
+
 
           </>
         );
@@ -321,6 +345,12 @@ Member of the year                  </Link>
                 <span className="side-menu__label">Best Performance</span>
               </Link>
             </li>
+            <li className="slide">
+              <Link to="/reports" className="side-menu__item">
+                <i className="ri-file-warning-line side-menu__icon"></i>
+                <span className="side-menu__label">Reports</span>
+              </Link>
+            </li>
 
             <li className="slide__category">
               <span className="category-name">Communication</span>
@@ -338,12 +368,23 @@ Member of the year                  </Link>
       // Add more roles as needed
       default:
         return (
-          <li className="slide">
-            <Link to="/profile" className="side-menu__item">
-              <i className="ri-user-line side-menu__icon"></i>
-              <span className="side-menu__label">Profile</span>
-            </Link>
-          </li>
+          <>
+            <li className="slide">
+              <Link to="/profile" className="side-menu__item">
+                <i className="ri-user-line side-menu__icon"></i>
+                <span className="side-menu__label">Profile</span>
+              </Link>
+            </li>
+            <li className="slide__category">
+              <span className="category-name">Communication</span>
+            </li>
+            <li className="slide">
+              <Link to="/chat" className="side-menu__item">
+                <i className="ri-message-3-line side-menu__icon"></i>
+                <span className="side-menu__label">Messagerie</span>
+              </Link>
+            </li>
+          </>
         );
     }
   };

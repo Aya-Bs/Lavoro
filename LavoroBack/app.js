@@ -44,6 +44,11 @@ const taskAssignmentRoutes = require('./routes/taskAssignmentRoutes');
 // const homeRouter = require('./routes/home');
 const adminRouter = require('./routes/admin');
 const emailRouter = require('./routes/emails');
+const reportRouter = require('./routes/reports');
+const deleteReportRouter = require('./routes/deleteReport');
+const taskPrioritizationRoutes = require('./routes/taskPrioritizationRoutes');
+const predictRouter = require('./routes/predictMember');
+
 
 
 const app = express();
@@ -112,6 +117,7 @@ app.set('io', io);
 
 app.use('/tasks',taskRouter);
 app.use('/chat', chatRouter);
+app.use('/predict', predictRouter);
 
 
 app.use('/project',projectRouter);
@@ -127,6 +133,10 @@ app.use('/teams', teamRouter);
 
 app.use('/teams', teamRouter);
 
+
+app.use('/ai-prioritization', taskPrioritizationRoutes);
+app.use('/reports', reportRouter);
+app.use('/delete-report', deleteReportRouter);
 
 app.post("/translate", async (req, res) => {
   const { text, targetLanguage } = req.body;
