@@ -70,6 +70,15 @@ export const CreateTask = () => {
     const [tagInput, setTagInput] = useState('');
     const [productFeatures, setProductFeatures] = useState('');
 
+    // Static task counts for team members with varied numbers
+    const staticTaskCounts = {
+      'member1_id': 2,
+      'member2_id': 5,
+      'member3_id': 4,
+      'member4_id': 1,
+      'member5_id': 3
+    };
+
     useEffect(() => {
         const fetchData = async () => {
           try {
@@ -97,10 +106,11 @@ export const CreateTask = () => {
             // Transform data to match expected structure
             const formattedMembers = membersResponse.data.data.map(member => ({
               ...member,
-              _id: member.id || member._id, // Standardize ID field
+              _id: member.id || member._id,
               name: member.name || 'Unnamed Member',
               image: member.image || '../assets/images/faces/11.jpg',
-              role: member.role || 'Developer'
+              role: member.role || 'Developer',
+              taskCount: staticTaskCounts[member.id || member._id] || Math.floor(Math.random() * 6) // Use static count or random if not specified
             }));
             
             setProjects(projectsResponse.data.data);
@@ -142,17 +152,33 @@ export const CreateTask = () => {
       if (formData.assigned_to) {
         const member = teamMembers.find(m => m._id === formData.assigned_to);
         setSelectedMember(member);
-        console.log('Selected Member:', member); // Debugging
       } else {
         setSelectedMember(null);
       }
     }, [formData.assigned_to, teamMembers]);
 
     const handleTeamMemberChange = (e) => {
-      setFormData(prev => ({
-        ...prev,
-        assigned_to: e.target.value
-      }));
+      const selectedId = e.target.value;
+      const selectedMember = teamMembers.find(m => m._id === selectedId);
+      
+      if (selectedMember && selectedMember.taskCount >= 5) {
+        Swal.fire({
+          icon: 'error',
+          title: 'Cannot Assign Task',
+          text: `${selectedMember.name} already has 5 tasks. Please select another team member.`,
+          confirmButtonText: 'OK'
+        });
+        setFormData(prev => ({
+          ...prev,
+          assigned_to: ''
+        }));
+        setSelectedMember(null);
+      } else {
+        setFormData(prev => ({
+          ...prev,
+          assigned_to: selectedId
+        }));
+      }
     };
 
     const handleProjectChange = (e) => {
@@ -213,7 +239,6 @@ export const CreateTask = () => {
             text: 'Task has been created successfully',
             confirmButtonText: 'OK'
           });
-          console.log('Task created successfully:', response.data);
         }
       } catch (err) {
         console.error('Task creation error:', err);
@@ -274,25 +299,23 @@ export const CreateTask = () => {
     return (
       <>
         <div className="d-flex align-items-center justify-content-between page-header-breadcrumb flex-wrap gap-2">
-                <div>
-                    <nav>
-                        <ol className="breadcrumb mb-1">
-                            
-                            <li className="breadcrumb-item">
-                                <a href="javascript:void(0);">Tasks</a>
-                            </li>
-                            <li className="breadcrumb-item active" aria-current="page">
-                            Create Task
-                            </li>
-                        </ol>
-                    </nav>
-                    <h1 className="page-title fw-medium fs-18 mb-0">
-                        Create Task
-                    </h1>
-                </div>
-                
-            </div>
- 
+          <div>
+            <nav>
+              <ol className="breadcrumb mb-1">
+                <li className="breadcrumb-item">
+                  <a href="javascript:void(0);">Tasks</a>
+                </li>
+                <li className="breadcrumb-item active" aria-current="page">
+                  Create Task
+                </li>
+              </ol>
+            </nav>
+            <h1 className="page-title fw-medium fs-18 mb-0">
+              Create Task
+            </h1>
+          </div>
+        </div>
+
         <div className="row">
           <div className="col-xl-12">
             <div className="card custom-card">
@@ -401,8 +424,12 @@ export const CreateTask = () => {
                               >
                                 <option value="">Select a team member</option>
                                 {teamMembers.map(member => (
-                                  <option key={member._id} value={member._id}>
-                                    {member.name || `Member ${member._id}`}
+                                  <option 
+                                    key={member._id} 
+                                    value={member._id}
+                                    style={member.taskCount >= 5 ? { backgroundColor: '#ffe6e6', color: '#cc0000' } : {}}
+                                  >
+                                    {member.name || `Member ${member._id}`} {member.taskCount >= 5 ? '(Max Tasks)' : `(${member.taskCount} tasks)`}
                                   </option>
                                 ))}
                               </select>
@@ -414,28 +441,26 @@ export const CreateTask = () => {
                                   <div className="d-flex flex-column align-items-center justify-content-center text-center">
                                     <div className="mb-2">
                                       <span className="avatar avatar-xl avatar-rounded">
-                                      {selectedMember.image ? (
-              <img
-                src={
-                    selectedMember.image.startsWith('http') || selectedMember.image.startsWith('https')
-                    ? selectedMember.image // Use as-is if it's already a full URL
-                    : `http://localhost:3000${selectedMember.image}` // Prepend server URL if relative
-                }
-
-                                          alt={selectedMember.name} 
-                                          className="img-fluid" 
-                                          onError={(e) => {
-                                            e.target.src = '../assets/images/faces/11.jpg';
-                                          }}
-                                        />
+                                        {selectedMember.image ? (
+                                          <img
+                                            src={
+                                              selectedMember.image.startsWith('http') || selectedMember.image.startsWith('https')
+                                                ? selectedMember.image
+                                                : `http://localhost:3000${selectedMember.image}`
+                                            }
+                                            alt={selectedMember.name} 
+                                            className="img-fluid" 
+                                            onError={(e) => {
+                                              e.target.src = '../assets/images/faces/11.jpg';
+                                            }}
+                                          />
                                         ) : (
-                                            <img 
-                                                src="../assets/images/faces/11.jpg" 
-                                                alt={selectedMember.name} 
-                                                className="img-fluid" 
-                                            />
-                                            )}
-
+                                          <img 
+                                            src="../assets/images/faces/11.jpg" 
+                                            alt={selectedMember.name} 
+                                            className="img-fluid" 
+                                          />
+                                        )}
                                       </span>
                                     </div>
                                     <h6 className="fw-semibold mb-2">
@@ -444,6 +469,11 @@ export const CreateTask = () => {
                                     <div className="mb-2">
                                       <span className="badge bg-info-transparent fw-xxl">
                                         {selectedMember.role}
+                                      </span>
+                                    </div>
+                                    <div className="mb-2">
+                                      <span className="badge bg-secondary-transparent">
+                                        Current Tasks: {selectedMember.taskCount}
                                       </span>
                                     </div>
                                   </div>
