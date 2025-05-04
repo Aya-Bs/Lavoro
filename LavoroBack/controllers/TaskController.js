@@ -369,7 +369,6 @@ exports.testPointsSystem = async (req, res) => {
 };
 
 
-
 exports.addTask = async (req, res) => {
   try {
     const {
@@ -846,49 +845,92 @@ exports.getMyTasks = async (req, res) => {
 
 
 
+// Helper function to calculate task score
+const calculateTaskScore = (task, oldTask) => {
+  let score = oldTask?.score || 0;
+  
+  // Check if status changed to "In Progress"
+  if (task.status === 'In Progress' && (!oldTask || oldTask.status !== 'In Progress')) {
+    if (task.start_date) {
+      const startDate = new Date(task.start_date);
+      const actualStartDate = new Date();
+      const timeDiff = actualStartDate - startDate;
+      const daysDiff = Math.floor(timeDiff / (1000 * 60 * 60 * 24));
+      
+      if (daysDiff < 0) {
+        score += 2; // Started early
+      } else if (daysDiff === 0) {
+        score += 1; // Started on time
+      } else {
+        score -= 1; // Started late
+      }
+    } else {
+      score += 1; // No start date specified
+    }
+  }
+  
+  // Check if status changed to "Done"
+  if (task.status === 'Done' && task.deadline && 
+      (!oldTask || oldTask.status !== 'Done')) {
+    const deadlineDate = new Date(task.deadline);
+    const completionDate = new Date();
+    const timeDiff = completionDate - deadlineDate;
+    const daysDiff = Math.floor(timeDiff / (1000 * 60 * 60 * 24));
+    
+    if (daysDiff < -1) {
+      score += 2;
+    } else if (daysDiff === 0) {
+      score += 1;
+    } else if (daysDiff > 0) {
+      score -= 1;
+    } else if (daysDiff === -1) {
+      score += 1.5;
+    }
+    
+    // Priority bonus
+    switch(task.priority) {
+      case 'High': score += 3; break;
+      case 'Medium': score += 2; break;
+      case 'Low': score += 1; break;
+      default: break;
+    }
+  }
+  
+  return score;
+};
+
+// Update your startTask controller
 exports.startTask = async (req, res) => {
   const { taskId } = req.params;
 
   try {
-    // 1. Find the task
-    const task = await Task.findById(taskId);
-    
-    if (!task) {
-      return res.status(404).json({
-        success: false,
-        message: 'Task not found'
-      });
+    const oldTask = await Task.findById(taskId);
+    if (!oldTask) {
+      return res.status(404).json({ message: 'Task not found' });
     }
 
-    // 2. Verify current status is "Not Started"
-    if (task.status !== 'Not Started') {
-      return res.status(400).json({
-        success: false,
-        message: 'Task must be in "Not Started" status to be started'
-      });
+    if (oldTask.status !== 'Not Started') {
+      return res.status(400).json({ message: 'Task must be in "Not Started" status' });
     }
 
-    // 3. Update the task status
     const updatedTask = await Task.findByIdAndUpdate(
       taskId,
       { 
         status: 'In Progress',
-        start_date: new Date() // Set start date when task begins
+        start_date: new Date() // Set actual start date
       },
-      { new: true, runValidators: true }
+      { new: true }
     );
 
-
-
+    // Calculate and update score
+    updatedTask.score = calculateTaskScore(updatedTask, oldTask);
+    await updatedTask.save();
 
     res.status(200).json({
       success: true,
-      message: 'Task started successfully',
       data: updatedTask
     });
-
   } catch (error) {
-    console.error('Error starting task:', error);
     res.status(500).json({
       success: false,
       message: 'Error starting task',
@@ -897,47 +939,35 @@ exports.startTask = async (req, res) => {
   }
 };
 
-
-
+// Update your completeTask controller
 exports.completeTask = async (req, res) => {
   const { taskId } = req.params;
 
   try {
-    // 1. Find the task
-    const task = await Task.findById(taskId);
-    
-    if (!task) {
-      return res.status(404).json({
-        success: false,
-        message: 'Task not found'
-      });
+    const oldTask = await Task.findById(taskId);
+    if (!oldTask) {
+      return res.status(404).json({ message: 'Task not found' });
     }
 
-    // 2. Verify current status is "In Progress"
-    if (task.status !== 'In Progress') {
-      return res.status(400).json({
-        success: false,
-        message: 'Task must be in "In Progress" status to be completed'
-      });
+    if (oldTask.status !== 'In Progress') {
+      return res.status(400).json({ message: 'Task must be in "In Progress" status' });
     }
 
-    // 3. Update the task status
     const updatedTask = await Task.findByIdAndUpdate(
       taskId,
       { status: 'Done' },
-      { new: true, runValidators: true }
+      { new: true }
     );
 
-    
+    // Calculate and update score
+    updatedTask.score = calculateTaskScore(updatedTask, oldTask);
+    await updatedTask.save();
 
     res.status(200).json({
       success: true,
-      message: 'Task completed successfully',
-      data: updatedTask,
+      data: updatedTask
     });
-
   } catch (error) {
-    console.error('Error completing task:', error);
     res.status(500).json({
       success: false,
       message: 'Error completing task',
@@ -945,6 +975,8 @@ exports.completeTask = async (req, res) => {
     });
   }
 };
+
+
 
 
 

@@ -58,19 +58,23 @@ export const fetchAllUsers = async () => {
         }
 
         // Utiliser la route de contacts du chat qui inclut les photos de profil
+        console.log(`Calling API endpoint: /chat/contacts/${userId}`);
         const response = await api.get(`/chat/contacts/${userId}`);
 
         console.log('Users response:', response.data);
 
         if (response.data && response.data.success && response.data.data) {
             // La réponse est déjà organisée par lettre, nous pouvons la retourner directement
-            return flattenContacts(response.data.data);
+            const contacts = flattenContacts(response.data.data);
+            console.log(`Successfully fetched ${contacts.length} contacts from database`);
+            return contacts;
         }
 
         console.warn('Invalid users response format:', response.data);
         return [];
     } catch (error) {
-        console.error('Error fetching all users:', error);
+        console.error('Error fetching all users:', error.message);
+        console.error('Error details:', error);
         return [];
     }
 };
@@ -89,11 +93,30 @@ const flattenContacts = (contacts) => {
 // Fonction pour organiser les utilisateurs par ordre alphabétique pour l'affichage des contacts
 export const organizeUsersByAlphabet = (users) => {
     if (!Array.isArray(users) || users.length === 0) {
+        console.log("No users to organize or invalid users array");
         return {};
     }
 
+    console.log("Organizing users by alphabet, total users:", users.length);
+
     // Filtrer les utilisateurs valides (qui ont un nom)
-    const validUsers = users.filter(user => user && typeof user.name === 'string');
+    const validUsers = users.filter(user => {
+        // Vérifier si l'utilisateur a un nom
+        if (!user || typeof user.name !== 'string') {
+            console.log("Invalid user found without name:", user);
+
+            // Si l'utilisateur a firstName et lastName, créer un nom
+            if (user && user.firstName) {
+                user.name = `${user.firstName} ${user.lastName || ''}`.trim();
+                console.log("Created name for user:", user.name);
+                return true;
+            }
+            return false;
+        }
+        return true;
+    });
+
+    console.log("Valid users with names:", validUsers.length);
 
     // Trier les utilisateurs par nom
     validUsers.sort((a, b) => a.name.localeCompare(b.name));
@@ -108,8 +131,15 @@ export const organizeUsersByAlphabet = (users) => {
             organizedUsers[firstLetter] = [];
         }
 
+        // Ensure user has profileImage property
+        if (!user.profileImage && user.image) {
+            user.profileImage = user.image;
+        }
+
         organizedUsers[firstLetter].push(user);
     });
+
+    console.log("Organized users by alphabet, letters:", Object.keys(organizedUsers));
 
     return organizedUsers;
 };

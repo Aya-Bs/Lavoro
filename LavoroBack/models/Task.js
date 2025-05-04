@@ -13,6 +13,8 @@ const TaskSchema = new Schema({
     estimated_duration: { type: Number },
     tags: [{ type: String }],
     created_at: { type: Date, default: Date.now },
+    score : { type: Number, default: 0 }
+
 });
 
 module.exports = mongoose.model('Task', TaskSchema);
