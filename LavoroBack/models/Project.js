@@ -33,10 +33,7 @@ const Project = new Schema({
     updated_at: { type: Date, default: Date.now },
     tasks: [{type : mongo.Schema.Types.ObjectId, ref: 'Task', required:false }], 
 
-
 });
 Project.index({ name: 'text' });
 module.exports = mongo.model('Project', Project);
-
-
 

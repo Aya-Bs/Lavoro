@@ -17,12 +17,32 @@ const [selectedUnassignMembers, setSelectedUnassignMembers] = useState([]);
     const [error, setError] = useState(null);
     const [stats, setStats] = useState({
         new: 0,
-        completed: 0,
+        Done: 0,
         pending: 0,
         inprogress: 0,
         notStarted: 0
 
     });
+    const [currentPage, setCurrentPage] = useState(1);
+const tasksPerPage = 5;
+    const [statusFilter, setStatusFilter] = useState('all'); 
+
+    const getPaginatedTasks = () => {
+      const filtered = getFilteredTasks();
+      const startIndex = (currentPage - 1) * tasksPerPage;
+      return filtered.slice(startIndex, startIndex + tasksPerPage);
+    };
+// Add this useEffect to update stats when filter changes
+useEffect(() => {
+  calculateStats(getFilteredTasks());
+}, [statusFilter, tasks]);
+
+    const getFilteredTasks = () => {
+      if (statusFilter === 'all') {
+        return tasks;
+      }
+      return tasks.filter(task => task.status === statusFilter);
+    };
 
     const fetchTeamMembers = async () => {
         try {
@@ -180,7 +200,7 @@ const [selectedUnassignMembers, setSelectedUnassignMembers] = useState([]);
     const calculateStats = (tasks) => {
         const newStats = {
             new: tasks.length,  // Total count of all tasks
-            completed: tasks.filter(task => task.status === 'Completed').length,
+            Done: tasks.filter(task => task.status === 'Done').length,
             pending: tasks.filter(task => task.status === 'Not Started').length,
             inprogress: tasks.filter(task => task.status === 'In Progress').length
         };
@@ -258,7 +278,7 @@ const [selectedUnassignMembers, setSelectedUnassignMembers] = useState([]);
                 return 'text-secondary';
             case 'Pending':
                 return 'text-warning';
-            case 'Completed':
+            case 'Done':
                 return 'text-success';
             default:
                 return 'text-primary';
@@ -266,54 +286,78 @@ const [selectedUnassignMembers, setSelectedUnassignMembers] = useState([]);
     };
 
 
-    const renderAssignedAvatars = (assignedTo, task) => {  // Add task parameter
-        if (!assignedTo || assignedTo.length === 0) {
-          return <span className="text-muted">Not assigned</span>;
-        }
-      
-        return (
-          <div className="avatar-list-stacked">
-            {assignedTo.map((member) => {
-              if (!member || !member.user_id) return null;
-              
-              const user = member.user_id;
-              const fullName = `${user.firstName || ''} ${user.lastName || ''}`.trim();
-              const avatarKey = member._id || user._id || Math.random().toString(36).substr(2, 9);
-      
-              return (
-                <span 
-                  key={avatarKey} 
-                  className="avatar avatar-sm avatar-rounded"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setCurrentTask(task);  // Now task is defined
-                    setSelectedUnassignMembers([member._id]);
-                    setShowUnassignModal(true);
+    const renderAssignedAvatars = (assignedTo, task) => {
+      if (!assignedTo || assignedTo.length === 0) {
+        return <span className="text-muted">Not assigned</span>;
+      }
+    
+      // Filter out invalid members and limit to 4
+      const validMembers = assignedTo.filter(member => member && member.user_id);
+      const membersToShow = validMembers.slice(0, 4);
+      const extraMembersCount = validMembers.length - 4;
+    
+      return (
+        <div className="avatar-list-stacked">
+          {membersToShow.map((member) => {
+            const user = member.user_id;
+            const fullName = `${user.firstName || ''} ${user.lastName || ''}`.trim();
+            const avatarKey = member._id || user._id || Math.random().toString(36).substr(2, 9);
+    
+            return (
+              <span 
+                key={avatarKey} 
+                className="avatar avatar-sm avatar-rounded"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setCurrentTask(task);
+                  setSelectedUnassignMembers([member._id]);
+                  setShowUnassignModal(true);
+                }}
+                style={{ cursor: 'pointer' }}
+              >
+                <img
+                  src={
+                    user.image && (user.image.startsWith('http') || user.image.startsWith('https'))
+                      ? user.image
+                      : user.image
+                        ? `http://localhost:3000${user.image}`
+                        : '../assets/images/faces/11.jpg'
+                  }
+                  alt={fullName || 'User avatar'}
+                  className="img-fluid"
+                  onError={(e) => {
+                    e.target.src = '../assets/images/faces/11.jpg';
+                    e.target.alt = 'Default avatar';
                   }}
-                  style={{ cursor: 'pointer' }}
-                >
-                  <img
-                    src={
-                      user.image && (user.image.startsWith('http') || user.image.startsWith('https'))
-                        ? user.image
-                        : user.image
-                          ? `http://localhost:3000${user.image}`
-                          : '../assets/images/faces/11.jpg'
-                    }
-                    alt={fullName || 'User avatar'}
-                    className="img-fluid"
-                    onError={(e) => {
-                      e.target.src = '../assets/images/faces/11.jpg';
-                      e.target.alt = 'Default avatar';
-                    }}
-                  />
-                </span>
-              );
-            })}
-          </div>
-        );
-      };
-
+                />
+              </span>
+            );
+          })}
+          
+          {extraMembersCount > 0 && (
+            <span 
+              className="avatar avatar-sm avatar-rounded "
+              onClick={(e) => {
+                e.stopPropagation();
+                setCurrentTask(task);
+                setShowUnassignModal(true);
+              }}
+              style={{ 
+                cursor: 'pointer',
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                backgroundColor: '#6366F1'
+                
+              }}
+              title={`${extraMembersCount} more members`}
+            >
+              <span className="text-dark fw-semibold">+{extraMembersCount}</span>
+            </span>
+          )}
+        </div>
+      );
+    };
 
     if (loading) {
         return (
@@ -388,8 +432,8 @@ const [selectedUnassignMembers, setSelectedUnassignMembers] = useState([]);
                         <div className="card-body">
                             <div className="d-flex align-items-start justify-content-between mb-2">
                                 <div>
-                                    <span className="text-muted d-block mb-1">Completed Tasks</span>
-                                    <h4 className="fw-medium mb-0">{stats.completed}</h4>
+                                    <span className="text-muted d-block mb-1">Done Tasks</span>
+                                    <h4 className="fw-medium mb-0">{stats.Done}</h4>
                                 </div>
                                 <div className="lh-1">
                                     <span className="avatar avatar-md avatar-rounded bg-primary1">
@@ -405,7 +449,7 @@ const [selectedUnassignMembers, setSelectedUnassignMembers] = useState([]);
                         <div className="card-body">
                             <div className="d-flex align-items-start justify-content-between mb-2">
                                 <div>
-                                    <span className="text-muted d-block mb-1">Pending Tasks</span>
+                                    <span className="text-muted d-block mb-1">Not Started Tasks</span>
                                     <h4 className="fw-medium mb-0">{stats.pending}</h4>
                                 </div>
                                 <div className="lh-1">
@@ -459,14 +503,46 @@ const [selectedUnassignMembers, setSelectedUnassignMembers] = useState([]);
                                         data-bs-toggle="dropdown"
                                         aria-expanded="false"
                                     >
-                                        <i className="ri-dots-line" />
+                                        <i className="ri-more-2-fill" />
                                     </button>
                                     <ul className="dropdown-menu">
-                                        <li><a className="dropdown-item" href="javascript:void(0);">New Tasks</a></li>
-                                        <li><a className="dropdown-item" href="javascript:void(0);">Pending Tasks</a></li>
-                                        <li><a className="dropdown-item" href="javascript:void(0);">Completed Tasks</a></li>
-                                        <li><a className="dropdown-item" href="javascript:void(0);">Inprogress Tasks</a></li>
-                                    </ul>
+  <li>
+    <a 
+      className="dropdown-item" 
+      href="javascript:void(0);"
+      onClick={() => setStatusFilter('all')}
+    >
+      All Tasks
+    </a>
+  </li>
+  <li>
+    <a 
+      className="dropdown-item" 
+      href="javascript:void(0);"
+      onClick={() => setStatusFilter('Not Started')}
+    >
+      Not Started Tasks
+    </a>
+  </li>
+  <li>
+    <a 
+      className="dropdown-item" 
+      href="javascript:void(0);"
+      onClick={() => setStatusFilter('In Progress')}
+    >
+      In Progress Tasks
+    </a>
+  </li>
+  <li>
+    <a 
+      className="dropdown-item" 
+      href="javascript:void(0);"
+      onClick={() => setStatusFilter('Done')}
+    >
+      Done Tasks
+    </a>
+  </li>
+</ul>
                                 </div>
                             </div>
                         </div>
@@ -496,72 +572,140 @@ const [selectedUnassignMembers, setSelectedUnassignMembers] = useState([]);
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {tasks.map(task => (
-                                            <tr className="task-list" key={`task-${task._id}`}>
-                                                <td className="task-checkbox">
-                                                    <input
-                                                        className="form-check-input"
-                                                        type="checkbox"
-                                                        defaultValue=""
-                                                        aria-label="..."
-                                                    />
-                                                </td>
-                                                <td>
-                                                    <span className="fw-medium">
-                                                        {task.title}
-                                                    </span>
-                                                </td>
-                                                <td>
-                                                    {new Date(task.start_date).toLocaleDateString()}
-                                                </td>
-                                                <td>
-                                                    <span className={`fw-medium ${getStatusClass(task.status)}`}>
-                                                        {task.status}
-                                                    </span>
-                                                </td>
-                                                <td>
-                                                    {new Date(task.deadline).toLocaleDateString()}
-                                                </td>
-                                                <td>
-                                                    <span className={getPriorityBadge(task.priority)}>
-                                                        {task.priority}
-                                                    </span>
-                                                </td>
-                                                <td>
-                                                     {renderAssignedAvatars(task.assigned_to, task)} 
-                                                </td>
-                                                <td>
-                                                    <span className="badge bg-info-transparent">
-                                                        {task.project_id?.name || 'No Project'}
-                                                    </span>
-                                                </td>
-                                                <td>
-                                                    <div className="d-flex align-items-center">
-                                                        <button 
-                                                            className="btn btn-primary-light btn-icon btn-sm"
-                                                            onClick={() => {
-                                                                setCurrentTask(task);
-                                                                setShowAssignModal(true);
-                                                            }}
-                                                        >
-                                                            <i className="ri-user-add-line" />
-                                                        </button>
-                                                        <button 
-                                                            className="btn btn-danger-light btn-icon ms-1 btn-sm"
-                                                            onClick={() => handleDeleteTask(task._id, task.status)}
-                                                        >
-                                                            <i className="ri-delete-bin-5-line" />
-                                                        </button>
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
+  {getPaginatedTasks().map(task => (
+    <tr 
+      className="task-list" 
+      key={`task-${task._id}`}
+      onClick={() => navigate(`/taskdetails/${task._id}`)}
+      style={{ cursor: 'pointer' }}
+    >
+      <td className="task-checkbox" onClick={(e) => e.stopPropagation()}>
+        <input
+          className="form-check-input"
+          type="checkbox"
+          defaultValue=""
+          aria-label="..."
+          onClick={(e) => e.stopPropagation()}
+        />
+      </td>
+      <td>
+        <span className="fw-medium">
+          {task.title}
+        </span>
+      </td>
+      <td>
+        {new Date(task.start_date).toLocaleDateString()}
+      </td>
+      <td>
+        <span className={`fw-medium ${getStatusClass(task.status)}`}>
+          {task.status}
+        </span>
+      </td>
+      <td>
+        {new Date(task.deadline).toLocaleDateString()}
+      </td>
+      <td>
+        <span className={getPriorityBadge(task.priority)}>
+          {task.priority}
+        </span>
+      </td>
+      <td onClick={(e) => e.stopPropagation()}>
+        {renderAssignedAvatars(task.assigned_to, task)} 
+      </td>
+      <td>
+        <span className="badge bg-info-transparent">
+          {task.project_id?.name || 'No Project'}
+        </span>
+      </td>
+      <td onClick={(e) => e.stopPropagation()}>
+        <div className="d-flex align-items-center">
+          <button 
+            className="btn btn-primary-light btn-icon btn-sm"
+            onClick={(e) => {
+              e.stopPropagation();
+              setCurrentTask(task);
+              setShowAssignModal(true);
+            }}
+          >
+            <i className="ri-user-add-line" />
+          </button>
+          <button 
+            className="btn btn-danger-light btn-icon ms-1 btn-sm"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleDeleteTask(task._id, task.status);
+            }}
+          >
+            <i className="ri-delete-bin-5-line" />
+          </button>
+        </div>
+      </td>
+    </tr>
+  ))}
+</tbody>
                                 </table>
                             </div>
                         </div>
-                        {/* Pagination (unchanged) */}
-                    </div>
+                        {getFilteredTasks().length > tasksPerPage && (
+  <div className="d-flex justify-content-end mt-3">
+    <nav aria-label="Page navigation" className="pagination-style-4">
+      <ul className="pagination mb-0 flex-wrap">
+        <li className={`page-item ${currentPage === 1 ? 'disabled' : ''}`}>
+          <button 
+            className="page-link" 
+            onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+          >
+            Prev
+          </button>
+        </li>
+        
+        {Array.from({ length: Math.ceil(getFilteredTasks().length / tasksPerPage) }).map((_, index) => {
+          const pageNumber = index + 1;
+          // Show only first 2 pages, last 2 pages, and pages around current page
+          if (
+            pageNumber === 1 || 
+            pageNumber === 2 || 
+            pageNumber === Math.ceil(getFilteredTasks().length / tasksPerPage) - 1 || 
+            pageNumber === Math.ceil(getFilteredTasks().length / tasksPerPage) ||
+            (pageNumber >= currentPage - 1 && pageNumber <= currentPage + 1)
+          ) {
+            return (
+              <li key={pageNumber} className={`page-item ${currentPage === pageNumber ? 'active' : ''}`}>
+                <button className="page-link" onClick={() => setCurrentPage(pageNumber)}>
+                  {pageNumber}
+                </button>
+              </li>
+            );
+          } else if (
+            pageNumber === 3 || 
+            pageNumber === Math.ceil(getFilteredTasks().length / tasksPerPage) - 2
+          ) {
+            return (
+              <li key={pageNumber} className="page-item">
+                <button className="page-link">
+                  <i className="bi bi-three-dots"></i>
+                </button>
+              </li>
+            );
+          }
+          return null;
+        })}
+        
+        <li className={`page-item ${currentPage === Math.ceil(getFilteredTasks().length / tasksPerPage) ? 'disabled' : ''}`}>
+          <button 
+            className="page-link text-primary" 
+            onClick={() => setCurrentPage(prev => Math.min(prev + 1, Math.ceil(getFilteredTasks().length / tasksPerPage)))}
+          >
+            Next
+          </button>
+        </li>
+
+      </ul>
+    </nav>
+  </div>
+)}                   
+<br />
+ </div>
                 </div>
             </div>
 

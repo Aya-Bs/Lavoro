@@ -4,17 +4,21 @@ const { seedTasks, seedTaskHistory,getTasksByUser } = require('../controllers/Ta
 const auth = require('../middleware/authenticatedToken');
 
 const taskController = require('../controllers/TaskController')
+const authenticateUser = require('../middleware/mailAuth');
 
 router.post('/createTask', taskController.addTask);
-// Get all tasks with filtering
 router.get('/',  taskController.getAllTasks);
-  
-  // Delete a task
-  router.delete('/:taskId', taskController.deleteTask);
-  
-  // Assign task to team members
-  router.patch('/:taskId/assign', taskController.assignTask);
-  router.patch('/:taskId/unassign', taskController.unassignTask);
+router.delete('/:taskId', taskController.deleteTask);
+router.patch('/:taskId/assign', taskController.assignTask);
+router.patch('/:taskId/unassign', taskController.unassignTask);
+router.get('/task/:taskId',  taskController.getTaskById);
+router.get('/my-tasks', authenticateUser, taskController.getMyTasks);
+router.patch('/:taskId/start', authenticateUser, taskController.startTask);
+router.patch('/:taskId/complete', authenticateUser, taskController.completeTask);
+
+
+
+
 
 router.post('/seedtasks', async (req, res) => {
     try {

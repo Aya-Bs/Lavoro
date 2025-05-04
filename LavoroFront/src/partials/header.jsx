@@ -796,24 +796,8 @@ useEffect(() => {
                 </span>
               </a>
             </li>
-            <li>
-              <a
-                className="dropdown-item d-flex align-items-center"
-                href="mail-settings.html"
-              >
-                <i className="ri-settings-line p-1 rounded-circle bg-primary-transparent ings me-2 fs-16" />
-                Settings
-              </a>
-            </li>
-            <li className="border-top bg-light">
-              <a
-                className="dropdown-item d-flex align-items-center"
-                href="chat.html"
-              >
-                <i className="ri-circle-line p-1 rounded-circle bg-primary-transparent ings me-2 fs-16" />
-                Help
-              </a>
-            </li>
+            
+            
             <li>
             <a
                     className="dropdown-item d-flex align-items-center"

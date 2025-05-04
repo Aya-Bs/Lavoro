@@ -11,6 +11,13 @@ const { spawn } = require("child_process");
 const teamMember = require("../models/teamMember");
 const PredictMember = require("../models/PredictMember"); // Import the PredictMember model
 const User = require("../models/user");
+
+router.get('/getAllMembers', teamMemberController.getAllMembers);
+router.get('/getAllMemberTasks', teamMemberController.getAllMemberTask);
+
+
+
+
 router.get('/getAllMembers', teamMemberController.getAllMembers);
 router.get('/getAllMemberTasks', teamMemberController.getAllMemberTask);
 
