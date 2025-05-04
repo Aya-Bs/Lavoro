@@ -1007,7 +1007,6 @@ exports.getTeamById = async (req, res) => {
         const teamId = member.team_id.toString();
         memberCounts[teamId] = (memberCounts[teamId] || 0) + 1;
       });
-
       archives.forEach((archive) => {
         const teamId = archive._id.toString();
         worksheet.addRow({
