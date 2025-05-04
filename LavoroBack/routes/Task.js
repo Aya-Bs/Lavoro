@@ -5,6 +5,9 @@ const auth = require('../middleware/authenticatedToken');
 
 const taskController = require('../controllers/TaskController')
 
+router.delete('/:taskId', taskController.deleteTask);
+
+
 router.post('/seedtasks', async (req, res) => {
     try {
         await seedTasks();

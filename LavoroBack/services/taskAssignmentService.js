@@ -7,12 +7,12 @@ const NodeCache = require('node-cache');
 const predictionCache = new NodeCache({ stdTTL: 3600, checkperiod: 600 });
 
 class TaskAssignmentService {
-        // constructor() {
-        //     this.pythonShell = null;
-        //     this.pythonShellReady = false;
-        //     this.initPythonShell();
-        //     this.localSkillRelations = this.buildSkillRelations();
-        // }
+        constructor() {
+            // this.pythonShell = null;
+            // this.pythonShellReady = false;
+            // this.initPythonShell();
+            // this.localSkillRelations = this.buildSkillRelations();
+        }
 
     buildSkillRelations() {
         return {
@@ -29,7 +29,9 @@ class TaskAssignmentService {
             
             // Autres
             'python': {'django': 0.8, 'flask': 0.8, 'pandas': 0.6},
-            'java': {'spring': 0.8, 'hibernate': 0.7}
+            'java': {'spring': 0.8, 'hibernate': 0.7, 'jsp': 0.6},
+            'spring': {'java': 0.8, 'hibernate': 0.7},
+            'hibernate': {'java': 0.7, 'spring': 0.7}
         };
     }
 

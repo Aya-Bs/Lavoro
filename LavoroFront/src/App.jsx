@@ -47,6 +47,7 @@ import FullCalendar from "./Tasks/calendar";
 import WinnersPodium from "./team/podium";
 import Mail from "./user/mail"
 import 'bootstrap/dist/css/bootstrap.min.css';
+import TaskAssignement from "./Tasks/taskAssignement";
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -102,6 +103,7 @@ function App() {
               <Route path="/calendar" element={<FullCalendar/>} />
               <Route path="/podium" element={<WinnersPodium />} />
               <Route path ="mail" element={< Mail />} />
+              <Route path="/taskAssignement" element={<TaskAssignement />} />
 
 
             </Route>

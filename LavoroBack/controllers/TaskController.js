@@ -5,6 +5,8 @@ const Task = require('../models/Task');
 const TaskHistory = require('../models/TaskHistory');
 const User = require('../models/user');
 const Role = require('../models/role'); 
+const Project = require('../models/Project');
+const TeamMember = require('../models/teamMember');
 
 const ObjectId = mongoose.Types.ObjectId;
 
@@ -572,9 +574,7 @@ exports.getTaskById = async (req, res) => {
       }
 
       // Récupérer la tâche avec les informations du projet associé
-      const task = await Task.findById(taskId)
-          .populate('created_by', 'name email')
-          .populate('assigned_to', 'name email');
+      const task = await Task.findById(taskId);
 
       if (!task) {
           return res.status(404).json({
@@ -597,8 +597,9 @@ exports.getTaskById = async (req, res) => {
           estimated_duration: task.estimated_duration,
           tags: task.tags,
           requiredSkills: task.requiredSkills,
-          created_at: task.created_at
       };
+
+      console.log("Task response skills:", response.requiredSkills);
 
       res.status(200).json({
           success: true,
@@ -610,5 +611,61 @@ exports.getTaskById = async (req, res) => {
           success: false,
           message: "Erreur serveur lors de la récupération de la tâche"
       });
+  }
+};
+
+
+
+exports.deleteTask = async (req, res) => {
+  try {
+    const { taskId } = req.params;
+
+    // 1. Find the task first to check status
+    const task = await Task.findById(taskId);
+    
+    if (!task) {
+      return res.status(404).json({
+        success: false,
+        message: 'Task not found'
+      });
+    }
+
+    // 2. Check if task can be deleted (only "Not Started" status)
+    if (task.status !== 'Not Started') {
+      return res.status(400).json({
+        success: false,
+        message: 'Only tasks with "Not Started" status can be deleted'
+      });
+    }
+
+    console.log("project_id:", task.project_id);
+    // 3. Remove task from project's tasks array
+    await Project.findByIdAndUpdate(
+      task.project_id,
+      { $pull: { tasks: taskId }, $inc: { total_tasks_count: -1 } }
+    );
+
+    // 4. Remove task from assigned team member's tasks array (if assigned)
+    if (task.assigned_to) {
+      await TeamMember.updateMany(
+        { _id: { $in: task.assigned_to } },
+        { $pull: { tasks: taskId } }
+      );
+    }
+
+    // 5. Delete the task
+    await Task.findByIdAndDelete(taskId);
+
+    res.status(200).json({
+      success: true,
+      message: 'Task deleted successfully'
+    });
+  } catch (error) {
+    console.error('Error deleting task:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error deleting task',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
   }
 };

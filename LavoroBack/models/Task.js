@@ -12,6 +12,7 @@ const TaskSchema = new Schema({
     deadline: { type: Date },
     start_date: { type: Date },
     estimated_duration: { type: Number },
+    requiredSkills: [{ type: String }],
     tags: [{ type: String }],
     created_at: { type: Date, default: Date.now },
     calendar_dates: { // Nouveau champ pour stocker les dates du calendrier
