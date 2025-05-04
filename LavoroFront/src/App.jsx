@@ -172,6 +172,9 @@ import { File } from "./fileManager/file";
 import axios from "axios";
 import { CreateTask } from "./Tasks/createTask";
 import { TaskList } from "./Tasks/tasksList";
+import { TaskDetail } from "./Tasks/taskDetail";
+import { MyTasks } from "./Tasks/myTasks";
+
 
 // ProtectedRoute component to check authentication and roles
 const ProtectedRoute = ({ children, allowedRoles }) => {
@@ -252,6 +255,7 @@ function App() {
           <Route path="/" element={<Navigate to="/signin" />} />
           <Route path="*" element={<Navigate to="/signin" />} />
 
+
           {/* Protected routes with role-based access */}
           <Route element={<Layout />}>
             {/* Common routes for all authenticated users */}
@@ -266,7 +270,9 @@ function App() {
                 <Profile />
               </ProtectedRoute>
             } />
-            
+              
+
+
             <Route path="/update-profile" element={
               <ProtectedRoute>
                 <UpdateProfile />
@@ -316,6 +322,8 @@ function App() {
                 <UpdateProject />
               </ProtectedRoute>
             } />
+
+
 
             <Route path="/AllProject" element={
               <ProtectedRoute allowedRoles={['Project Manager', 'Admin']}>
@@ -392,19 +400,19 @@ function App() {
 
             {/* Shared routes for multiple roles */}
             <Route path="/ListPro" element={
-              <ProtectedRoute allowedRoles={['Project Manager', 'Admin', 'Team Manager', 'Developer']}>
+              <ProtectedRoute allowedRoles={['Project Manager', 'Admin', 'Team Manager']}>
                 <ListPro />
               </ProtectedRoute>
             } />
             
             <Route path="/overviewPro/:id" element={
-              <ProtectedRoute allowedRoles={['Project Manager', 'Admin', 'Team Manager', 'Developer']}>
+              <ProtectedRoute allowedRoles={['Project Manager', 'Admin', 'Team Manager']}>
                 <ProjectOverview />
               </ProtectedRoute>
             } />
 
             <Route path="/overviewArchive/:id" element={
-              <ProtectedRoute allowedRoles={['Project Manager', 'Admin', 'Team Manager']}>
+              <ProtectedRoute allowedRoles={['Project Manager', 'Admin']}>
                 <ArchiveOverview />
               </ProtectedRoute>
             } />
@@ -417,15 +425,22 @@ function App() {
             } />
 
             <Route path="/mail" element={
-              <ProtectedRoute allowedRoles={['Project Manager', 'Admin', 'Team Manager']}>
+              <ProtectedRoute allowedRoles={['Project Manager', 'Admin', 'Team Manager','Developer']}>
                 <Mail />
               </ProtectedRoute>
             } />
 
             {/* File management */}
             <Route path="/file" element={
-              <ProtectedRoute allowedRoles={['Project Manager', 'Admin', 'Team Manager']}>
+              <ProtectedRoute allowedRoles={['Project Manager', 'Admin', 'Team Manager','Developer']}>
                 <File />
+              </ProtectedRoute>
+            } />
+
+            
+<Route path="/mytasks" element={
+              <ProtectedRoute allowedRoles={['Developer']}>
+                <MyTasks />
               </ProtectedRoute>
             } />
 
@@ -442,6 +457,13 @@ function App() {
                 <TaskList />
               </ProtectedRoute>
             } />
+
+<Route path="/taskdetails/:taskId" element={
+  <ProtectedRoute allowedRoles={['Team Manager', 'Admin']}>
+    <TaskDetail />
+  </ProtectedRoute>
+} />
+
 
 
             {/* Sales - example route */}

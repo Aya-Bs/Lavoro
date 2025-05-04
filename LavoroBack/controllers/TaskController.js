@@ -370,107 +370,6 @@ exports.testPointsSystem = async (req, res) => {
 
 
 
-// exports.addTask = async (req, res) => {
-//   try {
-//     const {
-//       title,
-//       description,
-//       project_id,
-//       assigned_to,
-//       status,
-//       priority,
-//       deadline,
-//       start_date,
-//       estimated_duration,
-//       tags
-//     } = req.body;
-
-//     // Optional: Validate that project exists
-//     const project = await Project.findById(project_id);
-//     if (!project) {
-//       return res.status(404).json({ message: 'Project not found' });
-//     }
-
-//     const newTask = new Task({
-//       title,
-//       description,
-//       project_id,
-//       assigned_to,
-//       status,
-//       priority,
-//       deadline,
-//       start_date,
-//       estimated_duration,
-//       tags
-//     });
-
-//     const savedTask = await newTask.save();
-
-
-
-//     res.status(201).json(savedTask);
-//   } catch (error) {
-//     console.error('Error creating task:', error);
-//     res.status(500).json({ message: 'Error creating task' });
-//   }
-// };
-
-
-// exports.addTask = async (req, res) => {
-//   try {
-//     const {
-//       title,
-//       description,
-//       project_id,
-//       assigned_to,
-//       status,
-//       priority,
-//       deadline,
-//       start_date,
-//       estimated_duration,
-//       tags
-//     } = req.body;
-
-//     // Validate that project exists
-//     const project = await Project.findById(project_id);
-//     if (!project) {
-//       return res.status(404).json({ 
-//         success: false,
-//         message: 'Project not found' 
-//       });
-//     }
-
-//     const newTask = new Task({
-//       title,
-//       description,
-//       project_id,
-//       assigned_to,
-//       status,
-//       priority,
-//       deadline,
-//       start_date,
-//       estimated_duration,
-//       tags
-//     });
-
-//     const savedTask = await newTask.save();
-
-//     res.status(201).json({
-//       success: true,
-//       message: 'Task created successfully',
-//       data: savedTask
-//     });
-//   } catch (error) {
-//     console.error('Error creating task:', error);
-//     res.status(500).json({ 
-//       success: false,
-//       message: 'Error creating task',
-//       error: process.env.NODE_ENV === 'development' ? error.message : undefined
-//     });
-//   }
-// };
-
-
 exports.addTask = async (req, res) => {
   try {
     const {
@@ -830,3 +729,222 @@ exports.unassignTask = async (req, res) => {
     });
   }
 };
+
+
+
+exports.getTaskById = async (req, res) => {
+  try {
+    const { taskId } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(taskId)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid task ID format'
+      });
+    }
+
+    const task = await Task.findById(taskId)
+      .populate({
+        path: 'assigned_to',
+        select: 'role user_id',
+        populate: {
+          path: 'user_id',
+          select: 'firstName lastName email image'
+        }
+      })
+      .populate({
+        path: 'project_id',
+        select: 'name description ProjectManager_id budget client start_date end_date priority status risk_level tasks manager_id',
+        populate: [
+          {
+            path: 'ProjectManager_id',
+            select: 'firstName lastName email image'
+          },
+          {
+            path: 'manager_id',
+            select: 'firstName lastName email image'
+          }
+        ]
+      });
+
+    if (!task) {
+      return res.status(404).json({
+        success: false,
+        message: 'Task not found'
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      data: task
+    });
+  } catch (error) {
+    console.error('Error fetching task:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching task',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+};
+
+
+
+
+exports.getMyTasks = async (req, res) => {
+  try {
+    // Get the authenticated user's ID from the request
+    const userId = req.user._id;
+    
+    // First find all team members where this user is the user_id
+    const teamMembers = await TeamMember.find({ user_id: userId });
+    
+    // Extract the team member IDs
+    const teamMemberIds = teamMembers.map(member => member._id);
+    
+    // Find tasks assigned to any of these team member IDs
+    const tasks = await Task.find({ 
+      assigned_to: { $in: teamMemberIds } 
+    })
+    .populate('project_id', 'name status')
+    .populate({
+      path: 'assigned_to',
+      select: 'role user_id',
+      populate: {
+        path: 'user_id',
+        select: 'firstName lastName image'
+      }
+    })
+    .sort({ deadline: 1 });
+
+    // Calculate counts for different statuses
+    const today = new Date().toISOString().split('T')[0];
+    const counts = {
+      all: tasks.length,
+      done: tasks.filter(t => t.status === 'Done').length,
+      today: tasks.filter(t => 
+        t.deadline && new Date(t.deadline).toISOString().split('T')[0] === today
+      ).length,
+      starred: tasks.filter(t => t.priority === 'High').length
+    };
+
+    res.status(200).json({
+      success: true,
+      data: tasks,
+      counts // Include the counts in the response
+    });
+  } catch (error) {
+    console.error('Error fetching user tasks:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching tasks',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+};
+
+
+
+
+exports.startTask = async (req, res) => {
+  const { taskId } = req.params;
+
+  try {
+    // 1. Find the task
+    const task = await Task.findById(taskId);
+    
+    if (!task) {
+      return res.status(404).json({
+        success: false,
+        message: 'Task not found'
+      });
+    }
+
+    // 2. Verify current status is "Not Started"
+    if (task.status !== 'Not Started') {
+      return res.status(400).json({
+        success: false,
+        message: 'Task must be in "Not Started" status to be started'
+      });
+    }
+
+    // 3. Update the task status
+    const updatedTask = await Task.findByIdAndUpdate(
+      taskId,
+      { 
+        status: 'In Progress',
+        start_date: new Date() // Set start date when task begins
+      },
+      { new: true, runValidators: true }
+    );
+
+
+
+
+    res.status(200).json({
+      success: true,
+      message: 'Task started successfully',
+      data: updatedTask
+    });
+
+  } catch (error) {
+    console.error('Error starting task:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error starting task',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+};
+
+
+
+exports.completeTask = async (req, res) => {
+  const { taskId } = req.params;
+
+  try {
+    // 1. Find the task
+    const task = await Task.findById(taskId);
+    
+    if (!task) {
+      return res.status(404).json({
+        success: false,
+        message: 'Task not found'
+      });
+    }
+
+    // 2. Verify current status is "In Progress"
+    if (task.status !== 'In Progress') {
+      return res.status(400).json({
+        success: false,
+        message: 'Task must be in "In Progress" status to be completed'
+      });
+    }
+
+    // 3. Update the task status
+    const updatedTask = await Task.findByIdAndUpdate(
+      taskId,
+      { status: 'Done' },
+      { new: true, runValidators: true }
+    );
+
+    
+
+    res.status(200).json({
+      success: true,
+      message: 'Task completed successfully',
+      data: updatedTask,
+    });
+
+  } catch (error) {
+    console.error('Error completing task:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error completing task',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+};
+
+
+

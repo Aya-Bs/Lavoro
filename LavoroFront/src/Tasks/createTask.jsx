@@ -189,6 +189,12 @@ export const CreateTask = () => {
       }));
     };
 
+    const stripHtmlTags = (html) => {
+      const tmp = document.createElement("DIV");
+      tmp.innerHTML = html;
+      return tmp.textContent || tmp.innerText || "";
+    };
+
     const handleSubmit = async (e) => {
       e.preventDefault();
       setLoading(true);
@@ -197,7 +203,7 @@ export const CreateTask = () => {
       try {
         const response = await axios.post('http://localhost:3000/tasks/createTask', {
           ...formData,
-          description: productFeatures
+          description: stripHtmlTags(productFeatures)
         }, {
           withCredentials: true,
           headers: {
