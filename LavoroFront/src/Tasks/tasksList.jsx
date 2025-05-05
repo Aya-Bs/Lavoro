@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import Swal from "sweetalert2";
+import { Bell, Calendar, Clock, AlertTriangle } from 'lucide-react';
 
 export const TaskList = () => {
     const [showAssignModal, setShowAssignModal] = useState(false);
@@ -383,6 +384,32 @@ useEffect(() => {
       );
     };
 
+    const handleSendReminder = async (taskId) => {
+      try {
+        const token = localStorage.getItem('token');
+        await axios.post(`http://localhost:3000/notifications/tasks/${taskId}/reminder`, {}, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        
+        // Show success message using SweetAlert2
+        Swal.fire({
+          icon: 'success',
+          title: 'Success',
+          text: 'Reminder sent successfully',
+          timer: 2000,
+          showConfirmButton: false
+        });
+      } catch (err) {
+        console.error('Error sending reminder:', err);
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: err.response?.data?.message || 'Failed to send reminder',
+          confirmButtonText: 'OK'
+        });
+      }
+    };
+
     if (loading) {
         return (
             <div className="d-flex justify-content-center align-items-center" style={{ height: '300px' }}>
@@ -661,6 +688,15 @@ useEffect(() => {
             }}
           >
             <i className="ri-delete-bin-5-line" />
+          </button>
+          <button 
+            className="btn btn-secondary-light btn-icon ms-1 btn-sm"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleSendReminder(task._id);
+            }}
+          >
+            <i className="ri-notification-3-line" />
           </button>
         </div>
       </td>

@@ -7,6 +7,7 @@ import axios from 'axios';
 import { Table, Dropdown, Pagination } from 'react-bootstrap';
 import { Link } from 'react-router-dom';
 
+
 export default function Dashboard() {
   // États pour les projets
   const [projectCount, setProjectCount] = useState(0);
@@ -477,6 +478,7 @@ export default function Dashboard() {
           </div>
         </div>
       </div>
+
 
       <div className="row">
         {/* Left Column - All Teams Table */}

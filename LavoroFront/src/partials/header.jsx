@@ -367,6 +367,41 @@ useEffect(() => {
           </div>
         </div>
       );
+    } else if (notification.type === 'TASK_REMINDER') {
+      return (
+        <div className="notification-item p-3 border-bottom">
+          <div className="d-flex align-items-center mb-2">
+            <div className="avatar avatar-sm avatar-rounded bg-warning-transparent me-2">
+              <i className="ri-alarm-warning-line"></i>
+            </div>
+            <div className="flex-grow-1">
+              <h6 className="mb-0">Task Deadline Reminder</h6>
+              <small className="text-muted">
+                {format(new Date(notification.created_at), 'MMM dd, yyyy HH:mm')}
+              </small>
+            </div>
+            {!notification.is_read && (
+              <span className="badge bg-warning rounded-pill">New</span>
+            )}
+          </div>
+          
+          <div className="notification-content">
+            <h6 className="mb-2">{notification.task_title}</h6>
+            <p className="text-muted mb-2">{notification.message}</p>
+            
+            <div className="d-flex flex-wrap gap-2">
+              <span className={`badge bg-${getPriorityColor(notification.task_priority)}-transparent`}>
+                <i className="ri-flag-line me-1"></i>
+                {notification.task_priority}
+              </span>
+              <span className={`badge bg-${getStatusColor(notification.task_status)}-transparent`}>
+                <i className="ri-time-line me-1"></i>
+                {notification.task_status}
+              </span>
+            </div>
+          </div>
+        </div>
+      );
     }
     
     return (

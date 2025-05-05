@@ -1,6 +1,6 @@
 const Notification = require('../models/notif'); 
 
-exports.createNotification = async (userId, text, type, taskData = null) => {
+const createNotification = async (userId, text, type, taskData = null) => {
   try {
     const notificationData = {
       user_id: userId,
@@ -27,12 +27,42 @@ exports.createNotification = async (userId, text, type, taskData = null) => {
   }
 };
 
-exports.createTaskAssignmentNotification = async (userId, task) => {
+const createTaskAssignmentNotification = async (userId, task) => {
   const notificationText = `You have been assigned to task: ${task.title}
 Start Date: ${task.start_date}
 End Date: ${task.deadline}
 Priority: ${task.priority}
 Status: ${task.status}`;
   
-  return this.createNotification(userId, notificationText, 'TASK_ASSIGNMENT', task);
+  return createNotification(userId, notificationText, 'TASK_ASSIGNMENT', task);
+};
+
+const createTaskReminderNotification = async (task, assignedTo) => {
+  try {
+    const notification = new Notification({
+      user_id: assignedTo,
+      type: 'TASK_REMINDER',
+      notification_text: `Task "${task.title}" is due on ${new Date(task.deadline).toLocaleDateString()}`,
+      task_id: task._id,
+      task_title: task.title,
+      task_start_date: task.start_date,
+      task_deadline: task.deadline,
+      task_priority: task.priority,
+      task_status: task.status,
+      is_read: false,
+      created_at: new Date()
+    });
+
+    await notification.save();
+    return notification;
+  } catch (error) {
+    console.error('Error creating task reminder notification:', error);
+    throw error;
+  }
+};
+
+module.exports = {
+  createNotification,
+  createTaskAssignmentNotification,
+  createTaskReminderNotification
 };

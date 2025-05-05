@@ -2,13 +2,16 @@ const express = require('express');
 const router = express.Router();
 const notificationController = require('../controllers/notificationController');
 
-// Create notification
-router.post('/create', notificationController.createNotification);
-
 // Get user notifications
-router.get('/user', notificationController.getUserNotifications);
+router.get('/', notificationController.getUserNotifications);
+
+// Create notification
+router.post('/', notificationController.createNotification);
 
 // Mark notification as read
-router.patch('/:notificationId/read', notificationController.markNotificationAsRead);
+router.put('/:notificationId/read', notificationController.markNotificationAsRead);
 
-module.exports = router;
+// Send task reminder
+router.post('/tasks/:taskId/reminder', notificationController.sendTaskReminder);
+
+module.exports = router; 
