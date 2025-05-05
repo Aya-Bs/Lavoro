@@ -1,4 +1,4 @@
-const { GoogleGenAI } = require('@google/genai'); // Use require instead of import
+const { GoogleGenAI } = require('@google/genai'); 
 
 const ai = new GoogleGenAI({ apiKey: "AIzaSyBhOHuAkp504kk4bfCmCXheEZQD2u8f_v8" });
 

@@ -6,6 +6,7 @@ const setDefaultRole = require('../middleware/setDefaultRole');
 const { googleLogin } = require('../controllers/authController');
 const { MicrosoftLogin } = require('../controllers/MicrosoftController');
 const { GitHubLogin, getData } = require('../controllers/GitHubController');
+const authenticateToken = require('../middleware/authenticatedToken');
 
 const TaskController = require('../controllers/TaskController');
 
@@ -67,6 +68,8 @@ router.post('/seedtasks', async (req, res) => {
 });
 
 router.get('/tasks/:userId', TaskController.getTasksByUser);
+router.get('/mytasks', authenticateToken, TaskController.getTasksByUser);
+
 router.post('/verify2FALogin', userController.verify2FALogin);
 
 
@@ -77,7 +80,15 @@ router.post('/github', GitHubLogin);
 router.get('/getData', getData);
 
 router.get('/getTeamManager', userController.getTeamManager);
+
+router.get('/getAllDev', userController.getAllDev);
+router.get('/searchDevsByName', userController.searchDevsByName);
 router.get('/getAllDevelopers', userController.getAllDevelopers);
 
+// Route pour récupérer le meilleur performeur
+router.get('/best-performer', authenticateToken, userController.getBestPerformer);
+
+// Route pour récupérer les meilleurs performeurs (top 5 par défaut)
+router.get('/top-performers', authenticateToken, userController.getTopPerformers);
 
 module.exports = router;

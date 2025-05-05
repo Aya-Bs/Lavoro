@@ -8,7 +8,6 @@ const crypto = require('crypto');
 const nodemailer = require('nodemailer');
 const speakeasy = require('speakeasy');
 
-
 const { validatePassword ,validateUserInput } = require('../middleware/validate'); // Import the validation function
 const transporter = require('../utils/emailConfig'); // Import the email transporter
 const AccountActivityLog = require('../models/accountActivityLog');
@@ -168,6 +167,7 @@ Best Regard , ${lastName} ${firstName}       </p>
 
 
       res.status(201).json({ message: '✅ User registered successfully. Please check your email for verification.' });
+
   } catch (error) {
       console.error('Error during signup:', error);
       res.status(500).json({ error: 'An error occurred during signup. Please try again.' });
@@ -200,7 +200,7 @@ exports.signin = async (req, res) => {
   // Vérifier si le compte est verrouillé
   if (user.lockUntil && user.lockUntil > Date.now()) {
     const remainingTime = Math.ceil((user.lockUntil - Date.now()) / 60000); // en minutes
-    return res.status(403).json({ 
+    return res.status(403).json({
         error: `Votre compte est bloqué pour ${remainingTime} minutes. Il sera réactivé à ${new Date(user.lockUntil).toLocaleTimeString()}.`,
         lockMessage: `Votre compte est verrouillé jusqu'à ${new Date(user.lockUntil).toLocaleTimeString()}.`
     });
@@ -216,23 +216,23 @@ exports.signin = async (req, res) => {
       const isPasswordValid = await bcrypt.compare(password, user.password_hash);
       if (!isPasswordValid) {
           user.loginAttempts += 1;
-    
+
           if (user.loginAttempts >= MAX_ATTEMPTS) {
             user.lockUntil = Date.now() + LOCK_TIME;
-    
+
             // Envoyer un e-mail à l'utilisateur
             const emailSubject = 'Votre compte est verrouillé';
             const emailText = `  Hello ${user.firstName},
-      
+
             Your account has been locked for 5 minutes due to multiple failed login attempts.
            Please try again later
-      
-            Best regards,  
+
+            Best regards,
             The Lavoro Team`;
             await sendEmail(user.email, emailSubject, emailText);
           }
 
-    
+
           await user.save();
           return res.status(400).render('signin', { error: 'Mot de passe invalide.', email });
         }
@@ -253,8 +253,8 @@ exports.signin = async (req, res) => {
 
       // Set the user session
       req.session.user = user;
-      
-      
+
+
       console.log('Session created for user:', req.session.user);
       await AccountActivityLog.create({
           userId: user._id,
@@ -264,8 +264,8 @@ exports.signin = async (req, res) => {
         if (user.twoFactorEnabled) {
           return res.status(200).json({ requires2FA: true, userId: user._id });
         }
-  
-      
+
+
       // Generate a token with 7-day expiration
       const token = jwt.sign(
         { _id: user._id }, // Payload
@@ -274,11 +274,11 @@ exports.signin = async (req, res) => {
     );
 
     // Return user data and token
-    res.status(200).json({ 
-        user, 
-        token 
+    res.status(200).json({
+        user,
+        token
     });
-      
+
 
 
   } catch (error) {
@@ -332,26 +332,26 @@ exports.verifyEmail = async (req, res) => {
     try {
         const { token } = req.query;
         console.log('Verification token received:', token);
-  
+
         const user = await User.findOne({ verificationToken: token });
-  
+
         if (!user) {
             console.log('User not found for token:', token);
             return res.status(400).json({ error: 'Invalid or expired token.' });
         }
-  
+
         if (user.isVerified) {
             console.log('User is already verified:', user.email);
             return res.status(200).json({ message: 'Email is already verified.' });
         }
-  
+
         // Only delete the token *after* a successful response
         user.isVerified = true;
         await user.save();
-        
+
         console.log('User verified successfully:', user.email);
         res.status(200).json({ message: ' ✅ Email verified successfully!' });
-  
+
         // Remove the token AFTER responding
         user.verificationToken = undefined;
         await user.save();
@@ -360,7 +360,7 @@ exports.verifyEmail = async (req, res) => {
         res.status(500).json({ error: 'An error occurred while verifying your email. Please try again.' });
     }
   };
-  
+
 
   exports.getUserInfo = async (req, res) => {
     try {
@@ -388,34 +388,6 @@ exports.verifyEmail = async (req, res) => {
     }
 };
 
-
-
-// exports.getUserInfo = async (req, res, next) => {
-//   try {
-//       const authHeader = req.headers['authorization'];
-//       const token = authHeader && authHeader.split(' ')[1];
-
-//       if (!token) {
-//           return res.status(401).json({ error: 'No token provided' });
-//       }
-
-//       // Verify the token
-//       const decoded = jwt.verify(token, process.env.JWT_SECRET);
-      
-//       // Attach user to request
-//       req.user = await User.findById(decoded._id).select('-password_hash').populate('role');
-//       if (!req.user) {
-//           return res.status(404).json({ error: 'User not found' });
-//       }
-
-//       next(); // Continue to the next middleware/route handler
-//   } catch (err) {
-//       console.error('Error in getUserInfo:', err);
-//       res.status(401).json({ error: 'Invalid or expired token' });
-//   }
-// };
-
-
 exports.checkmail =  async (req, res) => {
     const { email } = req.query;
 
@@ -425,6 +397,126 @@ exports.checkmail =  async (req, res) => {
     } catch (error) {
         console.error('Error checking email:', error);
         res.status(500).json({ error: 'Error checking email' });
+    }
+}
+
+// Récupérer l'utilisateur avec le plus de points de performance
+exports.getBestPerformer = async (req, res) => {
+    try {
+        // Trouver l'utilisateur avec le plus de points de performance
+        const bestPerformer = await User.findOne({
+            performancePoints: { $gt: 0 } // Seulement les utilisateurs avec des points positifs
+        })
+        .sort({ performancePoints: -1 }) // Trier par points de performance (décroissant)
+        .select('firstName lastName image performancePoints') // Sélectionner uniquement les champs nécessaires
+        .limit(1); // Limiter à un seul résultat
+
+        if (!bestPerformer) {
+            return res.status(404).json({ message: 'Aucun utilisateur avec des points de performance trouvé' });
+        }
+
+        // Récupérer les tâches de l'utilisateur et l'historique des tâches pour des statistiques précises
+        const Task = require('../models/Task');
+        const TaskHistory = require('../models/TaskHistory');
+
+        // Récupérer toutes les tâches assignées à l'utilisateur
+        const tasks = await Task.find({ assigned_to: bestPerformer._id });
+
+        // Récupérer l'historique des tâches pour cet utilisateur
+        // Trouver les entrées d'historique où le statut a été changé à 'Done'
+        const taskIds = tasks.map(task => task._id);
+        const taskHistories = await TaskHistory.find({
+            task_id: { $in: taskIds },
+            change_type: 'Status Update',
+            new_value: 'Done'
+        });
+
+        // Calculer les statistiques de performance à partir de l'historique
+        const tasksCompleted = taskHistories.length;
+
+        // Compter les tâches par type de complétion
+        const tasksEarly = taskHistories.filter(history => history.completion_type === 'early').length;
+        const tasksOnTime = taskHistories.filter(history => history.completion_type === 'on_time').length;
+        const tasksLate = taskHistories.filter(history => history.completion_type === 'late').length;
+
+        // Calculer le taux de réussite
+        const completionRate = tasksCompleted > 0 ?
+            ((tasksEarly + tasksOnTime) / tasksCompleted) * 100 : 0;
+
+        // Calculer le nombre total de points gagnés via les tâches
+        const totalPointsEarned = taskHistories.reduce((sum, history) => sum + (history.points_earned || 0), 0);
+
+        // Ajouter les statistiques à l'objet bestPerformer
+        const performerWithStats = {
+            ...bestPerformer.toObject(),
+            stats: {
+                tasksCompleted,
+                tasksEarly,
+                tasksOnTime,
+                tasksLate,
+                completionRate,
+                totalPointsEarned
+            }
+        };
+
+        res.status(200).json(performerWithStats);
+    } catch (error) {
+        console.error('Erreur lors de la récupération du meilleur performeur:', error);
+        res.status(500).json({
+            message: 'Erreur serveur',
+            error: error.message
+        });
+    }
+};
+
+// Récupérer les meilleurs performeurs (top 5)
+exports.getTopPerformers = async (req, res) => {
+    try {
+        // Récupérer le nombre de performeurs à afficher (par défaut 5)
+        const limit = parseInt(req.query.limit) || 5;
+
+        // Trouver les utilisateurs avec le plus de points de performance
+        const topPerformers = await User.find({
+            performancePoints: { $gt: 0 } // Seulement les utilisateurs avec des points positifs
+        })
+        .sort({ performancePoints: -1 }) // Trier par points de performance (décroissant)
+        .select('firstName lastName image performancePoints role') // Sélectionner uniquement les champs nécessaires
+        .limit(limit); // Limiter au nombre demandé
+
+        // Récupérer des statistiques supplémentaires pour chaque utilisateur
+        const performersWithStats = await Promise.all(topPerformers.map(async (performer) => {
+            // Ici, vous pourriez récupérer des statistiques supplémentaires comme le nombre de tâches terminées
+            // Pour l'exemple, nous allons simuler ces données
+            const tasksCompleted = Math.floor(performer.performancePoints / 2) + Math.floor(Math.random() * 5);
+            const tasksEarly = Math.floor(tasksCompleted * 0.6);
+
+            return {
+                id: performer._id,
+                firstName: performer.firstName,
+                lastName: performer.lastName,
+                fullName: `${performer.firstName} ${performer.lastName}`,
+                image: performer.image,
+                points: performer.performancePoints,
+                role: performer.role,
+                stats: {
+                    tasksCompleted,
+                    tasksEarly,
+                    completionRate: tasksEarly / tasksCompleted
+                }
+            };
+        }));
+
+        if (performersWithStats.length === 0) {
+            return res.status(404).json({ message: 'Aucun utilisateur avec des points de performance trouvé' });
+        }
+
+        res.status(200).json(performersWithStats);
+    } catch (error) {
+        console.error('Erreur lors de la récupération des meilleurs performeurs:', error);
+        res.status(500).json({
+            message: 'Erreur serveur',
+            error: error.message
+        });
     }
 }
 
@@ -476,50 +568,50 @@ exports.redirectIfNotAuthenticated = (req, res, next) => {
 exports.resetPassword = async (req, res) => {
     const token = req.query.token || req.body.token;
     const { newPassword, confirmPassword } = req.body;
-  
+
     try {
       if (!token) {
         return res.status(400).json({ error: 'Token is missing.' });
       }
-  
+
       const user = await User.findOne({
         resetPasswordToken: token,
         resetPasswordExpires: { $gt: Date.now() },
       });
-  
+
       if (!user) {
         return res.status(400).json({ error: 'Link expired or invalid.' });
       }
-  
+
       // Vérifier si le nouveau mot de passe est identique à l'ancien
       const isSamePassword = await bcrypt.compare(newPassword, user.password_hash);
       if (isSamePassword) {
         return res.status(400).json({ error: 'Please choose a new password. You cannot reuse your current password.' });
       }
-  
+
       // Vérifier que les mots de passe correspondent
       if (newPassword !== confirmPassword) {
         return res.status(400).json({ error: 'Passwords do not match.' });
       }
-  
+
       // Valider le nouveau mot de passe
       const passwordError = validatePassword(newPassword);
       if (passwordError) {
         return res.status(400).json({ error: passwordError });
       }
-  
+
       // Mettre à jour le mot de passe
       user.password_hash = await bcrypt.hash(newPassword, 10);
       user.resetPasswordToken = null;
       user.resetPasswordExpires = null;
       await user.save();
-  
+
       // Log l'action de réinitialisation du mot de passe
       await AccountActivityLog.create({
         userId: user._id,
         action: 'User has reset their password',
       });
-  
+
       res.status(200).json({ message: 'Password successfully updated!' });
     } catch (error) {
       console.error('Error:', error);
@@ -551,15 +643,15 @@ exports.forgotPassword = async (req, res) => {
     const message = `
       Hello ${user.firstName},
 
-      We received a password reset request for your account.  
+      We received a password reset request for your account.
       If you did not request this, please ignore this email.
 
-      ➡️ **Click the link below to reset your password:**  
-      🔗 ${resetLink}  
+      ➡️ **Click the link below to reset your password:**
+      🔗 ${resetLink}
 
       This link will expire in 1 hour.
 
-      Best regards,  
+      Best regards,
       The Lavoro Team
     `;
 
@@ -615,7 +707,6 @@ exports.verify2FALogin = async (req, res) => {
       res.status(500).json({ message: error.message });
   }
 };
-
 
 exports.getTeamManager = async (req, res) => {
   try {
@@ -675,3 +766,46 @@ exports.getAllDevelopers = async (req, res) => {
     });
   }
 }
+
+exports.getAllDev = async (req, res) => {
+  try {
+    const devRole = await Role.findOne({ RoleName: "Developer" });
+    const devs = await User.find({ role: devRole._id })
+      .select('firstName lastName image'); // Sélectionnez seulement les champs nécessaires
+
+    res.status(200).json({
+      success: true,
+      data: devs
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+};
+
+exports.searchDevsByName = async (req, res) => {
+  try {
+    const { searchTerm } = req.query;
+    
+    const devRole = await Role.findOne({ RoleName: "Developer" });
+    const devs = await User.find({
+      role: devRole._id,
+      $or: [
+        { firstName: { $regex: searchTerm, $options: 'i' } },
+        { lastName: { $regex: searchTerm, $options: 'i' } }
+      ]
+    }).select('firstName lastName email image');
+
+    res.status(200).json({
+      success: true,
+      data: devs
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+};

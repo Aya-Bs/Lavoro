@@ -347,7 +347,9 @@ const TeamDetailsPage = () => {
                   {team.description || 'No description available for this team.'}
                 </p>
                 <div className="popular-tags">
-                  
+                  <span className={`badge rounded-pill ${team.status === 'Active' ? 'bg-success-transparent' : 'bg-secondary-transparent'}`}>
+                    <i className="bi bi-circle-fill me-1"></i> {team.status}
+                  </span>
                   {team.tags?.map((tag, index) => (
                     <span key={index} className="badge rounded-pill bg-primary-transparent me-1">
                       {tag}
@@ -465,7 +467,7 @@ const TeamDetailsPage = () => {
                             <a
                               href="javascript:void(0);"
                               className="fw-semibold"
-                              onClick={() => navigate(`/members/${member._id}`)}
+                              onClick={() => navigate(`/member-details/${member._id}`)}
                             >
                               {member.firstName} {member.lastName}
                             </a>

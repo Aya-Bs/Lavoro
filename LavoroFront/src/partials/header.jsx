@@ -778,7 +778,7 @@ useEffect(() => {
             <li>
               <a
                 className="dropdown-item d-flex align-items-center"
-                href="mail.html"
+                href="/mail"
               >
                 <i className="ri-mail-line p-1 rounded-circle bg-primary-transparent me-2 fs-16" />
                 Mail Inbox
@@ -787,7 +787,7 @@ useEffect(() => {
             <li>
               <a
                 className="dropdown-item d-flex align-items-center"
-                href="file-manager.html"
+                href="/file"
               >
                 <i className="ri-database-line p-1 rounded-circle bg-primary-transparent klist me-2 fs-16" />
                 File Manger
@@ -796,24 +796,8 @@ useEffect(() => {
                 </span>
               </a>
             </li>
-            <li>
-              <a
-                className="dropdown-item d-flex align-items-center"
-                href="mail-settings.html"
-              >
-                <i className="ri-settings-line p-1 rounded-circle bg-primary-transparent ings me-2 fs-16" />
-                Settings
-              </a>
-            </li>
-            <li className="border-top bg-light">
-              <a
-                className="dropdown-item d-flex align-items-center"
-                href="chat.html"
-              >
-                <i className="ri-circle-line p-1 rounded-circle bg-primary-transparent ings me-2 fs-16" />
-                Help
-              </a>
-            </li>
+            
+            
             <li>
             <a
                     className="dropdown-item d-flex align-items-center"
