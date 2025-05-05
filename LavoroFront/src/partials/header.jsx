@@ -8,6 +8,7 @@ import Pickr from '@simonwep/pickr';
 import '@simonwep/pickr/dist/themes/nano.min.css';
 import { useTranslation } from "react-i18next";
 import i18n from "./i18n"; // Adjust the path to your i18n.jsx file
+import { format } from 'date-fns';
 
 const Header = () => {
   const [notifications, setNotifications] = useState([]);
@@ -294,7 +295,86 @@ useEffect(() => {
     document.documentElement.setAttribute("data-theme-mode", savedThemeMode);
   }, []);
 
+  const getPriorityColor = (priority) => {
+    switch (priority?.toLowerCase()) {
+      case 'high':
+        return 'danger';
+      case 'medium':
+        return 'warning';
+      case 'low':
+        return 'success';
+      default:
+        return 'secondary';
+    }
+  };
 
+  const getStatusColor = (status) => {
+    switch (status?.toLowerCase()) {
+      case 'not started':
+        return 'primary';
+      case 'in progress':
+        return 'info';
+      case 'done':
+        return 'success';
+      default:
+        return 'secondary';
+    }
+  };
+
+  const renderNotificationContent = (notification) => {
+    if (notification.type === 'TASK_ASSIGNMENT') {
+      return (
+        <div className="notification-item p-3 border-bottom">
+          <div className="d-flex align-items-center mb-2">
+            <div className="avatar avatar-sm avatar-rounded bg-primary-transparent me-2">
+              <i className="ri-task-line"></i>
+            </div>
+            <div className="flex-grow-1">
+              <h6 className="mb-0">New Task Assignment</h6>
+              <small className="text-muted">
+                {format(new Date(notification.created_at), 'MMM dd, yyyy HH:mm')}
+              </small>
+            </div>
+            {!notification.is_read && (
+              <span className="badge bg-primary rounded-pill">New</span>
+            )}
+          </div>
+          
+          <div className="notification-content">
+            <h6 className="mb-2">{notification.task_title}</h6>
+            
+            <div className="d-flex flex-wrap gap-2 mb-2">
+              <div className="d-flex align-items-center">
+                <i className="ri-calendar-line me-1"></i>
+                <span className="text-muted">Start: {notification.task_start_date}</span>
+              </div>
+              <div className="d-flex align-items-center">
+                <i className="ri-calendar-check-line me-1"></i>
+                <span className="text-muted">End: {notification.task_deadline}</span>
+              </div>
+            </div>
+            
+            <div className="d-flex flex-wrap gap-2">
+              <span className={`badge bg-${getPriorityColor(notification.task_priority)}-transparent`}>
+                <i className="ri-flag-line me-1"></i>
+                {notification.task_priority}
+              </span>
+              <span className={`badge bg-${getStatusColor(notification.task_status)}-transparent`}>
+                <i className="ri-time-line me-1"></i>
+                {notification.task_status}
+              </span>
+            </div>
+          </div>
+        </div>
+      );
+    }
+    
+    return (
+      <div className="notification-item p-3 border-bottom">
+        <p className="mb-0">{notification.notification_text}</p>
+      </div>
+    );
+  };
 
   return (
    <>
@@ -573,113 +653,32 @@ useEffect(() => {
               </div>
             </div>
             <div className="dropdown-divider" />
-            <ul className="list-unstyled mb-0" id="header-notification-scroll">
-  {notifications.length > 0 ? (
-    notifications.map((notification) => (
-<li 
-  key={notification._id} 
-  className="dropdown-item"
-  onClick={() => markAsRead(notification._id)}
-  style={{ cursor: 'pointer' }}
->
-        <div className="d-flex align-items-start">
-          {/* Notification icon on left */}
-          <div className="pe-2 lh-1">
-            <span className={`avatar avatar-md avatar-rounded ${
-              notification.is_read ? 'bg-secondary' : 'bg-primary'
-            }`}>
-              <i className="ri-notification-line fs-16" />
-            </span>
-          </div>
-          
-          {/* Notification content - fills remaining space */}
-          <div className="flex-grow-1">
-            {/* Top row - notification text left, timestamp right */}
-            <div className="d-flex justify-content-between align-items-start w-100">
-              <p className={`mb-0 fw-medium ${
-                notification.is_read ? '' : 'text-primary'
-              }`}>
-                {notification.notification_text}
-              </p>
-              <span className="text-muted fs-11 ms-2">
-                {new Date(notification.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
-              </span>
+            <div className="notification-list" style={{ maxHeight: '400px', overflowY: 'auto' }}>
+              {notifications.length > 0 ? (
+                notifications.map((notification) => (
+                  <div
+                    key={notification._id}
+                    className={`notification-item ${!notification.is_read ? 'unread' : ''}`}
+                    onClick={() => markAsRead(notification._id)}
+                  >
+                    {renderNotificationContent(notification)}
+                  </div>
+                ))
+              ) : (
+                <div className="p-3 text-center text-muted">
+                  <i className="ri-notification-off-line fs-4 mb-2"></i>
+                  <p className="mb-0">No notifications</p>
+                </div>
+              )}
             </div>
             
-            {/* Bottom row - notification type badge */}
-            <div className="d-flex justify-content-end w-100 mt-1">
-              <span className="badge bg-light text-default">
-              {new Date(notification.created_at).toLocaleDateString('en-US', {
-            month: 'short',
-            day: 'numeric',
-            year: 'numeric'
-          })}              </span>
-            </div>
-          </div>
-        </div>
-      </li>
-    ))
-  ) : (
-    <li className="p-5 empty-item1">
-      <div className="text-center">
-        <span className="avatar avatar-xl avatar-rounded bg-secondary-transparent">
-          <i className="ri-notification-off-line fs-2" />
-        </span>
-        <h6 className="fw-medium mt-3">No New Notifications</h6>
-      </div>
-    </li>
-  )}
-</ul>
-{/*     
-<ul className="list-unstyled mb-0" id="header-notification-scroll">
-  {notifications.length > 0 ? (
-    notifications.map((notification) => (
-<li 
-  key={notification._id} 
-  className="dropdown-item"
-  onClick={() => markAsRead(notification._id)}
-  style={{ cursor: 'pointer' }}
->
-  
-          <div className="d-flex align-items-center">
-          <div className="pe-2 lh-1">
-            <span className={`avatar avatar-md avatar-rounded ${
-              notification.is_read ? 'bg-secondary' : 'bg-primary'
-            }`}>
-              <i className="ri-notification-line fs-16" />
-            </span>
-          </div>
-          <div className="flex-grow-1">
-            <p className={`mb-0 fw-medium ${
-              notification.is_read ? '' : 'text-primary'
-            }`}>
-              {notification.notification_text}
-            </p>
-            <div className="d-flex justify-content-between align-items-center">
-              <span className="text-muted fs-11">
-                {new Date(notification.created_at).toLocaleString()}
-              </span>
-              <span className="badge bg-light text-default">
-                {new Date(notification.created_at).toLocaleString()}
-              </span>
-            </div>
-          </div>
-        </div>
-      </li>
-    ))
-  ) : (
-    <li className="p-5 empty-item1">
-      <div className="text-center">
-        <span className="avatar avatar-xl avatar-rounded bg-secondary-transparent">
-          <i className="ri-notification-off-line fs-2" />
-        </span>
-        <h6 className="fw-medium mt-3">No New Notifications</h6>
-      </div>
-    </li>
-  )}
-</ul> */}
-           
-           
+            {notifications.length > 0 && (
+              <div className="p-2 border-top text-center">
+                <button className="btn btn-sm btn-light-primary w-100">
+                  View All Notifications
+                </button>
+              </div>
+            )}
           </div>
           {/* End::main-header-dropdown */}
         </li>

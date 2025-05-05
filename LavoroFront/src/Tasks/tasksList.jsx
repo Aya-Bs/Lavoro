@@ -132,7 +132,7 @@ useEffect(() => {
           const response = await axios.patch(
             `http://localhost:3000/tasks/${currentTask._id}/assign`,
             { 
-              memberIds: selectedMembers.filter(id => id) // Remove any null/undefined IDs
+              memberIds: selectedMembers.filter(id => id)
             },
             { 
               withCredentials: true,
@@ -143,6 +143,30 @@ useEffect(() => {
           );
       
           if (response.data.success) {
+            // Create notifications for each assigned member
+            const notificationPromises = selectedMembers.map(memberId => {
+              const notificationData = {
+                userId: memberId,
+                task: {
+                  _id: currentTask._id,
+                  title: currentTask.title,
+                  start_date: new Date(currentTask.start_date).toLocaleDateString(),
+                  deadline: new Date(currentTask.deadline).toLocaleDateString(),
+                  priority: currentTask.priority,
+                  status: currentTask.status
+                }
+              };
+
+              return axios.post('http://localhost:3000/notifications/create', notificationData, {
+                withCredentials: true,
+                headers: {
+                  'Content-Type': 'application/json'
+                }
+              });
+            });
+
+            await Promise.all(notificationPromises);
+            
             // Update the task in state with the newly assigned members
             setTasks(tasks.map(task => 
               task._id === currentTask._id ? response.data.data : task

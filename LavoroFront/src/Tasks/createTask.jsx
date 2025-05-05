@@ -237,7 +237,34 @@ export const CreateTask = () => {
           }
         });
     
-        if (response.data) {
+        if (response.data.success) {
+          // Create notification for the assigned team member
+          if (formData.assigned_to) {
+            try {
+              const notificationData = {
+                userId: formData.assigned_to,
+                task: {
+                  _id: response.data.data._id,
+                  title: formData.title,
+                  start_date: new Date(formData.start_date).toLocaleDateString(),
+                  deadline: new Date(formData.deadline).toLocaleDateString(),
+                  priority: formData.priority,
+                  status: formData.status
+                }
+              };
+
+              await axios.post('http://localhost:3000/notifications/create', notificationData, {
+                withCredentials: true,
+                headers: {
+                  'Content-Type': 'application/json'
+                }
+              });
+            } catch (notificationError) {
+              console.error('Error creating notification:', notificationError);
+              // Don't block task creation if notification fails
+            }
+          }
+    
           navigate("/listTask");
           Swal.fire({
             icon: 'success',
@@ -248,16 +275,12 @@ export const CreateTask = () => {
         }
       } catch (err) {
         console.error('Task creation error:', err);
-        const errorMessage = err.response?.data?.message || 
-                            err.message || 
-                            'Failed to create task';
-        
-        setError(errorMessage);
+        setError(err.response?.data?.message || err.message || 'Failed to create task');
         Swal.fire({
           icon: 'error',
           title: 'Error',
-          text: errorMessage,
-          confirmButtonText: 'Try Again'
+          text: err.response?.data?.message || err.message || 'Failed to create task',
+          confirmButtonText: 'OK'
         });
       } finally {
         setLoading(false);

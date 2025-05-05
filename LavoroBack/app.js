@@ -49,6 +49,7 @@ const deleteReportRouter = require('./routes/deleteReport');
 const taskPrioritizationRoutes = require('./routes/taskPrioritizationRoutes');
 const predictRouter = require('./routes/predictMember');
 
+const notificationRoutes = require('./routes/notificationRoutes');
 
 
 const app = express();
@@ -132,7 +133,7 @@ app.use('/teams', teamRouter);
 app.use('/teams', teamRouter);
 
 app.use('/teams', teamRouter);
-
+app.use('/notifications', notificationRoutes);
 
 app.use('/ai-prioritization', taskPrioritizationRoutes);
 app.use('/reports', reportRouter);
