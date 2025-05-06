@@ -118,7 +118,7 @@ function DeveloperDashboard() {
                   {dashboardData?.approachingDeadlines?.length || 0}
                 </span>
               </div>
-              <a href="/tasks" className="btn btn-sm btn-primary-light">
+              <a href="/mytasks" className="btn btn-sm btn-primary-light">
                 View All Tasks
               </a>
             </div>
@@ -139,7 +139,7 @@ function DeveloperDashboard() {
         <TaskStats stats={dashboardData?.taskStats} />
         <SkillsPolarChart skills={dashboardData?.skills} />
       </div>
-      
+
       <div className="row mt-4">
         <div className="col-12">
 

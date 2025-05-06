@@ -2,11 +2,13 @@ import React, { useEffect, useRef } from 'react';
 import { RiAlertLine } from 'react-icons/ri';
 import Swiper from 'swiper';
 import { Pagination, Autoplay } from 'swiper/modules';
+import { useNavigate } from 'react-router-dom';
 
 // Swiper will handle the layout
 
 const UpcomingDeadlines = ({ tasks }) => {
   const swiperRef = useRef(null);
+  const navigate = useNavigate();
 
   // Define colors for borders
   const COLORS = {
@@ -129,7 +131,14 @@ const UpcomingDeadlines = ({ tasks }) => {
                 {/* Task Title with Priority Icon */}
                 <div className="mb-1">
                   <h5 className="card-title fs-14 fw-semibold mb-0">
-                    <a href={`/tasks/${task._id}`} className="text-dark">
+                    <a
+                      href="#"
+                      className="text-dark"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        navigate(`/developer/taskdetails/${task._id}`);
+                      }}
+                    >
                       {task.title}
                       {task.priority === 'High' && (
                         <RiAlertLine className={`ms-2 ${getTextColor(task.priority)}`} />

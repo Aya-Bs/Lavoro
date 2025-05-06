@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import './KanbanBoard.css';
 
 const DeveloperKanbanBoard = () => {
-      const [loading, setLoading] = useState(true); // State for loading status
-    
+    const [loading, setLoading] = useState(true); // State for loading status
+    const navigate = useNavigate();
+
     const [tasks, setTasks] = useState({
         'Not Started': [],
         'In Progress': [],
@@ -20,11 +21,11 @@ const DeveloperKanbanBoard = () => {
             try {
                 setLoading(true); // Ensure loading starts
                 const response = await axios.get('http://localhost:3000/tasks/developer-kanban', {
-                    headers: { 
-                        Authorization: `Bearer ${localStorage.getItem('token')}` 
+                    headers: {
+                        Authorization: `Bearer ${localStorage.getItem('token')}`
                     }
                 });
-        
+
                 setTasks(response.data.data || {
                     'Not Started': [],
                     'In Progress': [],
@@ -42,7 +43,7 @@ const DeveloperKanbanBoard = () => {
     }, []);
 
     // Fetch tasks on component mount
-    
+
 
     // Handle drag and drop
     const handleDragEnd = async (result) => {
@@ -280,6 +281,12 @@ const DeveloperKanbanBoard = () => {
                                                                 <span className="badge bg-success">
                                                                     {task.status}
                                                                 </span>
+                                                                <button
+                                                                    className="btn btn-sm btn-primary-light ms-auto"
+                                                                    onClick={() => navigate(`/developer/taskdetails/${task._id}`)}
+                                                                >
+                                                                    <i className="ri-eye-line me-1"></i>View
+                                                                </button>
                                                             </div>
                                                         </div>
                                                         <div className="p-3 border-top border-block-start-dashed">

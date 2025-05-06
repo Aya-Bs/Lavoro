@@ -13,7 +13,7 @@ export const MyTasks = () => {
   const [user, setUser] = useState(null);
   const navigate = useNavigate();
 
-  
+
   // State for active tab and filters
   const [activeTab, setActiveTab] = useState('all');
   const [priorityFilters, setPriorityFilters] = useState({
@@ -55,13 +55,13 @@ export const MyTasks = () => {
 
         setAllTasks(tasksResponse.data.data);
         setFilteredTasks(tasksResponse.data.data);
-        
+
         // Calculate status counts
         const today = new Date().toISOString().split('T')[0];
         setStatusCounts({
           all: tasksResponse.data.data.length,
           Done: tasksResponse.data.data.filter(t => t.status === 'Done').length,
-          today: tasksResponse.data.data.filter(t => 
+          today: tasksResponse.data.data.filter(t =>
             t.deadline && new Date(t.deadline).toISOString().split('T')[0] === today
           ).length,
           InProgress: tasksResponse.data.data.filter(t => t.status === 'In Progress').length,
@@ -92,7 +92,7 @@ export const MyTasks = () => {
       filtered = filtered.filter(task => {
         switch (activeTab) {
           case 'Done': return task.status === 'Done';
-          case 'today': 
+          case 'today':
             const today = new Date().toISOString().split('T')[0];
             return task.deadline && new Date(task.deadline).toISOString().split('T')[0] === today;
           case 'InProgress': return task.status === 'In Progress';
@@ -106,9 +106,9 @@ export const MyTasks = () => {
     const activePriorityFilters = Object.keys(priorityFilters).filter(
       key => priorityFilters[key]
     );
-    
+
     if (activePriorityFilters.length > 0) {
-      filtered = filtered.filter(task => 
+      filtered = filtered.filter(task =>
         activePriorityFilters.includes(task.priority)
       );
     }
@@ -128,10 +128,10 @@ export const MyTasks = () => {
       );
 
       // Update the task in the local state
-      setAllTasks(prevTasks => 
-        prevTasks.map(task => 
-          task._id === taskId 
-            ? { ...task, status: 'In Progress', start_date: new Date() } 
+      setAllTasks(prevTasks =>
+        prevTasks.map(task =>
+          task._id === taskId
+            ? { ...task, status: 'In Progress', start_date: new Date() }
             : task
         )
       );
@@ -154,10 +154,10 @@ export const MyTasks = () => {
       );
 
       // Update the task in the local state
-      setAllTasks(prevTasks => 
-        prevTasks.map(task => 
-          task._id === taskId 
-            ? { ...task, status: 'Done' } 
+      setAllTasks(prevTasks =>
+        prevTasks.map(task =>
+          task._id === taskId
+            ? { ...task, status: 'Done' }
             : task
         )
       );
@@ -181,22 +181,22 @@ export const MyTasks = () => {
 
   const getStatusBadge = (status) => {
     switch (status) {
-      case 'Not Started': 
+      case 'Not Started':
         return <span className="fw-medium text-muted">
           <i className="ri-circle-line fw-semibold fs-7 me-2 lh-1 align-middle" />
           Not Started
         </span>;
-      case 'In Progress': 
+      case 'In Progress':
         return <span className="fw-medium text-primary">
           <i className="ri-circle-line fw-semibold fs-7 me-2 lh-1 align-middle" />
           In Progress
         </span>;
-      case 'Done': 
+      case 'Done':
         return <span className="fw-medium text-success">
           <i className="ri-checkbox-circle-line fw-semibold fs-7 me-2 lh-1 align-middle" />
           Done
         </span>;
-      default: 
+      default:
         return <span className="fw-medium text-secondary">{status}</span>;
     }
   };
@@ -229,13 +229,13 @@ export const MyTasks = () => {
                 <a href="javascript:void(0);">Pages</a>
               </li>
               <li className="breadcrumb-item active" aria-current="page">
-              My Tasks 
+              My Tasks
               </li>
             </ol>
           </nav>
           <h1 className="page-title fw-medium fs-18 mb-0">My Tasks </h1>
         </div>
-       
+
       </div>
 
       <div className="row">
@@ -351,7 +351,7 @@ export const MyTasks = () => {
             </div>
           </div>
         </div>
-        
+
         <div className="col-xl-9">
           <div className="card custom-card">
             <div className="card-body p-0 position-relative" id="todo-content">
@@ -377,14 +377,29 @@ export const MyTasks = () => {
                     <tbody id="todo-drag">
                       {filteredTasks.length > 0 ? (
                         filteredTasks.map(task => (
-                          <tr className="todo-box" key={task._id}>
-                            <td>
+                          <tr
+                            className="todo-box"
+                            key={task._id}
+                            onClick={() => navigate(`/developer/taskdetails/${task._id}`)}
+                            style={{ cursor: 'pointer' }}
+                          >
+                            <td onClick={(e) => e.stopPropagation()}>
                               <button className="btn btn-icon btn-sm btn-wave btn-light todo-handle">
                                 : :
                               </button>
                             </td>
                             <td>
-                              <span className="fw-medium">{task.title}</span>
+                              <a
+                                href="#"
+                                className="fw-medium text-dark"
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  navigate(`/developer/taskdetails/${task._id}`);
+                                }}
+                                style={{ textDecoration: 'none' }}
+                              >
+                                {task.title}
+                              </a>
                             </td>
                             <td>{getStatusBadge(task.status)}</td>
                             <td>{formatDate(task.deadline)}</td>
@@ -395,8 +410,8 @@ export const MyTasks = () => {
                             <td>
                               <div className="d-flex align-items-center">
                                 <div className="progress progress-animate progress-xs w-100">
-                                  <div 
-                                    className="progress-bar progress-bar-striped progress-bar-animated bg-primary" 
+                                  <div
+                                    className="progress-bar progress-bar-striped progress-bar-animated bg-primary"
                                     style={{ width: task.status === 'Done' ? '100%' : task.status === 'In Progress' ? '50%' : '10%' }}
                                   />
                                 </div>
@@ -405,10 +420,10 @@ export const MyTasks = () => {
                                 </div>
                               </div>
                             </td>
-                            <td className="text-end">
-                              <div className="d-flex gap-2">
+                            <td className="text-end" onClick={(e) => e.stopPropagation()}>
+                              <div className="d-flex gap-2 justify-content-end">
                                 {task.status === 'Not Started' && (
-                                  <button 
+                                  <button
                                     className="btn btn-icon btn-sm btn-info-light btn-wave"
                                     onClick={() => startTask(task._id)}
                                     title="Start Task"
@@ -417,7 +432,7 @@ export const MyTasks = () => {
                                   </button>
                                 )}
                                 {task.status === 'In Progress' && (
-                                  <button 
+                                  <button
                                     className="btn btn-icon btn-sm btn-success-light btn-wave"
                                     onClick={() => completeTask(task._id)}
                                     title="Complete Task"
@@ -430,7 +445,14 @@ export const MyTasks = () => {
                                     <i className="ri-checkbox-circle-fill fs-16" />
                                   </span>
                                 )}
-                               
+
+                                <button
+                                  className="btn btn-icon btn-sm btn-primary-light btn-wave"
+                                  onClick={() => navigate(`/developer/taskdetails/${task._id}`)}
+                                  title="View Details"
+                                >
+                                  <i className="ri-eye-line" />
+                                </button>
                               </div>
                             </td>
                           </tr>

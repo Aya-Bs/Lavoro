@@ -57,6 +57,7 @@ import { AITaskGenerator } from "./Tasks/createTaskWithAI";
 import KanbanBoard from "./Tasks/KanbanBoard";
 import DeveloperDashboard from "./Tasks/DeveloperDashboard";
 import DeveloperKanbanBoard from "./Tasks/DeveloperKanbanBoard";
+import DeveloperTaskDetail from "./Tasks/DeveloperTaskDetail";
 
 
 // ProtectedRoute component to check authentication and roles
@@ -365,6 +366,11 @@ function App() {
 <Route path="/developer-kanban" element={
   <ProtectedRoute allowedRoles={['Developer']}>
     <DeveloperKanbanBoard />
+  </ProtectedRoute>
+} />
+<Route path="/developer/taskdetails/:taskId" element={
+  <ProtectedRoute allowedRoles={['Developer']}>
+    <DeveloperTaskDetail />
   </ProtectedRoute>
 } />
 
