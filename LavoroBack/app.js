@@ -18,7 +18,6 @@ const ChatGroup = require('./models/chatGroup');
 const GroupMessage = require('./models/groupMessage');
 const User = require('./models/user');
 
-
 // Connect to MongoDB
 mongo
   .connect(db.url)
@@ -47,6 +46,7 @@ const reportRouter = require('./routes/reports');
 const deleteReportRouter = require('./routes/deleteReport');
 const taskPrioritizationRoutes = require('./routes/taskPrioritizationRoutes');
 const predictRouter = require('./routes/predictMember');
+const fileRouter = require('./routes/file');
 
 
 
@@ -82,7 +82,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
-
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Session configuration
 app.use(
@@ -103,6 +103,7 @@ app.use(
   })
 );
 
+app.use ('/files',fileRouter);
 app.use('/notifications',notifroute);
 
 
@@ -119,6 +120,7 @@ app.use('/chat', chatRouter);
 app.use('/predict', predictRouter);
 
 
+
 app.use('/project',projectRouter);
 app.use('/teamMember', teamMemberRouter);
 app.use('/skills', skillsRouter);
@@ -131,6 +133,7 @@ app.use('/teams', teamRouter);
 app.use('/ai-prioritization', taskPrioritizationRoutes);
 app.use('/reports', reportRouter);
 app.use('/delete-report', deleteReportRouter);
+
 
 app.post("/translate", async (req, res) => {
   const { text, targetLanguage } = req.body;

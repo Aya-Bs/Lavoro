@@ -6,8 +6,10 @@ const auth = require('../middleware/authenticatedToken');
 const taskController = require('../controllers/TaskController')
 const authenticateUser = require('../middleware/mailAuth');
 
-router.post('/createTask', taskController.addTask);
-router.get('/',  taskController.getAllTasks);
+// router.post('/createTask', taskController.addTask);
+// router.get('/',  taskController.getAllTasks);
+router.post('/createTask', authenticateUser, taskController.addTask);
+router.get('/', authenticateUser, taskController.getAllTasks);
 router.delete('/:taskId', taskController.deleteTask);
 router.patch('/:taskId/assign', taskController.assignTask);
 router.patch('/:taskId/unassign', taskController.unassignTask);

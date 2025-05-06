@@ -208,29 +208,27 @@ export const TaskDetail = () => {
                             <div className="text-muted">
                               <p className="mb-3">
                                 <span className="avatar avatar-sm avatar-rounded text-primary p-1 bg-primary-transparent me-2">
-                                  <i className="ri-mail-line align-middle fs-15" />
+                                <i class="ri-calendar-schedule-line"></i>
                                 </span>
                                 <span className="fw-medium text-default">Start Date : </span>{" "}
                                 {task.start_date ? new Date(task.start_date).toLocaleDateString() : "Not set"}
                               </p>
                               <p className="mb-3">
                                 <span className="avatar avatar-sm avatar-rounded text-primary1 p-1 bg-primary1-transparent me-2">
-                                  <i className="ri-map-pin-line align-middle fs-15" />
-                                </span>
+                                <i class="ri-calendar-schedule-line"></i>
+                                                                </span>
                                 <span className="fw-medium text-default">End Date : </span>{" "}
                                 {task.deadline ? new Date(task.deadline).toLocaleDateString() : "Not set"}
                               </p>
                               <p className="mb-3">
                                 <span className="avatar avatar-sm avatar-rounded text-primary2 p-1 bg-primary2-transparent me-2">
-                                  <i className="ri-building-line align-middle fs-15" />
-                                </span>
+                                <i class="ri-time-line"></i>                                </span>
                                 <span className="fw-medium text-default">Estimated Duration : </span>{" "}
                                 {task.estimated_duration ? `${task.estimated_duration} days` : "Not estimated"}
                               </p>
                               <p className="mb-0">
                                 <span className="avatar avatar-sm avatar-rounded text-primary3 p-1 bg-primary3-transparent me-2">
-                                  <i className="ri-phone-line align-middle fs-15" />
-                                </span>
+                                <i class="ri-gemini-fill"></i>                                </span>
                                 <span className="fw-medium text-default">Priority : </span>{" "}
                                 {getPriorityBadge(task.priority)}
                               </p>

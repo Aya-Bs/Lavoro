@@ -230,8 +230,16 @@ const TeamDetailsPage = () => {
                                   Manager: {team.manager_id?.firstName} {team.manager_id?.lastName}
                                 </p>
                               </div>
+                              
 
                             </div>
+                            <div className="popular-tags">
+                  <span className={`badge rounded-pill ${team.status === 'Active' ? 'bg-success-transparent' : 'bg-secondary-transparent'}`}>
+                    <i className="bi bi-circle-fill me-1"></i> {team.status}
+                  </span>
+                 
+                  
+                </div>
 
                           </div>
                         </div>
@@ -280,9 +288,7 @@ const TeamDetailsPage = () => {
                   {team.description || 'No description available for this team.'}
                 </p>
                 <div className="popular-tags">
-                  <span className={`badge rounded-pill ${team.status === 'Active' ? 'bg-success-transparent' : 'bg-secondary-transparent'}`}>
-                    <i className="bi bi-circle-fill me-1"></i> {team.status}
-                  </span>
+                  
                   {team.tags?.map((tag, index) => (
                     <span key={index} className="badge rounded-pill bg-primary-transparent me-1">
                       {tag}
@@ -465,7 +471,7 @@ const TeamDetailsPage = () => {
                 <h6 className="fw-medium mb-3">Quick Actions</h6>
                 <button
                   className="btn btn-outline-primary btn-wave w-100 mb-2"
-                  onClick={() => navigate(`/teams/${team._id}/add-member`)}
+                  onClick={() => navigate(`/searchMember/${team._id}`)}
                 >
                   <i className="ri-user-add-line me-2"></i> Add Member
                 </button>

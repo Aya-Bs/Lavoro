@@ -167,7 +167,6 @@ import FullCalendar from "./team/calendar";
 import WinnersPodium from "./team/podium";
 import Mail from "./user/mail";
 import 'bootstrap/dist/css/bootstrap.min.css';
-import { File } from "./fileManager/file";
 import axios from "axios";
 import { CreateTask } from "./Tasks/createTask";
 import { TaskList } from "./Tasks/tasksList";
@@ -175,6 +174,7 @@ import { TaskDetail } from "./Tasks/taskDetail";
 import { MyTasks } from "./Tasks/myTasks";
 import ReportsList from "./reports/ReportsList";
 import PrioritizedTasks from "./Tasks/PrioritizedTasks";
+import File from "./fileManager/file"
 
 
 // ProtectedRoute component to check authentication and roles

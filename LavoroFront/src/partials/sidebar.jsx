@@ -5,6 +5,8 @@ const Sidebar = ({ userRole }) => {
   const [isDashboardOpen, setIsDashboardOpen] = useState(false);
   const [isPagesOpen, setIsPagesOpen] = useState(false);
   const [isProjectsMenuOpen, setIsProjectsMenuOpen] = useState(false);
+  const [isPagesOpenTask, setIsPagesOpenTask] = useState(false);
+
 
   const getMenuItems = () => {
     switch(userRole) {
@@ -199,7 +201,6 @@ Member of the year                  </Link>
                 </li>
                 <li className="slide">
                   <Link to="/reports" className="side-menu__item">
-                    <i className="ri-file-warning-line side-menu__icon"></i>
                     Reports
                   </Link>
                 </li>
@@ -207,20 +208,20 @@ Member of the year                  </Link>
               </ul>
             </li>
 
-            <li className={`slide has-sub ${isPagesOpen ? "open" : ""}`}>
+            <li className={`slide has-sub ${isPagesOpenTask ? "open" : ""}`}>
             <li className="slide__category">
               <span className="category-name">Tasks</span>
             </li>
               <button
                 className="side-menu__item"
-                onClick={() => setIsPagesOpen(!isPagesOpen)}
+                onClick={() => setIsPagesOpenTask(!isPagesOpenTask)}
                 style={{ background: "none", border: "none", cursor: "pointer", width: "100%", textAlign: "left" }}
               >
                 <i className="ri-arrow-down-s-line side-menu__angle"></i>
                 <i className="ri-list-check-3 side-menu__icon"></i>
                 <span className="side-menu__label">Tasks</span>
               </button>
-              <ul className="slide-menu child1" style={{ display: isPagesOpen ? "block" : "none" }}>
+              <ul className="slide-menu child1" style={{ display: isPagesOpenTask ? "block" : "none" }}>
 
                 <li className="slide">
                   <Link to="/createTask" className="side-menu__item">
@@ -343,7 +344,6 @@ Member of the year                  </Link>
             </li>
             <li className="slide">
               <Link to="/reports" className="side-menu__item">
-                <i className="ri-file-warning-line side-menu__icon"></i>
                 <span className="side-menu__label">Reports</span>
               </Link>
             </li>

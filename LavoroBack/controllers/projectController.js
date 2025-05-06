@@ -1045,6 +1045,7 @@ exports.startProject = async (req, res) => {
   }
 };
 
+
 exports.getManagedProjects = async (req, res) => {
   try {
     // Verify session exists

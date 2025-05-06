@@ -15,15 +15,21 @@ exports.getTasksByUser = async (req, res) => {
   try {
     console.log("Request user object:", req.user);
     console.log("Authenticated user ID:", req.user._id);
-    
-    const query = { assigned_to: req.user._id };
+
+    // Trouver d'abord tous les teamMembers où cet utilisateur est le user_id
+    const teamMembers = await TeamMember.find({ user_id: req.user._id });
+
+    // Extraire les IDs des teamMembers
+    const teamMemberIds = teamMembers.map(member => member._id);
+
+    const query = { assigned_to: { $in: teamMemberIds } };
     console.log("Query:", query);
 
     // Récupérer les tâches sans populate pour éviter l'erreur
     const tasks = await Task.find(query).lean();
 
     console.log("Found tasks:", tasks);
-    
+
     if (!tasks.length) {
       console.log("No tasks found for user:", req.user._id);
       return res.status(200).json([]);
@@ -32,9 +38,9 @@ exports.getTasksByUser = async (req, res) => {
     res.status(200).json(tasks);
   } catch (error) {
     console.error("Controller error:", error);
-    res.status(500).json({ 
+    res.status(500).json({
       error: 'Server error',
-      details: error.message 
+      details: error.message
     });
   }
 };
@@ -369,8 +375,161 @@ exports.testPointsSystem = async (req, res) => {
 };
 
 
+// exports.addTask = async (req, res) => {
+//   try {
+//     const {
+//       title,
+//       description,
+//       project_id,
+//       assigned_to,
+//       status,
+//       priority,
+//       deadline,
+//       start_date,
+//       estimated_duration,
+//       tags
+//     } = req.body;
+
+//     // Validate that project exists
+//     const project = await Project.findById(project_id);
+//     if (!project) {
+//       return res.status(404).json({ 
+//         success: false,
+//         message: 'Project not found' 
+//       });
+//     }
+
+//     // Validate that team member exists if assigned
+//     if (assigned_to) {
+//       const teamMember = await TeamMember.findById(assigned_to);
+//       if (!teamMember) {
+//         return res.status(404).json({
+//           success: false,
+//           message: 'Team member not found'
+//         });
+//       }
+//     }
+
+//     const newTask = new Task({
+//       title,
+//       description,
+//       project_id,
+//       assigned_to,
+//       status,
+//       priority,
+//       deadline,
+//       start_date,
+//       estimated_duration,
+//       tags
+//     });
+
+//     const savedTask = await newTask.save();
+
+//     // 1. Add task to project's tasks array
+//     await Project.findByIdAndUpdate(
+//       project_id,
+//       {
+//         $push: { tasks: savedTask._id },
+//         $inc: { total_tasks_count: 1 }
+//       },
+//       { new: true }
+//     );
+
+//     // 2. If assigned to a team member, add task to their tasks array
+//     if (assigned_to) {
+//       await TeamMember.findByIdAndUpdate(
+//         assigned_to,
+//         {
+//           $push: { tasks: savedTask._id }
+//         },
+//         { new: true }
+//       );
+//     }
+
+//     res.status(201).json({
+//       success: true,
+//       message: 'Task created successfully',
+//       data: savedTask
+//     });
+//   } catch (error) {
+//     console.error('Error creating task:', error);
+//     res.status(500).json({ 
+//       success: false,
+//       message: 'Error creating task',
+//       error: process.env.NODE_ENV === 'development' ? error.message : undefined
+//     });
+//   }
+// };
+
+
+
+
+// In your TaskController.js
+
+// exports.getAllTasks = async (req, res) => {
+//   try {
+//     // Extract query parameters
+//     const { 
+//       status, 
+//       priority, 
+//       project_id, 
+//       assigned_to, 
+//       page = 1, 
+//       limit = 10 
+//     } = req.query;
+
+//     // Build filter object
+//     const filter = {};
+    
+//     if (status) filter.status = status;
+//     if (priority) filter.priority = priority;
+//     if (project_id) filter.project_id = project_id;
+//     if (assigned_to) filter.assigned_to = assigned_to;
+
+//     // Calculate pagination
+//     const skip = (page - 1) * limit;
+
+//     // Get tasks with population and pagination
+//     const tasks = await Task.find(filter)
+//   .populate('project_id', 'name status')
+//   .populate({
+//     path: 'assigned_to',
+//     select: 'role', // Fields from TeamMember
+//     populate: {
+//       path: 'user_id',
+//       select: 'firstName lastName image' // Fields from User
+//     }
+//   })
+//   .skip(skip)
+//   .limit(parseInt(limit))
+//   .sort({ deadline: 1 });
+//     // Get total count for pagination info
+//     const totalTasks = await Task.countDocuments(filter);
+
+//     res.status(200).json({
+//       success: true,
+//       data: tasks,
+//       pagination: {
+//         currentPage: parseInt(page),
+//         totalPages: Math.ceil(totalTasks / limit),
+//         totalTasks,
+//         tasksPerPage: parseInt(limit)
+//       }
+//     });
+//   } catch (error) {
+//     console.error('Error fetching tasks:', error);
+//     res.status(500).json({
+//       success: false,
+//       message: 'Error fetching tasks',
+//       error: process.env.NODE_ENV === 'development' ? error.message : undefined
+//     });
+//   }
+// };
+
+
 exports.addTask = async (req, res) => {
   try {
+
     const {
       title,
       description,
@@ -383,6 +542,10 @@ exports.addTask = async (req, res) => {
       estimated_duration,
       tags
     } = req.body;
+
+    // Get the current user ID from the request (assuming you have authentication middleware)
+    const created_by = req.user._id;
+
 
     // Validate that project exists
     const project = await Project.findById(project_id);
@@ -409,6 +572,7 @@ exports.addTask = async (req, res) => {
       description,
       project_id,
       assigned_to,
+      created_by, // Add the creator ID
       status,
       priority,
       deadline,
@@ -419,7 +583,7 @@ exports.addTask = async (req, res) => {
 
     const savedTask = await newTask.save();
 
-    // 1. Add task to project's tasks array
+    // Update project's tasks array
     await Project.findByIdAndUpdate(
       project_id,
       {
@@ -429,7 +593,7 @@ exports.addTask = async (req, res) => {
       { new: true }
     );
 
-    // 2. If assigned to a team member, add task to their tasks array
+    // If assigned to a team member, add task to their tasks array
     if (assigned_to) {
       await TeamMember.findByIdAndUpdate(
         assigned_to,
@@ -456,10 +620,6 @@ exports.addTask = async (req, res) => {
 };
 
 
-
-
-// In your TaskController.js
-
 exports.getAllTasks = async (req, res) => {
   try {
     // Extract query parameters
@@ -472,8 +632,11 @@ exports.getAllTasks = async (req, res) => {
       limit = 10 
     } = req.query;
 
+    // Get the current user ID from the request
+    const created_by = req.user._id;
+
     // Build filter object
-    const filter = {};
+    const filter = { created_by }; // Only show tasks created by this user
     
     if (status) filter.status = status;
     if (priority) filter.priority = priority;
@@ -485,18 +648,20 @@ exports.getAllTasks = async (req, res) => {
 
     // Get tasks with population and pagination
     const tasks = await Task.find(filter)
-  .populate('project_id', 'name status')
-  .populate({
-    path: 'assigned_to',
-    select: 'role', // Fields from TeamMember
-    populate: {
-      path: 'user_id',
-      select: 'firstName lastName image' // Fields from User
-    }
-  })
-  .skip(skip)
-  .limit(parseInt(limit))
-  .sort({ deadline: 1 });
+      .populate('project_id', 'name status')
+      .populate({
+        path: 'assigned_to',
+        select: 'role',
+        populate: {
+          path: 'user_id',
+          select: 'firstName lastName image'
+        }
+      })
+      .populate('created_by', 'firstName lastName') // Populate creator info
+      .skip(skip)
+      .limit(parseInt(limit))
+      .sort({ deadline: 1 });
+
     // Get total count for pagination info
     const totalTasks = await Task.countDocuments(filter);
 
@@ -519,7 +684,6 @@ exports.getAllTasks = async (req, res) => {
     });
   }
 };
-
 
 // In your TaskController.js
 
