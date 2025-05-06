@@ -33,7 +33,7 @@ const usersRouter = require('./routes/users');
 const taskRouter=require('./routes/Task')
 const profileRouter = require('./routes/profile');
 const projectRouter = require('./routes/project');
-const notifroute = require('./routes/notification');
+//const notifroute = require('./routes/notification');
 const meetRouter = require('./routes/meets');
 const chatRouter = require('./routes/chat');
 const teamRouter = require('./routes/teams');
@@ -105,7 +105,7 @@ app.use(
   })
 );
 
-app.use('/notifications',notifroute);
+//app.use('/notifications',notifroute);
 
 
 // Routes

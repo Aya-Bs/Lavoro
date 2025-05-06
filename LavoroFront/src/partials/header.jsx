@@ -103,16 +103,21 @@ useEffect(() => {
       const token = localStorage.getItem("token");
       if (!token) return;
 
-      const response = await axios.get("http://localhost:3000/notifications", {
+      // Decode the token to get user ID
+      const tokenParts = token.split('.');
+      const payload = JSON.parse(atob(tokenParts[1]));
+      const userId = payload._id;
+
+      const response = await axios.get(`http://localhost:3000/notifications?userId=${userId}`, {
         headers: { 
           Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json'
         }
       });
 
-      if (response.data) {
-        setNotifications(response.data.notifications || []);
-        setUnreadCount(response.data.unreadCount || 0);
+      if (response.data && response.data.success) {
+        setNotifications(response.data.data || []);
+        setUnreadCount(response.data.data?.filter(notif => !notif.is_read).length || 0);
       }
     } catch (error) {
       console.error("Error fetching notifications:", error);
@@ -346,11 +351,11 @@ useEffect(() => {
             <div className="d-flex flex-wrap gap-2 mb-2">
               <div className="d-flex align-items-center">
                 <i className="ri-calendar-line me-1"></i>
-                <span className="text-muted">Start: {notification.task_start_date}</span>
+                <span className="text-muted">Start: {format(new Date(notification.task_start_date), 'MMM dd, yyyy')}</span>
               </div>
               <div className="d-flex align-items-center">
                 <i className="ri-calendar-check-line me-1"></i>
-                <span className="text-muted">End: {notification.task_deadline}</span>
+                <span className="text-muted">End: {format(new Date(notification.task_deadline), 'MMM dd, yyyy')}</span>
               </div>
             </div>
             

@@ -104,7 +104,13 @@ const notificationController = {
     sendTaskReminder: async (req, res) => {
         try {
             const { taskId } = req.params;
-            const task = await Task.findById(taskId).populate('assigned_to');
+            const task = await Task.findById(taskId).populate({
+                path: 'assigned_to',
+                populate: {
+                    path: 'user_id',
+                    select: '_id'
+                }
+            });
             
             if (!task) {
                 return res.status(404).json({ 
@@ -113,7 +119,15 @@ const notificationController = {
                 });
             }
 
-            const notification = await notificationUtils.createTaskReminderNotification(task, task.assigned_to[0]._id);
+            if (!task.assigned_to || task.assigned_to.length === 0) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'No team members assigned to this task'
+                });
+            }
+
+            const userId = task.assigned_to[0].user_id._id;
+            const notification = await notificationUtils.createTaskReminderNotification(task, userId);
             
             res.status(200).json({ 
                 success: true,

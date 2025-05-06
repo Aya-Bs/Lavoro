@@ -240,6 +240,7 @@ exports.getAllMembers = async (req, res) => {
 
     const result = members.map(member => ({
       id: member._id,
+      user_id: member.user_id?._id,
       name: member.user_id ? `${member.user_id.firstName} ${member.user_id.lastName}` : 'Unknown',
       image: member.user_id?.image || '',
       role: member.role,

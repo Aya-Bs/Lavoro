@@ -6,7 +6,7 @@ const notificationController = require('../controllers/notificationController');
 router.get('/', notificationController.getUserNotifications);
 
 // Create notification
-router.post('/', notificationController.createNotification);
+router.post('/create', notificationController.createNotification);
 
 // Mark notification as read
 router.put('/:notificationId/read', notificationController.markNotificationAsRead);

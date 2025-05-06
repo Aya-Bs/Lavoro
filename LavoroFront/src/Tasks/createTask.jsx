@@ -107,6 +107,7 @@ export const CreateTask = () => {
             const formattedMembers = membersResponse.data.data.map(member => ({
               ...member,
               _id: member.id || member._id,
+              user_id: member.user_id, // Store user_id from response
               name: member.name || 'Unnamed Member',
               image: member.image || '../assets/images/faces/11.jpg',
               role: member.role || 'Developer',
@@ -241,13 +242,16 @@ export const CreateTask = () => {
           // Create notification for the assigned team member
           if (formData.assigned_to) {
             try {
+              const selectedMember = teamMembers.find(m => m._id === formData.assigned_to);
+              const userId = selectedMember.user_id; // Use user_id from teamMembers
+
               const notificationData = {
-                userId: formData.assigned_to,
+                userId: userId,
                 task: {
                   _id: response.data.data._id,
                   title: formData.title,
-                  start_date: new Date(formData.start_date).toLocaleDateString(),
-                  deadline: new Date(formData.deadline).toLocaleDateString(),
+                  start_date: new Date(formData.start_date),
+                  deadline: new Date(formData.deadline),
                   priority: formData.priority,
                   status: formData.status
                 }
