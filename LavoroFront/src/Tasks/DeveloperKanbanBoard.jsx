@@ -5,58 +5,44 @@ import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import './KanbanBoard.css';
 
-const KanbanBoard = () => {
-    const { projectId } = useParams();
+const DeveloperKanbanBoard = () => {
+      const [loading, setLoading] = useState(true); // State for loading status
+    
     const [tasks, setTasks] = useState({
         'Not Started': [],
         'In Progress': [],
         'In Review': [],
         'Done': []
     });
-    const [loading, setLoading] = useState(true);
 
-    // Fetch tasks on component mount
     useEffect(() => {
         const fetchTasks = async () => {
             try {
-                // Use the correct API endpoint from the Task.js routes file
-                const response = await axios.get(`http://localhost:3000/tasks/projects/${projectId}/kanban`, {
-                    headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+                setLoading(true); // Ensure loading starts
+                const response = await axios.get('http://localhost:3000/tasks/developer-kanban', {
+                    headers: { 
+                        Authorization: `Bearer ${localStorage.getItem('token')}` 
+                    }
                 });
-
-                // Process the response data
-                console.log('API Response:', response.data);
-
-                // Check if the response is already grouped by status or needs to be grouped
-                let groupedTasks;
-
-                if (response.data && typeof response.data === 'object' && 'Not Started' in response.data) {
-                    // Response is already grouped by status
-                    groupedTasks = response.data;
-                    console.log('Using pre-grouped tasks from API');
-                } else {
-                    // Need to group the tasks by status
-                    const tasksData = response.data || [];
-                    console.log('Fetched tasks:', tasksData);
-
-                    groupedTasks = {
-                        'Not Started': tasksData.filter(t => t.status === 'Not Started'),
-                        'In Progress': tasksData.filter(t => t.status === 'In Progress'),
-                        'In Review': tasksData.filter(t => t.status === 'In Review'),
-                        'Done': tasksData.filter(t => t.status === 'Done')
-                    };
-                }
-
-                setTasks(groupedTasks);
-                setLoading(false);
+        
+                setTasks(response.data.data || {
+                    'Not Started': [],
+                    'In Progress': [],
+                    'In Review': [],
+                    'Done': []
+                });
             } catch (error) {
-                console.error('Error fetching tasks:', error);
-                setLoading(false);
+                console.error('Error fetching developer tasks:', error);
+            } finally {
+                setLoading(false); // This ensures loading stops whether successful or not
             }
         };
 
         fetchTasks();
-    }, [projectId]);
+    }, []);
+
+    // Fetch tasks on component mount
+    
 
     // Handle drag and drop
     const handleDragEnd = async (result) => {
@@ -349,4 +335,4 @@ const KanbanBoard = () => {
     );
 };
 
-export default KanbanBoard;
+export default DeveloperKanbanBoard;

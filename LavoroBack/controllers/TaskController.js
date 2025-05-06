@@ -1196,22 +1196,44 @@ exports.saveTasks = async (req, res) => {
 
 exports.getKanbanTasks = async (req, res) => {
   try {
-      const tasks = await Task.find({ project_id: req.params.projectId });
-      
+      console.log('Getting kanban tasks for project:', req.params.projectId);
+
+      // Find tasks for this project with populated data
+      const tasks = await Task.find({ project_id: req.params.projectId })
+          .populate('project_id', 'name description')
+          .populate({
+              path: 'assigned_to',
+              select: 'role user_id',
+              populate: {
+                  path: 'user_id',
+                  select: 'firstName lastName image'
+              }
+          })
+          .sort({ order: 1 })
+          .lean();
+
+      console.log(`Found ${tasks.length} tasks for project ${req.params.projectId}`);
+
+      // Group tasks by status
       const groupedTasks = {
           'Not Started': tasks.filter(t => t.status === 'Not Started')
-                             .sort((a, b) => a.order - b.order),
+                             .sort((a, b) => (a.order || 0) - (b.order || 0)),
           'In Progress': tasks.filter(t => t.status === 'In Progress')
-                             .sort((a, b) => a.order - b.order),
+                             .sort((a, b) => (a.order || 0) - (b.order || 0)),
           'In Review': tasks.filter(t => t.status === 'In Review')
-                           .sort((a, b) => a.order - b.order),
+                           .sort((a, b) => (a.order || 0) - (b.order || 0)),
           'Done': tasks.filter(t => t.status === 'Done')
-                      .sort((a, b) => a.order - b.order)
+                      .sort((a, b) => (a.order || 0) - (b.order || 0))
       };
-      
+
       res.json(groupedTasks);
   } catch (error) {
-      res.status(500).json({ error: error.message });
+      console.error('Error fetching kanban tasks:', error);
+      res.status(500).json({
+          success: false,
+          message: 'Error fetching kanban tasks',
+          error: error.message
+      });
   }
 };
 
@@ -1220,13 +1242,13 @@ exports.updateTaskStatus = async (req, res) => {
   try {
       const { taskId } = req.params;
       const { status, order } = req.body;
-      
+
       const updatedTask = await Task.findByIdAndUpdate(
           taskId,
           { status, order },
           { new: true }
       );
-      
+
       res.json(updatedTask);
   } catch (error) {
       res.status(500).json({ error: error.message });
@@ -1237,19 +1259,236 @@ exports.updateTaskStatus = async (req, res) => {
 exports.updateTaskOrders = async (req, res) => {
   try {
       const { updates } = req.body;
-      
+
       const bulkOps = updates.map(update => ({
           updateOne: {
               filter: { _id: update.taskId },
               update: { $set: { order: update.order } }
           }
       }));
-      
+
       await Task.bulkWrite(bulkOps);
-      
+
       res.json({ success: true });
   } catch (error) {
       res.status(500).json({ error: error.message });
   }
 };
 
+
+exports.getDeveloperDashboard = async (req, res) => {
+  try {
+    const userId = req.user._id;
+    const teamMembers = await TeamMember.find({ user_id: userId });
+    const teamMemberIds = teamMembers.map(member => member._id);
+
+    const tasks = await Task.find({
+      assigned_to: { $in: teamMemberIds }
+    })
+    .populate('project_id', 'name description')
+    .populate({
+      path: 'assigned_to',
+      select: 'role user_id',
+      populate: {
+        path: 'user_id',
+        select: 'firstName lastName image'
+      }
+    })
+    .sort({ deadline: 1 })
+    .lean();
+
+    if (!tasks) {
+      return res.status(404).json({
+        success: false,
+        message: 'No tasks found for this user'
+      });
+    }
+
+    // Calculate task statistics
+    const taskStats = {
+      total: tasks.length || 0,
+      notStarted: tasks.filter(t => t.status === 'Not Started').length || 0,
+      inProgress: tasks.filter(t => t.status === 'In Progress').length || 0,
+      inReview: tasks.filter(t => t.status === 'In Review').length || 0,
+      completed: tasks.filter(t => t.status === 'Done').length || 0,
+    };
+
+    const timelineTasks = tasks
+      .filter(task => task.deadline)
+      .map(task => ({
+        ...task,
+        deadline: task.deadline.toISOString(),
+        start_date: task.start_date?.toISOString() || task.created_at.toISOString()
+      }));
+
+    // Extract skills from tags
+    const allSkills = {};
+    tasks.forEach(task => {
+      if (task.tags && Array.isArray(task.tags)) {
+        task.tags.forEach(tag => {
+          allSkills[tag] = (allSkills[tag] || 0) + 1;
+        });
+      }
+    });
+
+    // Approaching deadlines
+    const now = new Date();
+    const threeDaysFromNow = new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000);
+    const approachingDeadlines = tasks.filter(task => {
+      if (!task.deadline) return false;
+      return task.deadline <= threeDaysFromNow && task.deadline >= now;
+    });
+
+    // Recently completed
+    const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+    const recentlyCompleted = tasks.filter(task => {
+      return task.status === 'Done' && task.updated_at >= sevenDaysAgo;
+    }).slice(0, 5);
+
+    // Get team memberships for this user
+    const userTeamMemberships = await TeamMember.find({ user_id: userId }).distinct('team_id');
+
+    // Get teams the user is part of
+    const userTeams = await mongoose.model('team').find({
+      $or: [
+        { _id: { $in: userTeamMemberships } },
+        { manager_id: userId }
+      ]
+    }).distinct('project_id');
+
+    // Get projects the user is involved in
+    const projects = await Project.aggregate([
+      {
+        $match: {
+          $or: [
+            { _id: { $in: userTeams.map(id => new mongoose.Types.ObjectId(id)) } },
+            { manager_id: new mongoose.Types.ObjectId(userId) },
+            { ProjectManager_id: new mongoose.Types.ObjectId(userId) }
+          ]
+        }
+      },
+      {
+        $lookup: {
+          from: "tasks",
+          localField: "_id",
+          foreignField: "project_id",
+          as: "tasks"
+        }
+      },
+      {
+        $lookup: {
+          from: "users",
+          localField: "ProjectManager_id",
+          foreignField: "_id",
+          as: "projectManager"
+        }
+      },
+      {
+        $lookup: {
+          from: "users",
+          localField: "manager_id",
+          foreignField: "_id",
+          as: "manager"
+        }
+      },
+      {
+        $project: {
+          name: 1,
+          description: 1,
+          image: 1,
+          repository: 1,
+          teamMembers: 1,
+          projectManager: { $arrayElemAt: ["$projectManager", 0] },
+          manager: { $arrayElemAt: ["$manager", 0] },
+          taskCount: { $size: "$tasks" },
+          completedTasks: {
+            $size: {
+              $filter: {
+                input: "$tasks",
+                as: "task",
+                cond: { $eq: ["$$task.status", "Done"] }
+              }
+            }
+          }
+        }
+      },
+      { $limit: 4 }
+    ]);
+
+    // Productivity metrics
+    const completedThisWeek = recentlyCompleted.length || 0;
+    const totalTasks = taskStats.total || 1;
+    const productivityScore = Math.round((completedThisWeek / totalTasks) * 100);
+
+    res.json({
+      success: true,
+      data: {
+        taskStats,
+        projects,
+        approachingDeadlines,
+        timelineTasks,
+        recentlyCompleted,
+        skills: Object.keys(allSkills).map(skill => ({
+          name: skill,
+          count: allSkills[skill]
+        })),
+        productivity: {
+          score: productivityScore,
+          completedThisWeek,
+          overdueTasks: tasks.filter(t =>
+            t.deadline && t.deadline < now && t.status !== 'Done'
+          ).length || 0
+        }
+      }
+    });
+
+  } catch (error) {
+    console.error('Dashboard error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Internal server error while loading dashboard data',
+      error: error.message
+    });
+  }
+};
+
+// controllers/taskController.js
+exports.getDeveloperKanbanTasks = async (req, res) => {
+  try {
+    const userId = req.user._id; // From auth middleware
+
+    // 1. Find team members for this user
+    const teamMembers = await TeamMember.find({ user_id: userId });
+    const teamMemberIds = teamMembers.map(member => member._id);
+
+    // 2. Find tasks assigned to these team members
+    const tasks = await Task.find({ assigned_to: { $in: teamMemberIds } })
+      .populate('project_id', 'name')
+      .populate({
+        path: 'assigned_to',
+        select: 'role user_id',
+        populate: {
+          path: 'user_id',
+          select: 'firstName lastName image'
+        }
+      })
+      .sort({ order: 1 });
+
+    // 3. Group by status
+    const groupedTasks = {
+      'Not Started': tasks.filter(t => t.status === 'Not Started'),
+      'In Progress': tasks.filter(t => t.status === 'In Progress'),
+      'In Review': tasks.filter(t => t.status === 'In Review'),
+      'Done': tasks.filter(t => t.status === 'Done')
+    };
+    console.log('Grouped tasks:', groupedTasks);
+
+    res.json({ success: true, data: groupedTasks });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching developer tasks',
+      error: error.message
+    });
+  }
+};

@@ -12,7 +12,7 @@ const TaskSchema = new Schema({
     start_date: { type: Date },
     estimated_duration: { type: Number },
     tags: [{ type: String }],
-    created_at: { type: Date, default: Date.now },
+    created_at: { type: Date, default: Date.now }
 });
 
 module.exports = mongoose.model('Task', TaskSchema);

@@ -15,11 +15,18 @@ const Sidebar = ({ userRole }) => {
               <span className="category-name">Main</span>
             </li>
             <li className="slide">
+              <Link to="/developer-dashboard" className="side-menu__item">
+                <i className="ri-user-line side-menu__icon"></i>
+                <span className="side-menu__label">Dashboard</span>
+              </Link>
+            </li>
+            <li className="slide">
               <Link to="/profile" className="side-menu__item">
                 <i className="ri-user-line side-menu__icon"></i>
                 <span className="side-menu__label">Profile</span>
               </Link>
             </li>
+            
 
             <li className={`slide has-sub ${isPagesOpen ? "open" : ""}`}>
             <li className="slide__category">
@@ -41,6 +48,12 @@ const Sidebar = ({ userRole }) => {
                   My Tasks
                   </Link>
                 </li>
+                <li className="slide">
+                  <Link to="/developer-kanban" className="side-menu__item">
+                  Kanban Board
+                  </Link>
+                </li>
+
                 
              </ul>
             </li>

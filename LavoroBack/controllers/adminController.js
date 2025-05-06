@@ -272,53 +272,6 @@ exports.getUsersForEmail = async (req, res) => {
 };
 
 
-// exports.sendBulkEmail = async (req, res) => {
-//   try {
-//     const { to, subject, content } = req.body;
-
-//     // Validation
-//     if (!Array.isArray(to) || to.length === 0) {
-//       return res.status(400).json({
-//         success: false,
-//         message: 'At least one recipient is required'
-//       });
-//     }
-
-//     if (!subject || !content) {
-//       return res.status(400).json({
-//         success: false,
-//         message: 'Subject and content are required'
-//       });
-//     }
-
-//     // Send emails
-//     const emailPromises = to.map(email => 
-//       sendEmail(
-//         email,
-//         subject,
-//         content.replace(/<[^>]*>/g, ''), // Plain text version
-//         content // HTML version
-//       )
-//     );
-
-//     await Promise.all(emailPromises);
-
-//     res.status(200).json({
-//       success: true,
-//       message: 'Emails sent successfully',
-//       count: to.length
-//     });
-//   } catch (error) {
-//     console.error('Error sending bulk email:', error);
-//     res.status(500).json({
-//       success: false,
-//       message: 'Failed to send emails',
-//       error: error.message
-//     });
-//   }
-// };
-
-
 exports.getUpcomingDeadlines = async (req, res) => {
   try {
     const today = new Date();
@@ -373,82 +326,6 @@ exports.getUpcomingDeadlines = async (req, res) => {
   }
 
 };
-// exports.sendDeadlineReminder = async (req, res) => {
-//   try {
-//     const { projectId } = req.params;
-//     const today = new Date();
-//     today.setHours(0, 0, 0, 0); // Start of today
-    
-//     const twoWeeksLater = new Date(today);
-//     twoWeeksLater.setDate(today.getDate() + 14); // Exactly 14 days from today
-//     twoWeeksLater.setHours(23, 59, 59, 999); // End of the day
-
-//     // 2. Fetch Project
-//     const project = await Project.findById(projectId)
-//       .populate('manager_id', 'email firstName lastName');
-    
-//     if (!project) {
-//       return res.status(404).json({ 
-//         success: false,
-//         message: 'Project not found' 
-//       });
-//     }
-
-//     // 3. Deadline Validation
-//     if (project.end_date > twoWeeksLater) {
-//       const daysRemaining = Math.ceil((project.end_date - today) / (1000 * 60 * 60 * 24));
-//       return res.status(400).json({
-//         success: false,
-//         message: 'Project deadline is not within two weeks',
-//         daysRemaining
-//       });
-//     }
-
-//     // Calculate days remaining (more accurate check)
-//     const endDate = new Date(project.end_date);
-//     endDate.setHours(23, 59, 59, 999); // End of the day
-    
-//     const timeDiff = endDate - today;
-//     const daysRemaining = Math.ceil(timeDiff / (1000 * 60 * 60 * 24));
-
-//     if (daysRemaining > 14) {
-//       return res.status(400).json({
-//         success: false,
-//         message: 'Project deadline is not within two weeks',
-//         daysRemaining
-//       });
-//     }
-
-//     const emailText = `Dear ${project.manager_id.firstName},\n\n` +
-//                      `This is a reminder that your project "${project.name}" is due on ${endDate.toDateString()}.\n\n` +
-//                      `Only ${daysRemaining} ${daysRemaining === 1 ? 'day' : 'days'} remaining.\n\n` +
-//                      `Please ensure all tasks are completed on time.\n\n` +
-//                      `Best regards,\nYour Project Management Team`;
-
-//     await sendEmail(
-//       project.manager_id.email,
-//       `Urgent: ${project.name} Deadline Approaching (${endDate.toDateString()})`,
-//       emailText
-//     );
-
-//     res.status(200).json({ 
-//       success: true,
-//       message: 'Reminder email sent successfully',
-//       data: {
-//         projectId: project._id,
-//         managerEmail: project.manager_id.email,
-//         daysRemaining
-//       }
-//     });
-//   } catch (error) {
-//     console.error('Error sending deadline reminder:', error);
-//     res.status(500).json({ 
-//       success: false,
-//       message: 'Error sending reminder email',
-//       error: error.message
-//     });
-//   }
-// };
 
 
 const sendDeadlineReminderWithTracking = async (project, senderUserId) => {

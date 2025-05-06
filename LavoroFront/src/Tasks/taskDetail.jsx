@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import axios from 'axios';
+import TaskCommentsTab from './CommentTask';
 
 export const TaskDetail = () => {
 
@@ -74,8 +75,8 @@ export const TaskDetail = () => {
 
     return (
     <>
- 
-       
+
+
  <br />
       <div className="row">
         <div className="col-xxl-9">
@@ -113,7 +114,7 @@ export const TaskDetail = () => {
                       aria-selected="false"
                     >
                       <i className="ri-user-3-line me-2 align-middle" />
-                      Assignees 
+                      Assignees
                     </button>
                   </li>
                   <li className="nav-item" role="presentation">
@@ -131,6 +132,21 @@ export const TaskDetail = () => {
                       Rate
                     </button>
                   </li>
+                  <li className="nav-item" role="presentation">
+                      <button
+                        className="nav-link p-3"
+                        id="comments-tab"
+                        data-bs-toggle="tab"
+                        data-bs-target="#comments-tab-pane"
+                        type="button"
+                        role="tab"
+                        aria-controls="comments-tab"
+                        aria-selected="false"
+                      >
+                        <i className="ri-chat-3-line me-2 align-middle" />
+                        Comments
+                      </button>
+                    </li>
                   <li className="nav-item" role="presentation">
                     <button
                       className="nav-link p-3"
@@ -235,7 +251,7 @@ export const TaskDetail = () => {
                 >
                   <br />
                   <div className="card custom-card" >
-                  
+
                     <div className="card-body pb-0">
                       <div className="swiper testimonialSwiper2">
                         <div className="swiper-wrapper">
@@ -256,7 +272,7 @@ export const TaskDetail = () => {
                                                   : '../assets/images/faces/11.jpg'
                                             }
                                             alt={`${member.user_id?.firstName || ''} ${member.user_id?.lastName || ''}`.trim() || 'User'}
-                                            className="mb-1 mx-auto text-center avatar avatar-xl rounded-circle shadow-sm" 
+                                            className="mb-1 mx-auto text-center avatar avatar-xl rounded-circle shadow-sm"
                                             onError={(e) => {
                                               e.target.src = '../assets/images/faces/11.jpg';
                                               e.target.alt = 'Default avatar';
@@ -265,7 +281,7 @@ export const TaskDetail = () => {
                                               objectFit: 'cover' // Ensures the image fills the square
                                             }}
                                           />
-                                        
+
                                         ) : (
                                           <div className="mb-2 mx-auto text-center avatar avatar-xl rounded-circle shadow-sm bg-primary d-flex align-items-center justify-content-center">
                                             <span className="text-white fs-18">
@@ -569,6 +585,15 @@ export const TaskDetail = () => {
                     </div>
                   </div>
                   <div
+  className="tab-pane fade border-0 p-0"
+  id="comments-tab-pane"
+  role="tabpanel"
+  aria-labelledby="comments-tab-pane"
+  tabIndex={0}
+>
+  <TaskCommentsTab taskId={task._id} projectData={task.project_id} />
+</div>
+                  <div
                     className="tab-pane fade border-0 p-0"
                     id="delivery-tab-pane"
                     role="tabpanel"
@@ -627,7 +652,7 @@ export const TaskDetail = () => {
                 {task.project_id.ProjectManager_id?.image ? (
                   <img
                     src={
-                      task.project_id.ProjectManager_id.image.startsWith('http') || 
+                      task.project_id.ProjectManager_id.image.startsWith('http') ||
                       task.project_id.ProjectManager_id.image.startsWith('https')
                         ? task.project_id.ProjectManager_id.image
                         : `http://localhost:3000${task.project_id.ProjectManager_id.image}`
@@ -660,7 +685,7 @@ export const TaskDetail = () => {
                 {task.project_id.manager_id?.image ? (
                   <img
                     src={
-                      task.project_id.manager_id.image.startsWith('http') || 
+                      task.project_id.manager_id.image.startsWith('http') ||
                       task.project_id.manager_id.image.startsWith('https')
                         ? task.project_id.manager_id.image
                         : `http://localhost:3000${task.project_id.manager_id.image}`
@@ -723,14 +748,14 @@ export const TaskDetail = () => {
             </div>
           </div>
           <div className="p-3">
-            
+
             <div className="d-flex align-items-center justify-content-between mt-3">
               <span className="fw-semibold">Tasks in Project:</span>
               <span className="badge bg-primary rounded-pill">
                 {task.project_id.tasks?.length || 0}
               </span>
             </div>
-            
+
           </div>
         </>
       ) : (
@@ -742,7 +767,7 @@ export const TaskDetail = () => {
   </div>
 </div>
         </div>
-   
+
     </>
   );
 
