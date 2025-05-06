@@ -1,1976 +1,1875 @@
-export const File = () => (
-    <>
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
+import Dropzone from 'react-dropzone';
 
+const File = () => {
+  const [user, setUser] = useState(null);
+  const [files, setFiles] = useState([]);
+  const [sharedFiles, setSharedFiles] = useState([]);
+  const [folders, setFolders] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [showShareModal, setShowShareModal] = useState(false);
+  const [shareFileId, setShareFileId] = useState(null);
+  const [usersToShare, setUsersToShare] = useState([]);
+  const [allUsers, setAllUsers] = useState([]);
+  const [makePublic, setMakePublic] = useState(false);
+  const [permission, setPermission] = useState('view');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [activeTab, setActiveTab] = useState('all');
+  const [showFileDetails, setShowFileDetails] = useState(false);
+  const [fileDetails, setFileDetails] = useState(null);
+  const [showCategoryModal, setShowCategoryModal] = useState(false);
+  const [currentCategory, setCurrentCategory] = useState(null);
+  const [newFolderName, setNewFolderName] = useState('');
+  const [currentFolder, setCurrentFolder] = useState(null);
+  const [showMoveModal, setShowMoveModal] = useState(false);
+  const [fileToMove, setFileToMove] = useState(null);
+  const navigate = useNavigate();
+
+  // Fetch all data on component mount or when currentFolder changes
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        if (!token) {
+          navigate('/signin');
+          return;
+        }
+
+        // Fetch user info
+        const userResponse = await axios.get("http://localhost:3000/users/me", {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        setUser(userResponse.data);
+
+        // Fetch files based on current folder
+        const filesEndpoint = currentFolder
+          ? `http://localhost:3000/files/folders/${currentFolder}`
+          : "http://localhost:3000/files/shared";
+
+        const [filesResponse, foldersResponse, usersResponse] = await Promise.all([
+          axios.get(filesEndpoint, {
+            headers: { Authorization: `Bearer ${token}` }
+          }),
+          axios.get("http://localhost:3000/files/folders", {
+            headers: { Authorization: `Bearer ${token}` }
+          }),
+          axios.get("http://localhost:3000/users/all", {
+            headers: { Authorization: `Bearer ${token}` }
+          })
+        ]);
+
+        // Handle response based on whether we're in a folder or not
+        if (currentFolder) {
+          setFiles(filesResponse.data.files || []);
+          setFolders(filesResponse.data.folder?.sub_folders || []);
+          setSharedFiles([]); // Clear shared files when in a folder
+        } else {
+          setFiles(filesResponse.data.ownedFiles || []);
+          setSharedFiles(filesResponse.data.sharedFiles || []);
+          setFolders(foldersResponse.data.folders || []);
+        }
+
+        const usersArray = usersResponse.data.data;
+        setAllUsers(usersArray.filter(u => u._id !== userResponse.data._id));
+
+      } catch (err) {
+        console.error("Error fetching data:", err);
+        if (err.response?.status === 401) {
+          localStorage.removeItem('token');
+          navigate('/signin');
+        }
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, [navigate, currentFolder]);
+
+
+  const handleDelete = async (fileId) => {
+        try {
+            const token = localStorage.getItem('token');
+            await axios.delete(
+                `http://localhost:3000/files/${fileId}`,
+                { headers: { Authorization: `Bearer ${token}` } }
+            );
+
+            // Refresh the files list
+            const filesResponse = await axios.get(
+                currentFolder
+                    ? `http://localhost:3000/files/folders/${currentFolder}`
+                    : "http://localhost:3000/files/shared",
+                { headers: { Authorization: `Bearer ${token}` } }
+            );
+
+            if (currentFolder) {
+                setFiles(filesResponse.data.files || []);
+            } else {
+                setFiles(filesResponse.data.ownedFiles || []);
+                setSharedFiles(filesResponse.data.sharedFiles || []);
+            }
+
+        } catch (err) {
+            console.error("Error deleting file:", err);
+            alert('Failed to delete file');
+        }
+
+};
+
+  // Fetch folder contents when a folder is clicked
+  const fetchFolderContents = async (folderId) => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.get(
+        `http://localhost:3000/files/folders/${folderId}`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      setCurrentFolder(folderId);
+      setFiles(response.data.files || []);
+      setFolders(response.data.folder?.sub_folders || []);
+      setActiveTab('all'); // Switch to all files view when entering a folder
+
+    } catch (err) {
+      console.error("Error fetching folder contents:", err);
+      alert('Failed to load folder contents');
+    }
+  };
+
+  // Handle file upload via Dropzone
+  const onDrop = async (acceptedFiles) => {
+    const file = acceptedFiles[0];
+    if (!file) return;
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    // Include current folder in upload if set
+    if (currentFolder) {
+      formData.append('folder_id', currentFolder);
+    }
+
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.post(
+        "http://localhost:3000/files/upload",
+        formData,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'multipart/form-data'
+          }
+        }
+      );
+
+      setFiles(prev => [...prev, response.data.file]);
+    } catch (err) {
+      console.error("Error uploading file:", err);
+      alert('Failed to upload file');
+    }
+  };
+  const handleDownload = async (fileId) => {
+    try {
+        const token = localStorage.getItem('token');
+        const response = await axios.get(
+            `http://localhost:3000/files/file/${fileId}?download=true`,
+            {
+                headers: { Authorization: `Bearer ${token}` },
+                responseType: 'blob'
+            }
+        );
+
+        // Create a URL and simulate download
+        const url = window.URL.createObjectURL(new Blob([response.data]));
+        const link = document.createElement('a');
+        link.href = url;
+
+        // Extract filename from content-disposition header if available
+        let filename = 'download';
+        const contentDisposition = response.headers['content-disposition'];
+        if (contentDisposition) {
+            const filenameMatch = contentDisposition.match(/filename="?(.+)"?/);
+            if (filenameMatch && filenameMatch[1]) {
+                filename = filenameMatch[1];
+            }
+        }
+
+        link.setAttribute('download', filename);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    } catch (err) {
+        console.error("Error downloading file:", err);
+        alert('Failed to download file');
+    }
+};
+
+//   const handleDownload = async (fileId) => {
+//     try {
+//       const token = localStorage.getItem('token');
+//       const response = await axios.get(
+//         `http://localhost:3000/files/file/${fileId}?download=true`
+// ,
+//         {
+//           headers: { Authorization: `Bearer ${token}` },
+//           responseType: 'blob', // Important for binary data
+//         }
+//       );
+
+//       // Create a URL and simulate download
+//       const url = window.URL.createObjectURL(new Blob([response.data]));
+//       const link = document.createElement('a');
+//       link.href = url;
+//       link.setAttribute('download', 'filename.ext'); // You might want to extract the name dynamically
+//       document.body.appendChild(link);
+//       link.click();
+//       document.body.removeChild(link);
+
+//     } catch (err) {
+//       console.error("Error downloading file:", err);
+//       alert('Failed to download file');
+//     }
+//   };
+
+
+  // Handle file sharing
+  const handleShare = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      await axios.post(
+        `http://localhost:3000/files/share/${shareFileId}`,
+        {
+          userIds: usersToShare,
+          permission,
+          makePublic
+        },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      setShowShareModal(false);
+      setUsersToShare([]);
+      setMakePublic(false);
+
+      // Refresh files list
+      const filesResponse = await axios.get("http://localhost:3000/files/shared", {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setFiles(filesResponse.data.ownedFiles);
+      setSharedFiles(filesResponse.data.sharedFiles);
+    } catch (err) {
+      console.error("Error sharing file:", err);
+      alert('Failed to share file');
+    }
+  };
+
+  // Toggle user selection for sharing
+  const toggleUserSelection = (userId) => {
+    setUsersToShare(prev =>
+      prev.includes(userId)
+        ? prev.filter(id => id !== userId)
+        : [...prev, userId]
+    );
+  };
+
+  // Handle create folder
+  const handleCreateFolder = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        navigate('/signin');
+        return;
+      }
+
+      if (!newFolderName.trim()) {
+        alert('Folder name cannot be empty');
+        return;
+      }
+
+      const response = await axios.post(
+        "http://localhost:3000/files/folders/create",
+        {
+          name: newFolderName,
+          parentFolder: currentFolder
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+
+      if (response.data.success) {
+        // Refresh folders list
+        const foldersResponse = await axios.get("http://localhost:3000/files/folders", {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        setFolders(foldersResponse.data.folders);
+
+        setNewFolderName('');
+        // Close modal
+        document.getElementById('create-folder').classList.remove('show');
+        document.querySelector('.modal-backdrop').remove();
+      }
+    } catch (err) {
+      console.error("Error creating folder:", err);
+      alert(err.response?.data?.error || 'Failed to create folder');
+    }
+  };
+
+  // Handle moving file to folder
+  const handleMoveFile = async (fileId, folderId) => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.patch(
+        `http://localhost:3000/files/${fileId}/move`,
+        { folderId },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      if (response.data.success) {
+        // Refresh files list
+        const filesResponse = await axios.get(
+          currentFolder
+            ? `http://localhost:3000/files/folders/${currentFolder}`
+            : "http://localhost:3000/files/shared",
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+
+        if (currentFolder) {
+          setFiles(filesResponse.data.files || []);
+        } else {
+          setFiles(filesResponse.data.ownedFiles || []);
+          setSharedFiles(filesResponse.data.sharedFiles || []);
+        }
+
+        setShowMoveModal(false);
+      }
+    } catch (err) {
+      console.error("Error moving file:", err);
+      alert('Failed to move file');
+    }
+  };
+
+  // Open share modal
+  const openShareModal = (fileId) => {
+    setShareFileId(fileId);
+    setUsersToShare([]);
+    setMakePublic(false);
+    setPermission('view');
+    setShowShareModal(true);
+  };
+
+  // Open move file modal
+  const openMoveModal = (fileId) => {
+    setFileToMove(fileId);
+    setShowMoveModal(true);
+  };
+
+  // Get current files based on active tab and current folder
+  const getCurrentFiles = () => {
+    let result = [];
+
+    if (activeTab === 'all') {
+      result = [...files, ...sharedFiles];
+    } else if (activeTab === 'owned') {
+      result = files;
+    } else if (activeTab === 'shared') {
+      result = sharedFiles;
+    } else if (activeTab === 'folders') {
+      return []; // Folders tab shows folders, not files
+    }
+
+    // Filter by search term if set
+    if (searchTerm) {
+      result = result.filter(file =>
+        file.file_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        file.file_type.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    }
+
+    return result;
+  };
+
+  // Filter files by category
+  const filterFilesByCategory = (category) => {
+    let filesToFilter = getCurrentFiles();
+    return filesToFilter.filter(file => file.file_type === category);
+  };
+
+  // Format file size
+  const formatFileSize = (bytes) => {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  };
+
+  // Get file icon based on type
+  const getFileIcon = (fileType) => {
+    switch(fileType) {
+      case 'image': return <i className="ri-image-line fs-20"></i>;
+      case 'video': return <i className="ri-video-line fs-20"></i>;
+      case 'audio': return <i className="ri-music-2-line fs-20"></i>;
+      case 'document': return <i className="ri-file-text-line fs-20"></i>;
+      case 'archive': return <i className="ri-archive-line fs-20"></i>;
+      default: return <i className="ri-file-line fs-20"></i>;
+    }
+  };
+
+  // Get folder icon
+  const getFolderIcon = () => {
+    return <i className="ri-folder-2-fill fs-20 text-warning"></i>;
+  };
+
+  // Get file details
+  const getFileDetails = async (fileId) => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.get(`http://localhost:3000/files/${fileId}/details`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setFileDetails(response.data.file);
+      setShowFileDetails(true);
+    } catch (err) {
+      console.error("Error fetching file details:", err);
+      alert('Failed to fetch file details');
+    }
+  };
+
+  // Open category modal
+  const openCategoryModal = (category) => {
+    setCurrentCategory(category);
+    setShowCategoryModal(true);
+  };
+
+  // Navigate back to parent folder
+  const navigateToParentFolder = async () => {
+    if (!currentFolder) return;
+
+    try {
+      const token = localStorage.getItem('token');
+      const folderResponse = await axios.get(
+        `http://localhost:3000/files/folders/${currentFolder}`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      const parentFolder = folderResponse.data.folder?.parent_folder;
+      setCurrentFolder(parentFolder || null);
+
+      if (parentFolder) {
+        const parentResponse = await axios.get(
+          `http://localhost:3000/files/folders/${parentFolder}`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        setFiles(parentResponse.data.files || []);
+        setFolders(parentResponse.data.folder?.sub_folders || []);
+      } else {
+        // If going back to root, fetch all files
+        const filesResponse = await axios.get(
+          "http://localhost:3000/files/shared",
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        setFiles(filesResponse.data.ownedFiles || []);
+        setSharedFiles(filesResponse.data.sharedFiles || []);
+
+        const foldersResponse = await axios.get(
+          "http://localhost:3000/files/folders",
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        setFolders(foldersResponse.data.folders || []);
+      }
+    } catch (err) {
+      console.error("Error navigating to parent folder:", err);
+      alert('Failed to navigate to parent folder');
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="d-flex justify-content-center align-items-center vh-100">
+        <div className="spinner-border text-primary" role="status">
+          <span className="visually-hidden">Loading...</span>
+        </div>
+      </div>
+    );
+  }
+
+  const currentFiles = getCurrentFiles();
+  const totalFiles = currentFiles.length;
+  const totalSize = currentFiles.reduce((acc, file) => acc + file.file_size, 0);
+
+  return (
+    <>
       <link rel="stylesheet" href="../assets/libs/dropzone/dropzone.css" />
 
-    
-            <div className="d-flex align-items-center justify-content-between page-header-breadcrumb flex-wrap gap-2">
-              <div>
-                <nav>
-                  <ol className="breadcrumb mb-1">
-                    <li className="breadcrumb-item">
-                      <a href="javascript:void(0);">Pages</a>
-                    </li>
-                    <li className="breadcrumb-item active" aria-current="page">
-                      File Manager
-                    </li>
-                  </ol>
-                </nav>
-                <h1 className="page-title fw-medium fs-18 mb-0">File Manager</h1>
-              </div>
-              <div className="btn-list">
-                <button className="btn btn-white btn-wave">
-                  <i className="ri-filter-3-line align-middle me-1 lh-1" /> Filter
-                </button>
-                <button className="btn btn-primary btn-wave me-0">
-                  <i className="ri-share-forward-line me-1" /> Share
-                </button>
+      <div className="container-fluid">
+        {/* Page Header */}
+        <div className="d-flex align-items-center justify-content-between page-header-breadcrumb flex-wrap gap-2">
+          <div>
+            <nav>
+              <ol className="breadcrumb mb-1">
+                <li className="breadcrumb-item">
+                  <a href="javascript:void(0);">Pages</a>
+                </li>
+                <li className="breadcrumb-item active" aria-current="page">
+                  File Manager
+                </li>
+              </ol>
+            </nav>
+            <h1 className="page-title fw-medium fs-18 mb-0">File Manager</h1>
+          </div>
+          <div className="btn-list">
+            <button className="btn btn-white btn-wave">
+              <i className="ri-filter-3-line align-middle me-1 lh-1" /> Filter
+            </button>
+            <button className="btn btn-primary btn-wave me-0">
+              <i className="ri-share-forward-line me-1" /> Share
+            </button>
+          </div>
+        </div>
+
+        {/* Main Content */}
+        <div className="row">
+          {/* Sidebar */}
+          <div className="col-xxl-3">
+            <div className="row">
+              <div className="col-xl-12">
+                <div className="card custom-card">
+                  <div className="d-flex p-3 flex-wrap gap-2 align-items-center justify-content-between border-bottom">
+                    <div className="flex-fill">
+                      <h6 className="fw-medium mb-0">File Manager</h6>
+                    </div>
+                  </div>
+                  <div className="d-flex align-items-center gap-3 p-3 border-bottom border-block-end-dashed">
+                    <span className="avatar avatar-xl online">
+                      {user?.image ? (
+                        <img
+                          src={
+                            user.image.startsWith('http') || user.image.startsWith('https')
+                              ? user.image
+                              : `http://localhost:3000${user.image}`
+                          }
+                          alt="Profile"
+                          onError={(e) => {
+                            e.target.src = "https://via.placeholder.com/100";
+                          }}
+                        />
+                      ) : (
+                        <p>No profile image uploaded.</p>
+                      )}
+                    </span>
+                    <div className="main-profile-info">
+                      <h6 className="fw-semibold mb-1">{user?.firstName} {user?.lastName}</h6>
+                      <p className="text-muted fs-11 mb-2">{user?.role?.RoleName}</p>
+                      <p className="mb-0">{user?.email}</p>
+                    </div>
+                  </div>
+                  <div className="card-body">
+                    <ul className="list-unstyled files-main-nav" id="files-main-nav">
+                      <li className="px-0 pt-0">
+                        <span className="fs-12 text-muted">My Files</span>
+                      </li>
+                      <li className={`files-type ${activeTab === 'all' ? 'active' : ''}`}>
+                        <a href="javascript:void(0)" onClick={() => {
+                          setActiveTab('all');
+                          setCurrentFolder(null);
+                        }}>
+                          <div className="d-flex align-items-center">
+                            <div className="me-2">
+                              <i className="ri-folder-2-line fs-16" />
+                            </div>
+                            <span className="flex-fill text-nowrap">
+                              All Files
+                            </span>
+                            <span className="badge bg-primary">{files.length + sharedFiles.length}</span>
+                          </div>
+                        </a>
+                      </li>
+                      <li className={`files-type ${activeTab === 'owned' ? 'active' : ''}`}>
+                        <a href="javascript:void(0)" onClick={() => {
+                          setActiveTab('owned');
+                          setCurrentFolder(null);
+                        }}>
+                          <div className="d-flex align-items-center">
+                            <div className="me-2">
+                              <i className="ri-history-fill fs-16" />
+                            </div>
+                            <span className="flex-fill text-nowrap">
+                              My Files
+                            </span>
+                            <span className="badge bg-primary">{files.length}</span>
+                          </div>
+                        </a>
+                      </li>
+                      <li className={`files-type ${activeTab === 'shared' ? 'active' : ''}`}>
+                        <a href="javascript:void(0)" onClick={() => {
+                          setActiveTab('shared');
+                          setCurrentFolder(null);
+                        }}>
+                          <div className="d-flex align-items-center">
+                            <div className="me-2">
+                              <i className="ri-share-forward-line fs-16" />
+                            </div>
+                            <span className="flex-fill text-nowrap">
+                              Shared Files
+                            </span>
+                            <span className="badge bg-primary">{sharedFiles.length}</span>
+                          </div>
+                        </a>
+                      </li>
+                      <li className={`files-type ${activeTab === 'folders' ? 'active' : ''}`}>
+                        <a href="javascript:void(0)" onClick={() => {
+                          setActiveTab('folders');
+                          setCurrentFolder(null);
+                        }}>
+                          <div className="d-flex align-items-center">
+                            <div className="me-2">
+                              <i className="ri-folder-2-fill fs-16" />
+                            </div>
+                            <span className="flex-fill text-nowrap">
+                              Folders
+                            </span>
+                            <span className="badge bg-primary">{folders.length}</span>
+                          </div>
+                        </a>
+                      </li>
+                      <li className="px-0 pt-3">
+                        <span className="fs-12 text-muted">Upload File</span>
+                      </li>
+                      <li className="p-3 border border-dashed">
+                        <Dropzone onDrop={onDrop} multiple={false}>
+                          {({getRootProps, getInputProps}) => (
+                            <div {...getRootProps()} className="dropzone bg-light">
+                              <input {...getInputProps()} />
+                              <p>Drag & drop a file here, or click to select</p>
+                              <em>(Only one file will be accepted)</em>
+                            </div>
+                          )}
+                        </Dropzone>
+                      </li>
+                    </ul>
+                  </div>
+                </div>
               </div>
             </div>
-            {/* Page Header Close */}
-            {/* Start:: row-1 */}
-            <div className="row">
-              <div className="col-xxl-3">
-                <div className="row">
-                  <div className="col-xl-12">
-                    <div className="card custom-card">
-                      <div className="d-flex p-3 flex-wrap gap-2 align-items-center justify-content-between border-bottom">
-                        <div className="flex-fill">
-                          <h6 className="fw-medium mb-0">File Manager</h6>
-                        </div>
-                      </div>
-                      <div className="d-flex align-items-center gap-3 p-3 border-bottom border-block-end-dashed">
-                        <span className="avatar avatar-xl online">
-                          <img src="../assets/images/faces/9.jpg" alt="" />
+          </div>
+
+          {/* Main File Area */}
+          <div className="col-xxl-6">
+            <div className="card custom-card overflow-hidden">
+              <div className="card-body p-0">
+                <div className="file-manager-folders">
+                  {/* Folder Navigation Breadcrumb */}
+                  <div className="d-flex p-3 align-items-center border-bottom">
+                    {currentFolder && (
+                      <button
+                        className="btn btn-sm btn-outline-secondary me-2"
+                        onClick={navigateToParentFolder}
+                      >
+                        <i className="ri-arrow-left-line"></i> Back
+                      </button>
+                    )}
+                    <div className="breadcrumb mb-0">
+                      <span
+                        className="breadcrumb-item"
+                        style={{ cursor: 'pointer' }}
+                        onClick={() => {
+                          setCurrentFolder(null);
+                          setActiveTab('all');
+                        }}
+                      >
+                        Root
+                      </span>
+                      {currentFolder && (
+                        <span className="breadcrumb-item active">
+                          {folders.find(f => f._id === currentFolder)?.name}
                         </span>
-                        <div className="main-profile-info">
-                          <h6 className="fw-semibold mb-1">Daniel David </h6>
-                          <p className="text-muted fs-11 mb-2">Web Designer</p>
-                          <p className="mb-0">danieldavid@mail.com </p>
-                        </div>
-                      </div>
-                      <div className="card-body">
-                        <ul
-                          className="list-unstyled files-main-nav"
-                          id="files-main-nav"
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="d-flex p-3 flex-wrap gap-2 align-items-center justify-content-between border-bottom">
+                    <div className="flex-fill">
+                      <h6 className="fw-medium mb-0">
+                        {activeTab === 'all' && 'All Files'}
+                        {activeTab === 'owned' && 'My Files'}
+                        {activeTab === 'shared' && 'Shared With Me'}
+                        {activeTab === 'folders' && 'Folders'}
+                      </h6>
+                    </div>
+                    <div className="d-flex gap-2 flex-lg-nowrap flex-wrap justify-content-sm-end w-75">
+                      <div className="input-group">
+                        <input
+                          type="text"
+                          className="form-control w-50"
+                          placeholder={activeTab === 'folders' ? 'Search Folder' : 'Search File'}
+                          value={searchTerm}
+                          onChange={(e) => setSearchTerm(e.target.value)}
+                        />
+                        <button
+                          className="btn btn-primary-light"
+                          type="button"
                         >
-                          <li className="px-0 pt-0">
-                            <span className="fs-12 text-muted">My Files</span>
-                          </li>
-                          <li className="active files-type">
-                            <a href="javascript:void(0)">
-                              <div className="d-flex align-items-center">
-                                <div className="me-2">
-                                  <i className="ri-folder-2-line fs-16" />
-                                </div>
-                                <span className="flex-fill text-nowrap">
-                                  All Files
-                                </span>
-                                <span className="badge bg-primary">412</span>
-                              </div>
-                            </a>
-                          </li>
-                          <li className="files-type">
-                            <a href="javascript:void(0)">
-                              <div className="d-flex align-items-center">
-                                <div className="me-2">
-                                  <i className="ri-history-fill fs-16" />
-                                </div>
-                                <span className="flex-fill text-nowrap">
-                                  Recent Files
-                                </span>
-                              </div>
-                            </a>
-                          </li>
-                          <li className="files-type">
-                            <a href="javascript:void(0)">
-                              <div className="d-flex align-items-center">
-                                <div className="me-2">
-                                  <i className="ri-share-forward-line fs-16" />
-                                </div>
-                                <span className="flex-fill text-nowrap">
-                                  Shared Files
-                                </span>
-                              </div>
-                            </a>
-                          </li>
-                          <li className="files-type">
-                            <a href="javascript:void(0)">
-                              <div className="d-flex align-items-center">
-                                <div className="me-2">
-                                  <i className="ri-star-s-line fs-16" />
-                                </div>
-                                <span className="flex-fill text-nowrap">
-                                  favourites
-                                </span>
-                                <span className="badge bg-primary1">02</span>
-                              </div>
-                            </a>
-                          </li>
-                          <li className="files-type">
-                            <a href="javascript:void(0)">
-                              <div className="d-flex align-items-center">
-                                <div className="me-2">
-                                  <i className="ri-delete-bin-line fs-16" />
-                                </div>
-                                <span className="flex-fill text-nowrap">
-                                  Recycle Bin
-                                </span>
-                              </div>
-                            </a>
-                          </li>
-                          <li>
-                            <a href="javascript:void(0)">
-                              <div className="d-flex align-items-center">
-                                <div className="me-2">
-                                  <i className="ri-settings-3-line fs-16" />
-                                </div>
-                                <span className="flex-fill text-nowrap">
-                                  Settings
-                                </span>
-                              </div>
-                            </a>
-                          </li>
-                          <li>
-                            <a href="javascript:void(0)">
-                              <div className="d-flex align-items-center">
-                                <div className="me-2">
-                                  <i className="ri-questionnaire-line fs-16" />
-                                </div>
-                                <span className="flex-fill text-nowrap">
-                                  Help Center
-                                </span>
-                              </div>
-                            </a>
-                          </li>
-                          <li>
-                            <a href="javascript:void(0)">
-                              <div className="d-flex align-items-center">
-                                <div className="me-2">
-                                  <i className="ri-folder-line fs-16" />
-                                </div>
-                                <span className="flex-fill text-nowrap">
-                                  Version
-                                </span>
-                              </div>
-                            </a>
-                          </li>
-                          <li>
-                            <a href="javascript:void(0)">
-                              <div className="d-flex align-items-center">
-                                <div className="me-2">
-                                  <i className="ri-logout-box-line fs-16" />
-                                </div>
-                                <span className="flex-fill text-nowrap">
-                                  Log out
-                                </span>
-                              </div>
-                            </a>
-                          </li>
-                          <li className="px-0 pt-0">
-                            <span className="fs-12 text-muted">Most Recent</span>
-                          </li>
-                          <li>
-                            <div className="d-flex align-items-center gap-2">
-                              <div className="me-0">
-                                <span className="avatar avatar-md bg-primary-transparent text-primary">
-                                  <svg
-                                    xmlns="http://www.w3.org/2000/svg"
-                                    viewBox="0 0 256 256"
-                                  >
-                                    <rect width={256} height={256} fill="none" />
-                                    <path
-                                      d="M112,175.67V168a8,8,0,0,0-8-8H48a8,8,0,0,0-8,8v40a8,8,0,0,0,8,8h56a8,8,0,0,0,8-8v-8.82L144,216V160Z"
-                                      opacity="0.2"
-                                    />
-                                    <polyline
-                                      points="112 175.67 144 160 144 216 112 199.18"
-                                      fill="none"
-                                      stroke="currentColor"
-                                      strokeLinecap="round"
-                                      strokeLinejoin="round"
-                                      strokeWidth={16}
-                                    />
-                                    <rect
-                                      x={40}
-                                      y={160}
-                                      width={72}
-                                      height={56}
-                                      rx={8}
-                                      fill="none"
-                                      stroke="currentColor"
-                                      strokeLinecap="round"
-                                      strokeLinejoin="round"
-                                      strokeWidth={16}
-                                    />
-                                    <polygon
-                                      points="152 32 152 88 208 88 152 32"
-                                      opacity="0.2"
-                                    />
-                                    <polyline
-                                      points="152 32 152 88 208 88"
-                                      fill="none"
-                                      stroke="currentColor"
-                                      strokeLinecap="round"
-                                      strokeLinejoin="round"
-                                      strokeWidth={16}
-                                    />
-                                    <path
-                                      d="M176,224h24a8,8,0,0,0,8-8V88L152,32H56a8,8,0,0,0-8,8v88"
-                                      fill="none"
-                                      stroke="currentColor"
-                                      strokeLinecap="round"
-                                      strokeLinejoin="round"
-                                      strokeWidth={16}
-                                    />
-                                  </svg>
-                                </span>
-                              </div>
-                              <div>
-                                <a
-                                  href="javascript:void(0);"
-                                  data-bs-toggle="offcanvas"
-                                  data-bs-target="#offcanvasRight"
-                                  aria-controls="offcanvasRight"
-                                >
-                                  VID-14512223-AKP823.mp4
-                                </a>
-                              </div>
-                              <div className="ms-auto">
-                                <span className="fw-medium text-muted">
-                                  1.2KB
-                                </span>
-                              </div>
-                            </div>
-                          </li>
-                          <li>
-                            <div className="d-flex align-items-center gap-2">
-                              <div className="me-0">
-                                <span className="avatar avatar-md bg-primary1-transparent text-primary1">
-                                  <svg
-                                    xmlns="http://www.w3.org/2000/svg"
-                                    viewBox="0 0 256 256"
-                                  >
-                                    <rect width={256} height={256} fill="none" />
-                                    <path
-                                      d="M112,175.67V168a8,8,0,0,0-8-8H48a8,8,0,0,0-8,8v40a8,8,0,0,0,8,8h56a8,8,0,0,0,8-8v-8.82L144,216V160Z"
-                                      opacity="0.2"
-                                    />
-                                    <polyline
-                                      points="112 175.67 144 160 144 216 112 199.18"
-                                      fill="none"
-                                      stroke="currentColor"
-                                      strokeLinecap="round"
-                                      strokeLinejoin="round"
-                                      strokeWidth={16}
-                                    />
-                                    <rect
-                                      x={40}
-                                      y={160}
-                                      width={72}
-                                      height={56}
-                                      rx={8}
-                                      fill="none"
-                                      stroke="currentColor"
-                                      strokeLinecap="round"
-                                      strokeLinejoin="round"
-                                      strokeWidth={16}
-                                    />
-                                    <polygon
-                                      points="152 32 152 88 208 88 152 32"
-                                      opacity="0.2"
-                                    />
-                                    <polyline
-                                      points="152 32 152 88 208 88"
-                                      fill="none"
-                                      stroke="currentColor"
-                                      strokeLinecap="round"
-                                      strokeLinejoin="round"
-                                      strokeWidth={16}
-                                    />
-                                    <path
-                                      d="M176,224h24a8,8,0,0,0,8-8V88L152,32H56a8,8,0,0,0-8,8v88"
-                                      fill="none"
-                                      stroke="currentColor"
-                                      strokeLinecap="round"
-                                      strokeLinejoin="round"
-                                      strokeWidth={16}
-                                    />
-                                  </svg>
-                                </span>
-                              </div>
-                              <div>
-                                <a
-                                  href="javascript:void(0);"
-                                  data-bs-toggle="offcanvas"
-                                  data-bs-target="#offcanvasRight"
-                                  aria-controls="offcanvasRight"
-                                >
-                                  AUD-14512223-AKP823.mp3
-                                </a>
-                              </div>
-                              <div className="ms-auto">
-                                <span className="fw-medium text-muted">25GB</span>
-                              </div>
-                            </div>
-                          </li>
-                          <li>
-                            <div className="d-flex align-items-center gap-2">
-                              <div className="me-0">
-                                <span className="avatar avatar-md bg-primary2-transparent text-primary2">
-                                  <svg
-                                    xmlns="http://www.w3.org/2000/svg"
-                                    viewBox="0 0 256 256"
-                                  >
-                                    <rect width={256} height={256} fill="none" />
-                                    <path
-                                      d="M112,175.67V168a8,8,0,0,0-8-8H48a8,8,0,0,0-8,8v40a8,8,0,0,0,8,8h56a8,8,0,0,0,8-8v-8.82L144,216V160Z"
-                                      opacity="0.2"
-                                    />
-                                    <polyline
-                                      points="112 175.67 144 160 144 216 112 199.18"
-                                      fill="none"
-                                      stroke="currentColor"
-                                      strokeLinecap="round"
-                                      strokeLinejoin="round"
-                                      strokeWidth={16}
-                                    />
-                                    <rect
-                                      x={40}
-                                      y={160}
-                                      width={72}
-                                      height={56}
-                                      rx={8}
-                                      fill="none"
-                                      stroke="currentColor"
-                                      strokeLinecap="round"
-                                      strokeLinejoin="round"
-                                      strokeWidth={16}
-                                    />
-                                    <polygon
-                                      points="152 32 152 88 208 88 152 32"
-                                      opacity="0.2"
-                                    />
-                                    <polyline
-                                      points="152 32 152 88 208 88"
-                                      fill="none"
-                                      stroke="currentColor"
-                                      strokeLinecap="round"
-                                      strokeLinejoin="round"
-                                      strokeWidth={16}
-                                    />
-                                    <path
-                                      d="M176,224h24a8,8,0,0,0,8-8V88L152,32H56a8,8,0,0,0-8,8v88"
-                                      fill="none"
-                                      stroke="currentColor"
-                                      strokeLinecap="round"
-                                      strokeLinejoin="round"
-                                      strokeWidth={16}
-                                    />
-                                  </svg>
-                                </span>
-                              </div>
-                              <div>
-                                <a
-                                  href="javascript:void(0);"
-                                  data-bs-toggle="offcanvas"
-                                  data-bs-target="#offcanvasRight"
-                                  aria-controls="offcanvasRight"
-                                >
-                                  VID-14211110-AKP823.mp4
-                                </a>
-                              </div>
-                              <div className="ms-auto">
-                                <span className="fw-medium text-muted">36GB</span>
-                              </div>
-                            </div>
-                          </li>
-                          <li className="px-0 pt-3">
-                            <span className="fs-12 text-muted">Upload File</span>
-                          </li>
-                          <li className="p-3 border border-dashed">
-                            <label className="form-label">Drop File here :</label>
-                            <form
-                              data-single="true"
-                              method="post"
-                              action="https://httpbin.org/post"
-                              className="dropzone bg-light"
-                            />
-                          </li>
-                        </ul>
+                          <i className="ri-search-line" />
+                        </button>
                       </div>
+                      <button
+                        className="btn btn-sm btn-light"
+                        onClick={() => currentFolder ? fetchFolderContents(currentFolder) : window.location.reload()}
+                      >
+                        <i className="ri-refresh-line"></i> Refresh
+                      </button>
+                      {activeTab === 'folders' && (
+                        <button
+                          className="btn btn-primary btn-w-md d-flex align-items-center justify-content-center btn-wave waves-light text-nowrap"
+                          data-bs-toggle="modal"
+                          data-bs-target="#create-folder"
+                        >
+                          <i className="ri-add-circle-line align-middle me-1" />
+                          Create Folder
+                        </button>
+                      )}
                     </div>
                   </div>
-                  <div className="col-xl-12"></div>
+
+                  {/* Quick Access Folders (shown when not in Folders tab) */}
+                  {activeTab !== 'folders' && (
+                    <div className="p-3 file-folders-container">
+                      <div className="d-flex mb-3 align-items-center justify-content-between">
+                        <p className="mb-0 fw-medium fs-14">Quick Access</p>
+                        <a
+                          href="javascript:void(0);"
+                          className="fs-12 text-muted fw-medium"
+                        >
+                          View All
+                          <i className="ti ti-arrow-narrow-right ms-1" />
+                        </a>
+                      </div>
+                      <div className="row mb-3">
+                        {/* Images Folder */}
+                        <div className="col-xxl-4 col-xl-6 col-lg-6 col-md-6">
+                          <div
+                            className="card custom-card shadow-none border"
+                            onClick={() => openCategoryModal('image')}
+                            style={{ cursor: 'pointer' }}
+                          >
+                            <div className="card-body">
+                              <div className="d-flex align-items-center gap-3 flex-wrap">
+                                <div className="main-card-icon primary">
+                                  <div className="avatar avatar-md bg-primary-transparent border border-primary border-opacity-10">
+                                    <div className="avatar avatar-sm text-primary">
+                                      <i className="ri-image-line fs-24" />
+                                    </div>
+                                  </div>
+                                </div>
+                                <div className="flex-fill">
+                                  <a href="javascript:void(0);" className="d-block fw-medium">
+                                    Images
+                                  </a>
+                                  <span className="fs-12 text-muted">
+                                    {Math.round(
+                                      currentFiles.filter(f => f.file_type === 'image').length /
+                                      (totalFiles || 1) * 100
+                                    )}% Used
+                                  </span>
+                                </div>
+                                <div className="text-end">
+                                  <span className="fw-medium">
+                                    {currentFiles.filter(f => f.file_type === 'image').length} files
+                                  </span>
+                                  <span className="d-block fs-12 text-muted">
+                                    {formatFileSize(
+                                      currentFiles.filter(f => f.file_type === 'image')
+                                        .reduce((acc, file) => acc + file.file_size, 0)
+                                    )}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Videos Folder */}
+                        <div className="col-xxl-4 col-xl-6 col-lg-6 col-md-6">
+                          <div
+                            className="card custom-card shadow-none border"
+                            onClick={() => openCategoryModal('video')}
+                            style={{ cursor: 'pointer' }}
+                          >
+                            <div className="card-body">
+                              <div className="d-flex align-items-center gap-3 flex-wrap">
+                                <div className="main-card-icon primary1">
+                                  <div className="avatar avatar-md bg-primary1-transparent border border-primary1 border-opacity-10">
+                                    <div className="avatar avatar-sm text-primary1">
+                                      <i className="ri-video-line fs-24" />
+                                    </div>
+                                  </div>
+                                </div>
+                                <div className="flex-fill">
+                                  <a href="javascript:void(0);" className="d-block fw-medium">
+                                    Videos
+                                  </a>
+                                  <span className="fs-12 text-muted">
+                                    {Math.round(
+                                      currentFiles.filter(f => f.file_type === 'video').length /
+                                      (totalFiles || 1) * 100
+                                    )}% Used
+                                  </span>
+                                </div>
+                                <div className="text-end">
+                                  <span className="fw-medium">
+                                    {currentFiles.filter(f => f.file_type === 'video').length} files
+                                  </span>
+                                  <span className="d-block fs-12 text-muted">
+                                    {formatFileSize(
+                                      currentFiles.filter(f => f.file_type === 'video')
+                                        .reduce((acc, file) => acc + file.file_size, 0)
+                                    )}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Documents Folder */}
+                        <div className="col-xxl-4 col-xl-6 col-lg-6 col-md-6">
+                          <div
+                            className="card custom-card shadow-none border"
+                            onClick={() => openCategoryModal('document')}
+                            style={{ cursor: 'pointer' }}
+                          >
+                            <div className="card-body">
+                              <div className="d-flex align-items-center gap-3 flex-wrap">
+                                <div className="main-card-icon secondary">
+                                  <div className="avatar avatar-md bg-secondary-transparent border border-secondary border-opacity-10">
+                                    <div className="avatar avatar-sm text-secondary">
+                                      <i className="ri-file-text-line fs-24" />
+                                    </div>
+                                  </div>
+                                </div>
+                                <div className="flex-fill">
+                                  <a href="javascript:void(0);" className="d-block fw-medium">
+                                    Documents
+                                  </a>
+                                  <span className="fs-12 text-muted">
+                                    {Math.round(
+                                      currentFiles.filter(f => f.file_type === 'document').length /
+                                      (totalFiles || 1) * 100
+                                    )}% Used
+                                  </span>
+                                </div>
+                                <div className="text-end">
+                                  <span className="fw-medium">
+                                    {currentFiles.filter(f => f.file_type === 'document').length} files
+                                  </span>
+                                  <span className="d-block fs-12 text-muted">
+                                    {formatFileSize(
+                                      currentFiles.filter(f => f.file_type === 'document')
+                                        .reduce((acc, file) => acc + file.file_size, 0)
+                                    )}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Audio Folder */}
+                        <div className="col-xxl-4 col-xl-6 col-lg-6 col-md-6">
+                          <div
+                            className="card custom-card shadow-none border"
+                            onClick={() => openCategoryModal('audio')}
+                            style={{ cursor: 'pointer' }}
+                          >
+                            <div className="card-body">
+                              <div className="d-flex align-items-center gap-3 flex-wrap">
+                                <div className="main-card-icon success">
+                                  <div className="avatar avatar-md bg-success-transparent border border-success border-opacity-10">
+                                    <div className="avatar avatar-sm text-success">
+                                      <i className="ri-music-2-line fs-24" />
+                                    </div>
+                                  </div>
+                                </div>
+                                <div className="flex-fill">
+                                  <a href="javascript:void(0);" className="d-block fw-medium">
+                                    Audio
+                                  </a>
+                                  <span className="fs-12 text-muted">
+                                    {Math.round(
+                                      currentFiles.filter(f => f.file_type === 'audio').length /
+                                      (totalFiles || 1) * 100
+                                    )}% Used
+                                  </span>
+                                </div>
+                                <div className="text-end">
+                                  <span className="fw-medium">
+                                    {currentFiles.filter(f => f.file_type === 'audio').length} files
+                                  </span>
+                                  <span className="d-block fs-12 text-muted">
+                                    {formatFileSize(
+                                      currentFiles.filter(f => f.file_type === 'audio')
+                                        .reduce((acc, file) => acc + file.file_size, 0)
+                                    )}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Archives Folder */}
+                        <div className="col-xxl-4 col-xl-6 col-lg-6 col-md-6">
+                          <div
+                            className="card custom-card shadow-none border"
+                            onClick={() => openCategoryModal('archive')}
+                            style={{ cursor: 'pointer' }}
+                          >
+                            <div className="card-body">
+                              <div className="d-flex align-items-center gap-3 flex-wrap">
+                                <div className="main-card-icon warning">
+                                  <div className="avatar avatar-md bg-warning-transparent border border-warning border-opacity-10">
+                                    <div className="avatar avatar-sm text-warning">
+                                      <i className="ri-archive-line fs-24" />
+                                    </div>
+                                  </div>
+                                </div>
+                                <div className="flex-fill">
+                                  <a href="javascript:void(0);" className="d-block fw-medium">
+                                    Archives
+                                  </a>
+                                  <span className="fs-12 text-muted">
+                                    {Math.round(
+                                      currentFiles.filter(f => f.file_type === 'archive').length /
+                                      (totalFiles || 1) * 100
+                                    )}% Used
+                                  </span>
+                                </div>
+                                <div className="text-end">
+                                  <span className="fw-medium">
+                                    {currentFiles.filter(f => f.file_type === 'archive').length} files
+                                  </span>
+                                  <span className="d-block fs-12 text-muted">
+                                    {formatFileSize(
+                                      currentFiles.filter(f => f.file_type === 'archive')
+                                        .reduce((acc, file) => acc + file.file_size, 0)
+                                    )}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Folders Card */}
+                        <div className="col-xxl-4 col-xl-6 col-lg-6 col-md-6">
+                          <div
+                            className="card custom-card shadow-none border"
+                            onClick={() => setActiveTab('folders')}
+                            style={{ cursor: 'pointer' }}
+                          >
+                            <div className="card-body">
+                              <div className="d-flex align-items-center gap-3 flex-wrap">
+                                <div className="main-card-icon warning">
+                                  <div className="avatar avatar-md bg-danger-transparent border border-warning border-opacity-10">
+                                    <div className="avatar avatar-sm text-danger">
+                                      <i className="ri-folder-line fs-24" />
+                                    </div>
+                                  </div>
+                                </div>
+                                <div className="flex-fill">
+                                  <a href="javascript:void(0);" className="d-block fw-medium">
+                                    Folders
+                                  </a>
+                                  <span className="fs-12 text-muted">
+                                    {Math.round(
+                                      folders.length /
+                                      (folders.length + files.length + sharedFiles.length || 1) * 100
+                                    )}% Used
+                                  </span>
+                                </div>
+                                <div className="text-end">
+                                  <span className="fw-medium">
+                                    {folders.length} folders
+                                  </span>
+                                  <span className="d-block fs-12 text-muted">
+                                    {formatFileSize(
+                                      files.filter(f => f.folder_id).reduce((acc, file) => acc + file.file_size, 0)
+                                    )}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Folders List (shown when Folders tab is active) */}
+                  {activeTab === 'folders' && (
+                    <div className="p-3">
+                      <div className="row">
+                        {folders
+                          .filter(folder =>
+                            (!currentFolder && !folder.parent_folder) ||
+                            (currentFolder && folder.parent_folder === currentFolder)
+                          )
+                          .filter(folder =>
+                            folder.name.toLowerCase().includes(searchTerm.toLowerCase())
+                          )
+                          .map(folder => (
+                            <div className="col-xxl-4 col-xl-6 col-lg-6 col-md-6" key={folder._id}>
+                              <div
+                                className="card custom-card shadow-none border folder-card"
+                                onClick={() => fetchFolderContents(folder._id)}
+                                style={{ cursor: 'pointer' }}
+                              >
+                                <div className="card-body">
+                                  <div className="d-flex align-items-center gap-3 flex-wrap">
+                                    <div className="folder-icon">
+                                      {getFolderIcon()}
+                                    </div>
+                                    <div className="flex-fill">
+                                      <a href="javascript:void(0);" className="d-block fw-medium">
+                                        {folder.name}
+                                      </a>
+                                      <span className="fs-12 text-muted">
+                                        Created: {new Date(folder.created_at).toLocaleDateString()}
+                                      </span>
+                                    </div>
+                                    <div className="text-end">
+                                      <span className="badge bg-light text-default">
+                                        {files.filter(f => f.folder_id === folder._id).length} files
+                                      </span>
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Files List (shown when not in Folders tab) */}
+                  {activeTab !== 'folders' && (
+                    <div className="p-3">
+                      <div className="table-responsive border border-bottom-0">
+                        <table className="table text-nowrap table-hover">
+                          <thead>
+                            <tr>
+                              <th scope="col">Name</th>
+                              <th scope="col">Category</th>
+                              <th scope="col">Size</th>
+                              <th scope="col">Date Modified</th>
+                              <th scope="col">Actions</th>
+                            </tr>
+                          </thead>
+                          <tbody className="files-list">
+                            {currentFiles.length > 0 ? (
+                              currentFiles.map(file => (
+                                <tr key={file._id}>
+                                  <th scope="row">
+                                    <div className="d-flex align-items-center">
+                                      <div className="me-0">
+                                        <span className="avatar avatar-md">
+                                          {getFileIcon(file.file_type)}
+                                        </span>
+                                      </div>
+                                      <div>
+                                        <a href="javascript:void(0);" onClick={() => getFileDetails(file._id)}>
+                                          {file.file_name}
+                                        </a>
+                                      </div>
+                                    </div>
+                                  </th>
+                                  <td>{file.file_type}</td>
+                                  <td>{formatFileSize(file.file_size)}</td>
+                                  <td>{new Date(file.uploaded_at).toLocaleDateString()}</td>
+                                  <td>
+                                    <div className="hstack gap-2 fs-15">
+                                      <button
+                                        className="btn btn-icon btn-sm btn-primary2-light"
+                                        onClick={() => handleDownload(file._id)}
+                                      >
+                                        <i className="ri-download-line" />
+                                      </button>
+                                      {activeTab !== 'shared' && (
+                                        <>
+                                          <button
+                                            className="btn btn-icon btn-sm btn-primary-light"
+                                            onClick={() => openShareModal(file._id)}
+                                          >
+                                            <i className="ri-share-forward-line" />
+                                          </button>
+                                          <button
+                                            className="btn btn-icon btn-sm btn-warning-light"
+                                            onClick={() => openMoveModal(file._id)}
+                                          >
+                                            <i className="ri-folder-shared-line" />
+                                          </button>
+                                        </>
+                                      )}
+                                      <button
+    className="btn btn-icon btn-sm btn-danger-light"
+    onClick={() => handleDelete(file._id)}
+>
+    <i className="ri-delete-bin-line" />
+</button>
+                                    </div>
+                                  </td>
+                                </tr>
+                              ))
+                            ) : (
+                              <tr>
+                                <td colSpan="5" className="text-center py-4">
+                                  {currentFolder ? 'This folder is empty' : 'No files found'}
+                                </td>
+                              </tr>
+                            )}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
-              <div className="col-xxl-6">
-                <div className="card custom-card overflow-hidden">
-                  <div className="card-body p-0">
-                    <div className="file-manager-folders">
-                      <div className="d-flex p-3 flex-wrap gap-2 align-items-center justify-content-between border-bottom">
-                        <div className="flex-fill">
-                          <h6 className="fw-medium mb-0">All Folders</h6>
-                        </div>
-                        <div className="d-flex gap-2 flex-lg-nowrap flex-wrap justify-content-sm-end w-75">
-                          <div className="input-group">
-                            <input
-                              type="text"
-                              className="form-control w-50"
-                              placeholder="Search File"
-                              aria-describedby="button-addon01"
-                            />
-                            <button
-                              className="btn btn-primary-light"
-                              type="button"
-                              id="button-addon01"
-                            >
-                              <i className="ri-search-line" />
-                            </button>
-                          </div>
-                          <button
-                            className="btn btn-primary btn-w-md d-flex align-items-center justify-content-center btn-wave waves-light text-nowrap"
-                            data-bs-toggle="modal"
-                            data-bs-target="#create-folder"
-                          >
-                            <i className="ri-add-circle-line align-middle me-1" />
-                            Create Folder
-                          </button>
-                          <div
-                            className="modal fade"
-                            id="create-folder"
-                            tabIndex={-1}
-                            aria-labelledby="create-folder"
-                            data-bs-keyboard="false"
-                            aria-hidden="true"
-                          >
-                            <div className="modal-dialog modal-dialog-centered">
-                              <div className="modal-content">
-                                <div className="modal-header">
-                                  <h6
-                                    className="modal-title"
-                                    id="staticBackdropLabel"
-                                  >
-                                    Create Folder
-                                  </h6>
-                                  <button
-                                    type="button"
-                                    className="btn-close"
-                                    data-bs-dismiss="modal"
-                                    aria-label="Close"
-                                  />
-                                </div>
-                                <div className="modal-body">
-                                  <label
-                                    htmlFor="create-folder1"
-                                    className="form-label"
-                                  >
-                                    Folder Name
-                                  </label>
-                                  <input
-                                    type="text"
-                                    className="form-control"
-                                    id="create-folder1"
-                                    placeholder="Folder Name"
-                                  />
-                                </div>
-                                <div className="modal-footer">
-                                  <button
-                                    type="button"
-                                    className="btn btn-sm btn-icon btn-light"
-                                    data-bs-dismiss="modal"
-                                  >
-                                    <i className="ri-close-fill" />
-                                  </button>
-                                  <button
-                                    type="button"
-                                    className="btn btn-sm btn-success"
-                                  >
-                                    Create
-                                  </button>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                          <button
-                            className="btn btn-primary1-light btn-w-md d-flex align-items-center justify-content-center btn-wave waves-light"
-                            data-bs-toggle="modal"
-                            data-bs-target="#create-file"
-                          >
-                            <i className="ri-add-circle-line align-middle me-1" />
-                            Create File
-                          </button>
-                          <div
-                            className="modal fade"
-                            id="create-file"
-                            tabIndex={-1}
-                            aria-labelledby="create-file"
-                            data-bs-keyboard="false"
-                            aria-hidden="true"
-                          >
-                            <div className="modal-dialog modal-dialog-centered">
-                              <div className="modal-content">
-                                <div className="modal-header">
-                                  <h6
-                                    className="modal-title"
-                                    id="staticBackdropLabel1"
-                                  >
-                                    Create File
-                                  </h6>
-                                  <button
-                                    type="button"
-                                    className="btn-close"
-                                    data-bs-dismiss="modal"
-                                    aria-label="Close"
-                                  />
-                                </div>
-                                <div className="modal-body">
-                                  <label
-                                    htmlFor="create-file1"
-                                    className="form-label"
-                                  >
-                                    File Name
-                                  </label>
-                                  <input
-                                    type="text"
-                                    className="form-control"
-                                    id="create-file1"
-                                    placeholder="File Name"
-                                  />
-                                </div>
-                                <div className="modal-footer">
-                                  <button
-                                    type="button"
-                                    className="btn btn-sm btn-icon btn-light"
-                                    data-bs-dismiss="modal"
-                                  >
-                                    <i className="ri-close-fill" />
-                                  </button>
-                                  <button
-                                    type="button"
-                                    className="btn btn-sm btn-success"
-                                  >
-                                    Create
-                                  </button>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                      <div className="p-3 file-folders-container">
-                        <div className="d-flex mb-3 align-items-center justify-content-between">
-                          <p className="mb-0 fw-medium fs-14">Quick Access</p>
-                          <a
-                            href="javascript:void(0);"
-                            className="fs-12 text-muted fw-medium"
-                          >
-                            {" "}
-                            View All
-                            <i className="ti ti-arrow-narrow-right ms-1" />{" "}
-                          </a>
-                        </div>
-                        <div className="row mb-3">
-                          <div className="col-xxl-4 col-xl-6 col-lg-6 col-md-6">
-                            <div className="card custom-card shadow-none border">
-                              <div className="card-body">
-                                <div className="d-flex align-items-center gap-3 flex-wrap">
-                                  <div className="main-card-icon primary">
-                                    <div className="avatar avatar-md bg-primary-transparent border border-primary border-opacity-10">
-                                      <div className="avatar avatar-sm text-primary">
-                                        <i className="ri-image-line fs-24" />
-                                      </div>
-                                    </div>
-                                  </div>
-                                  <div className="flex-fill">
-                                    <a
-                                      href="javascript:void(0);"
-                                      className="d-block fw-medium"
-                                    >
-                                      Images
-                                    </a>
-                                    <span className="fs-12 text-muted">
-                                      17% Used
-                                    </span>
-                                  </div>
-                                  <div className="text-end">
-                                    <span className="fw-medium">245 files</span>
-                                    <span className="d-block fs-12 text-muted">
-                                      26.14GB
-                                    </span>
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                          <div className="col-xxl-4 col-xl-6 col-lg-6 col-md-6">
-                            <div className="card custom-card shadow-none border">
-                              <div className="card-body">
-                                <div className="d-flex align-items-center gap-3 flex-wrap">
-                                  <div className="main-card-icon primary1">
-                                    <div className="avatar avatar-md bg-primary1-transparent border border-primary1 border-opacity-10">
-                                      <div className="avatar avatar-sm text-primary1">
-                                        <i className="ri-video-line fs-24" />
-                                      </div>
-                                    </div>
-                                  </div>
-                                  <div className="flex-fill">
-                                    <a
-                                      href="javascript:void(0);"
-                                      className="d-block fw-medium"
-                                    >
-                                      Videos
-                                    </a>
-                                    <span className="fs-12 text-muted">
-                                      22% Used
-                                    </span>
-                                  </div>
-                                  <div className="text-end">
-                                    <span className="fw-medium">224 files</span>
-                                    <span className="d-block fs-12 text-muted">
-                                      24.32GB
-                                    </span>
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                          <div className="col-xxl-4 col-xl-6 col-lg-6 col-md-6">
-                            <div className="card custom-card shadow-none border">
-                              <div className="card-body">
-                                <div className="d-flex align-items-center gap-3 flex-wrap">
-                                  <div className="main-card-icon primary2">
-                                    <div className="avatar avatar-md bg-primary2-transparent border border-primary2 border-opacity-10">
-                                      <div className="avatar avatar-sm text-primary2">
-                                        <i className="ri-mv-line fs-24" />
-                                      </div>
-                                    </div>
-                                  </div>
-                                  <div className="flex-fill">
-                                    <a
-                                      href="javascript:void(0);"
-                                      className="d-block fw-medium"
-                                    >
-                                      Audio
-                                    </a>
-                                    <span className="fs-12 text-muted">
-                                      24% Used
-                                    </span>
-                                  </div>
-                                  <div className="text-end">
-                                    <span className="fw-medium">1354 files</span>
-                                    <span className="d-block fs-12 fw-medium">
-                                      29.45GB
-                                    </span>
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                          <div className="col-xxl-4 col-xl-6 col-lg-6 col-md-6">
-                            <div className="card custom-card shadow-none border">
-                              <div className="card-body">
-                                <div className="d-flex align-items-center gap-3 flex-wrap">
-                                  <div className="main-card-icon primary3">
-                                    <div className="avatar avatar-md bg-primary3-transparent border border-primary3 border-opacity-10">
-                                      <div className="avatar avatar-sm text-primary3">
-                                        <i className="ri-apps-line fs-24" />
-                                      </div>
-                                    </div>
-                                  </div>
-                                  <div className="flex-fill">
-                                    <a
-                                      href="javascript:void(0);"
-                                      className="d-block fw-medium"
-                                    >
-                                      Apps
-                                    </a>
-                                    <span className="fs-12 text-muted">
-                                      46% Used
-                                    </span>
-                                  </div>
-                                  <div className="text-end">
-                                    <span className="fw-medium">18 files</span>
-                                    <span className="d-block fs-12 text-muted">
-                                      54.14GB
-                                    </span>
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                          <div className="col-xxl-4 col-xl-6 col-lg-6 col-md-6">
-                            <div className="card custom-card shadow-none border">
-                              <div className="card-body">
-                                <div className="d-flex align-items-center gap-3 flex-wrap">
-                                  <div className="main-card-icon info">
-                                    <div className="avatar avatar-md bg-info-transparent border border-info border-opacity-10">
-                                      <div className="avatar avatar-sm text-info">
-                                        <i className="ri-folders-fill fs-24" />
-                                      </div>
-                                    </div>
-                                  </div>
-                                  <div className="flex-fill">
-                                    <a
-                                      href="javascript:void(0);"
-                                      className="d-block fw-medium"
-                                    >
-                                      Docs
-                                    </a>
-                                    <span className="fs-12 text-muted">
-                                      18% Used
-                                    </span>
-                                  </div>
-                                  <div className="text-end">
-                                    <span className="fw-medium">102 files</span>
-                                    <span className="d-block fs-12 text-muted">
-                                      8.42GB
-                                    </span>
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                          <div className="col-xxl-4 col-xl-6 col-lg-6 col-md-6">
-                            <div className="card custom-card shadow-none border">
-                              <div className="card-body">
-                                <div className="d-flex align-items-center gap-3 flex-wrap">
-                                  <div className="main-card-icon secondary">
-                                    <div className="avatar avatar-md bg-secondary-transparent border border-secondary border-opacity-10">
-                                      <div className="avatar avatar-sm text-secondary">
-                                        <i className="ri-file-download-line fs-24" />
-                                      </div>
-                                    </div>
-                                  </div>
-                                  <div className="flex-fill">
-                                    <a
-                                      href="javascript:void(0);"
-                                      className="d-block fw-medium"
-                                    >
-                                      Downloads
-                                    </a>
-                                    <span className="fs-12 text-muted">
-                                      16% Used
-                                    </span>
-                                  </div>
-                                  <div className="text-end">
-                                    <span className="fw-medium">16 files</span>
-                                    <span className="d-block fs-12 text-muted">
-                                      6.36GB
-                                    </span>
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                        <div className="d-flex mb-3 align-items-center justify-content-between">
-                          <p className="mb-0 fw-medium fs-14">Folders</p>
-                          <a
-                            href="javascript:void(0);"
-                            className="fs-12 text-muted fw-medium"
-                          >
-                            {" "}
-                            View All
-                            <i className="ti ti-arrow-narrow-right ms-1" />{" "}
-                          </a>
-                        </div>
-                        <div className="row mb-2">
-                          <div className="col-xxl-3 col-xl-6 col-lg-6 col-md-6">
-                            <div className="card custom-card shadow-none border">
-                              <div className="card-body">
-                                <div className="mb-4 folder-svg-container d-flex flex-wrap justify-content-between align-items-top">
-                                  <div className="avatar">
-                                    <img
-                                      src="../assets/images/media/file-manager/1.png"
-                                      alt=""
-                                      className="img-fluid"
-                                    />
-                                  </div>
-                                  <div>
-                                    <div className="dropdown">
-                                      <a
-                                        href="javascript:void(0);"
-                                        data-bs-toggle="dropdown"
-                                        aria-expanded="false"
-                                      >
-                                        <i className="ri-more-fill fw-semibold text-muted" />
-                                      </a>
-                                      <ul className="dropdown-menu">
-                                        <li>
-                                          <a
-                                            className="dropdown-item"
-                                            href="javascript:void(0);"
-                                          >
-                                            Delete
-                                          </a>
-                                        </li>
-                                        <li>
-                                          <a
-                                            className="dropdown-item"
-                                            href="javascript:void(0);"
-                                          >
-                                            Rename
-                                          </a>
-                                        </li>
-                                        <li>
-                                          <a
-                                            className="dropdown-item"
-                                            href="javascript:void(0);"
-                                          >
-                                            Hide Folder
-                                          </a>
-                                        </li>
-                                      </ul>
-                                    </div>
-                                  </div>
-                                </div>
-                                <p className="fs-14 fw-medium mb-1 lh-1">
-                                  <a href="javascript:void(0);">Images</a>
-                                </p>
-                                <div className="d-flex align-items-center justify-content-between flex-wrap">
-                                  <div>
-                                    <span className="text-muted fs-12">
-                                      345 Files
-                                    </span>
-                                  </div>
-                                  <div>
-                                    <span className="text-default fw-medium">
-                                      124.16MB
-                                    </span>
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                          <div className="col-xxl-3 col-xl-6 col-lg-6 col-md-6">
-                            <div className="card custom-card shadow-none border">
-                              <div className="card-body">
-                                <div className="mb-4 folder-svg-container d-flex flex-wrap justify-content-between align-items-top">
-                                  <div className="avatar">
-                                    <img
-                                      src="../assets/images/media/file-manager/1.png"
-                                      alt=""
-                                      className="img-fluid"
-                                    />
-                                  </div>
-                                  <div>
-                                    <div className="dropdown">
-                                      <a
-                                        href="javascript:void(0);"
-                                        data-bs-toggle="dropdown"
-                                        aria-expanded="false"
-                                      >
-                                        <i className="ri-more-fill fw-semibold text-muted" />
-                                      </a>
-                                      <ul className="dropdown-menu">
-                                        <li>
-                                          <a
-                                            className="dropdown-item"
-                                            href="javascript:void(0);"
-                                          >
-                                            Delete
-                                          </a>
-                                        </li>
-                                        <li>
-                                          <a
-                                            className="dropdown-item"
-                                            href="javascript:void(0);"
-                                          >
-                                            Rename
-                                          </a>
-                                        </li>
-                                        <li>
-                                          <a
-                                            className="dropdown-item"
-                                            href="javascript:void(0);"
-                                          >
-                                            Hide Folder
-                                          </a>
-                                        </li>
-                                      </ul>
-                                    </div>
-                                  </div>
-                                </div>
-                                <p className="fs-14 fw-medium mb-1 lh-1">
-                                  <a href="javascript:void(0);">Docs</a>
-                                </p>
-                                <div className="d-flex align-items-center justify-content-between flex-wrap">
-                                  <div>
-                                    <span className="text-muted fs-12">
-                                      45 Files
-                                    </span>
-                                  </div>
-                                  <div>
-                                    <span className="text-default fw-medium">
-                                      451.15KB
-                                    </span>
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                          <div className="col-xxl-3 col-xl-6 col-lg-6 col-md-6">
-                            <div className="card custom-card shadow-none border">
-                              <div className="card-body">
-                                <div className="mb-4 folder-svg-container d-flex flex-wrap justify-content-between align-items-top">
-                                  <div className="avatar">
-                                    <img
-                                      src="../assets/images/media/file-manager/1.png"
-                                      alt=""
-                                      className="img-fluid"
-                                    />
-                                  </div>
-                                  <div>
-                                    <div className="dropdown">
-                                      <a
-                                        href="javascript:void(0);"
-                                        data-bs-toggle="dropdown"
-                                        aria-expanded="false"
-                                      >
-                                        <i className="ri-more-fill fw-semibold text-muted" />
-                                      </a>
-                                      <ul className="dropdown-menu">
-                                        <li>
-                                          <a
-                                            className="dropdown-item"
-                                            href="javascript:void(0);"
-                                          >
-                                            Delete
-                                          </a>
-                                        </li>
-                                        <li>
-                                          <a
-                                            className="dropdown-item"
-                                            href="javascript:void(0);"
-                                          >
-                                            Rename
-                                          </a>
-                                        </li>
-                                        <li>
-                                          <a
-                                            className="dropdown-item"
-                                            href="javascript:void(0);"
-                                          >
-                                            Hide Folder
-                                          </a>
-                                        </li>
-                                      </ul>
-                                    </div>
-                                  </div>
-                                </div>
-                                <p className="fs-14 fw-medium mb-1 lh-1">
-                                  <a href="javascript:void(0);">Downloads</a>
-                                </p>
-                                <div className="d-flex align-items-center justify-content-between flex-wrap">
-                                  <div>
-                                    <span className="text-muted fs-12">
-                                      568 Files
-                                    </span>
-                                  </div>
-                                  <div>
-                                    <span className="text-default fw-medium">
-                                      1.45GB
-                                    </span>
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                          <div className="col-xxl-3 col-xl-6 col-lg-6 col-md-6">
-                            <div className="card custom-card shadow-none border">
-                              <div className="card-body">
-                                <div className="mb-4 folder-svg-container d-flex flex-wrap justify-content-between align-items-top">
-                                  <div className="avatar">
-                                    <img
-                                      src="../assets/images/media/file-manager/1.png"
-                                      alt=""
-                                      className="img-fluid"
-                                    />
-                                  </div>
-                                  <div>
-                                    <div className="dropdown">
-                                      <a
-                                        href="javascript:void(0);"
-                                        data-bs-toggle="dropdown"
-                                        aria-expanded="false"
-                                      >
-                                        <i className="ri-more-fill fw-semibold text-muted" />
-                                      </a>
-                                      <ul className="dropdown-menu">
-                                        <li>
-                                          <a
-                                            className="dropdown-item"
-                                            href="javascript:void(0);"
-                                          >
-                                            Delete
-                                          </a>
-                                        </li>
-                                        <li>
-                                          <a
-                                            className="dropdown-item"
-                                            href="javascript:void(0);"
-                                          >
-                                            Rename
-                                          </a>
-                                        </li>
-                                        <li>
-                                          <a
-                                            className="dropdown-item"
-                                            href="javascript:void(0);"
-                                          >
-                                            Hide Folder
-                                          </a>
-                                        </li>
-                                      </ul>
-                                    </div>
-                                  </div>
-                                </div>
-                                <p className="fs-14 fw-medium mb-1 lh-1">
-                                  <a href="javascript:void(0);">Apps</a>
-                                </p>
-                                <div className="d-flex align-items-center justify-content-between flex-wrap">
-                                  <div>
-                                    <span className="text-muted fs-12">
-                                      247 Files
-                                    </span>
-                                  </div>
-                                  <div>
-                                    <span className="text-default fw-medium">
-                                      15.88GB
-                                    </span>
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                        <div className="d-flex mb-3 align-items-center justify-content-between">
-                          <p className="mb-0 fw-medium fs-14">Recent Files</p>
-                          <a
-                            href="javascript:void(0);"
-                            className="fs-12 text-muted fw-medium"
-                          >
-                            {" "}
-                            View All
-                            <i className="ti ti-arrow-narrow-right ms-1" />{" "}
-                          </a>
-                        </div>
-                        <div className="row">
-                          <div className="col-xl-12">
-                            <div className="table-responsive border border-bottom-0">
-                              <table className="table text-nowrap table-hover">
-                                <thead>
-                                  <tr>
-                                    <th scope="col">File Name</th>
-                                    <th scope="col">Category</th>
-                                    <th scope="col">Size</th>
-                                    <th scope="col">Date Modified</th>
-                                    <th scope="col">Action</th>
-                                  </tr>
-                                </thead>
-                                <tbody className="files-list">
-                                  <tr>
-                                    <th scope="row">
-                                      <div className="d-flex align-items-center">
-                                        <div className="me-0">
-                                          <span className="avatar avatar-md svg-primary text-primary">
-                                            <svg
-                                              xmlns="http://www.w3.org/2000/svg"
-                                              viewBox="0 0 256 256"
-                                            >
-                                              <rect
-                                                width={256}
-                                                height={256}
-                                                fill="none"
-                                              />
-                                              <path
-                                                d="M112,175.67V168a8,8,0,0,0-8-8H48a8,8,0,0,0-8,8v40a8,8,0,0,0,8,8h56a8,8,0,0,0,8-8v-8.82L144,216V160Z"
-                                                opacity="0.2"
-                                              />
-                                              <polyline
-                                                points="112 175.67 144 160 144 216 112 199.18"
-                                                fill="none"
-                                                stroke="currentColor"
-                                                strokeLinecap="round"
-                                                strokeLinejoin="round"
-                                                strokeWidth={16}
-                                              />
-                                              <rect
-                                                x={40}
-                                                y={160}
-                                                width={72}
-                                                height={56}
-                                                rx={8}
-                                                fill="none"
-                                                stroke="currentColor"
-                                                strokeLinecap="round"
-                                                strokeLinejoin="round"
-                                                strokeWidth={16}
-                                              />
-                                              <polygon
-                                                points="152 32 152 88 208 88 152 32"
-                                                opacity="0.2"
-                                              />
-                                              <polyline
-                                                points="152 32 152 88 208 88"
-                                                fill="none"
-                                                stroke="currentColor"
-                                                strokeLinecap="round"
-                                                strokeLinejoin="round"
-                                                strokeWidth={16}
-                                              />
-                                              <path
-                                                d="M176,224h24a8,8,0,0,0,8-8V88L152,32H56a8,8,0,0,0-8,8v88"
-                                                fill="none"
-                                                stroke="currentColor"
-                                                strokeLinecap="round"
-                                                strokeLinejoin="round"
-                                                strokeWidth={16}
-                                              />
-                                            </svg>
-                                          </span>
-                                        </div>
-                                        <div>
-                                          <a
-                                            href="javascript:void(0);"
-                                            data-bs-toggle="offcanvas"
-                                            data-bs-target="#offcanvasRight"
-                                            aria-controls="offcanvasRight"
-                                          >
-                                            VIDEO_88745_KKI451.mp4
-                                          </a>
-                                        </div>
-                                      </div>
-                                    </th>
-                                    <td>Videos</td>
-                                    <td>89MB</td>
-                                    <td>15,Aug 2024</td>
-                                    <td>
-                                      <div className="hstack gap-2 fs-15">
-                                        <a
-                                          href="javascript:void(0);"
-                                          className="btn btn-icon btn-sm btn-primary2-light"
-                                        >
-                                          <i className="ri-eye-line" />
-                                        </a>
-                                        <a
-                                          href="javascript:void(0);"
-                                          className="btn btn-icon btn-sm btn-primary3-light"
-                                        >
-                                          <i className="ri-delete-bin-line" />
-                                        </a>
-                                      </div>
-                                    </td>
-                                  </tr>
-                                  <tr>
-                                    <th scope="row">
-                                      <div className="d-flex align-items-center">
-                                        <div className="me-0">
-                                          <span className="avatar avatar-md svg-primary1 text-primary1">
-                                            <svg
-                                              xmlns="http://www.w3.org/2000/svg"
-                                              viewBox="0 0 256 256"
-                                            >
-                                              <rect
-                                                width={256}
-                                                height={256}
-                                                fill="none"
-                                              />
-                                              <path
-                                                d="M112,175.67V168a8,8,0,0,0-8-8H48a8,8,0,0,0-8,8v40a8,8,0,0,0,8,8h56a8,8,0,0,0,8-8v-8.82L144,216V160Z"
-                                                opacity="0.2"
-                                              />
-                                              <polyline
-                                                points="112 175.67 144 160 144 216 112 199.18"
-                                                fill="none"
-                                                stroke="currentColor"
-                                                strokeLinecap="round"
-                                                strokeLinejoin="round"
-                                                strokeWidth={16}
-                                              />
-                                              <rect
-                                                x={40}
-                                                y={160}
-                                                width={72}
-                                                height={56}
-                                                rx={8}
-                                                fill="none"
-                                                stroke="currentColor"
-                                                strokeLinecap="round"
-                                                strokeLinejoin="round"
-                                                strokeWidth={16}
-                                              />
-                                              <polygon
-                                                points="152 32 152 88 208 88 152 32"
-                                                opacity="0.2"
-                                              />
-                                              <polyline
-                                                points="152 32 152 88 208 88"
-                                                fill="none"
-                                                stroke="currentColor"
-                                                strokeLinecap="round"
-                                                strokeLinejoin="round"
-                                                strokeWidth={16}
-                                              />
-                                              <path
-                                                d="M176,224h24a8,8,0,0,0,8-8V88L152,32H56a8,8,0,0,0-8,8v88"
-                                                fill="none"
-                                                stroke="currentColor"
-                                                strokeLinecap="round"
-                                                strokeLinejoin="round"
-                                                strokeWidth={16}
-                                              />
-                                            </svg>
-                                          </span>
-                                        </div>
-                                        <div>
-                                          <a
-                                            href="javascript:void(0);"
-                                            data-bs-toggle="offcanvas"
-                                            data-bs-target="#offcanvasRight"
-                                            aria-controls="offcanvasRight"
-                                          >
-                                            VID-14211110-AKP823.mp4
-                                          </a>
-                                        </div>
-                                      </div>
-                                    </th>
-                                    <td>Videos</td>
-                                    <td>12MB</td>
-                                    <td>18,May 2024</td>
-                                    <td>
-                                      <div className="hstack gap-2 fs-15">
-                                        <a
-                                          href="javascript:void(0);"
-                                          className="btn btn-icon btn-sm btn-primary2-light"
-                                        >
-                                          <i className="ri-eye-line" />
-                                        </a>
-                                        <a
-                                          href="javascript:void(0);"
-                                          className="btn btn-icon btn-sm btn-primary3-light"
-                                        >
-                                          <i className="ri-delete-bin-line" />
-                                        </a>
-                                      </div>
-                                    </td>
-                                  </tr>
-                                  <tr className="table-active">
-                                    <th scope="row">
-                                      <div className="d-flex align-items-center">
-                                        <div className="me-0">
-                                          <span className="avatar avatar-md svg-primary2 text-primary2">
-                                            <svg
-                                              xmlns="http://www.w3.org/2000/svg"
-                                              viewBox="0 0 256 256"
-                                            >
-                                              <rect
-                                                width={256}
-                                                height={256}
-                                                fill="none"
-                                              />
-                                              <path
-                                                d="M168,192h16a20,20,0,0,0,0-40H168v56"
-                                                fill="none"
-                                                stroke="currentColor"
-                                                strokeLinecap="round"
-                                                strokeLinejoin="round"
-                                                strokeWidth={16}
-                                              />
-                                              <line
-                                                x1={128}
-                                                y1={152}
-                                                x2={128}
-                                                y2={208}
-                                                fill="none"
-                                                stroke="currentColor"
-                                                strokeLinecap="round"
-                                                strokeLinejoin="round"
-                                                strokeWidth={16}
-                                              />
-                                              <polyline
-                                                points="56 152 88 152 56 208 88 208"
-                                                fill="none"
-                                                stroke="currentColor"
-                                                strokeLinecap="round"
-                                                strokeLinejoin="round"
-                                                strokeWidth={16}
-                                              />
-                                              <polygon
-                                                points="152 32 152 88 208 88 152 32"
-                                                opacity="0.2"
-                                              />
-                                              <path
-                                                d="M48,112V40a8,8,0,0,1,8-8h96l56,56v24"
-                                                fill="none"
-                                                stroke="currentColor"
-                                                strokeLinecap="round"
-                                                strokeLinejoin="round"
-                                                strokeWidth={16}
-                                              />
-                                              <polyline
-                                                points="152 32 152 88 208 88"
-                                                fill="none"
-                                                stroke="currentColor"
-                                                strokeLinecap="round"
-                                                strokeLinejoin="round"
-                                                strokeWidth={16}
-                                              />
-                                            </svg>
-                                          </span>
-                                        </div>
-                                        <div>
-                                          <a
-                                            href="javascript:void(0);"
-                                            data-bs-toggle="offcanvas"
-                                            data-bs-target="#offcanvasRight"
-                                            aria-controls="offcanvasRight"
-                                          >
-                                            AC-20241.zip
-                                          </a>
-                                        </div>
-                                      </div>
-                                    </th>
-                                    <td>Archives</td>
-                                    <td>564KB</td>
-                                    <td>06,Mar 2024</td>
-                                    <td>
-                                      <div className="hstack gap-2 fs-15">
-                                        <a
-                                          href="javascript:void(0);"
-                                          className="btn btn-icon btn-sm btn-primary2-light"
-                                        >
-                                          <i className="ri-eye-line" />
-                                        </a>
-                                        <a
-                                          href="javascript:void(0);"
-                                          className="btn btn-icon btn-sm btn-primary3-light"
-                                        >
-                                          <i className="ri-delete-bin-line" />
-                                        </a>
-                                      </div>
-                                    </td>
-                                  </tr>
-                                  <tr>
-                                    <th scope="row">
-                                      <div className="d-flex align-items-center">
-                                        <div className="me-0">
-                                          <span className="avatar avatar-md svg-primary3 text-primary3">
-                                            <svg
-                                              xmlns="http://www.w3.org/2000/svg"
-                                              viewBox="0 0 256 256"
-                                            >
-                                              <rect
-                                                width={256}
-                                                height={256}
-                                                fill="none"
-                                              />
-                                              <polygon
-                                                points="48 200 48 160 72 160 96 136 96 224 72 200 48 200"
-                                                opacity="0.2"
-                                              />
-                                              <polygon
-                                                points="48 200 48 160 72 160 96 136 96 224 72 200 48 200"
-                                                fill="none"
-                                                stroke="currentColor"
-                                                strokeLinecap="round"
-                                                strokeLinejoin="round"
-                                                strokeWidth={16}
-                                              />
-                                              <path
-                                                d="M128,152a32.5,32.5,0,0,1,0,56"
-                                                fill="none"
-                                                stroke="currentColor"
-                                                strokeLinecap="round"
-                                                strokeLinejoin="round"
-                                                strokeWidth={16}
-                                              />
-                                              <polygon
-                                                points="152 32 152 88 208 88 152 32"
-                                                opacity="0.2"
-                                              />
-                                              <polyline
-                                                points="152 32 152 88 208 88"
-                                                fill="none"
-                                                stroke="currentColor"
-                                                strokeLinecap="round"
-                                                strokeLinejoin="round"
-                                                strokeWidth={16}
-                                              />
-                                              <path
-                                                d="M168,224h32a8,8,0,0,0,8-8V88L152,32H56a8,8,0,0,0-8,8v80"
-                                                fill="none"
-                                                stroke="currentColor"
-                                                strokeLinecap="round"
-                                                strokeLinejoin="round"
-                                                strokeWidth={16}
-                                              />
-                                            </svg>
-                                          </span>
-                                        </div>
-                                        <div>
-                                          <a
-                                            href="javascript:void(0);"
-                                            data-bs-toggle="offcanvas"
-                                            data-bs-target="#offcanvasRight"
-                                            aria-controls="offcanvasRight"
-                                          >
-                                            AUD__145_24152.mp3
-                                          </a>
-                                        </div>
-                                      </div>
-                                    </th>
-                                    <td>Archives</td>
-                                    <td>264KB</td>
-                                    <td>26,Apr 2024</td>
-                                    <td>
-                                      <div className="hstack gap-2 fs-15">
-                                        <a
-                                          href="javascript:void(0);"
-                                          className="btn btn-icon btn-sm btn-primary2-light"
-                                        >
-                                          <i className="ri-eye-line" />
-                                        </a>
-                                        <a
-                                          href="javascript:void(0);"
-                                          className="btn btn-icon btn-sm btn-primary3-light"
-                                        >
-                                          <i className="ri-delete-bin-line" />
-                                        </a>
-                                      </div>
-                                    </td>
-                                  </tr>
-                                  <tr>
-                                    <th scope="row">
-                                      <div className="d-flex align-items-center">
-                                        <div className="me-0">
-                                          <span className="avatar avatar-md svg-secondary text-secondary">
-                                            <svg
-                                              xmlns="http://www.w3.org/2000/svg"
-                                              viewBox="0 0 256 256"
-                                            >
-                                              <rect
-                                                width={256}
-                                                height={256}
-                                                fill="none"
-                                              />
-                                              <polygon
-                                                points="152 32 152 88 208 88 152 32"
-                                                opacity="0.2"
-                                              />
-                                              <path
-                                                d="M48,112V40a8,8,0,0,1,8-8h96l56,56v24"
-                                                fill="none"
-                                                stroke="currentColor"
-                                                strokeLinecap="round"
-                                                strokeLinejoin="round"
-                                                strokeWidth={16}
-                                              />
-                                              <polyline
-                                                points="152 32 152 88 208 88"
-                                                fill="none"
-                                                stroke="currentColor"
-                                                strokeLinecap="round"
-                                                strokeLinejoin="round"
-                                                strokeWidth={16}
-                                              />
-                                              <polyline
-                                                points="216 152 184 152 184 208"
-                                                fill="none"
-                                                stroke="currentColor"
-                                                strokeLinecap="round"
-                                                strokeLinejoin="round"
-                                                strokeWidth={16}
-                                              />
-                                              <line
-                                                x1={208}
-                                                y1={184}
-                                                x2={184}
-                                                y2={184}
-                                                fill="none"
-                                                stroke="currentColor"
-                                                strokeLinecap="round"
-                                                strokeLinejoin="round"
-                                                strokeWidth={16}
-                                              />
-                                              <path
-                                                d="M48,192H64a20,20,0,0,0,0-40H48v56"
-                                                fill="none"
-                                                stroke="currentColor"
-                                                strokeLinecap="round"
-                                                strokeLinejoin="round"
-                                                strokeWidth={16}
-                                              />
-                                              <path
-                                                d="M112,152v56h16a28,28,0,0,0,0-56Z"
-                                                fill="none"
-                                                stroke="currentColor"
-                                                strokeLinecap="round"
-                                                strokeLinejoin="round"
-                                                strokeWidth={16}
-                                              />
-                                            </svg>
-                                          </span>
-                                        </div>
-                                        <div>
-                                          <a
-                                            href="javascript:void(0);"
-                                            data-bs-toggle="offcanvas"
-                                            data-bs-target="#offcanvasRight"
-                                            aria-controls="offcanvasRight"
-                                          >
-                                            Document-file.pdf
-                                          </a>
-                                        </div>
-                                      </div>
-                                    </th>
-                                    <td>Documents</td>
-                                    <td>2.6MB</td>
-                                    <td>07,Feb 2024</td>
-                                    <td>
-                                      <div className="hstack gap-2 fs-15">
-                                        <a
-                                          href="javascript:void(0);"
-                                          className="btn btn-icon btn-sm btn-primary2-light"
-                                        >
-                                          <i className="ri-eye-line" />
-                                        </a>
-                                        <a
-                                          href="javascript:void(0);"
-                                          className="btn btn-icon btn-sm btn-primary3-light"
-                                        >
-                                          <i className="ri-delete-bin-line" />
-                                        </a>
-                                      </div>
-                                    </td>
-                                  </tr>
-                                </tbody>
-                                <tfoot>
-                                  <tr>
-                                    <td colSpan={5}>
-                                      <nav aria-label="Page navigation">
-                                        <nav
-                                          aria-label="Page navigation"
-                                          className="pagination-style-4 float-end"
-                                        >
-                                          <ul className="pagination mb-0">
-                                            <li className="page-item disabled">
-                                              <a
-                                                className="page-link"
-                                                href="javascript:void(0)"
-                                              >
-                                                Prev
-                                              </a>
-                                            </li>
-                                            <li className="page-item active">
-                                              <a
-                                                className="page-link"
-                                                href="javascript:void(0)"
-                                              >
-                                                1
-                                              </a>
-                                            </li>
-                                            <li className="page-item">
-                                              <a
-                                                className="page-link"
-                                                href="javascript:void(0)"
-                                              >
-                                                2
-                                              </a>
-                                            </li>
-                                            <li className="page-item">
-                                              <a
-                                                className="page-link text-primary"
-                                                href="javascript:void(0)"
-                                              >
-                                                next
-                                              </a>
-                                            </li>
-                                          </ul>
-                                        </nav>
-                                      </nav>
-                                    </td>
-                                  </tr>
-                                </tfoot>
-                              </table>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
+            </div>
+          </div>
+
+          {/* Storage Info */}
+          <div className="col-xxl-3">
+            <div className="card custom-card overflow-hidden">
+              <div className="card-body">
+                <div className="d-flex align-items-start gap-3">
+                  <div>
+                    <span className="avatar avatar-md bg-secondary-transparent">
+                      <i className="ri-hard-drive-2-fill fs-16" />
+                    </span>
+                  </div>
+                  <div className="flex-fill">
+                    <div className="mb-3">
+                      {" "}
+                      Storage Usage
+                      <p className="mb-0">
+                        <span className="fw-bold fs-14">
+                          {formatFileSize(totalSize)}
+                        </span> Used
+                      </p>
+                      <p className="fs-11 text-muted mb-0">
+                        {totalFiles} files in {activeTab === 'all' ? 'total' : activeTab === 'owned' ? 'your files' : 'shared files'}
+                      </p>
                     </div>
                   </div>
                 </div>
               </div>
-              <div className="col-xxl-3">
-                <div className="card custom-card overflow-hidden">
-                  <div className="card-body">
-                    <div className="d-flex align-items-start gap-3">
-                      <div>
-                        <span className="avatar avatar-md bg-secondary-transparent">
-                          <i className="ri-hard-drive-2-fill fs-16" />
-                        </span>
-                      </div>
-                      <div className="flex-fill">
-                        <div className=" mb-3">
-                          {" "}
-                          All Folders
-                          <p className="mb-0">
-                            <span className="fw-bold fs-14">68.12GB</span> Used
-                          </p>
-                          <p className="fs-11 text-muted mb-0">
-                            21.35GB free space
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                    <div id="file-manager-storage" />
-                  </div>
-                  <div className="card-footer p-0">
-                    <div className="m-3 mb-0">
-                      <span className="fs-12 text-muted">Storage Details</span>
-                    </div>
-                    <ul className="list-group list-group-flush">
-                      <li className="list-group-item">
+              <div className="card-footer p-0">
+                <div className="m-3 mb-0">
+                  <span className="fs-12 text-muted">Storage Details</span>
+                </div>
+                <ul className="list-group list-group-flush">
+                  {['image', 'video', 'audio', 'document', 'archive'].map(type => {
+                    const typeFiles = currentFiles.filter(f => f.file_type === type);
+                    const totalSize = typeFiles.reduce((acc, file) => acc + file.file_size, 0);
+                    const percentage = totalFiles > 0 ? (typeFiles.length / totalFiles * 100).toFixed(0) : 0;
+
+                    return (
+                      <li className="list-group-item" key={type}>
                         <div className="d-flex align-items-center gap-3">
-                          <div className="main-card-icon primary">
-                            <div className="avatar avatar-lg bg-primary-transparent border border-primary border-opacity-10">
-                              <div className="avatar avatar-sm text-primary">
-                                <i className="ti ti-photo fs-20" />
-                              </div>
+                          <div className="avatar avatar-lg bg-primary-transparent border border-primary border-opacity-10">
+                            <div className="avatar avatar-sm text-primary">
+                              {getFileIcon(type)}
                             </div>
                           </div>
                           <div className="flex-fill">
-                            <span className="fw-medium">Media</span>
+                            <span className="fw-medium">{type.charAt(0).toUpperCase() + type.slice(1)}</span>
                             <span className="text-muted fs-12 d-block">
-                              3,145 files
+                              {typeFiles.length} files
                             </span>
                           </div>
                           <div>
                             <span className="fw-medium text-primary mb-0 fs-14">
-                              45GB
+                              {formatFileSize(totalSize)}
                             </span>
                           </div>
                         </div>
                         <div
                           className="progress progress-md p-1 bg-primary-transparent mt-3"
                           role="progressbar"
-                          aria-valuenow={90}
+                          aria-valuenow={percentage}
                           aria-valuemin={0}
                           aria-valuemax={100}
                         >
                           <div
                             className="progress-bar progress-bar-striped progress-bar-animated"
-                            style={{ width: "90%" }}
+                            style={{ width: `${percentage}%` }}
                           />
                         </div>
                       </li>
-                      <li className="list-group-item">
-                        <div className="d-flex align-items-center gap-3">
-                          <div className="main-card-icon primary1">
-                            <div className="avatar avatar-lg bg-primary1-transparent border border-primary1 border-opacity-10">
-                              <div className="avatar avatar-sm text-primary1">
-                                <i className="ti ti-download fs-20" />
-                              </div>
-                            </div>
-                          </div>
-                          <div className="flex-fill">
-                            <span className="fw-medium">Downloads</span>
-                            <span className="text-muted fs-12 d-block">
-                              568 files
-                            </span>
-                          </div>
-                          <div>
-                            <span className="fw-medium text-primary1 mb-0 fs-14">
-                              66GB
-                            </span>
-                          </div>
-                        </div>
-                        <div
-                          className="progress progress-md p-1 bg-primary1-transparent mt-3"
-                          role="progressbar"
-                          aria-valuenow={86}
-                          aria-valuemin={0}
-                          aria-valuemax={100}
-                        >
-                          <div
-                            className="progress-bar progress-bar-striped bg-primary1 progress-bar-animated"
-                            style={{ width: "86%" }}
-                          />
-                        </div>
-                      </li>
-                      <li className="list-group-item">
-                        <div className="d-flex align-items-center gap-3">
-                          <div className="main-card-icon primary2">
-                            <div className="avatar avatar-lg bg-primary2-transparent border border-primary2 border-opacity-10">
-                              <div className="avatar avatar-sm text-primary2">
-                                <i className="ti ti-layout-grid fs-20" />
-                              </div>
-                            </div>
-                          </div>
-                          <div className="flex-fill">
-                            <span className="fw-medium">Apps</span>
-                            <span className="text-muted fs-12 d-block">
-                              74 files
-                            </span>
-                          </div>
-                          <div>
-                            <span className="fw-medium text-primary2 mb-0 fs-14">
-                              55GB
-                            </span>
-                          </div>
-                        </div>
-                        <div
-                          className="progress progress-md p-1 bg-primary2-transparent mt-3"
-                          role="progressbar"
-                          aria-valuenow={75}
-                          aria-valuemin={0}
-                          aria-valuemax={100}
-                        >
-                          <div
-                            className="progress-bar progress-bar-striped bg-primary2 progress-bar-animated"
-                            style={{ width: "75%" }}
-                          />
-                        </div>
-                      </li>
-                      <li className="list-group-item">
-                        <div className="d-flex align-items-center gap-3">
-                          <div className="main-card-icon primary3">
-                            <div className="avatar avatar-lg bg-primary3-transparent border border-primary3 border-opacity-10">
-                              <div className="avatar avatar-sm text-primary3">
-                                <i className="ti ti-file-description fs-20" />
-                              </div>
-                            </div>
-                          </div>
-                          <div className="flex-fill">
-                            <span className="fw-medium">Documents</span>
-                            <span className="text-muted fs-12 d-block">
-                              1,441 files
-                            </span>
-                          </div>
-                          <div>
-                            <span className="fw-medium text-primary3 mb-0 fs-14">
-                              34GB{" "}
-                            </span>
-                          </div>
-                        </div>
-                        <div
-                          className="progress progress-md p-1 bg-primary3-transparent mt-3"
-                          role="progressbar"
-                          aria-valuenow={80}
-                          aria-valuemin={0}
-                          aria-valuemax={100}
-                        >
-                          <div
-                            className="progress-bar progress-bar-striped bg-primary3 progress-bar-animated"
-                            style={{ width: "80%" }}
-                          />
-                        </div>
-                      </li>
-                    </ul>
-                  </div>
-                </div>
-                <div className="card custom-card">
-                  <div className="card-body">
-                    <div className="filemanager-upgrade-storage w-100 text-center">
-                      <span className="d-block mb-3 pb-1 bg-primary1-transparent rounded-2">
-                        {" "}
-                        <img
-                          src="../assets/images/media/file-manager/2.png"
-                          alt=""
-                        />{" "}
-                      </span>
-                      <span className="fs-16 fw-semibold text-default">
-                        Get more storage with Pro.
-                      </span>
-                      <span className="d-block text-muted mt-2">
-                        Upgrade now for increased storage space and enhanced
-                        functionality.
-                      </span>
-                      <div className="mt-4 d-grid">
-                        {" "}
-                        <button className="btn btn-lg btn-primary btn-wave waves-effect waves-light">
-                          Upgrade Now
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-  
-        <div
-          className="offcanvas offcanvas-end"
-          tabIndex={-1}
-          id="offcanvasRight"
-        >
-          <div className="offcanvas-body p-0">
-            <div className="selected-file-details">
-              <div className="d-flex p-3 align-items-center justify-content-between border-bottom">
-                <div>
-                  <h6 className="fw-medium mb-0">File Details</h6>
-                </div>
-                <div className="d-flex align-items-center">
-                  <div className="dropdown me-1">
-                    <button
-                      className="btn btn-sm btn-icon btn-primary-light btn-wave waves-light waves-effect waves-light"
-                      type="button"
-                      data-bs-toggle="dropdown"
-                      aria-expanded="false"
-                    >
-                      <i className="ri-more-2-fill" />
-                    </button>
-                    <ul className="dropdown-menu">
-                      <li>
-                        <a className="dropdown-item" href="javascript:void(0);">
-                          Share
-                        </a>
-                      </li>
-                      <li>
-                        <a className="dropdown-item" href="javascript:void(0);">
-                          Copy
-                        </a>
-                      </li>
-                      <li>
-                        <a className="dropdown-item" href="javascript:void(0);">
-                          Move
-                        </a>
-                      </li>
-                      <li>
-                        <a className="dropdown-item" href="javascript:void(0);">
-                          Delete
-                        </a>
-                      </li>
-                      <li>
-                        <a className="dropdown-item" href="javascript:void(0);">
-                          Raname
-                        </a>
-                      </li>
-                    </ul>
-                  </div>
-                  <button
-                    type="button"
-                    className="btn btn-sm btn-icon btn-outline-light border"
-                    data-bs-dismiss="offcanvas"
-                    aria-label="Close"
-                  >
-                    <i className="ri-close-line" />
-                  </button>
-                </div>
-              </div>
-              <div
-                className="filemanager-file-details"
-                id="filemanager-file-details"
-              >
-                <div className="p-3 text-center border-bottom border-block-end-dashed">
-                  <div className="file-details mb-3">
-                    <img src="../assets/images/media/blog/9.jpg" alt="" />
-                  </div>
-                  <div>
-                    <p className="mb-0 fw-medium fs-16">
-                      IMG-09123878-SPK734.jpeg
-                    </p>
-                    <p className="mb-0 text-muted fs-10">422KB | 23,Nov 2024</p>
-                  </div>
-                </div>
-                <div className="p-3 border-bottom border-block-end-dashed">
-                  <ul className="list-group">
-                    <li className="list-group-item">
-                      <div>
-                        <span className="fw-medium">File Format : </span>
-                        <span className="fs-12 text-muted">jpeg</span>
-                      </div>
-                    </li>
-                    <li className="list-group-item">
-                      <div>
-                        <p className="fw-medium mb-0">File Description : </p>
-                        <span className="fs-12 text-muted">
-                          This file contains 3 folder Xintra.main &amp;
-                          Xintra.premium &amp; Xintra.featured and 42 images and
-                          layout styles are added in this update.
-                        </span>
-                      </div>
-                    </li>
-                    <li className="list-group-item">
-                      <p className="fw-medium mb-0">File Location : </p>
-                      <span className="fs-12 text-muted">
-                        Device/Storage/Archives/IMG-09123878-SPK734.jpeg
-                      </span>
-                    </li>
-                  </ul>
-                </div>
-                <div className="p-3 border-bottom border-block-end-dashed">
-                  <p className="mb-1 fw-medium fs-14">Downloaded from :</p>
-                  <a
-                    className="text-primary fw-medium text-break"
-                    href="https://themeforest.net/user/spruko/portfolio"
-                    target="_blank"
-                  >
-                    <u>https://themeforest.net/user/spruko/portfolio</u>
-                  </a>
-                </div>
-                <div className="p-3">
-                  <p className="mb-2 fw-medium fs-14">Shared With :</p>
-                  <a href="javascript:void(0);">
-                    <div className="d-flex align-items-center p-2 mb-1">
-                      <span className="avatar avatar-sm me-2 avatar-rounded">
-                        <img src="../assets/images/faces/1.jpg" alt="" />
-                      </span>
-                      <span className="fw-medium flex-fill">Akira Susan</span>
-                      <span className="badge bg-success-transparent fw-normal">
-                        28,Nov 2024
-                      </span>
-                    </div>
-                  </a>
-                  <a href="javascript:void(0);">
-                    <div className="d-flex align-items-center p-2 mb-1">
-                      <span className="avatar avatar-sm me-2 avatar-rounded">
-                        <img src="../assets/images/faces/15.jpg" alt="" />
-                      </span>
-                      <span className="fw-medium flex-fill">Khalid Ahmad</span>
-                      <span className="badge bg-success-transparent fw-normal">
-                        16,Oct 2024
-                      </span>
-                    </div>
-                  </a>
-                  <a href="javascript:void(0);">
-                    <div className="d-flex align-items-center p-2 mb-1">
-                      <span className="avatar avatar-sm me-2 avatar-rounded">
-                        <img src="../assets/images/faces/8.jpg" alt="" />
-                      </span>
-                      <span className="fw-medium flex-fill">
-                        Jeremiah Jackson
-                      </span>
-                      <span className="badge bg-success-transparent fw-normal">
-                        05,Dec 2024
-                      </span>
-                    </div>
-                  </a>
-                  <a href="javascript:void(0);">
-                    <div className="d-flex align-items-center p-2">
-                      <span className="avatar avatar-sm me-2 avatar-rounded">
-                        <img src="../assets/images/faces/13.jpg" alt="" />
-                      </span>
-                      <span className="fw-medium flex-fill">Brigo Jhonson</span>
-                      <span className="badge bg-success-transparent fw-normal">
-                        26,Apr 2024
-                      </span>
-                    </div>
-                  </a>
-                </div>
+                    );
+                  })}
+                </ul>
               </div>
             </div>
           </div>
         </div>
-        {/* End::mail information offcanvas */}
-        {/* include footer.html"*/}
-        {/* include responsive-search-modal.html"*/}
+
+        {/* Create Folder Modal */}
+        <div
+          className="modal fade"
+          id="create-folder"
+          tabIndex={-1}
+          aria-labelledby="create-folder"
+          data-bs-keyboard="false"
+          aria-hidden="true"
+        >
+          <div className="modal-dialog modal-dialog-centered">
+            <div className="modal-content">
+              <div className="modal-header">
+                <h6 className="modal-title">Create Folder</h6>
+                <button
+                  type="button"
+                  className="btn-close"
+                  data-bs-dismiss="modal"
+                  aria-label="Close"
+                />
+              </div>
+              <div className="modal-body">
+                <label htmlFor="create-folder1" className="form-label">
+                  Folder Name
+                </label>
+                <input
+                  type="text"
+                  className="form-control"
+                  id="create-folder1"
+                  placeholder="Folder Name"
+                  value={newFolderName}
+                  onChange={(e) => setNewFolderName(e.target.value)}
+                />
+                {currentFolder && (
+                  <p className="mt-2 text-muted">
+                    Will be created inside: {folders.find(f => f._id === currentFolder)?.name}
+                  </p>
+                )}
+              </div>
+              <div className="modal-footer">
+                <button
+                  type="button"
+                  className="btn btn-sm btn-icon btn-light"
+                  data-bs-dismiss="modal"
+                >
+                  <i className="ri-close-fill" />
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-sm btn-success"
+                  onClick={handleCreateFolder}
+                  disabled={!newFolderName.trim()}
+                >
+                  Create
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Share Modal */}
+        {showShareModal && (
+          <div className="modal fade show" style={{ display: 'block', backgroundColor: 'rgba(0,0,0,0.5)' }}>
+            <div className="modal-dialog modal-dialog-centered">
+              <div className="modal-content">
+                <div className="modal-header">
+                  <h6 className="modal-title">Share File</h6>
+                  <button
+                    type="button"
+                    className="btn-close"
+                    onClick={() => setShowShareModal(false)}
+                  />
+                </div>
+                <div className="modal-body">
+                  <div className="mb-3">
+                    <label className="form-label">Share with users:</label>
+                    <div className="list-group" style={{ maxHeight: '200px', overflowY: 'auto' }}>
+                      {allUsers.map(user => (
+                        <div key={user._id} className="list-group-item">
+                          <div className="form-check">
+                            <input
+                              className="form-check-input"
+                              type="checkbox"
+                              checked={usersToShare.includes(user._id)}
+                              onChange={() => toggleUserSelection(user._id)}
+                              id={`user-${user._id}`}
+                            />
+                            <label className="form-check-label" htmlFor={`user-${user._id}`}>
+                              {user.firstName} {user.lastName} ({user.email})
+                            </label>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="mb-3">
+                    <label className="form-label">Permission:</label>
+                    <select
+                      className="form-select"
+                      value={permission}
+                      onChange={(e) => setPermission(e.target.value)}
+                    >
+                      <option value="view">View Only</option>
+                      <option value="edit">Edit</option>
+                    </select>
+                  </div>
+                </div>
+                <div className="modal-footer">
+                  <button
+                    type="button"
+                    className="btn btn-sm btn-light"
+                    onClick={() => setShowShareModal(false)}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-sm btn-primary"
+                    onClick={handleShare}
+                  >
+                    Share
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Move File Modal */}
+        {showMoveModal && (
+          <div className="modal fade show" style={{ display: 'block', backgroundColor: 'rgba(0,0,0,0.5)' }}>
+            <div className="modal-dialog modal-dialog-centered">
+              <div className="modal-content">
+                <div className="modal-header">
+                  <h6 className="modal-title">Move File to Folder</h6>
+                  <button
+                    type="button"
+                    className="btn-close"
+                    onClick={() => setShowMoveModal(false)}
+                  />
+                </div>
+                <div className="modal-body">
+                  <div className="list-group" style={{ maxHeight: '300px', overflowY: 'auto' }}>
+                    <div
+                      className="list-group-item list-group-item-action"
+                      onClick={() => handleMoveFile(fileToMove, null)}
+                    >
+                      <div className="d-flex align-items-center">
+                        <div className="me-2">
+                          <i className="ri-folder-line fs-16" />
+                        </div>
+                        <div>
+                          Root Directory (No Folder)
+                        </div>
+                      </div>
+                    </div>
+                    {folders.map(folder => (
+                      <div
+                        key={folder._id}
+                        className="list-group-item list-group-item-action"
+                        onClick={() => handleMoveFile(fileToMove, folder._id)}
+                      >
+                        <div className="d-flex align-items-center">
+                          <div className="me-2">
+                            <i className="ri-folder-fill fs-16 text-warning" />
+                          </div>
+                          <div>
+                            {folder.name}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <div className="modal-footer">
+                  <button
+                    type="button"
+                    className="btn btn-sm btn-light"
+                    onClick={() => setShowMoveModal(false)}
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Category Files Modal */}
+        {showCategoryModal && (
+          <div className="modal fade show" style={{ display: 'block', backgroundColor: 'rgba(0,0,0,0.5)' }}>
+            <div className="modal-dialog modal-dialog-centered modal-lg">
+              <div className="modal-content">
+                <div className="modal-header">
+                  <h6 className="modal-title">
+                    {currentCategory.charAt(0).toUpperCase() + currentCategory.slice(1)} Files
+                  </h6>
+                  <button
+                    type="button"
+                    className="btn-close"
+                    onClick={() => setShowCategoryModal(false)}
+                  />
+                </div>
+                <div className="modal-body">
+                  <div className="table-responsive">
+                    <table className="table text-nowrap table-hover">
+                      <thead>
+                        <tr>
+                          <th scope="col">File Name</th>
+                          <th scope="col">Size</th>
+                          <th scope="col">Date Modified</th>
+                          <th scope="col">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {filterFilesByCategory(currentCategory).map(file => (
+                          <tr key={file._id}>
+                            <th scope="row">
+                              <div className="d-flex align-items-center">
+                                <div className="me-2">
+                                  <span className="avatar avatar-sm">
+                                    {getFileIcon(file.file_type)}
+                                  </span>
+                                </div>
+                                <div>
+                                  <a href="javascript:void(0);" onClick={() => getFileDetails(file._id)}>
+                                    {file.file_name}
+                                  </a>
+                                </div>
+                              </div>
+                            </th>
+                            <td>{formatFileSize(file.file_size)}</td>
+                            <td>{new Date(file.uploaded_at).toLocaleDateString()}</td>
+                            <td>
+                              <div className="hstack gap-2 fs-15">
+                                <button
+                                  className="btn btn-icon btn-sm btn-primary2-light"
+                                  onClick={() => handleDownload(file._id)}
+                                >
+                                  <i className="ri-download-line" />
+                                </button>
+                                {activeTab !== 'shared' && (
+                                  <button
+                                    className="btn btn-icon btn-sm btn-primary-light"
+                                    onClick={() => openShareModal(file._id)}
+                                  >
+                                    <i className="ri-share-forward-line" />
+                                  </button>
+                                )}
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+                <div className="modal-footer">
+                  <button
+                    type="button"
+                    className="btn btn-sm btn-light"
+                    onClick={() => setShowCategoryModal(false)}
+                  >
+                    Close
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+
+        {/* {showFileDetails && fileDetails && (
+          <div className="offcanvas offcanvas-end show" tabIndex={-1} style={{ visibility: 'visible' }}>
+            <div className="offcanvas-body p-0">
+              <div className="selected-file-details">
+                <div className="d-flex p-3 align-items-center justify-content-between border-bottom">
+                  <div>
+                    <h6 className="fw-medium mb-0">File Details</h6>
+                  </div>
+                  <div className="d-flex align-items-center">
+                    <div className="dropdown me-1">
+                      <button
+                        className="btn btn-sm btn-icon btn-primary-light btn-wave waves-light waves-effect waves-light"
+                        type="button"
+                        data-bs-toggle="dropdown"
+                        aria-expanded="false"
+                      >
+                        <i className="ri-more-2-fill" />
+                      </button>
+                      <ul className="dropdown-menu">
+                        <li>
+                          <button
+                            className="dropdown-item"
+                            onClick={() => {
+                              setShowShareModal(true);
+                              setShareFileId(fileDetails._id);
+                              setShowFileDetails(false);
+                            }}
+                          >
+                            Share
+                          </button>
+                        </li>
+                        <li>
+                          <button className="dropdown-item" onClick={() => handleDownload(fileDetails._id)}>
+                            Download
+                          </button>
+                        </li>
+                      </ul>
+                    </div>
+                    <button
+                      type="button"
+                      className="btn btn-sm btn-icon btn-outline-light border"
+                      onClick={() => setShowFileDetails(false)}
+                    >
+                      <i className="ri-close-line" />
+                    </button>
+                  </div>
+                </div>
+                <div className="filemanager-file-details" id="filemanager-file-details">
+                  <div className="p-3 text-center border-bottom border-block-end-dashed">
+                    <div className="file-details mb-3">
+                      <span className="avatar avatar-xxl">
+                        {getFileIcon(fileDetails.file_type)}
+                      </span>
+                    </div>
+                    <div>
+                      <p className="mb-0 fw-medium fs-16">
+                        {fileDetails.file_name}
+                      </p>
+                      <p className="mb-0 text-muted fs-10">
+                        {formatFileSize(fileDetails.file_size)} | {new Date(fileDetails.uploaded_at).toLocaleDateString()}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="p-3 border-bottom border-block-end-dashed">
+                    <ul className="list-group">
+                      <li className="list-group-item">
+                        <div>
+                          <span className="fw-medium">File Format : </span>
+                          <span className="fs-12 text-muted">{fileDetails.file_extension}</span>
+                        </div>
+                      </li>
+                      <li className="list-group-item">
+                        <div>
+                          <p className="fw-medium mb-0">File Type : </p>
+                          <span className="fs-12 text-muted">
+                            {fileDetails.file_type}
+                          </span>
+                        </div>
+                      </li>
+                      <li className="list-group-item">
+                        <p className="fw-medium mb-0">Owner : </p>
+                        <span className="fs-12 text-muted">
+                          {fileDetails.owner_id?.firstName} {fileDetails.owner_id?.lastName}
+                        </span>
+                      </li>
+                    </ul>
+                  </div>
+                  {fileDetails.shared_with && fileDetails.shared_with.length > 0 && (
+                    <div className="p-3">
+                      <p className="mb-2 fw-medium fs-14">Shared With :</p>
+                      {fileDetails.shared_with.map(share => (
+                        <div key={share.user_id?._id} className="d-flex align-items-center p-2 mb-1">
+                          <span className="avatar avatar-sm me-2 avatar-rounded">
+                            {share.user_id?.image ? (
+                              <img
+                                src={
+                                  share.user_id?.image.startsWith('http') || share.user_id?.image.startsWith('https')
+                                    ? share.user_id?.image
+                                    : `http://localhost:3000${share.user_id?.image}`
+                                }
+                                alt="Profile"
+                                onError={(e) => {
+                                  e.target.src = "https://via.placeholder.com/100";
+                                }}
+                              />
+                            ) : (
+                              <p>No profile image uploaded.</p>
+                            )}
+                          </span>
+                          <span className="fw-medium flex-fill">
+                            {share.user_id?.firstName} {share.user_id?.lastName}
+                          </span>
+                          <span className="badge bg-success-transparent fw-normal">
+                            {share.permission}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        )} */}
+
+
+        {/* File Details Offcanvas */}
+{showFileDetails && fileDetails && (
+  <div className="offcanvas offcanvas-end show" tabIndex={-1} style={{ visibility: 'visible', width: '600px' }}>
+    <div className="offcanvas-body p-0">
+      <div className="selected-file-details">
+        <div className="d-flex p-3 align-items-center justify-content-between border-bottom">
+          <div>
+            <h6 className="fw-medium mb-0">File Details</h6>
+          </div>
+          <div className="d-flex align-items-center">
+            <div className="dropdown me-1">
+              <button
+                className="btn btn-sm btn-icon btn-primary-light btn-wave waves-light waves-effect waves-light"
+                type="button"
+                data-bs-toggle="dropdown"
+                aria-expanded="false"
+              >
+                <i className="ri-more-2-fill" />
+              </button>
+              <ul className="dropdown-menu">
+                <li>
+                  <button
+                    className="dropdown-item"
+                    onClick={() => {
+                      setShowShareModal(true);
+                      setShareFileId(fileDetails._id);
+                      setShowFileDetails(false);
+                    }}
+                  >
+                    Share
+                  </button>
+                </li>
+                <li>
+                  <button className="dropdown-item" onClick={() => handleDownload(fileDetails._id)}>
+                    Download
+                  </button>
+                </li>
+                <li>
+                  <button
+                    className="dropdown-item text-danger"
+                    onClick={() => {
+                      handleDelete(fileDetails._id);
+                      setShowFileDetails(false);
+                    }}
+                  >
+                    Delete
+                  </button>
+                </li>
+              </ul>
+            </div>
+            <button
+              type="button"
+              className="btn btn-sm btn-icon btn-outline-light border"
+              onClick={() => setShowFileDetails(false)}
+            >
+              <i className="ri-close-line" />
+            </button>
+          </div>
+        </div>
+
+        <div className="filemanager-file-details" id="filemanager-file-details">
+          {/* File Preview Section */}
+          <div className="p-3 border-bottom border-block-end-dashed" style={{ maxHeight: '400px', overflow: 'auto' }}>
+            {fileDetails.file_type === 'image' && (
+              <div className="text-center">
+                <img
+                  src={fileDetails.file_url}
+                  alt={fileDetails.file_name}
+                  className="img-fluid rounded"
+                  style={{ maxHeight: '350px' }}
+                  onError={(e) => {
+                    e.target.src = "https://via.placeholder.com/400x300?text=Image+Not+Available";
+                  }}
+                />
+              </div>
+            )}
+
+            {fileDetails.file_type === 'video' && (
+              <div className="ratio ratio-16x9">
+                <video controls className="rounded">
+                  <source src={fileDetails.file_url} type={`video/${fileDetails.file_extension}`} />
+                  Your browser does not support the video tag.
+                </video>
+              </div>
+            )}
+
+            {fileDetails.file_type === 'audio' && (
+              <div className="text-center">
+                <div className="mb-3">
+                  <i className="ri-music-2-line fs-1 text-primary"></i>
+                </div>
+                <audio controls className="w-100">
+                  <source src={fileDetails.file_url} type={`audio/${fileDetails.file_extension}`} />
+                  Your browser does not support the audio element.
+                </audio>
+              </div>
+            )}
+
+            {fileDetails.file_type === 'document' && (
+              <div className="text-center">
+                {['pdf'].includes(fileDetails.file_extension) ? (
+                  <iframe
+                    src={`https://docs.google.com/viewer?url=${encodeURIComponent(fileDetails.file_url)}&embedded=true`}
+                    className="w-100"
+                    style={{ height: '350px', border: 'none' }}
+                    title={fileDetails.file_name}
+                  ></iframe>
+                ) : (
+                  <div className="d-flex flex-column align-items-center justify-content-center" style={{ height: '200px' }}>
+                    <i className="ri-file-text-line fs-1 text-muted"></i>
+                    <p className="mt-2">Preview not available for this document type</p>
+                    <button
+                      className="btn btn-primary mt-2"
+                      onClick={() => handleDownload(fileDetails._id)}
+                    >
+                      Download to View
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {!['image', 'video', 'audio', 'document'].includes(fileDetails.file_type) && (
+              <div className="text-center py-4">
+                <div className="avatar avatar-xxl">
+                  {getFileIcon(fileDetails.file_type)}
+                </div>
+                <p className="mt-2">No preview available for this file type</p>
+                <button
+                  className="btn btn-primary mt-2"
+                  onClick={() => handleDownload(fileDetails._id)}
+                >
+                  Download File
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* File Info Section */}
+          <div className="p-3">
+            <h6 className="fw-semibold mb-3">{fileDetails.file_name}</h6>
+
+            <div className="row">
+              <div className="col-md-6">
+                <div className="mb-3">
+                  <p className="mb-1 text-muted">Type</p>
+                  <p className="fw-medium">{fileDetails.file_type}</p>
+                </div>
+
+                <div className="mb-3">
+                  <p className="mb-1 text-muted">Size</p>
+                  <p className="fw-medium">{formatFileSize(fileDetails.file_size)}</p>
+                </div>
+              </div>
+
+              <div className="col-md-6">
+                <div className="mb-3">
+                  <p className="mb-1 text-muted">Uploaded</p>
+                  <p className="fw-medium">{new Date(fileDetails.uploaded_at).toLocaleDateString()}</p>
+                </div>
+
+                <div className="mb-3">
+                  <p className="mb-1 text-muted">Format</p>
+                  <p className="fw-medium text-uppercase">{fileDetails.file_extension}</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="mb-3">
+              <p className="mb-1 text-muted">Owner</p>
+              <div className="d-flex align-items-center">
+                <span className="avatar avatar-sm me-2">
+                  {fileDetails.owner_id?.image ? (
+                    <img
+                      src={
+                        fileDetails.owner_id.image.startsWith('http') || fileDetails.owner_id.image.startsWith('https')
+                          ? fileDetails.owner_id.image
+                          : `http://localhost:3000${fileDetails.owner_id.image}`
+                      }
+                      alt="Owner"
+                      onError={(e) => {
+                        e.target.src = "https://via.placeholder.com/100";
+                      }}
+                    />
+                  ) : (
+                    <span className="avatar-initial bg-primary rounded-circle">
+                      {fileDetails.owner_id?.firstName?.charAt(0)}{fileDetails.owner_id?.lastName?.charAt(0)}
+                    </span>
+                  )}
+                </span>
+                <span className="fw-medium">
+                  {fileDetails.owner_id?.firstName} {fileDetails.owner_id?.lastName}
+                </span>
+              </div>
+            </div>
+
+            {fileDetails.shared_with && fileDetails.shared_with.length > 0 && (
+              <div className="mb-3">
+                <p className="mb-2 fw-medium">Shared With</p>
+                <div className="d-flex flex-wrap gap-2">
+                  {fileDetails.shared_with.map(share => (
+                    <div key={share.user_id?._id} className="d-flex align-items-center bg-light rounded p-2">
+                      <span className="avatar avatar-xs me-2">
+                        {share.user_id?.image ? (
+                          <img
+                            src={
+                              share.user_id.image.startsWith('http') || share.user_id.image.startsWith('https')
+                                ? share.user_id.image
+                                : `http://localhost:3000${share.user_id.image}`
+                            }
+                            alt="User"
+                            onError={(e) => {
+                              e.target.src = "https://via.placeholder.com/100";
+                            }}
+                          />
+                        ) : (
+                          <span className="avatar-initial bg-secondary rounded-circle">
+                            {share.user_id?.firstName?.charAt(0)}{share.user_id?.lastName?.charAt(0)}
+                          </span>
+                        )}
+                      </span>
+                      <div>
+                        <p className="mb-0 fw-medium small">
+                          {share.user_id?.firstName} {share.user_id?.lastName}
+                        </p>
+                        <span className="badge bg-success-transparent small">
+                          {share.permission}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div className="mt-4">
+              <button
+                className="btn btn-primary w-100"
+                onClick={() => handleDownload(fileDetails._id)}
+              >
+                <i className="ri-download-line me-2"></i> Download File
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
-      {/* include commonjs.html"*/}
-      {/* include custom-switcherjs.html"*/}
-      {/* Apex Charts JS */}
-      {/* Dropzone JS */}
-      {/* Internal File Manager JS */}
-      {/* Custom JS */}
+    </div>
+  </div>
+)}
+      </div>
     </>
-  )
-  
+  );
+};
+
+export default File;

@@ -48,15 +48,15 @@ const WinnersPodium = () => {
       try {
         setLoading(true)
         // Fetch all users for cycling images
-        const usersResponse = await axios.get("http://localhost:3000/teamMember/all")
+        const usersResponse = await axios.get("http://localhost:3000/predict/all")
         setAllUsers(usersResponse.data || [])
 
         // Fetch predictions
-        const response = await axios.get("http://localhost:3000/teamMember/predict-all")
+        const response = await axios.get("http://localhost:3000/predict/predict-all")
         setPredictions(response.data.results) // Already sorted by backend
 
         // Fetch predict members
-        const predictMembersResponse = await axios.get("http://localhost:3000/teamMember/all")
+        const predictMembersResponse = await axios.get("http://localhost:3000/predict/all")
         setPredictMembers(predictMembersResponse.data.members || [])
 
         setLoading(false)

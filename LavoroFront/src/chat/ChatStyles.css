@@ -1,7 +1,7 @@
 /* Chat Component Styles */
 
 /* Force dark mode for all chat elements */
-/*[data-theme-mode="dark"] .main-chat-area,
+[data-theme-mode="dark"] .main-chat-area,
 [data-theme-mode="dark"] .chat-window,
 [data-theme-mode="dark"] .chat-info,
 [data-theme-mode="dark"] .chat-content,
@@ -24,6 +24,7 @@
     border-color: #495057 !important;
 }
 
+/* Global dark mode compatibility */
 .main-chat-area *,
 .chat-window *,
 .chat-info *,
@@ -36,6 +37,7 @@
     color-scheme: light dark;
 }
 
+/* Unified background color for all chat components */
 .main-chat-area,
 .chat-window,
 .chat-info,
@@ -59,6 +61,7 @@
     border-color: var(--bs-border-color) !important;
 }
 
+/* Chat Layout */
 .main-chart-wrapper {
     display: flex;
     gap: 1rem;
@@ -94,6 +97,7 @@
     color: var(--bs-body-color);
 }
 
+/* Chat Sidebar */
 .chat-search {
     padding: 0.75rem;
 }
@@ -125,6 +129,28 @@
     opacity: 0.7;
 }
 
+/* Empty state */
+.empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+    color: var(--bs-secondary-color);
+}
+
+.empty-state i {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    opacity: 0.5;
+}
+
+/* Force dark mode for empty state */
+[data-theme-mode="dark"] .empty-state {
+    color: #adb5bd;
+}
+
+/* Chat Window */
 .chat-header {
     padding: 0.75rem 1rem;
     border-bottom: 1px solid var(--bs-border-color);
@@ -139,10 +165,12 @@
     color: var(--bs-body-color) !important;
 }
 
+/* Chat read marks */
 .chat-read-mark {
     color: var(--bs-body-color) !important;
 }
 
+/* Chat message time */
 .msg-sent-time {
     color: var(--bs-body-color) !important;
     opacity: 0.7;
@@ -162,6 +190,7 @@
     border: 1px solid var(--bs-border-color);
 }
 
+/* Force dark mode for chat day label */
 [data-theme-mode="dark"] .chat-day-label span {
     background-color: #343a40 !important;
     color: #dee2e6 !important;
@@ -195,10 +224,12 @@
     background-color: rgba(var(--bs-primary-rgb), 0.1);
 }
 
+/* Ensure message text is visible in dark mode */
 .main-chat-msg p {
     color: var(--bs-body-color) !important;
 }
 
+/* Force dark mode for chat messages */
 [data-theme-mode="dark"] .main-chat-msg {
     background-color: #212529 !important;
     color: #dee2e6 !important;
@@ -214,6 +245,7 @@
     color: #dee2e6 !important;
 }
 
+/* Ensure chat user info is visible in dark mode */
 .chatting-user-info,
 .chatnameperson,
 .chatpersonstatus,
@@ -227,6 +259,7 @@
     color: var(--bs-body-color) !important;
 }
 
+/* Force dark mode for chat user info */
 [data-theme-mode="dark"] .chatting-user-info,
 [data-theme-mode="dark"] .chatnameperson,
 [data-theme-mode="dark"] .chatpersonstatus,
@@ -252,17 +285,20 @@
     opacity: 0.7;
 }
 
+/* Chat Footer */
 .chat-footer {
     padding: 0.75rem 1rem;
     border-top: 1px solid var(--bs-border-color);
     background-color: var(--bs-body-bg);
 }
 
+/* Force dark mode for chat footer */
 [data-theme-mode="dark"] .chat-footer {
     background-color: #212529 !important;
     border-color: #495057 !important;
 }
 
+/* Emoji Picker Styles */
 .emoji-picker-react {
     box-shadow: 0 5px 10px rgba(0, 0, 0, 0.2) !important;
     border-radius: 0.5rem !important;
@@ -283,6 +319,7 @@
     color: #dee2e6 !important;
 }
 
+/* All Buttons */
 .btn,
 .btn-primary1-light,
 .btn-primary2,
@@ -309,6 +346,7 @@ button:hover {
     background-color: rgba(var(--bs-primary-rgb), 0.1) !important;
 }
 
+/* Force dark mode for buttons */
 [data-theme-mode="dark"] .btn,
 [data-theme-mode="dark"] .btn-primary1-light,
 [data-theme-mode="dark"] .btn-primary2,
@@ -323,19 +361,23 @@ button:hover {
     border-color: #495057 !important;
 }
 
+/* Main Chat Area */
 .main-chat-area {
     background-color: var(--bs-body-bg) !important;
     color: var(--bs-body-color) !important;
     border-color: var(--bs-border-color) !important;
 }
 
+/* Chat Header */
 .main-chat-head {
     background-color: var(--bs-body-bg) !important;
     color: var(--bs-body-color) !important;
     border-color: var(--bs-border-color) !important;
 }
 
+/* Chat Header Buttons - using global button styles */
 
+/* All form controls */
 .form-control,
 input.form-control,
 .chat-message-space,
@@ -358,6 +400,7 @@ textarea::placeholder {
     opacity: 0.7;
 }
 
+/* Force dark mode for inputs */
 [data-theme-mode="dark"] .form-control,
 [data-theme-mode="dark"] input.form-control,
 [data-theme-mode="dark"] .chat-message-space,
@@ -370,6 +413,7 @@ textarea::placeholder {
     border-color: #495057 !important;
 }
 
+/* Dropdown menus in chat */
 .dropdown-menu {
     background-color: var(--bs-body-bg) !important;
     border-color: var(--bs-border-color) !important;
@@ -383,6 +427,7 @@ textarea::placeholder {
     background-color: rgba(var(--bs-primary-rgb), 0.1) !important;
 }
 
+/* Force dark mode for dropdowns */
 [data-theme-mode="dark"] .dropdown-menu {
     background-color: #212529 !important;
     border-color: #495057 !important;
@@ -420,6 +465,7 @@ textarea::placeholder {
     color: var(--bs-body-color);
 }
 
+/* File attachment styles */
 .chat-file-attachment {
     text-decoration: none;
     transition: all 0.2s ease;
@@ -437,6 +483,7 @@ textarea::placeholder {
     font-size: 24px;
 }
 
+/* Force dark mode for file attachments */
 [data-theme-mode="dark"] .chat-file-attachment {
     background-color: #212529 !important;
     border-color: #495057 !important;
@@ -447,6 +494,7 @@ textarea::placeholder {
     background-color: #343a40 !important;
 }
 
+/* Responsive */
 @media (max-width: 992px) {
     .main-chart-wrapper {
         flex-direction: column;
@@ -471,6 +519,7 @@ textarea::placeholder {
     }
 }
 
+/* Status indicators */
 .online::after {
     content: '';
     position: absolute;
@@ -495,11 +544,26 @@ textarea::placeholder {
     border: 2px solid var(--bs-body-bg);
 }
 
+/* Group chat specific */
 .group-indivudial {
     font-weight: 500;
     color: var(--bs-primary);
 }
 
+/* Sender name in group chats */
+.sender-name {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #4a6bff;
+    margin-bottom: 2px;
+}
+
+/* Dark mode support for sender name */
+[data-theme-mode="dark"] .sender-name {
+    color: #7a93ff;
+}
+
+/* Typing indicator */
 .chat-msg-typing .chat-msg::after {
     content: '';
     display: inline-block;
@@ -533,4 +597,3 @@ textarea::placeholder {
         opacity: 0.3;
     }
 }
-*/

@@ -10,196 +10,131 @@ export const TaskList = () => {
     const [selectedMembers, setSelectedMembers] = useState([]);
     const [isAssigning, setIsAssigning] = useState(false);
     const [showUnassignModal, setShowUnassignModal] = useState(false);
-const [selectedUnassignMembers, setSelectedUnassignMembers] = useState([]);
+    const [selectedUnassignMembers, setSelectedUnassignMembers] = useState([]);
     const navigate = useNavigate();
     const [tasks, setTasks] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [currentUser, setCurrentUser] = useState(null);
     const [stats, setStats] = useState({
         new: 0,
         Done: 0,
         pending: 0,
         inprogress: 0,
         notStarted: 0
-
     });
     const [currentPage, setCurrentPage] = useState(1);
-const tasksPerPage = 5;
+    const tasksPerPage = 5;
     const [statusFilter, setStatusFilter] = useState('all'); 
 
-    const getPaginatedTasks = () => {
-      const filtered = getFilteredTasks();
-      const startIndex = (currentPage - 1) * tasksPerPage;
-      return filtered.slice(startIndex, startIndex + tasksPerPage);
-    };
-// Add this useEffect to update stats when filter changes
-useEffect(() => {
-  calculateStats(getFilteredTasks());
-}, [statusFilter, tasks]);
+    const fetchCurrentUser = async () => {
+        try {
 
-    const getFilteredTasks = () => {
-      if (statusFilter === 'all') {
-        return tasks;
-      }
-      return tasks.filter(task => task.status === statusFilter);
+            const token = localStorage.getItem('token');
+            if (!token) {
+                navigate('/signin');
+                return;
+            }
+            
+            const response = await axios.get('http://localhost:3000/users/me', {
+                headers: {
+                    Authorization: `Bearer ${token}`
+                }
+            });
+            
+            if (response.data) {
+                setCurrentUser(response.data);
+                return response.data._id;
+            }
+            throw new Error('Failed to fetch user data');
+        } catch (err) {
+            console.error('Error fetching user:', err);
+            setError(err.response?.data?.message || err.message || 'Failed to load user data');
+            throw err;
+        }
+    };
+
+    const fetchTasks = async (userId) => {
+        try {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                navigate('/signin');
+                return;
+            }
+            const response = await axios.get(`http://localhost:3000/tasks?created_by=${userId}`, {
+                headers: {
+                    Authorization: `Bearer ${token}`
+                }            });
+            
+            if (response.data.success) {
+                setTasks(response.data.data);
+                calculateStats(response.data.data);
+            } else {
+                throw new Error(response.data.message || 'Failed to fetch tasks');
+            }
+        } catch (err) {
+            console.error('Error fetching tasks:', err);
+            setError(err.response?.data?.message || err.message || 'Failed to load tasks');
+        } finally {
+            setLoading(false);
+        }
     };
 
     const fetchTeamMembers = async () => {
         try {
-          const response = await axios.get('http://localhost:3000/teamMember/getAllMemberTasks', {
-            withCredentials: true
-          });
-          if (response.data.success) {
-            // Filter out any members without IDs
-            const validMembers = response.data.data.filter(member => member?._id);
-            setTeamMembers(validMembers);
-          }
+            const response = await axios.get('http://localhost:3000/teamMember/getAllMemberTasks', {
+                withCredentials: true
+            });
+            if (response.data.success) {
+                const validMembers = response.data.data.filter(member => member?._id);
+                setTeamMembers(validMembers);
+            }
         } catch (err) {
-          console.error('Error fetching team members:', err);
-          // Optionally show error to user
-          Swal.fire('Error', 'Failed to load team members', 'error');
+            console.error('Error fetching team members:', err);
+            Swal.fire('Error', 'Failed to load team members', 'error');
         }
-      };
+    };
 
     useEffect(() => {
-        const fetchData = async () => {
+        const initializeData = async () => {
             try {
                 setLoading(true);
-                await Promise.all([fetchTeamMembers()]);
-            } catch (err) {
-                setError(err.message);
-            } finally {
-                setLoading(false);
-            }
-        };
-        fetchData();
-    }, []);
-
-    const handleUnassignMembers = async () => {
-        if (!currentTask || selectedUnassignMembers.length === 0) return;
-      
-        try {
-          setIsAssigning(true);
-          
-          const response = await axios.patch(
-            `http://localhost:3000/tasks/${currentTask._id}/unassign`,
-            { 
-              memberIds: selectedUnassignMembers.filter(id => id)
-            },
-            { 
-              withCredentials: true,
-              headers: {
-                'Content-Type': 'application/json'
-              }
-            }
-          );
-      
-          if (response.data.success) {
-            setTasks(tasks.map(task => 
-              task._id === currentTask._id ? response.data.data : task
-            ));
-            
-            Swal.fire({
-              icon: 'success',
-              title: 'Success',
-              text: 'Members unassigned successfully',
-              timer: 2000,
-              showConfirmButton: false
-            });
-          }
-        } catch (err) {
-          console.error('Error unassigning members:', err);
-          Swal.fire({
-            icon: 'error',
-            title: 'Error',
-            text: err.response?.data?.message || 'Failed to unassign members',
-            confirmButtonText: 'OK'
-          });
-        } finally {
-          setIsAssigning(false);
-          setShowUnassignModal(false);
-          setSelectedUnassignMembers([]);
-        }
-      };
-
-
-    const handleAssignMembers = async () => {
-        if (!currentTask || selectedMembers.length === 0) return;
-      
-        try {
-          setIsAssigning(true);
-          
-          const response = await axios.patch(
-            `http://localhost:3000/tasks/${currentTask._id}/assign`,
-            { 
-              memberIds: selectedMembers.filter(id => id) // Remove any null/undefined IDs
-            },
-            { 
-              withCredentials: true,
-              headers: {
-                'Content-Type': 'application/json'
-              }
-            }
-          );
-      
-          if (response.data.success) {
-            // Update the task in state with the newly assigned members
-            setTasks(tasks.map(task => 
-              task._id === currentTask._id ? response.data.data : task
-            ));
-            
-            Swal.fire({
-              icon: 'success',
-              title: 'Success',
-              text: 'Members assigned successfully',
-              timer: 2000,
-              showConfirmButton: false
-            });
-          }
-        } catch (err) {
-          console.error('Error assigning members:', err);
-          Swal.fire({
-            icon: 'error',
-            title: 'Error',
-            text: err.response?.data?.message || 'Failed to assign members',
-            confirmButtonText: 'OK'
-          });
-        } finally {
-          setIsAssigning(false);
-          setShowAssignModal(false);
-          setSelectedMembers([]);
-        }
-      };
-
-
-
-    useEffect(() => {
-        const fetchTasks = async () => {
-            try {
-                const response = await axios.get('http://localhost:3000/tasks', {
-                    withCredentials: true
-                });
-                
-                if (response.data.success) {
-                    setTasks(response.data.data);
-                    calculateStats(response.data.data);
-                } else {
-                    throw new Error(response.data.message || 'Failed to fetch tasks');
+                const userId = await fetchCurrentUser();
+                if (userId) {
+                    await Promise.all([
+                        fetchTasks(userId),
+                        fetchTeamMembers()
+                    ]);
                 }
             } catch (err) {
-                console.error('Error fetching tasks:', err);
-                setError(err.response?.data?.message || err.message || 'Failed to load tasks');
-            } finally {
+                console.error('Initialization error:', err);
                 setLoading(false);
             }
         };
-
-        fetchTasks();
+        
+        initializeData();
     }, []);
+
+    useEffect(() => {
+        calculateStats(getFilteredTasks());
+    }, [statusFilter, tasks]);
+
+    const getPaginatedTasks = () => {
+        const filtered = getFilteredTasks();
+        const startIndex = (currentPage - 1) * tasksPerPage;
+        return filtered.slice(startIndex, startIndex + tasksPerPage);
+    };
+
+    const getFilteredTasks = () => {
+        if (statusFilter === 'all') {
+            return tasks;
+        }
+        return tasks.filter(task => task.status === statusFilter);
+    };
 
     const calculateStats = (tasks) => {
         const newStats = {
-            new: tasks.length,  // Total count of all tasks
+            new: tasks.length,
             Done: tasks.filter(task => task.status === 'Done').length,
             pending: tasks.filter(task => task.status === 'Not Started').length,
             inprogress: tasks.filter(task => task.status === 'In Progress').length
@@ -207,6 +142,107 @@ useEffect(() => {
         setStats(newStats);
     };
 
+    const handleAssignMembers = async () => {
+        if (!currentTask || selectedMembers.length === 0) return;
+      
+        try {
+            setIsAssigning(true);
+            
+            const response = await axios.patch(
+                `http://localhost:3000/tasks/${currentTask._id}/assign`,
+                { 
+                    memberIds: selectedMembers.filter(id => id)
+                },
+                { 
+                    withCredentials: true,
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                }
+            );
+        
+            if (response.data.success) {
+                // Preserve the existing project_id data when updating
+                setTasks(tasks.map(task => 
+                    task._id === currentTask._id 
+                        ? { ...response.data.data, project_id: task.project_id } 
+                        : task
+                ));
+                
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Success',
+                    text: 'Members assigned successfully',
+                    timer: 2000,
+                    showConfirmButton: false
+                });
+            }
+        } catch (err) {
+            console.error('Error assigning members:', err);
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: err.response?.data?.message || 'Failed to assign members',
+                confirmButtonText: 'OK'
+            });
+        } finally {
+            setIsAssigning(false);
+            setShowAssignModal(false);
+            setSelectedMembers([]);
+        }
+    };
+    
+    const handleUnassignMembers = async () => {
+        if (!currentTask || selectedUnassignMembers.length === 0) return;
+      
+        try {
+            setIsAssigning(true);
+    
+            const response = await axios.patch(
+                `http://localhost:3000/tasks/${currentTask._id}/unassign`,
+                { 
+                    memberIds: selectedUnassignMembers.filter(id => id)
+                },
+                { 
+                    withCredentials: true,
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                }
+            );
+        
+            if (response.data.success) {
+                // Preserve the existing project_id data when updating
+                setTasks(tasks.map(task => 
+                    task._id === currentTask._id 
+                        ? { ...response.data.data, project_id: task.project_id }
+                        : task
+                ));
+    
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Success',
+                    text: 'Members unassigned successfully',
+                    timer: 2000,
+                    showConfirmButton: false
+                });
+            }
+        } catch (err) {
+            console.error('Error unassigning members:', err);
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: err.response?.data?.message || 'Failed to unassign members',
+                confirmButtonText: 'OK'
+            });
+        } finally {
+            setIsAssigning(false);
+            setShowUnassignModal(false);
+            setSelectedUnassignMembers([]);
+        }
+    };
+
+    
     const handleDeleteTask = async (taskId, status) => {
         if (status !== 'Not Started') {
             Swal.fire({
@@ -285,78 +321,75 @@ useEffect(() => {
         }
     };
 
-
     const renderAssignedAvatars = (assignedTo, task) => {
-      if (!assignedTo || assignedTo.length === 0) {
-        return <span className="text-muted">Not assigned</span>;
-      }
-    
-      // Filter out invalid members and limit to 4
-      const validMembers = assignedTo.filter(member => member && member.user_id);
-      const membersToShow = validMembers.slice(0, 4);
-      const extraMembersCount = validMembers.length - 4;
-    
-      return (
-        <div className="avatar-list-stacked">
-          {membersToShow.map((member) => {
-            const user = member.user_id;
-            const fullName = `${user.firstName || ''} ${user.lastName || ''}`.trim();
-            const avatarKey = member._id || user._id || Math.random().toString(36).substr(2, 9);
-    
-            return (
-              <span 
-                key={avatarKey} 
-                className="avatar avatar-sm avatar-rounded"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setCurrentTask(task);
-                  setSelectedUnassignMembers([member._id]);
-                  setShowUnassignModal(true);
-                }}
-                style={{ cursor: 'pointer' }}
-              >
-                <img
-                  src={
-                    user.image && (user.image.startsWith('http') || user.image.startsWith('https'))
-                      ? user.image
-                      : user.image
-                        ? `http://localhost:3000${user.image}`
-                        : '../assets/images/faces/11.jpg'
-                  }
-                  alt={fullName || 'User avatar'}
-                  className="img-fluid"
-                  onError={(e) => {
-                    e.target.src = '../assets/images/faces/11.jpg';
-                    e.target.alt = 'Default avatar';
-                  }}
-                />
-              </span>
-            );
-          })}
-          
-          {extraMembersCount > 0 && (
-            <span 
-              className="avatar avatar-sm avatar-rounded "
-              onClick={(e) => {
-                e.stopPropagation();
-                setCurrentTask(task);
-                setShowUnassignModal(true);
-              }}
-              style={{ 
-                cursor: 'pointer',
-                display: 'inline-flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                backgroundColor: '#6366F1'
+        if (!assignedTo || assignedTo.length === 0) {
+            return <span className="text-muted">Not assigned</span>;
+        }
+      
+        const validMembers = assignedTo.filter(member => member && member.user_id);
+        const membersToShow = validMembers.slice(0, 4);
+        const extraMembersCount = validMembers.length - 4;
+      
+        return (
+            <div className="avatar-list-stacked">
+                {membersToShow.map((member) => {
+                    const user = member.user_id;
+                    const fullName = `${user.firstName || ''} ${user.lastName || ''}`.trim();
+                    const avatarKey = member._id || user._id || Math.random().toString(36).substr(2, 9);
+        
+                    return (
+                        <span 
+                            key={avatarKey} 
+                            className="avatar avatar-sm avatar-rounded"
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                setCurrentTask(task);
+                                setSelectedUnassignMembers([member._id]);
+                                setShowUnassignModal(true);
+                            }}
+                            style={{ cursor: 'pointer' }}
+                        >
+                            <img
+                                src={
+                                    user.image && (user.image.startsWith('http') || user.image.startsWith('https'))
+                                        ? user.image
+                                        : user.image
+                                            ? `http://localhost:3000${user.image}`
+                                            : '../assets/images/faces/11.jpg'
+                                }
+                                alt={fullName || 'User avatar'}
+                                className="img-fluid"
+                                onError={(e) => {
+                                    e.target.src = '../assets/images/faces/11.jpg';
+                                    e.target.alt = 'Default avatar';
+                                }}
+                            />
+                        </span>
+                    );
+                })}
                 
-              }}
-              title={`${extraMembersCount} more members`}
-            >
-              <span className="text-dark fw-semibold">+{extraMembersCount}</span>
-            </span>
-          )}
-        </div>
-      );
+                {extraMembersCount > 0 && (
+                    <span 
+                        className="avatar avatar-sm avatar-rounded"
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            setCurrentTask(task);
+                            setShowUnassignModal(true);
+                        }}
+                        style={{ 
+                            cursor: 'pointer',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            backgroundColor: '#6366F1'
+                        }}
+                        title={`${extraMembersCount} more members`}
+                    >
+                        <span className="text-dark fw-semibold">+{extraMembersCount}</span>
+                    </span>
+                )}
+            </div>
+        );
     };
 
     if (loading) {
@@ -380,7 +413,7 @@ useEffect(() => {
 
     return (
         <>
- <div className="d-flex align-items-center justify-content-between page-header-breadcrumb flex-wrap gap-2">
+            <div className="d-flex align-items-center justify-content-between page-header-breadcrumb flex-wrap gap-2">
                 <div>
                     <nav>
                         <ol className="breadcrumb mb-1">
@@ -506,43 +539,43 @@ useEffect(() => {
                                         <i className="ri-more-2-fill" />
                                     </button>
                                     <ul className="dropdown-menu">
-  <li>
-    <a 
-      className="dropdown-item" 
-      href="javascript:void(0);"
-      onClick={() => setStatusFilter('all')}
-    >
-      All Tasks
-    </a>
-  </li>
-  <li>
-    <a 
-      className="dropdown-item" 
-      href="javascript:void(0);"
-      onClick={() => setStatusFilter('Not Started')}
-    >
-      Not Started Tasks
-    </a>
-  </li>
-  <li>
-    <a 
-      className="dropdown-item" 
-      href="javascript:void(0);"
-      onClick={() => setStatusFilter('In Progress')}
-    >
-      In Progress Tasks
-    </a>
-  </li>
-  <li>
-    <a 
-      className="dropdown-item" 
-      href="javascript:void(0);"
-      onClick={() => setStatusFilter('Done')}
-    >
-      Done Tasks
-    </a>
-  </li>
-</ul>
+                                        <li>
+                                            <a 
+                                                className="dropdown-item" 
+                                                href="javascript:void(0);"
+                                                onClick={() => setStatusFilter('all')}
+                                            >
+                                                All Tasks
+                                            </a>
+                                        </li>
+                                        <li>
+                                            <a 
+                                                className="dropdown-item" 
+                                                href="javascript:void(0);"
+                                                onClick={() => setStatusFilter('Not Started')}
+                                            >
+                                                Not Started Tasks
+                                            </a>
+                                        </li>
+                                        <li>
+                                            <a 
+                                                className="dropdown-item" 
+                                                href="javascript:void(0);"
+                                                onClick={() => setStatusFilter('In Progress')}
+                                            >
+                                                In Progress Tasks
+                                            </a>
+                                        </li>
+                                        <li>
+                                            <a 
+                                                className="dropdown-item" 
+                                                href="javascript:void(0);"
+                                                onClick={() => setStatusFilter('Done')}
+                                            >
+                                                Done Tasks
+                                            </a>
+                                        </li>
+                                    </ul>
                                 </div>
                             </div>
                         </div>
@@ -572,386 +605,373 @@ useEffect(() => {
                                         </tr>
                                     </thead>
                                     <tbody>
-  {getPaginatedTasks().map(task => (
-    <tr 
-      className="task-list" 
-      key={`task-${task._id}`}
-      onClick={() => navigate(`/taskdetails/${task._id}`)}
-      style={{ cursor: 'pointer' }}
-    >
-      <td className="task-checkbox" onClick={(e) => e.stopPropagation()}>
-        <input
-          className="form-check-input"
-          type="checkbox"
-          defaultValue=""
-          aria-label="..."
-          onClick={(e) => e.stopPropagation()}
-        />
-      </td>
-      <td>
-        <span className="fw-medium">
-          {task.title}
-        </span>
-      </td>
-      <td>
-        {new Date(task.start_date).toLocaleDateString()}
-      </td>
-      <td>
-        <span className={`fw-medium ${getStatusClass(task.status)}`}>
-          {task.status}
-        </span>
-      </td>
-      <td>
-        {new Date(task.deadline).toLocaleDateString()}
-      </td>
-      <td>
-        <span className={getPriorityBadge(task.priority)}>
-          {task.priority}
-        </span>
-      </td>
-      <td onClick={(e) => e.stopPropagation()}>
-        {renderAssignedAvatars(task.assigned_to, task)} 
-      </td>
-      <td>
-        <span className="badge bg-info-transparent">
-          {task.project_id?.name || 'No Project'}
-        </span>
-      </td>
-      <td onClick={(e) => e.stopPropagation()}>
-        <div className="d-flex align-items-center">
-          <button 
-            className="btn btn-primary-light btn-icon btn-sm"
-            onClick={(e) => {
-              e.stopPropagation();
-              setCurrentTask(task);
-              setShowAssignModal(true);
-            }}
-          >
-            <i className="ri-user-add-line" />
-          </button>
-          <button 
-            className="btn btn-danger-light btn-icon ms-1 btn-sm"
-            onClick={(e) => {
-              e.stopPropagation();
-              handleDeleteTask(task._id, task.status);
-            }}
-          >
-            <i className="ri-delete-bin-5-line" />
-          </button>
-        </div>
-      </td>
-    </tr>
-  ))}
-</tbody>
+                                        {getPaginatedTasks().map(task => (
+                                            <tr 
+                                                className="task-list" 
+                                                key={`task-${task._id}`}
+                                                onClick={() => navigate(`/taskdetails/${task._id}`)}
+                                                style={{ cursor: 'pointer' }}
+                                            >
+                                                <td className="task-checkbox" onClick={(e) => e.stopPropagation()}>
+                                                    <input
+                                                        className="form-check-input"
+                                                        type="checkbox"
+                                                        defaultValue=""
+                                                        aria-label="..."
+                                                        onClick={(e) => e.stopPropagation()}
+                                                    />
+                                                </td>
+                                                <td>
+                                                    <span className="fw-medium">
+                                                        {task.title}
+                                                    </span>
+                                                </td>
+                                                <td>
+                                                    {new Date(task.start_date).toLocaleDateString()}
+                                                </td>
+                                                <td>
+                                                    <span className={`fw-medium ${getStatusClass(task.status)}`}>
+                                                        {task.status}
+                                                    </span>
+                                                </td>
+                                                <td>
+                                                    {new Date(task.deadline).toLocaleDateString()}
+                                                </td>
+                                                <td>
+                                                    <span className={getPriorityBadge(task.priority)}>
+                                                        {task.priority}
+                                                    </span>
+                                                </td>
+                                                <td onClick={(e) => e.stopPropagation()}>
+                                                    {renderAssignedAvatars(task.assigned_to, task)} 
+                                                </td>
+                                                <td>
+                                                    <span className="badge bg-info-transparent">
+                                                        {task.project_id?.name || 'No Project'}
+                                                    </span>
+                                                </td>
+                                                <td onClick={(e) => e.stopPropagation()}>
+                                                    <div className="d-flex align-items-center">
+                                                        <button 
+                                                            className="btn btn-primary-light btn-icon btn-sm"
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                setCurrentTask(task);
+                                                                setShowAssignModal(true);
+                                                            }}
+                                                        >
+                                                            <i className="ri-user-add-line" />
+                                                        </button>
+                                                        <button 
+                                                            className="btn btn-danger-light btn-icon ms-1 btn-sm"
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                handleDeleteTask(task._id, task.status);
+                                                            }}
+                                                        >
+                                                            <i className="ri-delete-bin-5-line" />
+                                                        </button>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
                                 </table>
                             </div>
                         </div>
                         {getFilteredTasks().length > tasksPerPage && (
-  <div className="d-flex justify-content-end mt-3">
-    <nav aria-label="Page navigation" className="pagination-style-4">
-      <ul className="pagination mb-0 flex-wrap">
-        <li className={`page-item ${currentPage === 1 ? 'disabled' : ''}`}>
-          <button 
-            className="page-link" 
-            onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-          >
-            Prev
-          </button>
-        </li>
-        
-        {Array.from({ length: Math.ceil(getFilteredTasks().length / tasksPerPage) }).map((_, index) => {
-          const pageNumber = index + 1;
-          // Show only first 2 pages, last 2 pages, and pages around current page
-          if (
-            pageNumber === 1 || 
-            pageNumber === 2 || 
-            pageNumber === Math.ceil(getFilteredTasks().length / tasksPerPage) - 1 || 
-            pageNumber === Math.ceil(getFilteredTasks().length / tasksPerPage) ||
-            (pageNumber >= currentPage - 1 && pageNumber <= currentPage + 1)
-          ) {
-            return (
-              <li key={pageNumber} className={`page-item ${currentPage === pageNumber ? 'active' : ''}`}>
-                <button className="page-link" onClick={() => setCurrentPage(pageNumber)}>
-                  {pageNumber}
-                </button>
-              </li>
-            );
-          } else if (
-            pageNumber === 3 || 
-            pageNumber === Math.ceil(getFilteredTasks().length / tasksPerPage) - 2
-          ) {
-            return (
-              <li key={pageNumber} className="page-item">
-                <button className="page-link">
-                  <i className="bi bi-three-dots"></i>
-                </button>
-              </li>
-            );
-          }
-          return null;
-        })}
-        
-        <li className={`page-item ${currentPage === Math.ceil(getFilteredTasks().length / tasksPerPage) ? 'disabled' : ''}`}>
-          <button 
-            className="page-link text-primary" 
-            onClick={() => setCurrentPage(prev => Math.min(prev + 1, Math.ceil(getFilteredTasks().length / tasksPerPage)))}
-          >
-            Next
-          </button>
-        </li>
-
-      </ul>
-    </nav>
-  </div>
-)}                   
-<br />
- </div>
+                            <div className="d-flex justify-content-end mt-3">
+                                <nav aria-label="Page navigation" className="pagination-style-4">
+                                    <ul className="pagination mb-0 flex-wrap">
+                                        <li className={`page-item ${currentPage === 1 ? 'disabled' : ''}`}>
+                                            <button 
+                                                className="page-link" 
+                                                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                                            >
+                                                Prev
+                                            </button>
+                                        </li>
+                                        
+                                        {Array.from({ length: Math.ceil(getFilteredTasks().length / tasksPerPage) }).map((_, index) => {
+                                            const pageNumber = index + 1;
+                                            if (
+                                                pageNumber === 1 || 
+                                                pageNumber === 2 || 
+                                                pageNumber === Math.ceil(getFilteredTasks().length / tasksPerPage) - 1 || 
+                                                pageNumber === Math.ceil(getFilteredTasks().length / tasksPerPage) ||
+                                                (pageNumber >= currentPage - 1 && pageNumber <= currentPage + 1)
+                                            ) {
+                                                return (
+                                                    <li key={pageNumber} className={`page-item ${currentPage === pageNumber ? 'active' : ''}`}>
+                                                        <button className="page-link" onClick={() => setCurrentPage(pageNumber)}>
+                                                            {pageNumber}
+                                                        </button>
+                                                    </li>
+                                                );
+                                            } else if (
+                                                pageNumber === 3 || 
+                                                pageNumber === Math.ceil(getFilteredTasks().length / tasksPerPage) - 2
+                                            ) {
+                                                return (
+                                                    <li key={pageNumber} className="page-item">
+                                                        <button className="page-link">
+                                                            <i className="bi bi-three-dots"></i>
+                                                        </button>
+                                                    </li>
+                                                );
+                                            }
+                                            return null;
+                                        })}
+                                        
+                                        <li className={`page-item ${currentPage === Math.ceil(getFilteredTasks().length / tasksPerPage) ? 'disabled' : ''}`}>
+                                            <button 
+                                                className="page-link text-primary" 
+                                                onClick={() => setCurrentPage(prev => Math.min(prev + 1, Math.ceil(getFilteredTasks().length / tasksPerPage)))}
+                                            >
+                                                Next
+                                            </button>
+                                        </li>
+                                    </ul>
+                                </nav>
+                            </div>
+                        )}                   
+                        <br />
+                    </div>
                 </div>
             </div>
 
             {/* Assign Member Modal */}
             {showAssignModal && (
-  <div className="modal fade show" style={{ display: 'block' }} tabIndex={-1}>
-    <div className="modal-dialog modal-dialog-centered">
-      <div className="modal-content">
-        <div className="modal-header">
-          <h6 className="modal-title">Assign Members</h6>
-          <button
-            type="button"
-            className="btn-close"
-            onClick={() => {
-              setShowAssignModal(false);
-              setSelectedMembers([]);
-            }}
-            aria-label="Close"
-          />
-        </div>
-        <div className="modal-body">
-          <div className="row gy-2">
-            <div className="col-xl-12">
-              <label className="form-label">Select Members</label>
-              <div className="list-group" style={{ maxHeight: '300px', overflowY: 'auto' }}>
-                {teamMembers.map(member => {
-  // Ensure we have a valid member with an ID
-  if (!member || !member._id) return null;
-  
-  const user = member.user_id || {};
-  const isAssigned = currentTask?.assigned_to?.some(
-    a => a?._id?.toString() === member._id.toString()
-  );
-  
-  // Create a guaranteed unique key
-  const memberKey = `member-${member._id}`;
-  
-  return (
-    <div 
-  key={memberKey}
-  className={`list-group-item list-group-item-action ${isAssigned ? 'disabled' : ''}`}
-  onClick={() => {
-    if (!isAssigned) {
-      setSelectedMembers(prev => {
-        if (prev.includes(member._id)) {
-          return prev.filter(id => id !== member._id);
-        } else {
-          return [...prev, member._id];
-        }
-      });
-    }
-  }}
-  style={{ cursor: isAssigned ? 'not-allowed' : 'pointer' }}
->
-  <div className="d-flex align-items-center">
-    <div className="form-check me-3">
-      <input
-        className="form-check-input"
-        type="checkbox"
-        checked={selectedMembers.includes(member._id)}
-        onChange={() => {}}
-        disabled={isAssigned}
-      />
-    </div>
-    {/* Add the square avatar here */}
-    <div className="avatar avatar-sm avatar-rounded me-3" style={{ 
-      width: '40px', 
-      height: '40px',
-      borderRadius: '1px', // Makes it square instead of rounded
-      overflow: 'hidden'
-    }}>
-      <img
-        src={
-          user.image && (user.image.startsWith('http') || user.image.startsWith('https'))
-            ? user.image
-            : user.image
-              ? `http://localhost:3000${user.image}`
-              : '../assets/images/faces/11.jpg'
-        }
-        alt={`${user.firstName || ''} ${user.lastName || ''}`.trim() || 'User'}
-        className="img-fluid h-100 w-100 object-fit-cover"
-        onError={(e) => {
-          e.target.src = '../assets/images/faces/11.jpg';
-          e.target.alt = 'Default avatar';
-        }}
-        style={{
-          objectFit: 'cover' // Ensures the image fills the square
-        }}
-      />
-    </div>
-    <div>
-      <div className="fw-medium">
-        {user.firstName || 'Unknown'} {user.lastName || ''}
-      </div>
-      <small className="text-muted">{member.role || 'No role'}</small>
-    </div>
-  </div>
-</div>
-  );
-})}
-              </div>
-            </div>
-          </div>
-        </div>
-        <div className="modal-footer">
-          <button
-            type="button"
-            className="btn btn-light"
-            onClick={() => {
-              setShowAssignModal(false);
-              setSelectedMembers([]);
-            }}
-          >
-            Cancel
-          </button>
-          <button 
-            type="button" 
-            className="btn btn-primary"
-            disabled={isAssigning || selectedMembers.length === 0}
-            onClick={handleAssignMembers}
-          >
-            {isAssigning ? (
-              <>
-                <span className="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
-                Assigning...
-              </>
-            ) : 'Assign Members'}
-          </button>
-        </div>
-      </div>
-    </div>
-  </div>
-)}
-
-
-{showUnassignModal && (
-  <div className="modal fade show" style={{ display: 'block' }} tabIndex={-1}>
-    <div className="modal-dialog modal-dialog-centered">
-      <div className="modal-content">
-        <div className="modal-header">
-          <h6 className="modal-title">Unassign Members</h6>
-          <button
-            type="button"
-            className="btn-close"
-            onClick={() => {
-              setShowUnassignModal(false);
-              setSelectedUnassignMembers([]);
-            }}
-            aria-label="Close"
-          />
-        </div>
-        <div className="modal-body">
-          <div className="row gy-2">
-            <div className="col-xl-12">
-              <label className="form-label">Select Members to Unassign</label>
-              <div className="list-group" style={{ maxHeight: '300px', overflowY: 'auto' }}>
-                {currentTask?.assigned_to?.map(member => {
-                  if (!member || !member._id) return null;
-                  
-                  const user = member.user_id || {};
-                  const memberKey = `unassign-member-${member._id}`;
-                  
-                  return (
-                    <div 
-                      key={memberKey}
-                      className="list-group-item list-group-item-action"
-                    >
-                      <div className="d-flex align-items-center">
-                        <div className="form-check me-3">
-                          <input
-                            className="form-check-input"
-                            type="checkbox"
-                            checked={selectedUnassignMembers.includes(member._id)}
-                            onChange={() => {
-                              setSelectedUnassignMembers(prev => {
-                                if (prev.includes(member._id)) {
-                                  return prev.filter(id => id !== member._id);
-                                } else {
-                                  return [...prev, member._id];
-                                }
-                              });
-                            }}
-                          />
+                <div className="modal fade show" style={{ display: 'block' }} tabIndex={-1}>
+                    <div className="modal-dialog modal-dialog-centered">
+                        <div className="modal-content">
+                            <div className="modal-header">
+                                <h6 className="modal-title">Assign Members</h6>
+                                <button
+                                    type="button"
+                                    className="btn-close"
+                                    onClick={() => {
+                                        setShowAssignModal(false);
+                                        setSelectedMembers([]);
+                                    }}
+                                    aria-label="Close"
+                                />
+                            </div>
+                            <div className="modal-body">
+                                <div className="row gy-2">
+                                    <div className="col-xl-12">
+                                        <label className="form-label">Select Members</label>
+                                        <div className="list-group" style={{ maxHeight: '300px', overflowY: 'auto' }}>
+                                            {teamMembers.map(member => {
+                                                if (!member || !member._id) return null;
+                                                
+                                                const user = member.user_id || {};
+                                                const isAssigned = currentTask?.assigned_to?.some(
+                                                    a => a?._id?.toString() === member._id.toString()
+                                                );
+                                                
+                                                const memberKey = `member-${member._id}`;
+                                                
+                                                return (
+                                                    <div 
+                                                        key={memberKey}
+                                                        className={`list-group-item list-group-item-action ${isAssigned ? 'disabled' : ''}`}
+                                                        onClick={() => {
+                                                            if (!isAssigned) {
+                                                                setSelectedMembers(prev => {
+                                                                    if (prev.includes(member._id)) {
+                                                                        return prev.filter(id => id !== member._id);
+                                                                    } else {
+                                                                        return [...prev, member._id];
+                                                                    }
+                                                                });
+                                                            }
+                                                        }}
+                                                        style={{ cursor: isAssigned ? 'not-allowed' : 'pointer' }}
+                                                    >
+                                                        <div className="d-flex align-items-center">
+                                                            <div className="form-check me-3">
+                                                                <input
+                                                                    className="form-check-input"
+                                                                    type="checkbox"
+                                                                    checked={selectedMembers.includes(member._id)}
+                                                                    onChange={() => {}}
+                                                                    disabled={isAssigned}
+                                                                />
+                                                            </div>
+                                                            <div className="avatar avatar-sm avatar-rounded me-3" style={{ 
+                                                                width: '40px', 
+                                                                height: '40px',
+                                                                borderRadius: '1px',
+                                                                overflow: 'hidden'
+                                                            }}>
+                                                                <img
+                                                                    src={
+                                                                        user.image && (user.image.startsWith('http') || user.image.startsWith('https'))
+                                                                            ? user.image
+                                                                            : user.image
+                                                                                ? `http://localhost:3000${user.image}`
+                                                                                : '../assets/images/faces/11.jpg'
+                                                                    }
+                                                                    alt={`${user.firstName || ''} ${user.lastName || ''}`.trim() || 'User'}
+                                                                    className="img-fluid h-100 w-100 object-fit-cover"
+                                                                    style={{ objectFit: 'cover' }}
+                                                                />
+                                                            </div>
+                                                            <div>
+                                                                <div className="fw-medium">
+                                                                    {user.firstName || 'Unknown'} {user.lastName || ''}
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="modal-footer">
+                                <button
+                                    type="button"
+                                    className="btn btn-light"
+                                    onClick={() => {
+                                        setShowAssignModal(false);
+                                        setSelectedMembers([]);
+                                    }}
+                                >
+                                    Cancel
+                                </button>
+                                <button 
+                                    type="button" 
+                                    className="btn btn-primary"
+                                    disabled={isAssigning || selectedMembers.length === 0}
+                                    onClick={handleAssignMembers}
+                                >
+                                    {isAssigning ? (
+                                        <>
+                                            <span className="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+                                            Assigning...
+                                        </>
+                                    ) : 'Assign Members'}
+                                </button>
+                            </div>
                         </div>
-                        <div className="avatar avatar-sm avatar-rounded me-3" style={{ 
-                          width: '40px', 
-                          height: '40px',
-                          borderRadius: '1px',
-                          overflow: 'hidden'
-                        }}>
-                          <img
-                            src={
-                              user.image && (user.image.startsWith('http') || user.image.startsWith('https'))
-                                ? user.image
-                                : user.image
-                                  ? `http://localhost:3000${user.image}`
-                                  : '../assets/images/faces/11.jpg'
-                            }
-                            alt={`${user.firstName || ''} ${user.lastName || ''}`.trim() || 'User'}
-                            className="img-fluid h-100 w-100 object-fit-cover"
-                            style={{ objectFit: 'cover' }}
-                          />
-                        </div>
-                        <div>
-                          <div className="fw-medium">
-                            {user.firstName || 'Unknown'} {user.lastName || ''}
-                          </div>
-                          <small className="text-muted">{member.role || 'No role'}</small>
-                        </div>
-                      </div>
                     </div>
-                  );
-                })}
-              </div>
-            </div>
-          </div>
-        </div>
-        <div className="modal-footer">
-          <button
-            type="button"
-            className="btn btn-light"
-            onClick={() => {
-              setShowUnassignModal(false);
-              setSelectedUnassignMembers([]);
-            }}
-          >
-            Cancel
-          </button>
-          <button 
-            type="button" 
-            className="btn btn-danger"
-            disabled={isAssigning || selectedUnassignMembers.length === 0}
-            onClick={handleUnassignMembers}
-          >
-            {isAssigning ? (
-              <>
-                <span className="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
-                Unassigning...
-              </>
-            ) : 'Unassign Members'}
-          </button>
-        </div>
-      </div>
-    </div>
-  </div>
-)}
+                </div>
+            )}
+
+            {/* Unassign Member Modal */}
+            {showUnassignModal && (
+                <div className="modal fade show" style={{ display: 'block' }} tabIndex={-1}>
+                    <div className="modal-dialog modal-dialog-centered">
+                        <div className="modal-content">
+                            <div className="modal-header">
+                                <h6 className="modal-title">Unassign Members</h6>
+                                <button
+                                    type="button"
+                                    className="btn-close"
+                                    onClick={() => {
+                                        setShowUnassignModal(false);
+                                        setSelectedUnassignMembers([]);
+                                    }}
+                                    aria-label="Close"
+                                />
+                            </div>
+                            <div className="modal-body">
+                                <div className="row gy-2">
+                                    <div className="col-xl-12">
+                                        <label className="form-label">Select Members to Unassign</label>
+                                        <div className="list-group" style={{ maxHeight: '300px', overflowY: 'auto' }}>
+                                            {currentTask?.assigned_to?.map(member => {
+                                                if (!member || !member._id) return null;
+                                                
+                                                const user = member.user_id || {};
+                                                const memberKey = `unassign-member-${member._id}`;
+                                                
+                                                return (
+                                                    <div 
+                                                        key={memberKey}
+                                                        className="list-group-item list-group-item-action"
+                                                    >
+                                                        <div className="d-flex align-items-center">
+                                                            <div className="form-check me-3">
+                                                                <input
+                                                                    className="form-check-input"
+                                                                    type="checkbox"
+                                                                    checked={selectedUnassignMembers.includes(member._id)}
+                                                                    onChange={() => {
+                                                                        setSelectedUnassignMembers(prev => {
+                                                                            if (prev.includes(member._id)) {
+                                                                                return prev.filter(id => id !== member._id);
+                                                                            } else {
+                                                                                return [...prev, member._id];
+                                                                            }
+                                                                        });
+                                                                    }}
+                                                                />
+                                                            </div>
+                                                            <div className="avatar avatar-sm avatar-rounded me-3" style={{ 
+                                                                width: '40px', 
+                                                                height: '40px',
+                                                                borderRadius: '1px',
+                                                                overflow: 'hidden'
+                                                            }}>
+                                                                <img
+                                                                    src={
+                                                                        user.image && (user.image.startsWith('http') || user.image.startsWith('https'))
+                                                                            ? user.image
+                                                                            : user.image
+                                                                                ? `http://localhost:3000${user.image}`
+                                                                                : '../assets/images/faces/11.jpg'
+                                                                    }
+                                                                    alt={`${user.firstName || ''} ${user.lastName || ''}`.trim() || 'User'}
+                                                                    className="img-fluid h-100 w-100 object-fit-cover"
+                                                                    style={{ objectFit: 'cover' }}
+                                                                />
+                                                            </div>
+                                                            <div>
+                                                                <div className="fw-medium">
+                                                                    {user.firstName || 'Unknown'} {user.lastName || ''}
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="modal-footer">
+                                <button
+                                    type="button"
+                                    className="btn btn-light"
+                                    onClick={() => {
+                                        setShowUnassignModal(false);
+                                        setSelectedUnassignMembers([]);
+                                    }}
+                                >
+                                    Cancel
+                                </button>
+                                <button 
+                                    type="button" 
+                                    className="btn btn-danger"
+                                    disabled={isAssigning || selectedUnassignMembers.length === 0}
+                                    onClick={handleUnassignMembers}
+                                >
+                                    {isAssigning ? (
+                                        <>
+                                            <span className="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+                                            Unassigning...
+                                        </>
+                                    ) : 'Unassign Members'}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
         </>
     );
 };

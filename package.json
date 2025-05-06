@@ -1,5 +1,8 @@
 {
   "dependencies": {
-    "boxicons": "^2.1.4"
+    "boxicons": "^2.1.4",
+    "date-fns": "^4.1.0",
+    "emoji-picker-react": "^4.12.2",
+    "socket.io-client": "^4.8.1"
   }
 }

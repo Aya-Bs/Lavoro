@@ -4,11 +4,12 @@ const Task = require('../models/Task');
 
 const TaskHistory = require('../models/TaskHistory');
 const User = require('../models/user');
-
+const Role = require('../models/role');
 const Project = require('../models/Project');
 const TeamMember = require('../models/teamMember');
 const jwt = require('jsonwebtoken');
 const { generateAITasks } = require('../utils/tasksCreation');
+
 
 
 
@@ -19,7 +20,13 @@ exports.getTasksByUser = async (req, res) => {
     console.log("Request user object:", req.user);
     console.log("Authenticated user ID:", req.user._id);
 
-    const query = { assigned_to: req.user._id };
+    // Trouver d'abord tous les teamMembers où cet utilisateur est le user_id
+    const teamMembers = await TeamMember.find({ user_id: req.user._id });
+
+    // Extraire les IDs des teamMembers
+    const teamMemberIds = teamMembers.map(member => member._id);
+
+    const query = { assigned_to: { $in: teamMemberIds } };
     console.log("Query:", query);
 
     // Récupérer les tâches sans populate pour éviter l'erreur
@@ -128,7 +135,7 @@ exports.seedTaskHistory = async () => {
 
 
 // Fonction pour récupérer les tâches assignées à un utilisateur spécifique
-exports.getTasksByUser = async (req, res) => {
+exports.getTasksByUserId = async (req, res) => {
     try {
         const userId = req.params.userId;
 
@@ -372,9 +379,9 @@ exports.testPointsSystem = async (req, res) => {
 };
 
 
-
 exports.addTask = async (req, res) => {
   try {
+
     const {
       title,
       description,
@@ -387,6 +394,10 @@ exports.addTask = async (req, res) => {
       estimated_duration,
       tags
     } = req.body;
+
+    // Get the current user ID from the request (assuming you have authentication middleware)
+    const created_by = req.user._id;
+
 
     // Validate that project exists
     const project = await Project.findById(project_id);
@@ -413,6 +424,7 @@ exports.addTask = async (req, res) => {
       description,
       project_id,
       assigned_to,
+      created_by, // Add the creator ID
       status,
       priority,
       deadline,
@@ -423,7 +435,7 @@ exports.addTask = async (req, res) => {
 
     const savedTask = await newTask.save();
 
-    // 1. Add task to project's tasks array
+    // Update project's tasks array
     await Project.findByIdAndUpdate(
       project_id,
       {
@@ -433,7 +445,7 @@ exports.addTask = async (req, res) => {
       { new: true }
     );
 
-    // 2. If assigned to a team member, add task to their tasks array
+    // If assigned to a team member, add task to their tasks array
     if (assigned_to) {
       await TeamMember.findByIdAndUpdate(
         assigned_to,
@@ -460,10 +472,6 @@ exports.addTask = async (req, res) => {
 };
 
 
-
-
-// In your TaskController.js
-
 exports.getAllTasks = async (req, res) => {
   try {
     // Extract query parameters
@@ -476,8 +484,11 @@ exports.getAllTasks = async (req, res) => {
       limit = 10
     } = req.query;
 
+    // Get the current user ID from the request
+    const created_by = req.user._id;
+
     // Build filter object
-    const filter = {};
+    const filter = { created_by }; // Only show tasks created by this user
 
     if (status) filter.status = status;
     if (priority) filter.priority = priority;
@@ -489,18 +500,20 @@ exports.getAllTasks = async (req, res) => {
 
     // Get tasks with population and pagination
     const tasks = await Task.find(filter)
-  .populate('project_id', 'name status')
-  .populate({
-    path: 'assigned_to',
-    select: 'role', // Fields from TeamMember
-    populate: {
-      path: 'user_id',
-      select: 'firstName lastName image' // Fields from User
-    }
-  })
-  .skip(skip)
-  .limit(parseInt(limit))
-  .sort({ deadline: 1 });
+      .populate('project_id', 'name status')
+      .populate({
+        path: 'assigned_to',
+        select: 'role',
+        populate: {
+          path: 'user_id',
+          select: 'firstName lastName image'
+        }
+      })
+      .populate('created_by', 'firstName lastName') // Populate creator info
+      .skip(skip)
+      .limit(parseInt(limit))
+      .sort({ deadline: 1 });
+
     // Get total count for pagination info
     const totalTasks = await Task.countDocuments(filter);
 
@@ -523,7 +536,6 @@ exports.getAllTasks = async (req, res) => {
     });
   }
 };
-
 
 // In your TaskController.js
 
@@ -849,49 +861,92 @@ exports.getMyTasks = async (req, res) => {
 
 
 
+// Helper function to calculate task score
+const calculateTaskScore = (task, oldTask) => {
+  let score = oldTask?.score || 0;
+
+  // Check if status changed to "In Progress"
+  if (task.status === 'In Progress' && (!oldTask || oldTask.status !== 'In Progress')) {
+    if (task.start_date) {
+      const startDate = new Date(task.start_date);
+      const actualStartDate = new Date();
+      const timeDiff = actualStartDate - startDate;
+      const daysDiff = Math.floor(timeDiff / (1000 * 60 * 60 * 24));
+
+      if (daysDiff < 0) {
+        score += 2; // Started early
+      } else if (daysDiff === 0) {
+        score += 1; // Started on time
+      } else {
+        score -= 1; // Started late
+      }
+    } else {
+      score += 1; // No start date specified
+    }
+  }
+
+  // Check if status changed to "Done"
+  if (task.status === 'Done' && task.deadline &&
+      (!oldTask || oldTask.status !== 'Done')) {
+    const deadlineDate = new Date(task.deadline);
+    const completionDate = new Date();
+    const timeDiff = completionDate - deadlineDate;
+    const daysDiff = Math.floor(timeDiff / (1000 * 60 * 60 * 24));
+
+    if (daysDiff < -1) {
+      score += 2;
+    } else if (daysDiff === 0) {
+      score += 1;
+    } else if (daysDiff > 0) {
+      score -= 1;
+    } else if (daysDiff === -1) {
+      score += 1.5;
+    }
+
+    // Priority bonus
+    switch(task.priority) {
+      case 'High': score += 3; break;
+      case 'Medium': score += 2; break;
+      case 'Low': score += 1; break;
+      default: break;
+    }
+  }
+
+  return score;
+};
+
+// Update your startTask controller
 exports.startTask = async (req, res) => {
   const { taskId } = req.params;
 
   try {
-    // 1. Find the task
-    const task = await Task.findById(taskId);
-
-    if (!task) {
-      return res.status(404).json({
-        success: false,
-        message: 'Task not found'
-      });
+    const oldTask = await Task.findById(taskId);
+    if (!oldTask) {
+      return res.status(404).json({ message: 'Task not found' });
     }
 
-    // 2. Verify current status is "Not Started"
-    if (task.status !== 'Not Started') {
-      return res.status(400).json({
-        success: false,
-        message: 'Task must be in "Not Started" status to be started'
-      });
+    if (oldTask.status !== 'Not Started') {
+      return res.status(400).json({ message: 'Task must be in "Not Started" status' });
     }
 
-    // 3. Update the task status
     const updatedTask = await Task.findByIdAndUpdate(
       taskId,
       {
         status: 'In Progress',
-        start_date: new Date() // Set start date when task begins
+        start_date: new Date() // Set actual start date
       },
-      { new: true, runValidators: true }
+      { new: true }
     );
 
-
-
+    // Calculate and update score
+    updatedTask.score = calculateTaskScore(updatedTask, oldTask);
+    await updatedTask.save();
 
     res.status(200).json({
       success: true,
-      message: 'Task started successfully',
       data: updatedTask
     });
-
   } catch (error) {
-    console.error('Error starting task:', error);
     res.status(500).json({
       success: false,
       message: 'Error starting task',
@@ -900,47 +955,35 @@ exports.startTask = async (req, res) => {
   }
 };
 
-
-
+// Update your completeTask controller
 exports.completeTask = async (req, res) => {
   const { taskId } = req.params;
 
   try {
-    // 1. Find the task
-    const task = await Task.findById(taskId);
-
-    if (!task) {
-      return res.status(404).json({
-        success: false,
-        message: 'Task not found'
-      });
+    const oldTask = await Task.findById(taskId);
+    if (!oldTask) {
+      return res.status(404).json({ message: 'Task not found' });
     }
 
-    // 2. Verify current status is "In Progress"
-    if (task.status !== 'In Progress') {
-      return res.status(400).json({
-        success: false,
-        message: 'Task must be in "In Progress" status to be completed'
-      });
+    if (oldTask.status !== 'In Progress') {
+      return res.status(400).json({ message: 'Task must be in "In Progress" status' });
     }
 
-    // 3. Update the task status
     const updatedTask = await Task.findByIdAndUpdate(
       taskId,
       { status: 'Done' },
-      { new: true, runValidators: true }
+      { new: true }
     );
 
-
+    // Calculate and update score
+    updatedTask.score = calculateTaskScore(updatedTask, oldTask);
+    await updatedTask.save();
 
     res.status(200).json({
       success: true,
-      message: 'Task completed successfully',
-      data: updatedTask,
+      data: updatedTask
     });
-
   } catch (error) {
-    console.error('Error completing task:', error);
     res.status(500).json({
       success: false,
       message: 'Error completing task',
@@ -948,71 +991,14 @@ exports.completeTask = async (req, res) => {
     });
   }
 };
-/*
-exports.generateTasks = async (req, res) => {
-  // Authentication (same as your example)
-  const token = req.headers.authorization?.replace('Bearer ', '');
-  if (!token) return res.status(401).json({ message: 'Authentication required' });
 
-  try {
-    // Verify user
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const user = await User.findById(decoded._id);
-    if (!user) return res.status(401).json({ message: 'User not found' });
-
-    const { projectId } = req.params;
-    const { name, description } = req.body;
-
-    // Get raw AI response (from your working script)
-    const aiResponse = await generateAITasks(name, description);
-
-    // Parse and clean response (same as your project example)
-    const rawTasks = aiResponse
-      //.replace(/^```json\s*//* i, '')
-     // .replace(/^```\s*//*i, '')
-     //uncoment these if you will use this method
-      .replace(/```$/, '')
-      .trim();
-
-    let tasks;
-    try {
-      tasks = JSON.parse(rawTasks);
-    } catch (err) {
-      return res.status(400).json({ error: "AI returned invalid JSON" });
-    }
-
-    // Format tasks for DB (with project_id)
-    const dbTasks = tasks.map(task => ({
-      title: task.title,
-      description: task.description,
-      project_id: projectId,
-      status: task.status || 'Not Started',
-      priority: task.priority || 'Medium',
-      deadline: new Date(task.deadline),
-      start_date: new Date(task.start_date),
-      estimated_duration: task.estimated_duration || 1,
-      tags: task.tags || [],
-      assigned_to: []
-    }));
-
-    // Save to database
-    const savedTasks = await Task.insertMany(dbTasks);
-
-    res.status(201).json(savedTasks);
-
-  } catch (error) {
-    console.error('Error:', error);
-    res.status(500).json({
-      error: 'Task generation failed',
-      details: error.message
-    });
-  }
-};
-*/
 exports.generateTasksForProject = async (req, res) => {
   try {
     const { projectId } = req.params;
     const { name, description } = req.body;
+
+    // Get the current user ID from the request
+    const created_by = req.user._id;
 
     // Validate project exists
     const project = await Project.findById(projectId);
@@ -1020,7 +1006,7 @@ exports.generateTasksForProject = async (req, res) => {
       return res.status(404).json({ message: 'Project not found' });
     }
 
-    const tasks = await generateAndFormatTasks(name, description, projectId);
+    const tasks = await generateAndFormatTasks(name, description, projectId, created_by);
     res.status(201).json(tasks);
   } catch (error) {
     handleTaskError(res, error);
@@ -1032,13 +1018,16 @@ exports.generateTasksWithProject = async (req, res) => {
   try {
     const { projectId, name, description } = req.body;
 
+    // Get the current user ID from the request
+    const created_by = req.user._id;
+
     // Validate project exists
     const project = await Project.findById(projectId);
     if (!project) {
       return res.status(404).json({ message: 'Project not found' });
     }
 
-    const tasks = await generateAndFormatTasks(name, description, projectId);
+    const tasks = await generateAndFormatTasks(name, description, projectId, created_by);
     res.status(201).json(tasks);
   } catch (error) {
     handleTaskError(res, error);
@@ -1046,7 +1035,7 @@ exports.generateTasksWithProject = async (req, res) => {
 };
 
 // Shared helper functions
-async function generateAndFormatTasks(name, description, projectId) {
+async function generateAndFormatTasks(name, description, projectId, created_by) {
   const aiResponse = await generateAITasks(name, description);
   const rawTasks = cleanAIResponse(aiResponse);
 
@@ -1056,7 +1045,8 @@ async function generateAndFormatTasks(name, description, projectId) {
     deadline: new Date(task.deadline),
     start_date: new Date(task.start_date),
     status: task.status || 'Not Started',
-    assigned_to: []
+    assigned_to: [],
+    created_by // Add the creator ID
   }));
 
   return await Task.insertMany(tasks);
@@ -1074,7 +1064,9 @@ async function generateTasksWithoutSaving(name, description, projectId) {
     start_date: new Date(task.start_date),
     status: task.status || 'Not Started',
     assigned_to: []
+    // Note: created_by is added in the controller function
   }));
+
 }
 
 function cleanAIResponse(response) {
@@ -1100,6 +1092,9 @@ exports.generateTasksOnly = async (req, res) => {
     const { projectId } = req.params.projectId ? { projectId: req.params.projectId } : req.body;
     const { name, description, start_date, end_date } = req.body;
 
+    // Get the current user ID from the request (assuming you have authentication middleware)
+    const created_by = req.user._id;
+
     // Validate project exists if projectId is provided
     if (projectId) {
       const project = await Project.findById(projectId);
@@ -1113,6 +1108,11 @@ exports.generateTasksOnly = async (req, res) => {
 
     // Generate tasks without saving
     const tasks = await generateTasksWithoutSaving(name, description, projectId);
+
+    // Add created_by to each task
+    tasks.forEach(task => {
+      task.created_by = created_by;
+    });
 
     res.status(200).json({
       success: true,
@@ -1133,6 +1133,9 @@ exports.generateTasksOnly = async (req, res) => {
 exports.saveTasks = async (req, res) => {
   try {
     const { projectId, tasks } = req.body;
+
+    // Get the current user ID from the request (assuming you have authentication middleware)
+    const created_by = req.user._id;
 
     // Validate project exists
     const project = await Project.findById(projectId);
@@ -1162,7 +1165,8 @@ exports.saveTasks = async (req, res) => {
       start_date: new Date(task.start_date),
       estimated_duration: task.estimated_duration || 1,
       tags: task.tags || [],
-      assigned_to: task.assigned_to || []
+      assigned_to: task.assigned_to || [],
+      created_by // Add the creator ID
     }));
 
     // Save tasks to database
@@ -1489,6 +1493,265 @@ exports.getDeveloperKanbanTasks = async (req, res) => {
       success: false,
       message: 'Error fetching developer tasks',
       error: error.message
+    });
+  }
+};
+
+exports.getTaskByIdMember = async (req, res) => {
+  try {
+      const taskId = req.params.id;
+
+      // Vérifier si l'ID est valide
+      if (!mongoose.Types.ObjectId.isValid(taskId)) {
+          return res.status(400).json({
+              success: false,
+              message: "ID de tâche invalide"
+          });
+      }
+
+      // Récupérer la tâche avec les informations du projet associé
+      const task = await Task.findById(taskId);
+
+      if (!task) {
+          return res.status(404).json({
+              success: false,
+              message: "Tâche non trouvée"
+          });
+      }
+
+      // Formater la réponse
+      const response = {
+          _id: task._id,
+          taskTitle: task.title,
+          description: task.description,
+          created_by: task.created_by,
+          assigned_to: task.assigned_to ,
+          status: task.status,
+          priority: task.priority,
+          deadline: task.deadline,
+          start_date: task.start_date,
+          estimated_duration: task.estimated_duration,
+          tags: task.tags,
+          requiredSkills: task.requiredSkills,
+      };
+
+      console.log("Task response skills:", response.requiredSkills);
+
+      res.status(200).json({
+          success: true,
+          data: response
+      });
+  } catch (error) {
+      console.error("Erreur lors de la récupération de la tâche:", error);
+      res.status(500).json({
+          success: false,
+          message: "Erreur serveur lors de la récupération de la tâche"
+      });
+  }
+};
+
+exports.getTasksList = async (req, res) => {
+  try {
+    const userId = req.params.userId;
+
+    // Récupérer l'utilisateur avec son rôle peuplé
+    const user = await User.findById(userId).populate('role');
+
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    // Récupérer les rôles une seule fois
+    const [teamManager, developer] = await Promise.all([
+      Role.findOne({ RoleName: 'Team Manager' }),
+      Role.findOne({ RoleName: 'Developer' })
+    ]);
+
+    console.log("User role:", user.role._id);
+    console.log("Team Manager ID:", teamManager._id);
+    console.log("Developer ID:", developer._id);
+
+    let tasks;
+    console.log("User ID:", userId);
+
+    if (user.role.equals(teamManager._id)) {
+      tasks = await Task.find({ created_by: userId });
+    } else if (user.role.equals(developer._id)) {
+      tasks = await Task.find({ assigned_to: userId });
+      console.log("Tasks for developer:", tasks);
+    } else {
+      // Rôle non reconnu
+      return res.status(403).json({
+        success: false,
+        message: 'Unauthorized role',
+        details: {
+          userRole: user.role._id,
+          allowedRoles: [teamManager._id, developer._id]
+        }
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      count: tasks.length,
+      data: tasks
+    });
+  } catch (error) {
+    console.error("Error in getTasksList:", error);
+    res.status(500).json({
+      success: false,
+      message: 'Server Error',
+      error: error.message,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
+  }
+};
+
+exports.updateTaskCalendarDates = async (req, res) => {
+  try {
+    const { taskId } = req.params;
+    const { start, end ,userId} = req.body;
+    const user = await User.findById(userId);
+    const team_manager = await Role.findOne({ RoleName: 'Team Manager' });
+    const developer = await Role.findOne({ RoleName: 'Developer' });
+
+
+    console.log("User ID from params:", userId); // Debug
+    console.log("start:", start);
+    console.log("end:", end);
+
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    const task = await Task.findById(taskId);
+    console.log("Task :", task);
+    if (!task) {
+      return res.status(404).json({ success: false, message: 'Task not found' });
+    }
+
+    // Vérifier les permissions
+    if (user.role.equals(developer._id) && task.assigned_to.toString() !== userId.toString()) {
+      return res.status(403).json({ success: false, message: 'Not authorized to update this task' });
+    }
+
+    if (user.role.equals(team_manager._id) && task.created_by.toString() !== userId.toString()) {
+      return res.status(403).json({ success: false, message: 'Not authorized to update this task' });
+    }
+
+    let updateData = {};
+
+    if (user.role.equals(team_manager._id)) {
+      // Mise à jour des dates principales pour les managers
+      if (start !== undefined) updateData.start_date = start;
+      if (end !== undefined) updateData.deadline = end;
+    } else if (user.role.equals(developer._id)) {
+      // Mise à jour des dates du calendrier pour les développeurs
+      if (start === null && end === null) {
+        // Supprimer les dates du calendrier
+        updateData = { $unset: { calendar_dates: 1 } };
+      } else {
+        // Mettre à jour les dates du calendrier
+        updateData = { $set: {} };
+        if (start !== undefined) updateData.$set['calendar_dates.start'] = start;
+        if (end !== undefined) updateData.$set['calendar_dates.end'] = end;
+      }
+    }
+
+    const updatedTask = await Task.findByIdAndUpdate(
+      taskId,
+      updateData,
+      { new: true, runValidators: true }
+    );
+
+    res.status(200).json({ success: true, data: updatedTask });
+  } catch (error) {
+    console.error("Error updating calendar dates:", error);
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      details: error.message
+    });
+  }
+};
+exports.confirmAssignment = async (req, res) => {
+  try {
+    const { taskId, teamMemberId } = req.body;
+
+    // Validate inputs
+    if (!taskId || !teamMemberId) {
+      return res.status(400).json({
+        success: false,
+        message: "Both taskId and teamMemberId are required"
+      });
+    }
+
+    // 1. Update the task to add the team member
+    const updatedTask = await Task.findByIdAndUpdate(
+      taskId,
+      { $addToSet: { assigned_to: teamMemberId } }, // Using $addToSet to avoid duplicates
+      { new: true }
+    );
+
+    if (!updatedTask) {
+      return res.status(404).json({
+        success: false,
+        message: "Task not found"
+      });
+    }
+
+    // 2. Update the team member to add the task
+    await TeamMember.findByIdAndUpdate(
+      teamMemberId,
+      { $addToSet: { tasks: taskId } },
+      { new: true }
+    );
+
+    res.status(200).json({
+      success: true,
+      message: "Assignment confirmed successfully",
+      data: updatedTask
+    });
+
+  } catch (error) {
+    console.error("Error confirming assignment:", error);
+    res.status(500).json({
+      success: false,
+      message: "Internal server error",
+      error: error.message
+    });
+  }
+};
+exports.getTasksByUser = async (req, res) => {
+  try {
+    console.log("Request user object:", req.user);
+    console.log("Authenticated user ID:", req.user._id);
+
+    // Trouver d'abord tous les teamMembers où cet utilisateur est le user_id
+    const teamMembers = await TeamMember.find({ user_id: req.user._id });
+
+    // Extraire les IDs des teamMembers
+    const teamMemberIds = teamMembers.map(member => member._id);
+
+    const query = { assigned_to: { $in: teamMemberIds } };
+    console.log("Query:", query);
+
+    // Récupérer les tâches sans populate pour éviter l'erreur
+    const tasks = await Task.find(query).lean();
+
+    console.log("Found tasks:", tasks);
+
+    if (!tasks.length) {
+      console.log("No tasks found for user:", req.user._id);
+      return res.status(200).json([]);
+    }
+
+    res.status(200).json(tasks);
+  } catch (error) {
+    console.error("Controller error:", error);
+    res.status(500).json({
+      error: 'Server error',
+      details: error.message
     });
   }
 };

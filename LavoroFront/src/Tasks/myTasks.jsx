@@ -13,6 +13,9 @@ export const MyTasks = () => {
   const [user, setUser] = useState(null);
   const navigate = useNavigate();
 
+  const navigateToPrioritizedTasks = () => {
+    navigate('/prioritized-tasks');
+  };
 
   // State for active tab and filters
   const [activeTab, setActiveTab] = useState('all');
@@ -249,6 +252,14 @@ export const MyTasks = () => {
                 To Do List
                 <span className="text-muted d-block fs-12"> My Task list</span>
               </div>
+              <div className="ms-auto">
+                <button 
+                  className="btn btn-primary btn-sm btn-wave"
+                  onClick={navigateToPrioritizedTasks}
+                >
+                  <i className="ri-ai-generate me-1"></i> AI Prioritized Tasks
+                </button>
+              </div>
             </div>
             <div className="card-body p-0">
               <div className="p-3 task-navigation border-bottom border-block-end-dashed">
@@ -482,3 +493,4 @@ export const MyTasks = () => {
     </>
   );
 };
+

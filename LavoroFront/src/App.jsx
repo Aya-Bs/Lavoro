@@ -1,5 +1,3 @@
-
-
 import { Routes, BrowserRouter, Route, Navigate, useLocation } from "react-router-dom";
 import SignUp from "./user/Signup";
 import SignIn from "./user/Signin";
@@ -40,14 +38,11 @@ import TeamArchive from "./team/teamArchiveList";
 import TeamArchiveDetailsPage from "./team/teamArchiveDetails";
 import BestPerformerPage from "./pages/BestPerformerPage";
 import ChatComponent from "./chat/ChatComponent";
-import ChatFloatingButton from "./chat/ChatFloatingButton";
 import SearchMember from "./team/searchMember";
 import MemberDetails from "./team/memberDetails";
-import FullCalendar from "./team/calendar";
 import WinnersPodium from "./team/podium";
 import Mail from "./user/mail";
 import 'bootstrap/dist/css/bootstrap.min.css';
-import { File } from "./fileManager/file";
 import axios from "axios";
 import { CreateTask } from "./Tasks/createTask";
 import { TaskList } from "./Tasks/tasksList";
@@ -59,6 +54,11 @@ import DeveloperDashboard from "./Tasks/DeveloperDashboard";
 import DeveloperKanbanBoard from "./Tasks/DeveloperKanbanBoard";
 import DeveloperTaskDetail from "./Tasks/DeveloperTaskDetail";
 
+import ReportsList from "./reports/ReportsList";
+import PrioritizedTasks from "./Tasks/PrioritizedTasks";
+import File from "./fileManager/file"
+import TaskAssignement from "./Tasks/taskAssignement";
+import Calendar from "./Tasks/calendar";
 
 // ProtectedRoute component to check authentication and roles
 const ProtectedRoute = ({ children, allowedRoles }) => {
@@ -123,7 +123,6 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [showChatPopup, setShowChatPopup] = useState(false);
 
   return (
     <GoogleOAuthProvider clientId="893053722717-a3eudc815ujr6ne3tf5q3dlrvkbmls6d.apps.googleusercontent.com">
@@ -131,6 +130,7 @@ function App() {
         <RefreshHandler setIsAuthenticated={setIsAuthenticated} />
         <Routes>
           {/* Public routes */}
+
           <Route path="/signin" element={<SignIn />} />
           <Route path="/signup" element={<SignUp />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
@@ -169,6 +169,19 @@ function App() {
                 <ActivitiesPage />
               </ProtectedRoute>
             } />
+
+
+             <Route path="/calendar" element={
+              <ProtectedRoute allowedRoles={['Team Manager', 'Admin','Developer']}>
+                <Calendar />
+              </ProtectedRoute>
+            } /> 
+
+            <Route path="/taskAssignement/:taskId" element={
+              <ProtectedRoute allowedRoles={['Team Manager', 'Admin']}>
+                <TaskAssignement />
+              </ProtectedRoute>
+            } /> 
 
             {/* Admin-only routes */}
             <Route path="/admin-dashboard" element={
@@ -271,17 +284,13 @@ function App() {
               </ProtectedRoute>
             } />
 
-            <Route path="/searchMember" element={
+            <Route path="/searchMember/:id" element={
               <ProtectedRoute allowedRoles={['Team Manager', 'Admin']}>
                 <SearchMember />
               </ProtectedRoute>
             } />
 
-            <Route path="/calendar" element={
-              <ProtectedRoute allowedRoles={['Team Manager', 'Admin']}>
-                <FullCalendar />
-              </ProtectedRoute>
-            } />
+         
 
             {/* Shared routes for multiple roles */}
             <Route path="/ListPro" element={
@@ -323,13 +332,13 @@ function App() {
             } />
 
 
-<Route path="/mytasks" element={
+            <Route path="/mytasks" element={
               <ProtectedRoute allowedRoles={['Developer']}>
                 <MyTasks />
               </ProtectedRoute>
             } />
 
-<Route path="/createTask" element={
+            <Route path="/createTask" element={
               <ProtectedRoute allowedRoles={['Team Manager', 'Admin']}>
                 <CreateTask />
               </ProtectedRoute>
@@ -337,7 +346,7 @@ function App() {
 
 
 
-<Route path="/listTask" element={
+            <Route path="/listTask" element={
               <ProtectedRoute allowedRoles={['Team Manager', 'Admin']}>
                 <TaskList />
               </ProtectedRoute>
@@ -418,9 +427,29 @@ function App() {
                 <TeamArchive />
               </ProtectedRoute>
             } />
+            <Route path="/teams/teamArchiveDetails/:id" element={
+              <ProtectedRoute allowedRoles={['Project Manager', 'Admin', 'Team Manager']}>
+                <TeamArchiveDetailsPage />
+              </ProtectedRoute>
+            } />
+
+
                       <Route path="/developer-dashboard" element={
               <ProtectedRoute allowedRoles={['Developer', 'Team Manager']}>
                 <DeveloperDashboard />
+</ProtectedRoute>
+} />
+            {/* Reports route */}
+            <Route path="/reports" element={
+              <ProtectedRoute allowedRoles={['Team Manager', 'Admin']}>
+                <ReportsList />
+              </ProtectedRoute>
+            } />
+
+            {/* Prioritized Tasks route */}
+            <Route path="/prioritized-tasks" element={
+              <ProtectedRoute allowedRoles={['Developer']}>
+                <PrioritizedTasks />
               </ProtectedRoute>
             } />
           </Route>
@@ -428,12 +457,8 @@ function App() {
 
 
 
-        </Routes>
 
-        {/* Floating chat button */}
-        {isAuthenticated && window.location.pathname !== '/chat' && (
-          <ChatFloatingButton />
-        )}
+        </Routes>
       </BrowserRouter>
     </GoogleOAuthProvider>
   );

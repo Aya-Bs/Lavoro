@@ -5,6 +5,8 @@ const Sidebar = ({ userRole }) => {
   const [isDashboardOpen, setIsDashboardOpen] = useState(false);
   const [isPagesOpen, setIsPagesOpen] = useState(false);
   const [isProjectsMenuOpen, setIsProjectsMenuOpen] = useState(false);
+  const [isPagesOpenTask, setIsPagesOpenTask] = useState(false);
+
 
   const getMenuItems = () => {
     switch(userRole) {
@@ -42,7 +44,7 @@ const Sidebar = ({ userRole }) => {
                 <span className="side-menu__label">Tasks</span>
               </button>
               <ul className="slide-menu child1" style={{ display: isPagesOpen ? "block" : "none" }}>
-             
+
                 <li className="slide">
                   <Link to="/mytasks" className="side-menu__item">
                   My Tasks
@@ -55,7 +57,17 @@ const Sidebar = ({ userRole }) => {
                 </li>
 
                 
+
              </ul>
+            </li>
+            <li className="slide__category">
+              <span className="category-name">Communication</span>
+            </li>
+            <li className="slide">
+              <Link to="/chat" className="side-menu__item">
+                <i className="ri-message-3-line side-menu__icon"></i>
+                <span className="side-menu__label">Messagerie</span>
+              </Link>
             </li>
           </>
         );
@@ -127,6 +139,15 @@ const Sidebar = ({ userRole }) => {
                 </li>
               </ul>
             </li>
+            <li className="slide__category">
+              <span className="category-name">Communication</span>
+            </li>
+            <li className="slide">
+              <Link to="/chat" className="side-menu__item">
+                <i className="ri-message-3-line side-menu__icon"></i>
+                <span className="side-menu__label">Messagerie</span>
+              </Link>
+            </li>
           </>
         );
 
@@ -175,42 +196,38 @@ Member of the year                  </Link>
                   Best Performance
                   </Link>
                 </li>
-              
+
                 <li className="slide">
                   <Link to="/teamsList" className="side-menu__item">
                   Teams List
                   </Link>
                 </li>
-          
+
+                
                 <li className="slide">
-                  <Link to="/member-details/67ffe958abcdc7b19d4edb98" className="side-menu__item">
-                    member details
-                  </Link>
-                </li>
-                <li className="slide">
-                  <Link to="/searchMember" className="side-menu__item">
-                    search member
+                  <Link to="/reports" className="side-menu__item">
+                    Reports
                   </Link>
                 </li>
 
               </ul>
             </li>
 
-            <li className={`slide has-sub ${isPagesOpen ? "open" : ""}`}>
+            <li className={`slide has-sub ${isPagesOpenTask ? "open" : ""}`}>
             <li className="slide__category">
               <span className="category-name">Tasks</span>
             </li>
               <button
                 className="side-menu__item"
-                onClick={() => setIsPagesOpen(!isPagesOpen)}
+                onClick={() => setIsPagesOpenTask(!isPagesOpenTask)}
                 style={{ background: "none", border: "none", cursor: "pointer", width: "100%", textAlign: "left" }}
               >
                 <i className="ri-arrow-down-s-line side-menu__angle"></i>
                 <i className="ri-list-check-3 side-menu__icon"></i>
                 <span className="side-menu__label">Tasks</span>
               </button>
-              <ul className="slide-menu child1" style={{ display: isPagesOpen ? "block" : "none" }}>
-             
+              <ul className="slide-menu child1" style={{ display: isPagesOpenTask ? "block" : "none" }}>
+
                 <li className="slide">
                   <Link to="/createTask" className="side-menu__item">
                   Create Task
@@ -221,6 +238,11 @@ Member of the year                  </Link>
                    Task List
                   </Link>
                 </li>
+                <li className="slide">
+                  <Link to="/calendar" className="side-menu__item">
+                   Calendar
+                  </Link>
+                </li> 
              </ul>
             </li>
             <li className="slide__category">
@@ -341,6 +363,11 @@ Member of the year                  </Link>
                 <span className="side-menu__label">Best Performance</span>
               </Link>
             </li>
+            <li className="slide">
+              <Link to="/reports" className="side-menu__item">
+                <span className="side-menu__label">Reports</span>
+              </Link>
+            </li>
 
             <li className="slide__category">
               <span className="category-name">Communication</span>
@@ -358,12 +385,23 @@ Member of the year                  </Link>
       // Add more roles as needed
       default:
         return (
-          <li className="slide">
-            <Link to="/profile" className="side-menu__item">
-              <i className="ri-user-line side-menu__icon"></i>
-              <span className="side-menu__label">Profile</span>
-            </Link>
-          </li>
+          <>
+            <li className="slide">
+              <Link to="/profile" className="side-menu__item">
+                <i className="ri-user-line side-menu__icon"></i>
+                <span className="side-menu__label">Profile</span>
+              </Link>
+            </li>
+            <li className="slide__category">
+              <span className="category-name">Communication</span>
+            </li>
+            <li className="slide">
+              <Link to="/chat" className="side-menu__item">
+                <i className="ri-message-3-line side-menu__icon"></i>
+                <span className="side-menu__label">Messagerie</span>
+              </Link>
+            </li>
+          </>
         );
     }
   };

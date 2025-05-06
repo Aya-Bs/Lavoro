@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import 'bootstrap/dist/css/bootstrap.min.css';
 
 // Quill Editor
@@ -6,41 +6,16 @@ import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
 import 'react-quill/dist/quill.bubble.css';
 
-// FilePond
-import { FilePond, registerPlugin } from 'react-filepond';
-import 'filepond/dist/filepond.min.css';
-import 'filepond-plugin-image-preview/dist/filepond-plugin-image-preview.css';
-import 'filepond-plugin-image-edit/dist/filepond-plugin-image-edit.min.css';
-import FilePondPluginImagePreview from 'filepond-plugin-image-preview';
-import FilePondPluginImageEdit from 'filepond-plugin-image-edit';
-import FilePondPluginFileValidateType from 'filepond-plugin-file-validate-type';
-import FilePondPluginFileValidateSize from 'filepond-plugin-file-validate-size';
-import FilePondPluginImageExifOrientation from 'filepond-plugin-image-exif-orientation';
-import FilePondPluginImageCrop from 'filepond-plugin-image-crop';
-import FilePondPluginImageResize from 'filepond-plugin-image-resize';
-import FilePondPluginImageTransform from 'filepond-plugin-image-transform';
 
 // Flatpickr
 import Flatpickr from 'react-flatpickr';
 import 'flatpickr/dist/flatpickr.min.css';
 
-import Select from 'react-select';
-
 import axios from 'axios';
 import { useNavigate, useLocation } from 'react-router-dom';
 import Swal from 'sweetalert2';
 
-// Register FilePond plugins
-registerPlugin(
-  FilePondPluginImagePreview,
-  FilePondPluginImageEdit,
-  FilePondPluginFileValidateType,
-  FilePondPluginFileValidateSize,
-  FilePondPluginImageExifOrientation,
-  FilePondPluginImageCrop,
-  FilePondPluginImageResize,
-  FilePondPluginImageTransform
-);
+
 
 export const CreateTask = () => {
     const navigate = useNavigate();
@@ -53,6 +28,7 @@ export const CreateTask = () => {
     const [loadingProjects, setLoadingProjects] = useState(false);
     const [loadingMembers, setLoadingMembers] = useState(false);
     const [selectedMember, setSelectedMember] = useState(null);
+    const [currentUser, setCurrentUser] = useState(null);
 
     const [formData, setFormData] = useState({
       title: '',
@@ -71,51 +47,77 @@ export const CreateTask = () => {
     const [productFeatures, setProductFeatures] = useState('');
 
     useEffect(() => {
-        const fetchData = async () => {
-          try {
-            setLoadingProjects(true);
-            setLoadingMembers(true);
-            
-            // Fetch projects
-            const projectsResponse = await axios.get('http://localhost:3000/project/managed-by-me', {
-              withCredentials: true
-            });
-            
-            if (!projectsResponse.data.success) {
+      const fetchData = async () => {
+        try {
+          setLoadingProjects(true);
+          setLoadingMembers(true);
+          
+          // Get token from localStorage
+          const token = localStorage.getItem('token');
+          if (!token) {
+              navigate('/signin');
+              return;
+          }
+  
+          // First fetch current user info with auth token
+          const userResponse = await axios.get('http://localhost:3000/users/me', {
+              headers: {
+                  Authorization: `Bearer ${token}`
+              }
+          });
+          
+          if (!userResponse.data) {
+              throw new Error('Failed to fetch user info');
+          }
+          
+          setCurrentUser(userResponse.data);
+      
+          // Then fetch projects and team members with auth token
+          const [projectsResponse, membersResponse] = await Promise.all([
+              axios.get('http://localhost:3000/project/managed-by-me', {
+                withCredentials: true
+              }),
+              axios.get('http://localhost:3000/teamMember/getAllMembers', {
+                withCredentials: true
+
+              })
+          ]);
+          
+          if (!projectsResponse.data.success) {
               throw new Error(projectsResponse.data.message || 'Failed to fetch projects');
-            }
-            
-            // Fetch team members
-            const membersResponse = await axios.get('http://localhost:3000/teamMember/getAllMembers', {
-              withCredentials: true
-            });
-            
-            if (!membersResponse.data.success) {
+          }
+          
+          if (!membersResponse.data.success) {
               throw new Error(membersResponse.data.message || 'Failed to fetch team members');
-            }
-            
-            // Transform data to match expected structure
-            const formattedMembers = membersResponse.data.data.map(member => ({
+          }
+          
+          const formattedMembers = membersResponse.data.data.map(member => ({
               ...member,
-              _id: member.id || member._id, // Standardize ID field
+              _id: member.id || member._id,
               name: member.name || 'Unnamed Member',
               image: member.image || '../assets/images/faces/11.jpg',
               role: member.role || 'Developer'
-            }));
-            
-            setProjects(projectsResponse.data.data);
-            setTeamMembers(formattedMembers);
-          } catch (err) {
-            console.error('Error fetching data:', err);
-            setError(err.response?.data?.message || err.message || 'Failed to load data');
-          } finally {
-            setLoadingProjects(false);
-            setLoadingMembers(false);
+          }));
+          
+          setProjects(projectsResponse.data.data);
+          setTeamMembers(formattedMembers);
+        } catch (err) {
+          console.error('Error fetching data:', err);
+          setError(err.response?.data?.message || err.message || 'Failed to load data');
+          if (err.response?.status === 401) {
+              // If unauthorized, redirect to login
+              localStorage.removeItem('token');
+              navigate('/signin');
           }
-        };
-      
-        fetchData();
-    }, []);
+        } finally {
+          setLoadingProjects(false);
+          setLoadingMembers(false);
+        }
+      };
+    
+      fetchData();
+  }, [navigate]);
+
 
     useEffect(() => {
       if (location.state?.projectId) {
@@ -142,7 +144,6 @@ export const CreateTask = () => {
       if (formData.assigned_to) {
         const member = teamMembers.find(m => m._id === formData.assigned_to);
         setSelectedMember(member);
-        console.log('Selected Member:', member); // Debugging
       } else {
         setSelectedMember(null);
       }
@@ -196,32 +197,43 @@ export const CreateTask = () => {
     };
 
     const handleSubmit = async (e) => {
-      e.preventDefault();
-      setLoading(true);
-      setError('');
-    
-      try {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
+  
+    try {
+        // Make sure currentUser is available
+        if (!currentUser || !currentUser._id) {
+            throw new Error('User information not available');
+        }
+        
+        const token = localStorage.getItem('token');
+        if (!token) {
+            navigate('/signin');
+            return;
+        }
+        
         const response = await axios.post('http://localhost:3000/tasks/createTask', {
-          ...formData,
-          description: stripHtmlTags(productFeatures)
+            ...formData,
+            description: stripHtmlTags(productFeatures),
+            created_by: currentUser._id
         }, {
-          withCredentials: true,
-          headers: {
-            'Content-Type': 'application/json'
-          }
+            headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${token}`
+            }
         });
     
         if (response.data) {
-          navigate("/listTask");
-          Swal.fire({
-            icon: 'success',
-            title: 'Task Created',
-            text: 'Task has been created successfully',
-            confirmButtonText: 'OK'
-          });
-          console.log('Task created successfully:', response.data);
+            navigate("/listTask");
+            Swal.fire({
+                icon: 'success',
+                title: 'Task Created',
+                text: 'Task has been created successfully',
+                confirmButtonText: 'OK'
+            });
         }
-      } catch (err) {
+    } catch (err) {
         console.error('Task creation error:', err);
         const errorMessage = err.response?.data?.message || 
                             err.message || 
@@ -229,15 +241,21 @@ export const CreateTask = () => {
         
         setError(errorMessage);
         Swal.fire({
-          icon: 'error',
-          title: 'Error',
-          text: errorMessage,
-          confirmButtonText: 'Try Again'
+            icon: 'error',
+            title: 'Error',
+            text: errorMessage,
+            confirmButtonText: 'Try Again'
         });
-      } finally {
+        
+        if (err.response?.status === 401) {
+            localStorage.removeItem('token');
+            navigate('/signin');
+        }
+    } finally {
         setLoading(false);
-      }
-    };
+    }
+};
+
 
     const projectSelectionSection = (
       <select
@@ -280,25 +298,23 @@ export const CreateTask = () => {
     return (
       <>
         <div className="d-flex align-items-center justify-content-between page-header-breadcrumb flex-wrap gap-2">
-                <div>
-                    <nav>
-                        <ol className="breadcrumb mb-1">
-                            
-                            <li className="breadcrumb-item">
-                                <a href="javascript:void(0);">Tasks</a>
-                            </li>
-                            <li className="breadcrumb-item active" aria-current="page">
-                            Create Task
-                            </li>
-                        </ol>
-                    </nav>
-                    <h1 className="page-title fw-medium fs-18 mb-0">
-                        Create Task
-                    </h1>
-                </div>
-                
-            </div>
- 
+          <div>
+            <nav>
+              <ol className="breadcrumb mb-1">
+                <li className="breadcrumb-item">
+                  <a href="javascript:void(0);">Tasks</a>
+                </li>
+                <li className="breadcrumb-item active" aria-current="page">
+                  Create Task
+                </li>
+              </ol>
+            </nav>
+            <h1 className="page-title fw-medium fs-18 mb-0">
+              Create Task
+            </h1>
+          </div>
+        </div>
+
         <div className="row">
           <div className="col-xl-12">
             <div className="card custom-card">
@@ -420,28 +436,26 @@ export const CreateTask = () => {
                                   <div className="d-flex flex-column align-items-center justify-content-center text-center">
                                     <div className="mb-2">
                                       <span className="avatar avatar-xl avatar-rounded">
-                                      {selectedMember.image ? (
-              <img
-                src={
-                    selectedMember.image.startsWith('http') || selectedMember.image.startsWith('https')
-                    ? selectedMember.image // Use as-is if it's already a full URL
-                    : `http://localhost:3000${selectedMember.image}` // Prepend server URL if relative
-                }
-
-                                          alt={selectedMember.name} 
-                                          className="img-fluid" 
-                                          onError={(e) => {
-                                            e.target.src = '../assets/images/faces/11.jpg';
-                                          }}
-                                        />
+                                        {selectedMember.image ? (
+                                          <img
+                                            src={
+                                              selectedMember.image.startsWith('http') || selectedMember.image.startsWith('https')
+                                              ? selectedMember.image
+                                              : `http://localhost:3000${selectedMember.image}`
+                                            }
+                                            alt={selectedMember.name} 
+                                            className="img-fluid" 
+                                            onError={(e) => {
+                                              e.target.src = '../assets/images/faces/11.jpg';
+                                            }}
+                                          />
                                         ) : (
-                                            <img 
-                                                src="../assets/images/faces/11.jpg" 
-                                                alt={selectedMember.name} 
-                                                className="img-fluid" 
-                                            />
-                                            )}
-
+                                          <img 
+                                            src="../assets/images/faces/11.jpg" 
+                                            alt={selectedMember.name} 
+                                            className="img-fluid" 
+                                          />
+                                        )}
                                       </span>
                                     </div>
                                     <h6 className="fw-semibold mb-2">
@@ -449,8 +463,7 @@ export const CreateTask = () => {
                                     </h6>
                                     <div className="mb-2">
                                       <span className="badge bg-info-transparent fw-xxl">
-                                        {selectedMember.role}
-                                      </span>
+Developer                                      </span>
                                     </div>
                                   </div>
                                 </div>
