@@ -1,4 +1,7 @@
 import { useState, useEffect, useRef } from "react"
+import Swal from "sweetalert2"
+import { useParams } from 'react-router-dom';
+
 
 export default function TaskAssignement() {
   const [members, setMembers] = useState([])
@@ -10,17 +13,20 @@ export default function TaskAssignement() {
   const [soundEnabled, setSoundEnabled] = useState(true)
   const [assignmentResult, setAssignmentResult] = useState(null)
   const [loading, setLoading] = useState(false)
+  const [isAssigned, setIsAssigned] = useState(false);
+  const { taskId } = useParams();
+
 
   const intervalRef = useRef(null)
   const spinTimeoutRef = useRef(null)
+
 
   // Récupérer la liste des membres
   useEffect(() => {
     const fetchMembers = async () => {
       try {
-        const response = await fetch('http://localhost:3000/teamMember/getAllMember')
+        const response = await fetch('http://localhost:3000/teamMember/getAll')
         const data = await response.json()
-        console.log("Membres récupérés:", data.data)
         setMembers(data.data || [])
       } catch (error) {
         console.error("Erreur lors de la récupération des membres:", error)
@@ -33,8 +39,9 @@ export default function TaskAssignement() {
   // Récupérer les détails de la tâche
   useEffect(() => {
     const fetchTask = async () => {
+      if (!taskId) return;
       try {
-        const response = await fetch('http://localhost:3000/tasks/getTaskById/680b729735d26a806d4db132')
+        const response = await fetch(`http://localhost:3000/tasks/getTaskByIdMember/${taskId}`)
         const data = await response.json()
         setTask(data.data || null)
       } catch (error) {
@@ -43,35 +50,56 @@ export default function TaskAssignement() {
     }
 
     fetchTask()
-  }, [])
+  }, [taskId])
 
   // Fonction pour assigner la tâche
-  const assignTask = async () => {
-    setLoading(true)
-    try {
-      const response = await fetch('http://localhost:3000/ai-assignment/assign', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          taskId: "680b729735d26a806d4db132",
-          teamId: "67ffe8e9abcdc7b19d4edb94"
-        })
-      })
-      const result = await response.json()
-      setAssignmentResult(result)
-      
-      // Retourner l'index du membre assigné
-      const assignedMemberId = result.data.bestMatch.memberId
-      return members.findIndex(member => member._id === assignedMemberId)
-    } catch (error) {
-      console.error("Erreur lors de l'assignation:", error)
-      return -1
-    } finally {
-      setLoading(false)
+  // Fonction pour assigner la tâche
+const assignTask = async () => {
+  if (!taskId) return -1;
+  
+  setLoading(true);
+  try {
+    // 1. Récupérer le meilleur match depuis l'API
+    const response = await fetch(
+      `http://localhost:3000/ai-assignment/tasks/${taskId}/matches?topN=1`
+    );
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
     }
+    
+    const result = await response.json();
+    console.log("Résultat de l'assignation:", result);
+    // 2. Vérifier la structure de la réponse
+    if (!result.success || !result.matches || result.matches.length === 0) {
+      throw new Error("Aucun membre correspondant trouvé");
+    }
+    
+    // 3. Stocker le résultat pour confirmation ultérieure
+    setAssignmentResult(result);
+    setIsAssigned(true);
+    
+    // 4. Trouver l'index du membre dans le tableau local
+    const bestMatch = result.matches[0];
+    const assignedMemberId = bestMatch.member_id;
+    
+    return members.findIndex(member => 
+      member._id === assignedMemberId || 
+      member.user?._id === assignedMemberId
+    );
+    
+  } catch (error) {
+    console.error("Erreur lors de l'assignation:", error);
+    Swal.fire({
+      title: 'Erreur',
+      text: error.message || "Échec de l'assignation",
+      icon: 'error'
+    });
+    return -1;
+  } finally {
+    setLoading(false);
   }
+};
 
   // Fonction pour simuler des sons
   const simulateSound = (type) => {
@@ -118,6 +146,61 @@ export default function TaskAssignement() {
     }
   }
 
+
+  const confirmAssignment = async () => {
+    try {
+      if (!assignmentResult || !assignmentResult?.matches) {
+        throw new Error("No assignment result available");
+      }
+  
+      const response = await fetch('http://localhost:3000/tasks/confirm-assignment', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          taskId: taskId,
+          teamMemberId: assignmentResult.matches.member_id
+        })
+      });
+  
+      const result = await response.json();
+      console.log("Confirmation de l'assignation:", result);
+  
+      if (result.success) {
+        Swal.fire({
+          title: 'Success!',
+          text: 'Task has been assigned successfully',
+          icon: 'success',
+          confirmButtonText: 'OK'
+        });
+        
+        // Mettre à jour l'état local si nécessaire
+        setTask(prev => ({
+          ...prev,
+          assigned_to: [...(prev?.assigned_to || []), {
+            member: assignmentResult.matches.member_id,
+            assigned_at: new Date()
+          }]
+        }));
+        
+        // Réinitialiser l'état
+        setAssignmentResult(null);
+        setIsAssigned(false);
+      } else {
+        throw new Error(result.message || 'Failed to confirm assignment');
+      }
+    } catch (error) {
+      console.error('Error confirming assignment:', error);
+      Swal.fire({
+        title: 'Error!',
+        text: error.message || 'Failed to confirm assignment',
+        icon: 'error',
+        confirmButtonText: 'OK'
+      });
+    }
+  };
+
   // Fonction pour démarrer la rotation et l'assignation
   const startSpin = async () => {
     if (!isSpinning && members.length > 0) {
@@ -153,6 +236,7 @@ export default function TaskAssignement() {
               setCurrentImageIndex(assignedIndex >= 0 ? assignedIndex : 0)
               setIsSpinning(false)
               simulateSound("win")
+              setIsAssigned(true)
             }, 500)
           }
         }, slowdownSpeed)
@@ -232,31 +316,31 @@ export default function TaskAssignement() {
           <div className="grid-container">
             {/* Section de gauche */}
             <div className="text-section">
-            <h2 className="task-title">
-  {task ? task.taskTitle : "Loading task..."}
-</h2>
-              
-              {task && task.requiredSkills && (
-                      <>
-                        <p className="text-muted mb-2">Required Skills:</p>
-                        <div className="d-flex flex-wrap gap-1 mb-3">
-                          {task.requiredSkills.map((skill, index) => (
-                            <span key={index} className="badge rounded-pill bg-info-transparent">
-                              {skill}
-                            </span>
-                          ))}
-                        </div>
-                      </>
-                    )}
-             
-              <div className="stat-row">
-                <div className="stat-dot pink-dot"></div>
-                <span className="text-muted">
-                        Status: <span className="fw-bold stat-value">{isSpinning ? "In progress..." : "Ready"}</span>
+              <div className="text-container">
+                <h2 className="task-title">{task ? task.taskTitle : "Loading task..."}</h2>
+
+                {task && task.requiredSkills && (
+                  <>
+                    <p className="text-muted mb-2">Required Skills:</p>
+                    <div className="d-flex flex-wrap gap-1 mb-3">
+                      {task.requiredSkills.map((skill, index) => (
+                        <span key={index} className="badge rounded-pill bg-info-transparent">
+                          {skill}
                         </span>
+                      ))}
+                    </div>
+                  </>
+                )}
+
+                <div className="stat-row">
+                  <div className="stat-dot pink-dot"></div>
+                  <span className="text-muted">
+                    Status: <span className="fw-bold stat-value">{isSpinning ? "In progress..." : "Ready"}</span>
+                  </span>
+                </div>
+                <div className="text-decorative-circle"></div>
               </div>
             </div>
-
             {/* Flèche au milieu */}
             <div className="arrow-container">
               <div className="arrow-circle">
@@ -310,14 +394,30 @@ export default function TaskAssignement() {
                 </div>
               )}
 
-              <button
-                onClick={startSpin}
-                className={`spin-button ${isSpinning || loading || members.length === 0 ? 'disabled' : ''}`}
-                disabled={isSpinning || loading || members.length === 0}
-              >
-                <RotateCwIcon spinning={isSpinning} />
-                {loading ? "Assignation..." : isSpinning ? "Loading..." : "Assign Task"}
-              </button>
+              <div className="buttons-container">
+                <button
+                  onClick={startSpin}
+                  className={`spin-button ${isSpinning || loading || members.length === 0 ? 'disabled' : ''}`}
+                  disabled={isSpinning || loading || members.length === 0}
+                >
+                  <RotateCwIcon spinning={isSpinning} />
+                  {loading ? "Assignation..." : isSpinning ? "Loading..." : "Assign Task"}
+                </button>
+
+                {isAssigned && !isSpinning && (
+                  <button
+                    className="confirm-button btn btn-success btn-wave"
+                    onClick={confirmAssignment}
+                    disabled={loading}
+                  >
+                    {loading ? (
+                      <span className="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                    ) : (
+                      "Confirm Assign"
+                    )}
+                  </button>
+                )}
+              </div>
             </div>
           </div>
         </div>
@@ -366,6 +466,22 @@ export default function TaskAssignement() {
           color: #D1D5DB;
         }
         
+        /* Conteneur pour la section de texte avec un léger fond et une ombre */
+.text-container {
+  position: relative;
+  padding: 1.5rem;
+  border-radius: 0.5rem;
+  background-color: rgba(255, 255, 255, 0.05);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+.text-decorative-circle {
+  position: absolute;
+  inset: -0.5rem;
+  border-radius: 0.5rem;
+  border: 2px dashed #6366F1;
+  pointer-events: none;
+}
         .stat-row {
           display: flex;
           align-items: center;
@@ -468,8 +584,18 @@ export default function TaskAssignement() {
           text-align: center;
           margin-top: 0.5rem;
         }
+          .buttons-container {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            width: 100%;
+            max-width: 30rem;
+            align-items: stretch;
+          }
         
         .spin-button {
+          margin-top: 0;
+          flex: 1;
           margin-top: 1.5rem;
           width: 100%;
           max-width: 20rem;
@@ -484,11 +610,15 @@ export default function TaskAssignement() {
           font-weight: 500;
           border: none;
           cursor: pointer;
-          transition: opacity 0.2s;
+          transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+          transform: translateY(0);
+          box-shadow: 0 2px 5px rgba(0,0,0,0.1);
         }
         
         .spin-button:hover:not(.disabled) {
           opacity: 0.9;
+          transform: translateY(-3px);
+          box-shadow: 0 5px 15px rgba(0,0,0,0.2);
         }
         
         .spin-button.disabled {
@@ -548,6 +678,38 @@ export default function TaskAssignement() {
     background-position: 200% center;
   }
 }
+  .confirm-button {
+          flex: 1;
+          height: 45px;
+          margin-top: 1.5rem;
+          min-width: 0;
+          color: white;
+          padding: 0.75rem 1.5rem;
+          border-radius: 0.375rem;
+          border: none;
+          cursor: pointer;
+          font-weight: 500;
+          transition: all 0.3s ease;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            animation: fadeIn 0.5s ease-out;
+
+        }
+            @keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+        .confirm-button:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+
+        .confirm-button:active {
+          transform: translateY(0);
+        }
       `}</style>
     </div>
   )

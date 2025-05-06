@@ -1,11 +1,28 @@
 const express = require('express');
 const router = express.Router();
-const { seedTasks, seedTaskHistory, getTasksByUser } = require('../controllers/TaskController');
 const auth = require('../middleware/authenticatedToken');
 
 const taskController = require('../controllers/TaskController')
+const authenticateUser = require('../middleware/mailAuth');
 
+router.post('/createTask', taskController.addTask);
+router.get('/',  taskController.getAllTasks);
 router.delete('/:taskId', taskController.deleteTask);
+router.patch('/:taskId/assign', taskController.assignTask);
+router.patch('/:taskId/unassign', taskController.unassignTask);
+router.get('/task/:taskId',  taskController.getTaskById);
+router.get('/my-tasks', authenticateUser, taskController.getMyTasks);
+router.patch('/:taskId/start', authenticateUser, taskController.startTask);
+router.patch('/:taskId/complete', authenticateUser, taskController.completeTask);
+router.get('/getTaskByIdMember/:id', taskController.getTaskByIdMember);
+router.get('/getTasksList/:userId', taskController.getTasksList);
+router.put('/updateCalendarDates/:taskId', taskController.updateTaskCalendarDates);
+router.post('/confirm-assignment', taskController.confirmAssignment);
+
+
+
+
+
 
 
 router.post('/seedtasks', async (req, res) => {
@@ -25,7 +42,7 @@ router.post('/seed-task-history', async (req, res) => {
         res.status(500).json({ error: 'Error seeding task history' });
     }
 });
-router.get('/getTasksByUser/:userId', getTasksByUser);
+router.get('/getTasksByUser/:userId', taskController.getTasksByUserId);
 router.get('/my-tasks', auth, taskController.getTasksByUser);
 
 
@@ -40,9 +57,7 @@ router.post('/test-points-system/:userId',
     taskController.testPointsSystem
 );
 
-router.get('/getTasksList/:userId', taskController.getTasksList);
-router.put('/updateCalendarDates/:taskId', taskController.updateTaskCalendarDates);
-router.get('/getTaskById/:id', taskController.getTaskById);
+
 
 
 module.exports = router;

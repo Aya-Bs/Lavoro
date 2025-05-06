@@ -1,11 +1,9 @@
+
 const TeamMember = require('../models/teamMember');
 const User = require('../models/user');
-const Team = require('../models/team');
-const Project = require('../models/Project');
 const Skills = require('../models/skills');
 const mongoose = require('mongoose');
 const nodemailer = require('nodemailer');
-
 
 // exports.getTeamMemberById = async (req, res) => {
 //   try {
@@ -55,7 +53,7 @@ const nodemailer = require('nodemailer');
 
 exports.getTeamMemberById = async (req, res) => {
   try {
-    const { id } = req.params; 
+    const { id } = req.params; // Maintenant on utilise l'ID direct du User
 
     // Recherche le TeamMember par l'ID du User
     const teamMember = await TeamMember.findOne({ user_id: id })
@@ -85,10 +83,8 @@ exports.getTeamMemberById = async (req, res) => {
         name: skill.name || 'Unnamed Skill',
         description: skill.description || ''
       })) || [],
-      experience_level: teamMember.experience_level,
-      missed_deadlines: teamMember.missed_deadlines,
       performance_score: teamMember.performance_score,
-      total_tasks_completed: teamMember.total_tasks_completed,
+      completed_tasks_count: teamMember.completed_tasks_count,
       joined_at: teamMember.joined_at
     };
 
@@ -141,8 +137,6 @@ exports.getTeamMembersByTeamId = async (req, res) => {
     });
   }
 };
-
-
 
 
 exports.addTeamMember = async (req, res) => {
@@ -287,7 +281,72 @@ exports.addTeamMember = async (req, res) => {
 };
 
 
+
+
+
+
+
+
+// In your backend controller
+exports.getAllMemberTask = async (req, res) => {
+  try {
+    const members = await TeamMember.find({})
+      .populate('user_id', 'firstName lastName image')
+      .lean();
+    
+    // Filter out any invalid members
+    const validMembers = members.filter(member => member?._id);
+    
+    res.status(200).json({
+      success: true,
+      data: validMembers
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching team members'
+    });
+  }
+};
+
+
+
 exports.getAllMembers = async (req, res) => {
+  try {
+    const members = await TeamMember.find()
+      .populate('user_id', 'firstName lastName image')
+      .populate('skills', 'name');
+
+    if (!members) {
+      return res.status(404).json({ success: false, message: 'No team members found' });
+    }
+
+    const result = members.map(member => ({
+      id: member._id,
+      name: member.user_id ? `${member.user_id.firstName} ${member.user_id.lastName}` : 'Unknown',
+      image: member.user_id?.image || '',
+      role: member.role,
+      skills: member.skills?.map(s => s.name) || [],
+      performance: member.performance_score,
+      tasksCompleted: member.completed_tasks_count
+    }));
+
+    res.status(200).json({
+      success: true,
+      data: result
+    });
+
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching team members'
+    });
+  }
+};
+
+
+exports.getAll = async (req, res) => {
   try {
       // Récupérer tous les membres d'équipe avec les informations utilisateur associées
       const members = await TeamMember.find()
@@ -326,3 +385,5 @@ exports.getAllMembers = async (req, res) => {
       });
   }
 };
+
+

@@ -12,7 +12,8 @@ const ChatSidebar = ({
     onChatSelect,
     searchQuery,
     onSearch,
-    currentUser
+    currentUser,
+    onCreateGroup
 }) => {
     // Format timestamp to relative time (e.g., "il y a 5 minutes")
     const formatTime = (timestamp) => {
@@ -114,127 +115,153 @@ const ChatSidebar = ({
                     tabIndex="0"
                 >
                     <ul className="list-unstyled mb-0 mt-2 chat-users-tab" id="chat-msg-scroll">
-                        <li className="pb-0">
-                            <p className="text-muted fs-11 fw-medium mb-2 op-7">CONVERSATIONS ACTIVES</p>
-                        </li>
-                        {conversations
-                            .filter(conv => conv.user.status === 'online')
-                            .map((conv, index) => (
-                                <li
-                                    key={`active-${index}`}
-                                    className={`checkforactive ${
-                                        activeChat &&
-                                        activeChat.type === 'direct' &&
-                                        activeChat.user._id === conv.user._id
-                                            ? 'active'
-                                            : ''
-                                    } ${conv.unreadCount > 0 ? 'chat-msg-unread' : ''}`}
-                                >
-                                    <a
-                                        href="javascript:void(0);"
-                                        onClick={() => onChatSelect(conv, 'direct')}
-                                    >
-                                        <div className="d-flex align-items-top">
-                                            <div className="me-1 lh-1">
-                                                <span className="avatar avatar-md online me-2">
-                                                    <img
-                                                        src={conv.user.profileImage || conv.user.image || "https://ui-avatars.com/api/?name=" + encodeURIComponent(conv.user.name) + "&background=4a6bff&color=fff"}
-                                                        alt={conv.user.name}
-                                                        onError={(e) => {
-                                                            e.target.onerror = null;
-                                                            e.target.src = "https://ui-avatars.com/api/?name=" + encodeURIComponent(conv.user.name) + "&background=4a6bff&color=fff";
-                                                        }}
-                                                    />
-                                                </span>
-                                            </div>
-                                            <div className="flex-fill">
-                                                <p className="mb-0 fw-medium">
-                                                    {conv.user.name}
-                                                    <span className="float-end text-muted fw-normal fs-11">
-                                                        {formatTime(conv.lastMessage?.sent_at)}
-                                                    </span>
-                                                </p>
-                                                <p className="fs-12 mb-0">
-                                                    <span className="chat-msg text-truncate">
-                                                        {truncateMessage(conv.lastMessage?.message)}
-                                                    </span>
-                                                    {conv.unreadCount > 0 && (
-                                                        <span className="badge bg-primary2 rounded-pill float-end">
-                                                            {conv.unreadCount}
-                                                        </span>
-                                                    )}
-                                                    {conv.unreadCount === 0 && conv.lastMessage?.sender_id === currentUser?._id && (
-                                                        <span className="chat-read-icon float-end align-middle">
-                                                            <i className="ri-check-double-fill"></i>
-                                                        </span>
-                                                    )}
-                                                </p>
-                                            </div>
-                                        </div>
-                                    </a>
-                                </li>
-                            ))}
+                        {conversations.length > 0 ? (
+                            <>
+                                {/* Conversations en ligne */}
+                                {conversations.filter(conv => conv.user.status === 'online').length > 0 && (
+                                    <>
+                                        <li className="pb-0">
+                                            <p className="text-muted fs-11 fw-medium mb-2 op-7">CONVERSATIONS ACTIVES</p>
+                                        </li>
+                                        {conversations
+                                            .filter(conv => conv.user.status === 'online')
+                                            .map((conv, index) => (
+                                                <li
+                                                    key={`active-${index}`}
+                                                    className={`checkforactive ${
+                                                        activeChat &&
+                                                        activeChat.type === 'direct' &&
+                                                        activeChat.user._id === conv.user._id
+                                                            ? 'active'
+                                                            : ''
+                                                    } ${conv.unreadCount > 0 ? 'chat-msg-unread' : ''}`}
+                                                >
+                                                    <a
+                                                        href="javascript:void(0);"
+                                                        onClick={() => onChatSelect(conv, 'direct')}
+                                                    >
+                                                        <div className="d-flex align-items-top">
+                                                            <div className="me-1 lh-1">
+                                                                <span className="avatar avatar-md online me-2">
+                                                                    <img
+                                                                        src={conv.user.profileImage || conv.user.image || "https://ui-avatars.com/api/?name=" + encodeURIComponent(conv.user.name || 'User') + "&background=4a6bff&color=fff"}
+                                                                        alt={conv.user.name || `${conv.user.firstName || ''} ${conv.user.lastName || ''}`.trim() || 'Utilisateur'}
+                                                                        onError={(e) => {
+                                                                            console.log("Image error for user:", conv.user.name);
+                                                                            e.target.onerror = null;
+                                                                            e.target.src = "https://ui-avatars.com/api/?name=" + encodeURIComponent(conv.user.name || 'User') + "&background=4a6bff&color=fff";
+                                                                        }}
+                                                                    />
+                                                                </span>
+                                                            </div>
+                                                            <div className="flex-fill">
+                                                                <p className="mb-0 fw-medium">
+                                                                    {conv.user.name || `${conv.user.firstName || ''} ${conv.user.lastName || ''}`.trim() || 'Utilisateur'}
+                                                                    <span className="float-end text-muted fw-normal fs-11">
+                                                                        {formatTime(conv.lastMessage?.sent_at)}
+                                                                    </span>
+                                                                </p>
+                                                                <p className="fs-12 mb-0">
+                                                                    <span className="chat-msg text-truncate">
+                                                                        {truncateMessage(conv.lastMessage?.message)}
+                                                                    </span>
+                                                                    {conv.unreadCount > 0 && (
+                                                                        <span className="badge bg-primary2 rounded-pill float-end">
+                                                                            {conv.unreadCount}
+                                                                        </span>
+                                                                    )}
+                                                                    {conv.unreadCount === 0 && conv.lastMessage?.sender_id === currentUser?._id && (
+                                                                        <span className="chat-read-icon float-end align-middle">
+                                                                            <i className="ri-check-double-fill"></i>
+                                                                        </span>
+                                                                    )}
+                                                                </p>
+                                                            </div>
+                                                        </div>
+                                                    </a>
+                                                </li>
+                                            ))}
+                                    </>
+                                )}
 
-                        <li className="pb-0">
-                            <p className="text-muted fs-11 fw-medium mb-2 op-7">TOUTES LES CONVERSATIONS</p>
-                        </li>
-                        {conversations
-                            .filter(conv => conv.user.status !== 'online')
-                            .map((conv, index) => (
-                                <li
-                                    key={`inactive-${index}`}
-                                    className={`chat-inactive checkforactive ${
-                                        activeChat &&
-                                        activeChat.type === 'direct' &&
-                                        activeChat.user._id === conv.user._id
-                                            ? 'active'
-                                            : ''
-                                    } ${conv.unreadCount > 0 ? 'chat-msg-unread' : ''}`}
-                                >
-                                    <a
-                                        href="javascript:void(0);"
-                                        onClick={() => onChatSelect(conv, 'direct')}
-                                    >
-                                        <div className="d-flex align-items-top">
-                                            <div className="me-1 lh-1">
-                                                <span className="avatar avatar-md offline me-2">
-                                                    <img
-                                                        src={conv.user.profileImage || conv.user.image || "https://ui-avatars.com/api/?name=" + encodeURIComponent(conv.user.name) + "&background=4a6bff&color=fff"}
-                                                        alt={conv.user.name}
-                                                        onError={(e) => {
-                                                            e.target.onerror = null;
-                                                            e.target.src = "https://ui-avatars.com/api/?name=" + encodeURIComponent(conv.user.name) + "&background=4a6bff&color=fff";
-                                                        }}
-                                                    />
-                                                </span>
-                                            </div>
-                                            <div className="flex-fill">
-                                                <p className="mb-0 fw-medium">
-                                                    {conv.user.name}
-                                                    <span className="float-end text-muted fw-normal fs-11">
-                                                        {formatTime(conv.lastMessage?.sent_at)}
-                                                    </span>
-                                                </p>
-                                                <p className="fs-12 mb-0">
-                                                    <span className="chat-msg text-truncate">
-                                                        {truncateMessage(conv.lastMessage?.message)}
-                                                    </span>
-                                                    {conv.unreadCount > 0 && (
-                                                        <span className="badge bg-primary2 rounded-pill float-end">
-                                                            {conv.unreadCount}
-                                                        </span>
-                                                    )}
-                                                    {conv.unreadCount === 0 && conv.lastMessage?.sender_id === currentUser?._id && (
-                                                        <span className="chat-read-icon float-end align-middle">
-                                                            <i className="ri-check-double-fill"></i>
-                                                        </span>
-                                                    )}
-                                                </p>
-                                            </div>
-                                        </div>
-                                    </a>
-                                </li>
-                            ))}
+                                {/* Conversations hors ligne */}
+                                {conversations.filter(conv => conv.user.status !== 'online').length > 0 && (
+                                    <>
+                                        <li className="pb-0">
+                                            <p className="text-muted fs-11 fw-medium mb-2 op-7">TOUTES LES CONVERSATIONS</p>
+                                        </li>
+                                        {conversations
+                                            .filter(conv => conv.user.status !== 'online')
+                                            .map((conv, index) => (
+                                                <li
+                                                    key={`inactive-${index}`}
+                                                    className={`chat-inactive checkforactive ${
+                                                        activeChat &&
+                                                        activeChat.type === 'direct' &&
+                                                        activeChat.user._id === conv.user._id
+                                                            ? 'active'
+                                                            : ''
+                                                    } ${conv.unreadCount > 0 ? 'chat-msg-unread' : ''}`}
+                                                >
+                                                    <a
+                                                        href="javascript:void(0);"
+                                                        onClick={() => onChatSelect(conv, 'direct')}
+                                                    >
+                                                        <div className="d-flex align-items-top">
+                                                            <div className="me-1 lh-1">
+                                                                <span className="avatar avatar-md offline me-2">
+                                                                    <img
+                                                                        src={conv.user.profileImage || conv.user.image || "https://ui-avatars.com/api/?name=" + encodeURIComponent(conv.user.name || 'User') + "&background=4a6bff&color=fff"}
+                                                                        alt={conv.user.name || `${conv.user.firstName || ''} ${conv.user.lastName || ''}`.trim() || 'Utilisateur'}
+                                                                        onError={(e) => {
+                                                                            console.log("Image error for user:", conv.user.name);
+                                                                            e.target.onerror = null;
+                                                                            e.target.src = "https://ui-avatars.com/api/?name=" + encodeURIComponent(conv.user.name || 'User') + "&background=4a6bff&color=fff";
+                                                                        }}
+                                                                    />
+                                                                </span>
+                                                            </div>
+                                                            <div className="flex-fill">
+                                                                <p className="mb-0 fw-medium">
+                                                                    {conv.user.name || `${conv.user.firstName || ''} ${conv.user.lastName || ''}`.trim() || 'Utilisateur'}
+                                                                    <span className="float-end text-muted fw-normal fs-11">
+                                                                        {formatTime(conv.lastMessage?.sent_at)}
+                                                                    </span>
+                                                                </p>
+                                                                <p className="fs-12 mb-0">
+                                                                    <span className="chat-msg text-truncate">
+                                                                        {truncateMessage(conv.lastMessage?.message)}
+                                                                    </span>
+                                                                    {conv.unreadCount > 0 && (
+                                                                        <span className="badge bg-primary2 rounded-pill float-end">
+                                                                            {conv.unreadCount}
+                                                                        </span>
+                                                                    )}
+                                                                    {conv.unreadCount === 0 && conv.lastMessage?.sender_id === currentUser?._id && (
+                                                                        <span className="chat-read-icon float-end align-middle">
+                                                                            <i className="ri-check-double-fill"></i>
+                                                                        </span>
+                                                                    )}
+                                                                </p>
+                                                            </div>
+                                                        </div>
+                                                    </a>
+                                                </li>
+                                            ))}
+                                    </>
+                                )}
+                            </>
+                        ) : (
+                            <li className="text-center p-4">
+                                <div className="empty-state">
+                                    <i className="ri-chat-3-line fs-40 text-muted mb-2"></i>
+                                    <p className="mb-1">Aucune conversation récente</p>
+                                    <small className="text-muted">
+                                        Commencez une nouvelle conversation en allant dans l'onglet "Contacts"
+                                    </small>
+                                </div>
+                            </li>
+                        )}
                     </ul>
                 </div>
 
@@ -247,8 +274,15 @@ const ChatSidebar = ({
                     tabIndex="0"
                 >
                     <ul className="list-unstyled mb-0 mt-2">
-                        <li className="pb-0">
+                        <li className="pb-0 d-flex justify-content-between align-items-center">
                             <p className="text-muted fs-11 fw-medium mb-1 op-7">MES GROUPES DE DISCUSSION</p>
+                            <button
+                                className="btn btn-sm btn-primary-light rounded-circle create-group-btn"
+                                onClick={onCreateGroup}
+                                title="Créer un nouveau groupe"
+                            >
+                                <i className="ri-add-line"></i>
+                            </button>
                         </li>
                         {groups.map((group, index) => (
                             <li key={index}>
@@ -374,19 +408,20 @@ const ChatSidebar = ({
                                             <div className="lh-1">
                                                 <span className="avatar avatar-sm">
                                                     <img
-                                                        src={contact.profileImage || contact.image || "https://ui-avatars.com/api/?name=" + encodeURIComponent(contact.name) + "&background=4a6bff&color=fff"}
-                                                        alt={contact.name}
+                                                        src={contact.profileImage || contact.image || "https://ui-avatars.com/api/?name=" + encodeURIComponent(contact.name || 'User') + "&background=4a6bff&color=fff"}
+                                                        alt={contact.name || `${contact.firstName} ${contact.lastName || ''}`}
                                                         onError={(e) => {
                                                             e.target.onerror = null;
-                                                            e.target.src = "https://ui-avatars.com/api/?name=" + encodeURIComponent(contact.name) + "&background=4a6bff&color=fff";
+                                                            e.target.src = "https://ui-avatars.com/api/?name=" + encodeURIComponent(contact.name || `${contact.firstName} ${contact.lastName || ''}` || 'User') + "&background=4a6bff&color=fff";
                                                         }}
                                                     />
                                                 </span>
                                             </div>
                                             <div className="flex-fill">
                                                 <span className="d-block fw-semibold">
-                                                    {contact.name}
+                                                    {contact.name || `${contact.firstName} ${contact.lastName || ''}`}
                                                 </span>
+                                                <small className="text-muted">{contact.email}</small>
                                             </div>
                                             <div className="dropdown">
                                                 <a

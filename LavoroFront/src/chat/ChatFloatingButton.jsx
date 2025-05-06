@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import * as chatService from './chatService.js';
-import './ChatFullScreen.css';
+import * as chatClient from './chatClient.js';
 
 const ChatFloatingButton = () => {
     const navigate = useNavigate();
@@ -23,7 +22,7 @@ const ChatFloatingButton = () => {
             if (user && user._id) {
                 setCurrentUser(user);
                 // Connect to socket
-                chatService.connectSocket(user._id);
+                chatClient.connectSocket(user._id);
                 // Start listening for new messages
                 setupMessageListeners(user._id);
             }
@@ -35,12 +34,12 @@ const ChatFloatingButton = () => {
     // Setup message listeners
     const setupMessageListeners = (userId) => {
         // Listen for new direct messages
-        chatService.onNewMessage(() => {
+        chatClient.onNewMessage(() => {
             updateUnreadCount(userId);
         });
 
         // Listen for new group messages
-        chatService.onNewGroupMessage(() => {
+        chatClient.onNewGroupMessage(() => {
             updateUnreadCount(userId);
         });
 
@@ -52,15 +51,15 @@ const ChatFloatingButton = () => {
     const updateUnreadCount = async (userId) => {
         try {
             // Get user chats
-            const chatsResponse = await chatService.getUserChats(userId);
-            if (chatsResponse && chatsResponse.success) {
-                const directUnread = chatsResponse.data.reduce((total, conv) => total + (conv.unreadCount || 0), 0);
-                
+            const chatsResponse = await chatClient.getUserChats(userId);
+            if (chatsResponse && Array.isArray(chatsResponse)) {
+                const directUnread = chatsResponse.reduce((total, conv) => total + (conv.unreadCount || 0), 0);
+
                 // Get user groups
-                const groupsResponse = await chatService.getUserGroups(userId);
-                if (groupsResponse && groupsResponse.success) {
-                    const groupUnread = groupsResponse.data.reduce((total, group) => total + (group.unreadCount || 0), 0);
-                    
+                const groupsResponse = await chatClient.getUserGroups(userId);
+                if (groupsResponse && Array.isArray(groupsResponse)) {
+                    const groupUnread = groupsResponse.reduce((total, group) => total + (group.unreadCount || 0), 0);
+
                     // Set total unread count
                     setUnreadCount(directUnread + groupUnread);
                 }
@@ -75,11 +74,48 @@ const ChatFloatingButton = () => {
         navigate('/chat');
     };
 
+    // Styles pour le bouton flottant
+    const floatingButtonStyle = {
+        position: 'fixed',
+        bottom: '20px',
+        right: '20px',
+        width: '60px',
+        height: '60px',
+        borderRadius: '50%',
+        backgroundColor: '#4a6bff',
+        color: 'white',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        boxShadow: '0 4px 12px rgba(0, 0, 0, 0.2)',
+        cursor: 'pointer',
+        zIndex: 1030,
+        transition: 'all 0.3s ease',
+        fontSize: '24px'
+    };
+
+    const unreadBadgeStyle = {
+        position: 'absolute',
+        top: '-5px',
+        right: '-5px',
+        backgroundColor: '#dc3545',
+        color: 'white',
+        borderRadius: '50%',
+        width: '24px',
+        height: '24px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        fontSize: '12px',
+        fontWeight: 'bold',
+        boxShadow: '0 2px 5px rgba(0, 0, 0, 0.2)'
+    };
+
     return (
-        <div className="chat-floating-button" onClick={handleClick}>
+        <div style={floatingButtonStyle} onClick={handleClick}>
             <i className="ri-chat-3-line"></i>
             {unreadCount > 0 && (
-                <span className="chat-unread-badge">{unreadCount > 99 ? '99+' : unreadCount}</span>
+                <span style={unreadBadgeStyle}>{unreadCount > 99 ? '99+' : unreadCount}</span>
             )}
         </div>
     );

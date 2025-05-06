@@ -487,37 +487,23 @@ const handleDownloadPDF = () => {
   </div>
                 </div>
                 <div className="mb-4">
-                  <div className="row">
-                    <div className="col-xl-6">
-                      <div className="fs-15 fw-medium mb-2">Key tasks :</div>
-                      <ul className="task-details-key-tasks mb-0">
-                        <li>
-                          Design and implement a user-friendly dashboard
-                          interface.
-                        </li>
-                        <li>
-                          Integrate data sources and APIs to fetch customer
-                          feedback data.
-                        </li>
-                        <li>
-                          Develop interactive data visualizations for easy
-                          interpretation.
-                        </li>
-                        <li>
-                          Implement filters and sorting functionalities for data
-                          analysis.
-                        </li>
-                        <li>
-                          Create user authentication and access control
-                          features.
-                        </li>
-                        <li>
-                          Perform usability testing and iterate based on
-                          feedback.
-                        </li>
-                      </ul>
-                    </div>
-                    <div className="col-xl-6">
+  <div className="row">
+    <div className="col-xl-6">
+      <div className="fs-15 fw-medium mb-2">Key tasks :</div>
+      <ul className="task-details-key-tasks mb-0">
+        {archive?.tasks?.length > 0 ? (
+          archive.tasks.map((task) => (
+            <li key={task._id} className="d-flex align-items-center">
+              <i className="ri-check-line fs-15 text-success me-2" />
+              <span className="text-muted">{task.title}</span>
+            </li>
+          ))
+        ) : (
+          <div className="text-muted">No tasks yet</div>
+        )}
+      </ul>
+    </div>
+         <div className="col-xl-6">
                     <div className="d-flex align-items-center justify-content-between mb-2">
                       <div className="fs-15 fw-medium">Risks :</div>
                       <a

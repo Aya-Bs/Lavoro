@@ -8,6 +8,6 @@ router.get('/getAllTeams',  teamController.getAllTeams);
 router.get('/teamDetails/:id', teamController.getTeamById);
 router.put('/updateTeam/:id', teamController.updateTeam);
 router.delete('/deleteTeam/:id', teamController.deleteTeam);
-// Team search route
-router.get('/search',  teamController.searchTeams);
+
 module.exports = router;
+

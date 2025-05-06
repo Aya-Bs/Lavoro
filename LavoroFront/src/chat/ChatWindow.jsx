@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import * as chatService from './chatService.js';
+import * as chatClient from './chatClient.js';
 import EmojiPicker from 'emoji-picker-react';
 
 // API URL for file uploads
@@ -13,10 +13,13 @@ const ChatWindow = ({ chat, messages, currentUser, onSendMessage, isLoading }) =
     const [isTyping, setIsTyping] = useState(false);
     const [typingTimeout, setTypingTimeout] = useState(null);
     const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+    const [editingMessage, setEditingMessage] = useState(null);
+    const [editText, setEditText] = useState('');
     const chatContentRef = useRef(null);
     const fileInputRef = useRef(null);
     const emojiPickerRef = useRef(null);
     const messageInputRef = useRef(null);
+    const editInputRef = useRef(null);
 
     // Scroll to bottom when messages change
     useEffect(() => {
@@ -56,6 +59,117 @@ const ChatWindow = ({ chat, messages, currentUser, onSendMessage, isLoading }) =
         return format(new Date(timestamp), 'HH:mm', { locale: fr });
     };
 
+    // Handle edit message
+    const handleEditMessage = (message) => {
+        setEditingMessage(message);
+        setEditText(message.message);
+
+        // Focus the edit input after a short delay to ensure it's rendered
+        setTimeout(() => {
+            if (editInputRef.current) {
+                editInputRef.current.focus();
+            }
+        }, 100);
+    };
+
+    // Handle save edited message
+    const handleSaveEdit = async () => {
+        if (!editingMessage || editText.trim() === '') return;
+
+        try {
+            if (chat.type === 'direct') {
+                // Use socket.io to update the message
+                chatClient.emitUpdateMessage({
+                    message_id: editingMessage._id,
+                    new_message: editText
+                });
+
+                // Update the message in the UI immediately
+                const updatedMessages = messages.map(msg =>
+                    msg._id === editingMessage._id
+                        ? { ...msg, message: editText, edited: true, edited_at: new Date() }
+                        : msg
+                );
+
+                // Update the messages state through the parent component
+                if (typeof onSendMessage === 'function') {
+                    // This is a workaround to update the messages state in the parent component
+                    // Ideally, we would have a separate callback for updating messages
+                    onSendMessage(null, null, updatedMessages);
+                }
+            } else if (chat.type === 'group') {
+                // Use socket.io to update the group message
+                chatClient.emitUpdateGroupMessage({
+                    message_id: editingMessage._id,
+                    new_message: editText
+                });
+
+                // Update the message in the UI immediately
+                const updatedMessages = messages.map(msg =>
+                    msg._id === editingMessage._id
+                        ? { ...msg, message: editText, edited: true, edited_at: new Date() }
+                        : msg
+                );
+
+                // Update the messages state through the parent component
+                if (typeof onSendMessage === 'function') {
+                    // This is a workaround to update the messages state in the parent component
+                    onSendMessage(null, null, updatedMessages);
+                }
+            }
+        } catch (error) {
+            console.error('Error updating message:', error);
+        } finally {
+            // Reset editing state
+            setEditingMessage(null);
+            setEditText('');
+        }
+    };
+
+    // Handle cancel edit
+    const handleCancelEdit = () => {
+        setEditingMessage(null);
+        setEditText('');
+    };
+
+    // Handle delete message
+    const handleDeleteMessage = async (message) => {
+        if (!window.confirm('Are you sure you want to delete this message?')) return;
+
+        try {
+            // Remove the message from the UI immediately
+            const updatedMessages = messages.filter(msg => msg._id !== message._id);
+
+            // Update the messages state through the parent component
+            if (typeof onSendMessage === 'function') {
+                onSendMessage(null, null, updatedMessages);
+            }
+
+            // Then send the delete request to the server
+            if (chat.type === 'direct') {
+                // Delete direct message
+                await chatClient.deleteMessage(message._id);
+            } else if (chat.type === 'group') {
+                // Delete group message
+                await chatClient.deleteGroupMessage(message._id);
+            }
+        } catch (error) {
+            console.error('Error deleting message:', error);
+            // If there was an error, refresh the messages to restore the deleted message
+            if (chat.type === 'direct' && chat.user) {
+                const conversation = await chatClient.getConversation(currentUser._id, chat.user._id);
+                if (conversation && conversation.messages) {
+                    onSendMessage(null, null, conversation.messages);
+                }
+            } else if (chat.type === 'group') {
+                const groupMessages = await chatClient.getGroupMessages(chat._id, currentUser._id);
+                if (groupMessages) {
+                    onSendMessage(null, null, groupMessages);
+                }
+            }
+        }
+    };
+
     // Handle message input change
     const handleMessageChange = (e) => {
         setMessageText(e.target.value);
@@ -64,7 +178,7 @@ const ChatWindow = ({ chat, messages, currentUser, onSendMessage, isLoading }) =
         if (chat.type === 'direct') {
             if (!isTyping) {
                 setIsTyping(true);
-                chatService.emitTyping({
+                chatClient.emitTyping({
                     sender_id: currentUser._id,
                     receiver_id: chat.user._id
                 });
@@ -78,7 +192,7 @@ const ChatWindow = ({ chat, messages, currentUser, onSendMessage, isLoading }) =
             // Set new timeout to stop typing indicator after 2 seconds
             const timeout = setTimeout(() => {
                 setIsTyping(false);
-                chatService.emitStopTyping({
+                chatClient.emitStopTyping({
                     sender_id: currentUser._id,
                     receiver_id: chat.user._id
                 });
@@ -241,7 +355,16 @@ const ChatWindow = ({ chat, messages, currentUser, onSendMessage, isLoading }) =
                                     <span>{date === new Date().toLocaleDateString('fr-FR') ? "Aujourd'hui" : date}</span>
                                 </li>
                                 {messageGroups[date].map((message, index) => {
-                                    const isCurrentUser = message.sender_id === currentUser._id;
+                                    // Gérer le cas où sender_id est un objet avec une propriété _id
+                                    const senderId = typeof message.sender_id === 'object' && message.sender_id !== null && message.sender_id._id
+                                        ? message.sender_id._id
+                                        : message.sender_id;
+                                    const currentUserId = currentUser._id;
+                                    const isCurrentUser = senderId === currentUserId;
+
+                                    // Log pour débogage
+                                    console.log(`Message ${index}: senderId=${senderId}, currentUserId=${currentUserId}, isCurrentUser=${isCurrentUser}`);
+
                                     return (
                                         <li key={index} className={isCurrentUser ? "chat-item-end" : "chat-item-start"}>
                                             <div className="chat-list-inner">
@@ -265,8 +388,142 @@ const ChatWindow = ({ chat, messages, currentUser, onSendMessage, isLoading }) =
                                                 )}
                                                 <div className={isCurrentUser ? "me-3" : "ms-3"}>
                                                     <div className="main-chat-msg">
+                                                        {chat.type === 'group' && (
+                                                            <div className="sender-name mb-1 fw-bold" style={{ color: isCurrentUser ? '#28a745' : '#4a6bff', textAlign: isCurrentUser ? 'right' : 'left' }}>
+                                                                {isCurrentUser ? 'Moi' :
+                                                                 (message.sender?.name ||
+                                                                 `${message.sender?.firstName || ''} ${message.sender?.lastName || ''}`.trim() ||
+                                                                 'Utilisateur')}
+                                                            </div>
+                                                        )}
+                                                        {/* Debug info - remove in production */}
+                                                        {chat.type === 'group' && (
+                                                            <div style={{ display: 'none' }}>
+                                                                {console.log('Message sender:', message.sender, 'isCurrentUser:', isCurrentUser)}
+                                                            </div>
+                                                        )}
                                                         <div>
-                                                            <p className="mb-0">{message.message}</p>
+                                                            {editingMessage && editingMessage._id === message._id ? (
+                                                                <div style={{
+                                                                    display: 'flex',
+                                                                    flexDirection: 'column',
+                                                                    gap: '10px',
+                                                                    width: '100%'
+                                                                }}>
+                                                                    <textarea
+                                                                        ref={editInputRef}
+                                                                        value={editText}
+                                                                        onChange={(e) => setEditText(e.target.value)}
+                                                                        rows={3}
+                                                                        style={{
+                                                                            width: '100%',
+                                                                            padding: '10px',
+                                                                            borderRadius: '8px',
+                                                                            border: '1px solid #4a6bff',
+                                                                            backgroundColor: '#252a30',
+                                                                            color: '#fff',
+                                                                            resize: 'vertical'
+                                                                        }}
+                                                                    />
+                                                                    <div style={{
+                                                                        display: 'flex',
+                                                                        justifyContent: 'flex-end',
+                                                                        gap: '10px'
+                                                                    }}>
+                                                                        <button
+                                                                            onClick={handleCancelEdit}
+                                                                            style={{
+                                                                                padding: '5px 10px',
+                                                                                borderRadius: '4px',
+                                                                                border: 'none',
+                                                                                backgroundColor: '#6c757d',
+                                                                                color: 'white',
+                                                                                cursor: 'pointer'
+                                                                            }}
+                                                                        >
+                                                                            Cancel
+                                                                        </button>
+                                                                        <button
+                                                                            onClick={handleSaveEdit}
+                                                                            style={{
+                                                                                padding: '5px 10px',
+                                                                                borderRadius: '4px',
+                                                                                border: 'none',
+                                                                                backgroundColor: '#4a6bff',
+                                                                                color: 'white',
+                                                                                cursor: 'pointer'
+                                                                            }}
+                                                                        >
+                                                                            Save
+                                                                        </button>
+                                                                    </div>
+                                                                </div>
+                                                            ) : (
+                                                                <>
+                                                                    {/* Message actions (only show for current user's messages) */}
+                                                                    {isCurrentUser && (
+                                                                        <div style={{
+                                                                            position: 'absolute',
+                                                                            top: '-20px',
+                                                                            right: '0',
+                                                                            display: 'flex',
+                                                                            gap: '5px',
+                                                                            opacity: '0',
+                                                                            transition: 'opacity 0.2s ease',
+                                                                            zIndex: '10'
+                                                                        }}
+                                                                        className="hover-visible">
+                                                                            <button
+                                                                                style={{
+                                                                                    background: '#4a6bff',
+                                                                                    color: 'white',
+                                                                                    border: 'none',
+                                                                                    borderRadius: '50%',
+                                                                                    width: '24px',
+                                                                                    height: '24px',
+                                                                                    display: 'flex',
+                                                                                    alignItems: 'center',
+                                                                                    justifyContent: 'center',
+                                                                                    cursor: 'pointer',
+                                                                                    fontSize: '12px'
+                                                                                }}
+                                                                                onClick={() => handleEditMessage(message)}
+                                                                            >
+                                                                                <i className="ri-edit-line"></i>
+                                                                            </button>
+                                                                            <button
+                                                                                style={{
+                                                                                    background: '#dc3545',
+                                                                                    color: 'white',
+                                                                                    border: 'none',
+                                                                                    borderRadius: '50%',
+                                                                                    width: '24px',
+                                                                                    height: '24px',
+                                                                                    display: 'flex',
+                                                                                    alignItems: 'center',
+                                                                                    justifyContent: 'center',
+                                                                                    cursor: 'pointer',
+                                                                                    fontSize: '12px'
+                                                                                }}
+                                                                                onClick={() => handleDeleteMessage(message)}
+                                                                            >
+                                                                                <i className="ri-delete-bin-line"></i>
+                                                                            </button>
+                                                                        </div>
+                                                                    )}
+                                                                    <p className="mb-0">{message.message}</p>
+                                                                    {message.edited && (
+                                                                        <div style={{
+                                                                            fontSize: '11px',
+                                                                            color: '#adb5bd',
+                                                                            marginTop: '2px',
+                                                                            fontStyle: 'italic'
+                                                                        }}>
+                                                                            (edited {message.edited_at ? format(new Date(message.edited_at), 'HH:mm', { locale: fr }) : ''})
+                                                                        </div>
+                                                                    )}
+                                                                </>
+                                                            )}
                                                             {message.attachment && (
                                                                 <div className="chat-attachment mt-2">
                                                                     {message.attachment_type === 'image' ? (
@@ -333,15 +590,7 @@ const ChatWindow = ({ chat, messages, currentUser, onSendMessage, isLoading }) =
                                                         </div>
                                                     </div>
                                                     <span className="chatting-user-info">
-                                                        {chat.type === 'group' && !isCurrentUser ? (
-                                                            <span>
-                                                                {message.sender?.name ||
-                                                                 `${message.sender?.firstName || ''} ${message.sender?.lastName || ''}`.trim() ||
-                                                                 'Utilisateur'}
-                                                            </span>
-                                                        ) : (
-                                                            <span>{isCurrentUser ? 'Vous' : chatName}</span>
-                                                        )}
+                                                        <span>{isCurrentUser ? 'Moi' : (chat.type === 'direct' ? chatName : '')}</span>
                                                         <span className="msg-sent-time">{formatTime(message.sent_at)}</span>
                                                     </span>
                                                 </div>
@@ -360,9 +609,9 @@ const ChatWindow = ({ chat, messages, currentUser, onSendMessage, isLoading }) =
                 )}
             </div>
 
-            {/* Chat Footer */}
-            <div className="chat-footer">
-                <form onSubmit={handleSubmit} className="d-flex align-items-center">
+            {/* Zone de saisie de message (nouvelle implémentation) */}
+            <div className="chat-message-input-container">
+                <form onSubmit={handleSubmit} className="chat-message-form">
                     <input
                         type="file"
                         ref={fileInputRef}
@@ -372,7 +621,7 @@ const ChatWindow = ({ chat, messages, currentUser, onSendMessage, isLoading }) =
                     />
                     <button
                         type="button"
-                        className="btn btn-primary1-light me-2 btn-icon btn-send"
+                        className="btn btn-primary1-light btn-icon chat-message-button"
                         onClick={handleAttachmentClick}
                     >
                         <i className="ri-attachment-2"></i>
@@ -380,7 +629,7 @@ const ChatWindow = ({ chat, messages, currentUser, onSendMessage, isLoading }) =
                     <div className="position-relative">
                         <button
                             type="button"
-                            className="btn btn-icon me-2 btn-primary2 emoji-picker"
+                            className="btn btn-icon btn-primary2 emoji-picker chat-message-button"
                             onClick={toggleEmojiPicker}
                         >
                             <i className="ri-emotion-line"></i>
@@ -408,7 +657,7 @@ const ChatWindow = ({ chat, messages, currentUser, onSendMessage, isLoading }) =
                         onChange={handleMessageChange}
                         ref={messageInputRef}
                     />
-                    <button type="submit" className="btn btn-primary ms-2 btn-icon btn-send">
+                    <button type="submit" className="btn btn-primary btn-icon chat-message-button">
                         <i className="ri-send-plane-2-line"></i>
                     </button>
                 </form>
@@ -446,6 +695,11 @@ const ChatWindow = ({ chat, messages, currentUser, onSendMessage, isLoading }) =
                         </div>
                     </div>
                 )}
+            </div>
+
+            {/* Chat Footer - Gardé vide mais présent pour maintenir la structure */}
+            <div className="chat-footer" style={{ position: 'sticky', bottom: 0, zIndex: 10, height: '0', padding: '0', border: 'none' }}>
+                {/* Le footer est conservé mais vidé pour ne pas perturber la structure existante */}
             </div>
         </div>
     );

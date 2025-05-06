@@ -41,6 +41,13 @@ const userSkillsRouter = require('./routes/userSkills');
 const taskAssignmentRoutes = require('./routes/taskAssignmentRoutes');
 // const homeRouter = require('./routes/home');
 const adminRouter = require('./routes/admin');
+const emailRouter = require('./routes/emails');
+const reportRouter = require('./routes/reports');
+const deleteReportRouter = require('./routes/deleteReport');
+const taskPrioritizationRoutes = require('./routes/taskPrioritizationRoutes');
+const predictRouter = require('./routes/predictMember');
+const fileRouter = require('./routes/file');
+
 
 
 const app = express();
@@ -75,7 +82,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
-
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Session configuration
 app.use(
@@ -96,6 +103,7 @@ app.use(
   })
 );
 
+app.use ('/files',fileRouter);
 app.use('/notifications',notifroute);
 
 
@@ -103,10 +111,14 @@ app.use('/notifications',notifroute);
 app.use('/users', usersRouter);
 // app.use('/', homeRouter);
 app.use('/admin',adminRouter);
+app.use('/email',emailRouter);
+
 app.set('io', io);
 
 app.use('/tasks',taskRouter);
 app.use('/chat', chatRouter);
+app.use('/predict', predictRouter);
+
 
 
 app.use('/project',projectRouter);
@@ -117,6 +129,11 @@ app.use('/ai-assignment', taskAssignmentRoutes);
 
 app.use('/profiles', profileRouter);
 app.use('/teams', teamRouter);
+
+app.use('/ai-prioritization', taskPrioritizationRoutes);
+app.use('/reports', reportRouter);
+app.use('/delete-report', deleteReportRouter);
+
 
 app.post("/translate", async (req, res) => {
   const { text, targetLanguage } = req.body;

@@ -1,7 +1,5 @@
-const Team = require('../models/team');
-const Project = require('../models/Project');
-const User = require('../models/user');
-
+// Import models from the index file
+const { Team, Project, User } = require('../models');
 
 
 exports.createTeam = async (req, res) => {
@@ -115,14 +113,14 @@ exports.getTeamById = async (req, res) => {
         .populate('project_id', 'name description')
         .populate('members', 'firstName lastName email image role')
         .populate('tags');
-  
+
       if (!team) {
         return res.status(404).json({
           success: false,
           message: 'Team not found'
         });
       }
-  
+
       res.status(200).json({
         success: true,
         data: team
@@ -137,12 +135,12 @@ exports.getTeamById = async (req, res) => {
     }
   };
 
- 
+
   exports.updateTeam = async (req, res) => {
     try {
       const { id } = req.params;
       const updates = req.body;
-  
+
       // Validate required fields
       if (!updates.name) {
         return res.status(400).json({
@@ -150,7 +148,7 @@ exports.getTeamById = async (req, res) => {
           message: 'Team name is required'
         });
       }
-  
+
       // Get existing team first
       const existingTeam = await Team.findById(id);
       if (!existingTeam) {
@@ -159,29 +157,29 @@ exports.getTeamById = async (req, res) => {
           message: 'Team not found'
         });
       }
-  
+
       // Remove project_id from updates if present
       if (updates.hasOwnProperty('project_id')) {
         delete updates.project_id;
       }
-  
+
       // Handle members array to prevent duplicates
       if (updates.members) {
         // Convert to Set to remove duplicates, then back to array
         const uniqueMembers = [...new Set(updates.members.map(m => m.toString()))];
-        
+
         // Ensure manager is included (only once)
         const managerId = existingTeam.manager_id.toString();
         if (!uniqueMembers.includes(managerId)) {
           uniqueMembers.push(managerId);
         }
-  
+
         updates.members = uniqueMembers;
       }
-  
+
       // Add updated_at timestamp
       updates.updated_at = Date.now();
-  
+
       // Find and update the team
       const team = await Team.findByIdAndUpdate(
         id,
@@ -200,20 +198,20 @@ exports.getTeamById = async (req, res) => {
         path: 'members',
         select: 'firstName lastName email'
       });
-  
+
       if (!team) {
         return res.status(404).json({
           success: false,
           message: 'Team not found after update'
         });
       }
-  
+
       res.status(200).json({
         success: true,
         data: team,
         message: 'Team updated successfully'
       });
-  
+
     } catch (error) {
       console.error('Team update error:', error);
       if (error.name === 'ValidationError') {
@@ -224,14 +222,14 @@ exports.getTeamById = async (req, res) => {
           errors: messages
         });
       }
-  
+
       if (error.code === 11000) {
         return res.status(400).json({
           success: false,
           message: 'Team with this name already exists'
         });
       }
-  
+
       res.status(500).json({
         success: false,
         message: 'Server error while updating team'
@@ -242,40 +240,40 @@ exports.getTeamById = async (req, res) => {
   exports.deleteTeam = async (req, res) => {
     try {
       const teamId = req.params.id;
-      
+
       // Check if team exists
       const team = await Team.findById(teamId);
       if (!team) {
         return res.status(404).json({ success: false, message: 'Team not found' });
       }
-  
+
       // Get user from session (same as createTeam)
       const userId = req.session.user._id;
       if (!userId) {
         return res.status(401).json({ success: false, message: 'Not authenticated' });
       }
-  
+
       // Find user in database
       const user = await User.findById(userId).populate('role');
       if (!user) {
         return res.status(404).json({ success: false, message: 'User not found' });
       }
-  
+
       // Authorization check - same logic as createTeam
       const isAdmin = user.role?.RoleName === 'Admin';
       const isTeamManager = user.role?.RoleName === 'Team Manager';
       const isTeamOwner = userId.toString() === team.manager_id.toString();
-  
+
       if (!isAdmin && !isTeamManager && !isTeamOwner) {
-        return res.status(403).json({ 
-          success: false, 
-          message: 'Not authorized to delete this team' 
+        return res.status(403).json({
+          success: false,
+          message: 'Not authorized to delete this team'
         });
       }
-  
+
       // Delete the team
       await Team.findByIdAndDelete(teamId);
-  
+
       // Remove team reference from members
      /* if (team.members && team.members.length > 0) {
         await Member.updateMany(
@@ -283,7 +281,7 @@ exports.getTeamById = async (req, res) => {
           { $pull: { teams: teamId } }
         );
       }*/
-  
+
       // Remove team reference from project
       if (team.project_id) {
         await Project.findByIdAndUpdate(
@@ -291,76 +289,14 @@ exports.getTeamById = async (req, res) => {
           { $pull: { teams: teamId } }
         );
       }
-  
+
       res.json({ success: true, message: 'Team deleted successfully' });
     } catch (error) {
       console.error('Error deleting team:', error);
-      res.status(500).json({ 
-        success: false, 
-        message: 'Failed to delete team',
-        error: process.env.NODE_ENV === 'development' ? error.message : undefined
-      });
-    }
-  };
-  exports.searchTeams = async (req, res) => {
-    try {
-      const { status, project, tags, sort, page = 1, limit = 8 } = req.query;
-      
-      // Build the query
-      const query = {};
-      
-      // Status filter
-      if (status) {
-        const statusArray = status.split(',');
-        query.status = { $in: statusArray };
-      }
-      
-      // Project filter
-      if (project) {
-        const projectArray = project.split(',');
-        query.project_id = { $in: projectArray };
-      }
-      
-      // Tags filter - using $all to match teams that have ALL selected tags
-      if (tags) {
-        const tagsArray = tags.split(',');
-        query.tags = { $all: tagsArray };
-      }
-      
-      // Sort options
-      let sortOption = { createdAt: -1 }; // Default: newest first
-      if (sort === 'oldest') sortOption = { createdAt: 1 };
-      else if (sort === 'name-asc') sortOption = { name: 1 };
-      else if (sort === 'name-desc') sortOption = { name: -1 };
-      
-      // Pagination
-      const skip = (page - 1) * limit;
-      
-      // Get teams with populated fields
-      const teams = await Team.find(query)
-        .populate('manager_id', 'firstName lastName email image')
-        .populate('project_id', 'name description')
-        .populate('members', 'firstName lastName role status')
-        .sort(sortOption)
-        .skip(skip)
-        .limit(parseInt(limit));
-      
-      // Count total teams for pagination
-      const total = await Team.countDocuments(query);
-      
-      res.status(200).json({
-        success: true,
-        data: teams,
-        total,
-        page: parseInt(page),
-        pages: Math.ceil(total / limit)
-      });
-    } catch (error) {
-      console.error('Team search error:', error);
       res.status(500).json({
         success: false,
-        message: 'Failed to search teams',
-        error: error.message
+        message: 'Failed to delete team',
+        error: process.env.NODE_ENV === 'development' ? error.message : undefined
       });
     }
   };
