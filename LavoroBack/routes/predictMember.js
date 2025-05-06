@@ -75,11 +75,11 @@ router.get("/predict-all", async (req, res) => {
     user_name: prediction.user_details.name,
     user_image: prediction.user_details.image,
     team_name: prediction.team_id.name,
-    project_id: prediction.team_id.project_id._id,
-    project_name: prediction.team_id.project_id.name, // Now this will work
+    project_id: prediction.team_id.project_id?._id,
+    project_name: prediction.team_id.project_id?.name, 
 
-    experience_level: prediction.experience_level,  // This should be correct
-    total_tasks_completed: prediction.total_tasks_completed,  // This should be correct
+    experience_level: prediction.experience_level,  
+    total_tasks_completed: prediction.total_tasks_completed,  
     role: prediction.role,
     productivity: prediction.predicted_productivity,
     performance_score: prediction.predicted_score,

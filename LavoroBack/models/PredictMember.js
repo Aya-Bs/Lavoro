@@ -3,8 +3,8 @@ const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 
 const PredictMember = new Schema({
-    team_id: { type: mongoose.Schema.Types.ObjectId, required: true , ref: 'team'},
-    user_id: { type: mongoose.Schema.Types.ObjectId, required: true ,ref: 'user'},
+    team_id: { type: mongoose.Schema.Types.ObjectId, required: false , ref: 'team'},
+    user_id: { type: mongoose.Schema.Types.ObjectId, required: false ,ref: 'user'},
     project_id: {  type: mongoose.Schema.Types.ObjectId, required: false , ref: 'Project'},
     role: { type: String, enum: ['Developer', 'Tester', 'Analyst', 'Designer'], required: true },
     experience_level: { type: Number, min: 1, max: 3, default: 1 }, // 1=Junior, 2=Mid, 3=Senior

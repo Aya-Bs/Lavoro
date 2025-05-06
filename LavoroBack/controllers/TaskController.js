@@ -4,9 +4,10 @@ const Task = require('../models/Task');
 
 const TaskHistory = require('../models/TaskHistory');
 const User = require('../models/user');
-
+const Role = require('../models/role'); 
 const Project = require('../models/Project');
 const TeamMember = require('../models/teamMember');
+
 
 
 const ObjectId = mongoose.Types.ObjectId;
@@ -131,7 +132,7 @@ exports.seedTaskHistory = async () => {
 
 
 // Fonction pour récupérer les tâches assignées à un utilisateur spécifique
-exports.getTasksByUser = async (req, res) => {
+exports.getTasksByUserId = async (req, res) => {
     try {
         const userId = req.params.userId;
 
@@ -373,158 +374,6 @@ exports.testPointsSystem = async (req, res) => {
     });
   }
 };
-
-
-// exports.addTask = async (req, res) => {
-//   try {
-//     const {
-//       title,
-//       description,
-//       project_id,
-//       assigned_to,
-//       status,
-//       priority,
-//       deadline,
-//       start_date,
-//       estimated_duration,
-//       tags
-//     } = req.body;
-
-//     // Validate that project exists
-//     const project = await Project.findById(project_id);
-//     if (!project) {
-//       return res.status(404).json({ 
-//         success: false,
-//         message: 'Project not found' 
-//       });
-//     }
-
-//     // Validate that team member exists if assigned
-//     if (assigned_to) {
-//       const teamMember = await TeamMember.findById(assigned_to);
-//       if (!teamMember) {
-//         return res.status(404).json({
-//           success: false,
-//           message: 'Team member not found'
-//         });
-//       }
-//     }
-
-//     const newTask = new Task({
-//       title,
-//       description,
-//       project_id,
-//       assigned_to,
-//       status,
-//       priority,
-//       deadline,
-//       start_date,
-//       estimated_duration,
-//       tags
-//     });
-
-//     const savedTask = await newTask.save();
-
-//     // 1. Add task to project's tasks array
-//     await Project.findByIdAndUpdate(
-//       project_id,
-//       {
-//         $push: { tasks: savedTask._id },
-//         $inc: { total_tasks_count: 1 }
-//       },
-//       { new: true }
-//     );
-
-//     // 2. If assigned to a team member, add task to their tasks array
-//     if (assigned_to) {
-//       await TeamMember.findByIdAndUpdate(
-//         assigned_to,
-//         {
-//           $push: { tasks: savedTask._id }
-//         },
-//         { new: true }
-//       );
-//     }
-
-//     res.status(201).json({
-//       success: true,
-//       message: 'Task created successfully',
-//       data: savedTask
-//     });
-//   } catch (error) {
-//     console.error('Error creating task:', error);
-//     res.status(500).json({ 
-//       success: false,
-//       message: 'Error creating task',
-//       error: process.env.NODE_ENV === 'development' ? error.message : undefined
-//     });
-//   }
-// };
-
-
-
-
-// In your TaskController.js
-
-// exports.getAllTasks = async (req, res) => {
-//   try {
-//     // Extract query parameters
-//     const { 
-//       status, 
-//       priority, 
-//       project_id, 
-//       assigned_to, 
-//       page = 1, 
-//       limit = 10 
-//     } = req.query;
-
-//     // Build filter object
-//     const filter = {};
-    
-//     if (status) filter.status = status;
-//     if (priority) filter.priority = priority;
-//     if (project_id) filter.project_id = project_id;
-//     if (assigned_to) filter.assigned_to = assigned_to;
-
-//     // Calculate pagination
-//     const skip = (page - 1) * limit;
-
-//     // Get tasks with population and pagination
-//     const tasks = await Task.find(filter)
-//   .populate('project_id', 'name status')
-//   .populate({
-//     path: 'assigned_to',
-//     select: 'role', // Fields from TeamMember
-//     populate: {
-//       path: 'user_id',
-//       select: 'firstName lastName image' // Fields from User
-//     }
-//   })
-//   .skip(skip)
-//   .limit(parseInt(limit))
-//   .sort({ deadline: 1 });
-//     // Get total count for pagination info
-//     const totalTasks = await Task.countDocuments(filter);
-
-//     res.status(200).json({
-//       success: true,
-//       data: tasks,
-//       pagination: {
-//         currentPage: parseInt(page),
-//         totalPages: Math.ceil(totalTasks / limit),
-//         totalTasks,
-//         tasksPerPage: parseInt(limit)
-//       }
-//     });
-//   } catch (error) {
-//     console.error('Error fetching tasks:', error);
-//     res.status(500).json({
-//       success: false,
-//       message: 'Error fetching tasks',
-//       error: process.env.NODE_ENV === 'development' ? error.message : undefined
-//     });
-//   }
-// };
 
 
 exports.addTask = async (req, res) => {
@@ -1144,3 +993,263 @@ exports.completeTask = async (req, res) => {
 
 
 
+exports.getTaskByIdMember = async (req, res) => {
+  try {
+      const taskId = req.params.id;
+
+      // Vérifier si l'ID est valide
+      if (!mongoose.Types.ObjectId.isValid(taskId)) {
+          return res.status(400).json({
+              success: false,
+              message: "ID de tâche invalide"
+          });
+      }
+
+      // Récupérer la tâche avec les informations du projet associé
+      const task = await Task.findById(taskId);
+
+      if (!task) {
+          return res.status(404).json({
+              success: false,
+              message: "Tâche non trouvée"
+          });
+      }
+
+      // Formater la réponse
+      const response = {
+          _id: task._id,
+          taskTitle: task.title,
+          description: task.description,  
+          created_by: task.created_by,
+          assigned_to: task.assigned_to ,
+          status: task.status,
+          priority: task.priority,
+          deadline: task.deadline,
+          start_date: task.start_date,
+          estimated_duration: task.estimated_duration,
+          tags: task.tags,
+          requiredSkills: task.requiredSkills,
+      };
+
+      console.log("Task response skills:", response.requiredSkills);
+
+      res.status(200).json({
+          success: true,
+          data: response
+      });
+  } catch (error) {
+      console.error("Erreur lors de la récupération de la tâche:", error);
+      res.status(500).json({
+          success: false,
+          message: "Erreur serveur lors de la récupération de la tâche"
+      });
+  }
+};
+
+
+
+exports.getTasksList = async (req, res) => {
+  try {
+    const userId = req.params.userId;
+    
+    // Récupérer l'utilisateur avec son rôle peuplé
+    const user = await User.findById(userId).populate('role');
+    
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    // Récupérer les rôles une seule fois
+    const [teamManager, developer] = await Promise.all([
+      Role.findOne({ RoleName: 'Team Manager' }),
+      Role.findOne({ RoleName: 'Developer' })
+    ]);
+
+    console.log("User role:", user.role._id);
+    console.log("Team Manager ID:", teamManager._id);
+    console.log("Developer ID:", developer._id);
+
+    let tasks;
+    console.log("User ID:", userId);
+    
+    if (user.role.equals(teamManager._id)) {
+      tasks = await Task.find({ created_by: userId });
+    } else if (user.role.equals(developer._id)) {
+      tasks = await Task.find({ assigned_to: userId });
+      console.log("Tasks for developer:", tasks);
+    } else {
+      // Rôle non reconnu
+      return res.status(403).json({ 
+        success: false, 
+        message: 'Unauthorized role',
+        details: {
+          userRole: user.role._id,
+          allowedRoles: [teamManager._id, developer._id]
+        }
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      count: tasks.length,
+      data: tasks
+    });
+  } catch (error) {
+    console.error("Error in getTasksList:", error);
+    res.status(500).json({
+      success: false,
+      message: 'Server Error',
+      error: error.message,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
+  }
+};
+
+exports.updateTaskCalendarDates = async (req, res) => {
+  try {
+    const { taskId } = req.params;
+    const { start, end ,userId} = req.body;
+    const user = await User.findById(userId);
+    const team_manager = await Role.findOne({ RoleName: 'Team Manager' });
+    const developer = await Role.findOne({ RoleName: 'Developer' });
+
+
+    console.log("User ID from params:", userId); // Debug
+    console.log("start:", start);
+    console.log("end:", end);    
+
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    const task = await Task.findById(taskId);
+    console.log("Task :", task);
+    if (!task) {
+      return res.status(404).json({ success: false, message: 'Task not found' });
+    }
+
+    // Vérifier les permissions
+    if (user.role.equals(developer._id) && task.assigned_to.toString() !== userId.toString()) {
+      return res.status(403).json({ success: false, message: 'Not authorized to update this task' });
+    }
+
+    if (user.role.equals(team_manager._id) && task.created_by.toString() !== userId.toString()) {
+      return res.status(403).json({ success: false, message: 'Not authorized to update this task' });
+    }
+
+    let updateData = {};
+    
+    if (user.role.equals(team_manager._id)) {
+      // Mise à jour des dates principales pour les managers
+      if (start !== undefined) updateData.start_date = start;
+      if (end !== undefined) updateData.deadline = end;
+    } else if (user.role.equals(developer._id)) {
+      // Mise à jour des dates du calendrier pour les développeurs
+      if (start === null && end === null) {
+        // Supprimer les dates du calendrier
+        updateData = { $unset: { calendar_dates: 1 } };
+      } else {
+        // Mettre à jour les dates du calendrier
+        updateData = { $set: {} };
+        if (start !== undefined) updateData.$set['calendar_dates.start'] = start;
+        if (end !== undefined) updateData.$set['calendar_dates.end'] = end;
+      }
+    }
+
+    const updatedTask = await Task.findByIdAndUpdate(
+      taskId,
+      updateData,
+      { new: true, runValidators: true }
+    );
+
+    res.status(200).json({ success: true, data: updatedTask });
+  } catch (error) {
+    console.error("Error updating calendar dates:", error);
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      details: error.message
+    });
+  }
+};
+
+
+// Assurez-vous que la fonction est bien exportée
+// exports.confirmAssignment = async (req, res) => {
+//   try {
+//     const { taskId, teamMemberId } = req.body;
+
+//     const updatedTask = await Task.findByIdAndUpdate(
+//       taskId,
+//       { $push: { assigned_to: teamMemberId } },
+//       { new: true }
+//     );
+
+//     if (!updatedTask) {
+//       return res.status(404).json({ success: false, message: 'Task not found' });
+//     }
+
+//     res.status(200).json({
+//       success: true,
+//       message: 'Member added to task',
+//       data: updatedTask
+//     });
+//   } catch (error) {
+//     res.status(500).json({
+//       success: false,
+//       message: 'Server error',
+//       error: error.message
+//     });
+//   }
+// };
+
+
+
+exports.confirmAssignment = async (req, res) => {
+  try {
+    const { taskId, teamMemberId } = req.body;
+
+    // Validate inputs
+    if (!taskId || !teamMemberId) {
+      return res.status(400).json({
+        success: false,
+        message: "Both taskId and teamMemberId are required"
+      });
+    }
+
+    // 1. Update the task to add the team member
+    const updatedTask = await Task.findByIdAndUpdate(
+      taskId,
+      { $addToSet: { assigned_to: teamMemberId } }, // Using $addToSet to avoid duplicates
+      { new: true }
+    );
+
+    if (!updatedTask) {
+      return res.status(404).json({ 
+        success: false, 
+        message: "Task not found" 
+      });
+    }
+
+    // 2. Update the team member to add the task
+    await TeamMember.findByIdAndUpdate(
+      teamMemberId,
+      { $addToSet: { tasks: taskId } },
+      { new: true }
+    );
+
+    res.status(200).json({
+      success: true,
+      message: "Assignment confirmed successfully",
+      data: updatedTask
+    });
+
+  } catch (error) {
+    console.error("Error confirming assignment:", error);
+    res.status(500).json({
+      success: false,
+      message: "Internal server error",
+      error: error.message
+    });
+  }
+};

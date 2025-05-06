@@ -189,16 +189,7 @@ Member of the year                  </Link>
                   </Link>
                 </li>
 
-                <li className="slide">
-                  <Link to="/member-details/67ffe958abcdc7b19d4edb98" className="side-menu__item">
-                    member details
-                  </Link>
-                </li>
-                <li className="slide">
-                  <Link to="/searchMember" className="side-menu__item">
-                    search member
-                  </Link>
-                </li>
+                
                 <li className="slide">
                   <Link to="/reports" className="side-menu__item">
                     Reports
@@ -233,6 +224,11 @@ Member of the year                  </Link>
                    Task List
                   </Link>
                 </li>
+                <li className="slide">
+                  <Link to="/calendar" className="side-menu__item">
+                   Calendar
+                  </Link>
+                </li> 
              </ul>
             </li>
             <li className="slide__category">

@@ -258,7 +258,13 @@ export const TaskDetail = () => {
                   aria-labelledby="confirm-tab-pane"
                   tabIndex={0}
                 >
-                  <br />
+                  <div className="d-flex justify-content-between align-items-center mb-3 p-3 border-bottom">
+                    <div className="mb-0"></div>
+                    <button className="btn btn-primary1 btn-sm" 
+                      onClick={() => navigate(`/taskAssignement/${taskId}`)}>
+                      <i className="ri-user-add-line me-1"></i> Assign
+                    </button>
+                  </div>
                   <div className="card custom-card">
                     <div className="card-body pb-0">
                       <div className="swiper testimonialSwiper2">
