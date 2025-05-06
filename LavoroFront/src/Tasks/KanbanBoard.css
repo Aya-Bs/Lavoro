@@ -58,7 +58,7 @@
     flex-direction: column;
     align-items: center;
   }
-  
+
   .kanban-tasks-type {
     min-width: 100%;
     max-width: 100%;
@@ -66,12 +66,25 @@
   }
 }
 
-/* Animation for drag and drop */
+/* Subtle hover effect for cards */
 .card {
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  transition: box-shadow 0.2s ease;
 }
 
 .card:hover {
-  transform: translateY(-2px);
   box-shadow: 0 4px 8px rgba(0,0,0,0.1) !important;
+}
+
+/* Ensure the board has enough height */
+.kanban-tasks {
+  min-height: 200px;
+  max-height: 600px;
+}
+
+/* Make sure the board is visible on all screen sizes */
+@media (min-width: 1200px) {
+  .TASK-kanban-board {
+    max-width: 1400px;
+    margin: 0 auto;
+  }
 }
