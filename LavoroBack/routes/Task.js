@@ -93,4 +93,7 @@ router.get('/check-manager-role', auth, async (req, res) => {
   // routes/task.js
 router.get('/developer-kanban', auth, taskController.getDeveloperKanbanTasks);
 
+router.post('/:id/export-to-github', auth, taskController.exportToGitHub);
+
+
 module.exports = router;

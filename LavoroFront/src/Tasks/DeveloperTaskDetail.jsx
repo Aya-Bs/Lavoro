@@ -1,12 +1,14 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import axios from 'axios';
+import Swal from 'sweetalert2';
 import DeveloperCommentsView from './DeveloperCommentsView';
 import './DeveloperTaskDetail.css';
 
 export const DeveloperTaskDetail = () => {
   const [assigneePage, setAssigneePage] = useState(0);
   const assigneesPerPage = 4;
+  const [issueUrl, setIssueUrl] = useState('');
 
   const { taskId } = useParams();
   const [task, setTask] = useState(null);
@@ -14,11 +16,11 @@ export const DeveloperTaskDetail = () => {
   const [error, setError] = useState(null);
   const [isDeveloper, setIsDeveloper] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
+  const [exportLoading, setExportLoading] = useState(false);
 
   useEffect(() => {
     const fetchTaskAndCheckRole = async () => {
       try {
-        // Get current user
         const token = localStorage.getItem('token');
         if (!token) {
           setLoading(false);
@@ -30,12 +32,8 @@ export const DeveloperTaskDetail = () => {
         });
 
         setCurrentUser(userResponse.data);
+        setIsDeveloper(userResponse.data.role?.RoleName === 'Developer');
 
-        // Check if user is a developer
-        const userRole = userResponse.data.role?.RoleName;
-        setIsDeveloper(userRole === 'Developer');
-
-        // Fetch task data
         const response = await axios.get(`http://localhost:3000/tasks/task/${taskId}`);
         setTask(response.data.data);
       } catch (err) {
@@ -47,11 +45,6 @@ export const DeveloperTaskDetail = () => {
 
     fetchTaskAndCheckRole();
   }, [taskId]);
-
-  if (loading) return <div>Loading...</div>;
-  if (error) return <div>Error: {error}</div>;
-  if (!task) return <div>Task not found</div>;
-  if (!isDeveloper) return <div>Access denied. This view is only for developers.</div>;
 
   const getStatusBadge = (status) => {
     switch (status) {
@@ -79,7 +72,7 @@ export const DeveloperTaskDetail = () => {
     }
   };
 
-  const totalAssigneePages = task.assigned_to ? Math.ceil(task.assigned_to.length / assigneesPerPage) : 0;
+  const totalAssigneePages = task?.assigned_to ? Math.ceil(task.assigned_to.length / assigneesPerPage) : 0;
 
   const handlePrevPage = () => {
     setAssigneePage((prev) => Math.max(prev - 1, 0));
@@ -89,14 +82,86 @@ export const DeveloperTaskDetail = () => {
     setAssigneePage((prev) => Math.min(prev + 1, totalAssigneePages - 1));
   };
 
-  const paginatedAssignees = task.assigned_to
+  const exportToGitHub = async () => {
+    setExportLoading(true);
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) throw new Error('You must be logged in');
+
+      const response = await fetch(`http://localhost:3000/tasks/${task._id}/export-to-github`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) throw new Error(data.message || 'Error exporting to GitHub');
+
+      setIssueUrl(data.issueUrl);
+      
+      await Swal.fire({
+        title: 'Success!',
+        text: 'Task successfully exported to GitHub',
+        icon: 'success',
+        confirmButtonText: 'View Issue',
+        showCancelButton: true,
+        cancelButtonText: 'Close'
+      }).then((result) => {
+        if (result.isConfirmed) {
+          window.open(data.issueUrl, '_blank');
+        }
+      });
+    } catch (err) {
+      await Swal.fire({
+        title: 'Error!',
+        text: err.message,
+        icon: 'error',
+        confirmButtonText: 'OK'
+      });
+    } finally {
+      setExportLoading(false);
+    }
+  };
+
+  const paginatedAssignees = task?.assigned_to
     ? task.assigned_to.slice(assigneePage * assigneesPerPage, (assigneePage + 1) * assigneesPerPage)
     : [];
 
+  if (loading) return <div className="text-center p-5"><div className="spinner-border" role="status"></div></div>;
+  if (error) return <div className="alert alert-danger m-3">Error: {error}</div>;
+  if (!task) return <div className="alert alert-warning m-3">Task not found</div>;
+  if (!isDeveloper) return <div className="alert alert-danger m-3">Access denied. This view is only for developers.</div>;
+
   return (
     <>
-      <br />
+    <div className="container-fluid">
+      <div className="row mb-3">
+        <div className="col-md-12 d-flex justify-content-end" style={{ marginTop: '10px' }}>
+          <button 
+            onClick={exportToGitHub} 
+            className="btn btn-primary"
+            disabled={exportLoading}
+          >
+            {exportLoading ? (
+              <>
+                <span className="spinner-border spinner-border-sm me-2" role="status"></span>
+                Exporting...
+              </>
+            ) : (
+              <>
+                <i className="ri-github-fill me-2"></i>
+                Export to GitHub
+              </>
+            )}
+          </button>
+        </div>
+      </div>
+      
       <div className="row">
+        
         <div className="col-xxl-9">
           <div className="card custom-card">
             <div className="card-body product-checkout">
@@ -446,6 +511,9 @@ export const DeveloperTaskDetail = () => {
         <div className="col-xxl-3">
           <div className="card custom-card">
             <div className="card-header">
+            <div className="mt-3">
+ 
+</div>
               <div className="card-title me-1"> {task.project_id.name}</div>
             </div>
             <div className="card-body p-0">
@@ -568,6 +636,7 @@ export const DeveloperTaskDetail = () => {
             </div>
           </div>
         </div>
+      </div>
       </div>
     </>
   );

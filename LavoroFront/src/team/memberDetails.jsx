@@ -4,7 +4,6 @@ import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js';
 import RelatedProfiles from './relatedProfiles';
 import axios from 'axios';
 import { useParams, useNavigate } from 'react-router-dom';
-import ReportForm from '../reports/ReportForm';
 
 // Enregistrer les composants nécessaires de Chart.js
 ChartJS.register(ArcElement, Tooltip, Legend);
@@ -12,9 +11,6 @@ ChartJS.register(ArcElement, Tooltip, Legend);
 const MemberDetails = () => {
     const [member, setMember] = useState(null);
     const [loading, setLoading] = useState(true);
-    const [showReportForm, setShowReportForm] = useState(false);
-    const [teamInfo, setTeamInfo] = useState(null);
-    const [projectInfo, setProjectInfo] = useState(null);
     const navigate = useNavigate();
     const { id } = useParams();
 
@@ -61,7 +57,7 @@ const MemberDetails = () => {
             try {
                 const token = localStorage.getItem('token');
                 const response = await axios.get(
-                    `http://localhost:3000/teamMember/getTeamMember/${id}`,
+                    `http://localhost:3000/teamMember/getTeamMember/${id}`, 
                     {
                         headers: {
                             'Authorization': `Bearer ${token}`,
@@ -70,91 +66,7 @@ const MemberDetails = () => {
                         withCredentials: true
                     }
                 );
-
-                const memberData = response.data.data;
-                setMember(memberData);
-
-                // Récupérer les informations sur l'équipe
-                if (memberData && memberData.teamId) {
-                    try {
-                        const teamResponse = await axios.get(
-                            `http://localhost:3000/team/${memberData.teamId}`,
-                            {
-                                headers: {
-                                    'Authorization': `Bearer ${token}`,
-                                    'Content-Type': 'application/json'
-                                },
-                                withCredentials: true
-                            }
-                        );
-
-                        const teamData = teamResponse.data.data;
-                        setTeamInfo(teamData);
-
-                        // Récupérer les informations sur le projet
-                        if (teamData && teamData.project_id) {
-                            try {
-                                const projectResponse = await axios.get(
-                                    `http://localhost:3000/project/getProjectById/${teamData.project_id}`,
-                                    {
-                                        headers: {
-                                            'Authorization': `Bearer ${token}`,
-                                            'Content-Type': 'application/json'
-                                        },
-                                        withCredentials: true
-                                    }
-                                );
-
-                                setProjectInfo(projectResponse.data);
-                            } catch (projectError) {
-                                console.error('Error fetching project:', projectError);
-
-                                // Récupérer un projet par défaut si le projet de l'équipe n'est pas trouvé
-                                try {
-                                    const defaultProjectResponse = await axios.get(
-                                        `http://localhost:3000/project/dash`,
-                                        {
-                                            headers: {
-                                                'Authorization': `Bearer ${token}`,
-                                                'Content-Type': 'application/json'
-                                            },
-                                            withCredentials: true
-                                        }
-                                    );
-
-                                    if (Array.isArray(defaultProjectResponse.data) && defaultProjectResponse.data.length > 0) {
-                                        setProjectInfo(defaultProjectResponse.data[0]);
-                                    }
-                                } catch (defaultProjectError) {
-                                    console.error('Error fetching default project:', defaultProjectError);
-                                }
-                            }
-                        } else {
-                            // Si l'équipe n'a pas de projet, récupérer un projet par défaut
-                            try {
-                                const defaultProjectResponse = await axios.get(
-                                    `http://localhost:3000/project/dash`,
-                                    {
-                                        headers: {
-                                            'Authorization': `Bearer ${token}`,
-                                            'Content-Type': 'application/json'
-                                        },
-                                        withCredentials: true
-                                    }
-                                );
-
-                                if (Array.isArray(defaultProjectResponse.data) && defaultProjectResponse.data.length > 0) {
-                                    setProjectInfo(defaultProjectResponse.data[0]);
-                                }
-                            } catch (defaultProjectError) {
-                                console.error('Error fetching default project:', defaultProjectError);
-                            }
-                        }
-                    } catch (teamError) {
-                        console.error('Error fetching team:', teamError);
-                    }
-                }
-
+                setMember(response.data.data);
                 setLoading(true);
             } catch (error) {
                 console.error('Error fetching member:', error);
@@ -165,7 +77,7 @@ const MemberDetails = () => {
 
         fetchMember();
     }, [id]);
-
+    
     if (loading) {
         return <div className="text-center py-4">Loading...</div>;
     }
@@ -223,43 +135,6 @@ const MemberDetails = () => {
 
     return (
         <div className="container-fluid">
-            {/* Report Form Modal */}
-            {showReportForm && (
-                <div className="modal d-block" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
-                    <div className="modal-dialog modal-dialog-centered modal-lg">
-                        <div className="modal-content">
-                            <div className="modal-header border-0">
-                                <button
-                                    type="button"
-                                    className="btn-close"
-                                    onClick={() => setShowReportForm(false)}
-                                    aria-label="Close"
-                                ></button>
-                            </div>
-                            <div className="modal-body">
-                                <ReportForm
-                                    onClose={() => setShowReportForm(false)}
-                                    onSuccess={() => {
-                                        setShowReportForm(false);
-                                        // Optionally refresh data or show success message
-                                    }}
-                                    initialData={{
-                                        reported_user_id: id, // Pass the current member ID
-                                        hideUserField: true, // Hide the user selection field
-                                        hideProjectField: true, // Hide the project selection field
-                                        memberName: member.name, // Pass the member name for display
-                                        project_id: projectInfo?.project_id || projectInfo?._id, // Pass the project ID
-                                        team_manager_id: teamInfo?.manager_id?._id, // Pass the team manager ID
-                                        teamInfo: teamInfo, // Pass the team info
-                                        projectInfo: projectInfo // Pass the project info
-                                    }}
-                                />
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            )}
-
             {/* Page Header */}
             <div className="d-flex align-items-center justify-content-between page-header-breadcrumb flex-wrap gap-2">
                 <div>
@@ -291,8 +166,8 @@ const MemberDetails = () => {
                         <div className="card-body pt-5">
                             <div className="mb-3 lh-1 mt-4">
                                 <span className="avatar avatar-xxl avatar-rounded">
-                                    <img src={member.image.startsWith('http') ?
-                                        member.image :
+                                    <img src={member.image.startsWith('http') ? 
+                                        member.image : 
                                         `http://localhost:3000${member.image}`}
                                         alt={member.name} className="rounded-circle img-fluid shadow" />
                                 </span>
@@ -328,12 +203,8 @@ const MemberDetails = () => {
                                     </div>
                                 </div>
                                 <div className="btn-list ms-auto">
-                                    <button
-                                        className="btn btn-danger rounded-pill btn-wave"
-                                        onClick={() => setShowReportForm(true)}
-                                    >
-                                        <i className="ri-alarm-warning-line me-1"></i> Réclamation
-                                    </button>
+                                    <button className="btn btn-primary rounded-pill btn-wave">
+                                        <i className="ri-download-cloud-line me-1"></i> Reclamation                                    </button>
                                     <button className="btn btn-primary1-light rounded-pill btn-wave">
                                         <i className="ri-heart-line lh-1 align-middle"></i> Add to wishlist
                                     </button>
