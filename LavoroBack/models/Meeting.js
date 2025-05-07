@@ -6,7 +6,7 @@ const Meeting = new Schema(
         organizer_id: { 
             type: Schema.Types.ObjectId, 
             required: true,
-            ref: 'User'  // Référence au modèle User
+            ref: 'user'  // Référence au modèle User
         },
         title: { 
             type: String, 
@@ -25,8 +25,12 @@ const Meeting = new Schema(
         },
         participants: [{ 
             type: Schema.Types.ObjectId,
-            ref: 'User'  // Référence au modèle User
+            ref: 'user'  // Référence au modèle User
         }],
+        meeting_link: {
+            type: String,
+            required: true
+        },
         created_at: { 
             type: Date, 
             default: Date.now 

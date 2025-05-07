@@ -11,6 +11,7 @@ const authenticateToken = require('../middleware/authenticatedToken');
 const TaskController = require('../controllers/TaskController');
 
 
+router.get('/all' , userController.getUsers)
 
 router.post('/signup', setDefaultRole, upload.single('image'), userController.signup);
 

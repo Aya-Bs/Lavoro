@@ -54,10 +54,10 @@ const handleStartProject = async (projectId) => {
     }
 
     const updatedProject = await response.json();
-    
+
     // Update local state with the new project data
     setProject(updatedProject);
-    
+
     // Show success message
     Swal.fire({
       title: "Project Started!",
@@ -194,18 +194,18 @@ const handleDelete = async (projectId) => {
   const fetchProjectDetails = async () => {
     try {
       const response = await fetch(`http://localhost:3000/project/${id}`);
-      
+
       // Check if the response is JSON
       const contentType = response.headers.get('content-type');
       if (!contentType || !contentType.includes('application/json')) {
         throw new Error('Server did not return JSON');
       }
-  
+
       const data = await response.json();
       if (response.ok) {
         setProject(data); // Set project details
         setShowAddTeamButton(!data.team_id);
-  
+
         // Manager details are already included in the response
         if (data.manager_id) {
           console.log('Manager Data:', data.manager_id); // Log the manager object
@@ -231,11 +231,11 @@ const handleDelete = async (projectId) => {
   };
 
   const handleAddTeam = () => {
-    navigate(`/createTeam`, { 
-      state: { 
+    navigate(`/createTeam`, {
+      state: {
         projectId: id,
-        projectName: project.name 
-      } 
+        projectName: project.name
+      }
     });
   };
 
@@ -284,7 +284,7 @@ const handleDelete = async (projectId) => {
       .split(/\s*\d+\.\s*/)
       .filter(risk => risk.trim() !== '');
   };
-  
+
 
   return (
     <>
@@ -312,14 +312,14 @@ const handleDelete = async (projectId) => {
           <br />
           <h1 className="page-title fw-medium fs-18 mb-0">Projects Overview</h1>
         </div>
-        
+
         <div className="btn-list">
           {/* <button className="btn btn-white btn-wave">
             <i className="ri-filter-3-line align-middle me-1 lh-1" /> Start Project
           </button> */}
                         {!isTeamManager && (
 
-          <button 
+          <button
   className="btn btn-white btn-wave"
   onClick={() => handleStartProject(project._id)}
   disabled={project.status !== 'Not Started'}
@@ -328,7 +328,7 @@ const handleDelete = async (projectId) => {
 </button>
 )}
     {showAddTeamButton && (
-                <button 
+                <button
                   className="btn btn-primary btn-wave"
                   onClick={handleAddTeam}
                 >
@@ -337,7 +337,7 @@ const handleDelete = async (projectId) => {
               )}
         </div>
       </div>
-  
+
       <div className="row">
         <div className="col-xxl-8">
           <div className="card custom-card">
@@ -366,7 +366,7 @@ const handleDelete = async (projectId) => {
                 </div>
               )}
             </div>
-            
+
             <div className="card-body">
               <div className="d-flex align-items-center mb-4 gap-2 flex-wrap">
                 <span className="avatar avatar-lg me-1 bg-primary-gradient">
@@ -385,14 +385,14 @@ const handleDelete = async (projectId) => {
                   </span>
                 </div>
               </div>
-  
+
               <div className="fs-15 fw-medium mb-2">
                 Project Description :
               </div>
               <p className="text-muted mb-4">
                 {project.description}
               </p>
-  
+
               <div className="d-flex gap-5 mb-4 flex-wrap">
               <div className="d-flex align-items-center gap-2 me-3">
                   <span className="avatar avatar-md avatar-rounded me-1 bg-primary2-transparent">
@@ -407,7 +407,7 @@ const handleDelete = async (projectId) => {
                     </span>
                   </div>
                 </div>
-               
+
                 <div className="d-flex align-items-center gap-2 me-3">
                   <span className="avatar avatar-md avatar-rounded me-1 bg-primary1-transparent">
                     <i className="ri-calendar-event-line fs-18 lh-1 align-middle" />
@@ -449,7 +449,7 @@ const handleDelete = async (projectId) => {
                   </div>
                 </div>
               </div>
-  
+
               <div className="mb-4">
   <div className="row">
     <div className="col-xl-6">
@@ -466,6 +466,7 @@ const handleDelete = async (projectId) => {
           <div className="text-muted">No tasks yet</div>
         )}
       </ul>
+
     </div>
                   <div className="col-xl-6">
                     <div className="d-flex align-items-center justify-content-between mb-2">
@@ -529,9 +530,10 @@ const handleDelete = async (projectId) => {
                       })()}
                     </ul>
                   </div>
+
                 </div>
               </div>
-  
+
               <div className="fs-15 fw-medium mb-2">Tags :</div>
               <div className="d-flex gap-2 flex-wrap">
                 {project.tags.split(',').map((tag, index) => (
@@ -541,7 +543,7 @@ const handleDelete = async (projectId) => {
                 ))}
               </div>
             </div>
-            
+
             <div className="card-footer">
               <div className="d-flex align-items-center justify-content-between gap-2 flex-wrap">
                 <div className="d-flex gap-3 align-items-center">
@@ -575,7 +577,13 @@ const handleDelete = async (projectId) => {
             </div>
           </div>
         </div>
-  
+        <button
+  className="btn btn-primary btn-wave"
+  onClick={() => navigate(`/projects/${project._id}/kanban`)}
+>
+  <i className="ri-kanban-line align-middle me-1 lh-1" /> Kanban Board
+</button>
+
         <div className="col-xxl-4">
           <div className="card custom-card">
             <div className="card-header pb-0">
@@ -623,7 +631,7 @@ const handleDelete = async (projectId) => {
                 )}
               </ul>
             </div>
-  
+
             <div className="card-footer">
               <div className="d-flex justify-content-center align-items-center w-100">
                 <div className="d-flex align-items-center gap-2">

@@ -4,6 +4,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import Swiper from 'swiper';
 import { Pagination, Autoplay } from 'swiper/modules';
 import Swal from 'sweetalert2';
+import TeamHistoryTimeline from './teamHistory';
 const TeamDetailsPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -135,6 +136,65 @@ const TeamDetailsPage = () => {
       );
     }
   };
+  const handleArchiveTeam = async () => {
+    try {
+      // First fetch team details to check project status
+      const teamResponse = await axios.get(`http://localhost:3000/teams/teamDetails/${id}`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+  
+      const team = teamResponse.data.data;
+      
+      // Check project status
+      if (team.project_id?.status === 'In Progress') {
+        await Swal.fire({
+          title: 'Cannot Archive',
+          text: 'This team has a project in progress. Please complete or reassign the project first.',
+          icon: 'error'
+        });
+        return;
+      }
+  
+      // Proceed with confirmation
+      const result = await Swal.fire({
+        title: 'Archive Team?',
+        text: "This team will be moved to the archive. You can restore it later.",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#3085d6',
+        cancelButtonColor: '#d33',
+        confirmButtonText: 'Yes, archive it!'
+      });
+  
+      if (result.isConfirmed) {
+        const response = await axios.post(
+          `http://localhost:3000/teams/archive/${id}`,
+          {},
+          {
+            headers: {
+              'Authorization': `Bearer ${localStorage.getItem('token')}`
+            }
+          }
+        );
+  
+        if (response.status === 200) {
+          await Swal.fire('Archived!', 'Team archived successfully.', 'success');
+          navigate('/teams/teamArchive');
+        }
+      }
+    } catch (err) {
+      console.error('Archive error:', err);
+      Swal.fire({
+        title: 'Error!',
+        text: err.response?.data?.message || 'Failed to archive team',
+        icon: 'error'
+      });
+    }
+  };
+
+
 
 
   return (
@@ -230,9 +290,15 @@ const TeamDetailsPage = () => {
                                   Manager: {team.manager_id?.firstName} {team.manager_id?.lastName}
                                 </p>
                               </div>
-
+                                
                             </div>
-
+                            <div className="popular-tags">
+                  <span className={`badge rounded-pill ${team.status === 'Active' ? 'bg-success-transparent' : 'bg-secondary-transparent'}`}>
+                    <i className="bi bi-circle-fill me-1"></i> {team.status}
+                  </span>
+                  
+                  
+                </div>
                           </div>
                         </div>
                       </div>
@@ -265,6 +331,7 @@ const TeamDetailsPage = () => {
                             <i className="ri-share-line"></i>
                           </button>
                         </div>
+                        
                       </div>
                     </div>
                   </div>
@@ -280,9 +347,7 @@ const TeamDetailsPage = () => {
                   {team.description || 'No description available for this team.'}
                 </p>
                 <div className="popular-tags">
-                  <span className={`badge rounded-pill ${team.status === 'Active' ? 'bg-success-transparent' : 'bg-secondary-transparent'}`}>
-                    <i className="bi bi-circle-fill me-1"></i> {team.status}
-                  </span>
+                  
                   {team.tags?.map((tag, index) => (
                     <span key={index} className="badge rounded-pill bg-primary-transparent me-1">
                       {tag}
@@ -459,13 +524,15 @@ const TeamDetailsPage = () => {
                 </div>
               </div>
             </div>
-
+            <div className="card custom-card">
+                <TeamHistoryTimeline />
+            </div>
             <div className="card custom-card">
               <div className="card-body">
                 <h6 className="fw-medium mb-3">Quick Actions</h6>
                 <button
                   className="btn btn-outline-primary btn-wave w-100 mb-2"
-                  onClick={() => navigate(`/teams/${team._id}/add-member`)}
+                  onClick={() => navigate(`/searchMember/${team._id}`)}
                 >
                   <i className="ri-user-add-line me-2"></i> Add Member
                 </button>
@@ -483,7 +550,7 @@ const TeamDetailsPage = () => {
                 </button>
                 <button
                   className="btn btn-outline-danger btn-wave w-100"
-                  onClick={() => {/* Add archive/delete functionality */}}
+                  onClick={handleArchiveTeam}
                 >
                   <i className="ri-archive-line me-2"></i> Archive Team
                 </button>

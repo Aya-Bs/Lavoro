@@ -47,6 +47,39 @@ const generateAvatar = (firstName, lastName) => {
 };
 
 
+
+exports.getUsers = async (req, res) => {
+  try {
+    const users = await User.find({})
+      .populate('role', 'RoleName')
+      .select('email firstName lastName role')
+      .lean();
+
+    const nonAdminUsers = users.filter(user => {
+      const roleName = (user.role?.RoleName || '').trim().toLowerCase();
+      return roleName !== 'admin';
+    });
+
+    res.status(200).json({
+      success: true,
+      data: nonAdminUsers
+    });
+
+    
+  } catch (error) {
+    console.error('Error fetching users:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch users',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+};
+
+
+
+
+
 exports.signup = async (req, res) => {
   try {
       const { firstName, lastName, email, password, role, phone_number } = req.body;

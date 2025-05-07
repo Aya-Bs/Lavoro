@@ -238,5 +238,14 @@ router.get('/getTeamMember/:id', teamMemberController.getTeamMemberById);
 router.get('/getAllTeamMembers/:teamId', teamMemberController.getTeamMembersByTeamId);
 router.post('/addTeamMembers', teamMemberController.addTeamMember);
 
+router.get('/getAll', teamMemberController.getAll);
+
 
 module.exports = router;
+
+
+
+
+
+
+

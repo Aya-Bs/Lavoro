@@ -201,7 +201,9 @@ useEffect(() => {
     useEffect(() => {
         const fetchTasks = async () => {
             try {
+                const token = localStorage.getItem('token');
                 const response = await axios.get('http://localhost:3000/tasks', {
+                    headers: { Authorization: `Bearer ${token}` },
                     withCredentials: true
                 });
                 

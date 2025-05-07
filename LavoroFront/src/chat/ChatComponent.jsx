@@ -1377,8 +1377,8 @@ const ChatComponent = () => {
     // Render based on view mode
     if (viewMode === 'fullscreen') {
         return (
-            <div className="main-content app-content">
-                <div className="container-fluid p-0">
+            <div >
+                <div >
                     {/* Page Header */}
                     <div className="d-flex align-items-center justify-content-between page-header-breadcrumb flex-wrap gap-2">
                         <div>

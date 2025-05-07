@@ -5,7 +5,7 @@ const Team = new Schema({
     name: { type: String, required: true },
     manager_id: { type: mongoose.Schema.Types.ObjectId, ref: 'user', required: true },
     project_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Project', required: true },
-    members: [{ type: mongoose.Schema.Types.ObjectId, ref: 'user', required: true }],
+    //members: [{ type: mongoose.Schema.Types.ObjectId, ref: 'user', required: true }],
     capacity: { type: Number, default: 0 },
     created_at: { type: Date, default: Date.now },
     updated_at: { type: Date, default: Date.now },

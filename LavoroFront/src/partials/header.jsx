@@ -115,9 +115,9 @@ useEffect(() => {
         }
       });
 
-      if (response.data && response.data.success) {
-        setNotifications(response.data.data || []);
-        setUnreadCount(response.data.data?.filter(notif => !notif.is_read).length || 0);
+      if (response.data && response.data.notifications) {
+        setNotifications(response.data.notifications || []);
+        setUnreadCount(response.data.unreadCount || 0);
       }
     } catch (error) {
       console.error("Error fetching notifications:", error);

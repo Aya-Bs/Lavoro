@@ -5,6 +5,8 @@ const Sidebar = ({ userRole }) => {
   const [isDashboardOpen, setIsDashboardOpen] = useState(false);
   const [isPagesOpen, setIsPagesOpen] = useState(false);
   const [isProjectsMenuOpen, setIsProjectsMenuOpen] = useState(false);
+  const [isPagesOpenTask, setIsPagesOpenTask] = useState(false);
+
 
   const getMenuItems = () => {
     switch(userRole) {
@@ -15,11 +17,18 @@ const Sidebar = ({ userRole }) => {
               <span className="category-name">Main</span>
             </li>
             <li className="slide">
+              <Link to="/developer-dashboard" className="side-menu__item">
+                <i className="ri-user-line side-menu__icon"></i>
+                <span className="side-menu__label">Dashboard</span>
+              </Link>
+            </li>
+            <li className="slide">
               <Link to="/profile" className="side-menu__item">
                 <i className="ri-user-line side-menu__icon"></i>
                 <span className="side-menu__label">Profile</span>
               </Link>
             </li>
+            
 
             <li className={`slide has-sub ${isPagesOpen ? "open" : ""}`}>
             <li className="slide__category">
@@ -41,6 +50,13 @@ const Sidebar = ({ userRole }) => {
                   My Tasks
                   </Link>
                 </li>
+                <li className="slide">
+                  <Link to="/developer-kanban" className="side-menu__item">
+                  Kanban Board
+                  </Link>
+                </li>
+
+                
 
              </ul>
             </li>
@@ -191,19 +207,9 @@ Member of the year                  </Link>
                   </Link>
                 </li>
 
-                <li className="slide">
-                  <Link to="/member-details/67ffe958abcdc7b19d4edb98" className="side-menu__item">
-                    member details
-                  </Link>
-                </li>
-                <li className="slide">
-                  <Link to="/searchMember" className="side-menu__item">
-                    search member
-                  </Link>
-                </li>
+                
                 <li className="slide">
                   <Link to="/reports" className="side-menu__item">
-                    <i className="ri-file-warning-line side-menu__icon"></i>
                     Reports
                   </Link>
                 </li>
@@ -211,20 +217,20 @@ Member of the year                  </Link>
               </ul>
             </li>
 
-            <li className={`slide has-sub ${isPagesOpen ? "open" : ""}`}>
+            <li className={`slide has-sub ${isPagesOpenTask ? "open" : ""}`}>
             <li className="slide__category">
               <span className="category-name">Tasks</span>
             </li>
               <button
                 className="side-menu__item"
-                onClick={() => setIsPagesOpen(!isPagesOpen)}
+                onClick={() => setIsPagesOpenTask(!isPagesOpenTask)}
                 style={{ background: "none", border: "none", cursor: "pointer", width: "100%", textAlign: "left" }}
               >
                 <i className="ri-arrow-down-s-line side-menu__angle"></i>
                 <i className="ri-list-check-3 side-menu__icon"></i>
                 <span className="side-menu__label">Tasks</span>
               </button>
-              <ul className="slide-menu child1" style={{ display: isPagesOpen ? "block" : "none" }}>
+              <ul className="slide-menu child1" style={{ display: isPagesOpenTask ? "block" : "none" }}>
 
                 <li className="slide">
                   <Link to="/createTask" className="side-menu__item">
@@ -236,6 +242,11 @@ Member of the year                  </Link>
                    Task List
                   </Link>
                 </li>
+                <li className="slide">
+                  <Link to="/calendar" className="side-menu__item">
+                   Calendar
+                  </Link>
+                </li> 
              </ul>
             </li>
             <li className="slide__category">
@@ -247,8 +258,13 @@ Member of the year                  </Link>
                 <span className="side-menu__label">Messagerie</span>
               </Link>
             </li>
-
-
+            <li className="slide">
+              <Link to="/teams/teamArchive" className="side-menu__item">
+                <i className="ri-file-list-line side-menu__icon"></i>
+                <span className="side-menu__label">Teams Archive</span>
+              </Link>
+            </li>
+            
           </>
         );
 
@@ -340,6 +356,12 @@ Member of the year                  </Link>
               </Link>
             </li>
             <li className="slide">
+              <Link to="/teams/teamArchive" className="side-menu__item">
+                <i className="ri-file-list-line side-menu__icon"></i>
+                <span className="side-menu__label">Teams Archive</span>
+              </Link>
+            </li>
+            <li className="slide">
               <Link to="/best-performer" className="side-menu__item">
                 <i className="ri-award-line side-menu__icon"></i>
                 <span className="side-menu__label">Best Performance</span>
@@ -347,7 +369,6 @@ Member of the year                  </Link>
             </li>
             <li className="slide">
               <Link to="/reports" className="side-menu__item">
-                <i className="ri-file-warning-line side-menu__icon"></i>
                 <span className="side-menu__label">Reports</span>
               </Link>
             </li>

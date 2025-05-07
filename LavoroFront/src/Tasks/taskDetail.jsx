@@ -2,6 +2,7 @@ import { useState, useEffect } from "react"
 import { useParams, useNavigate } from "react-router-dom"
 import axios from "axios"
 import { motion } from "framer-motion"
+import TaskCommentsTab from './CommentTask';
 
 export const TaskDetail = () => {
   const [assigneePage, setAssigneePage] = useState(0)
@@ -21,11 +22,10 @@ export const TaskDetail = () => {
 
   const handleTabChange = (tab) => {
     setActiveTab(tab)
-    // If the Rate tab is selected, trigger the animation
     if (tab === "shipped") {
       setTimeout(() => {
         setStarsAnimated(true)
-      }, 100) // Small delay to ensure the tab has rendered
+      }, 100)
     }
   }
 
@@ -43,10 +43,6 @@ export const TaskDetail = () => {
 
     fetchTask()
   }, [taskId])
-
-  if (loading) return <div>Loading...</div>
-  if (error) return <div>Error: {error}</div>
-  if (!task) return <div>Task not found</div>
 
   const getStatusBadge = (status) => {
     switch (status) {
@@ -74,7 +70,7 @@ export const TaskDetail = () => {
     }
   }
 
-  const totalAssigneePages = task.assigned_to ? Math.ceil(task.assigned_to.length / assigneesPerPage) : 0
+  const totalAssigneePages = task?.assigned_to ? Math.ceil(task.assigned_to.length / assigneesPerPage) : 0
 
   const handlePrevPage = () => {
     setAssigneePage((prev) => Math.max(prev - 1, 0))
@@ -84,9 +80,13 @@ export const TaskDetail = () => {
     setAssigneePage((prev) => Math.min(prev + 1, totalAssigneePages - 1))
   }
 
-  const paginatedAssignees = task.assigned_to
+  const paginatedAssignees = task?.assigned_to
     ? task.assigned_to.slice(assigneePage * assigneesPerPage, (assigneePage + 1) * assigneesPerPage)
     : []
+
+  if (loading) return <div>Loading...</div>
+  if (error) return <div>Error: {error}</div>
+  if (!task) return <div>Task not found</div>
 
   return (
     <>
@@ -166,6 +166,21 @@ export const TaskDetail = () => {
                 <li className="nav-item" role="presentation">
                   <button
                     className="nav-link p-3"
+                    id="comments-tab"
+                    data-bs-toggle="tab"
+                    data-bs-target="#comments-tab-pane"
+                    type="button"
+                    role="tab"
+                    aria-controls="comments-tab"
+                    aria-selected="false"
+                  >
+                    <i className="ri-chat-3-line me-2 align-middle" />
+                    Comments
+                  </button>
+                </li>
+                <li className="nav-item" role="presentation">
+                  <button
+                    className="nav-link p-3"
                     id="delivered-tab"
                     data-bs-toggle="tab"
                     data-bs-target="#delivery-tab-pane"
@@ -208,28 +223,28 @@ export const TaskDetail = () => {
                             <div className="text-muted">
                               <p className="mb-3">
                                 <span className="avatar avatar-sm avatar-rounded text-primary p-1 bg-primary-transparent me-2">
-                                  <i className="ri-mail-line align-middle fs-15" />
+                                  <i className="ri-calendar-schedule-line"></i>
                                 </span>
                                 <span className="fw-medium text-default">Start Date : </span>{" "}
                                 {task.start_date ? new Date(task.start_date).toLocaleDateString() : "Not set"}
                               </p>
                               <p className="mb-3">
                                 <span className="avatar avatar-sm avatar-rounded text-primary1 p-1 bg-primary1-transparent me-2">
-                                  <i className="ri-map-pin-line align-middle fs-15" />
+                                  <i className="ri-calendar-schedule-line"></i>
                                 </span>
                                 <span className="fw-medium text-default">End Date : </span>{" "}
                                 {task.deadline ? new Date(task.deadline).toLocaleDateString() : "Not set"}
                               </p>
                               <p className="mb-3">
                                 <span className="avatar avatar-sm avatar-rounded text-primary2 p-1 bg-primary2-transparent me-2">
-                                  <i className="ri-building-line align-middle fs-15" />
+                                  <i className="ri-time-line"></i>
                                 </span>
                                 <span className="fw-medium text-default">Estimated Duration : </span>{" "}
                                 {task.estimated_duration ? `${task.estimated_duration} days` : "Not estimated"}
                               </p>
                               <p className="mb-0">
                                 <span className="avatar avatar-sm avatar-rounded text-primary3 p-1 bg-primary3-transparent me-2">
-                                  <i className="ri-phone-line align-middle fs-15" />
+                                  <i className="ri-gemini-fill"></i>
                                 </span>
                                 <span className="fw-medium text-default">Priority : </span>{" "}
                                 {getPriorityBadge(task.priority)}
@@ -260,7 +275,15 @@ export const TaskDetail = () => {
                   aria-labelledby="confirm-tab-pane"
                   tabIndex={0}
                 >
-                  <br />
+                  <div className="d-flex justify-content-between align-items-center mb-3 p-3 border-bottom">
+                    <div className="mb-0"></div>
+                    <button 
+                      className="btn btn-primary1 btn-sm" 
+                      onClick={() => navigate(`/taskAssignement/${taskId}`)}
+                    >
+                      <i className="ri-user-add-line me-1"></i> Assign
+                    </button>
+                  </div>
                   <div className="card custom-card">
                     <div className="card-body pb-0">
                       <div className="swiper testimonialSwiper2">
@@ -286,17 +309,14 @@ export const TaskDetail = () => {
                                                   ? `http://localhost:3000${member.user_id?.image}`
                                                   : "../assets/images/faces/11.jpg"
                                             }
-                                            alt={
-                                              `${member.user_id?.firstName || ""} ${member.user_id?.lastName || ""}`.trim() ||
-                                              "User"
-                                            }
+                                            alt={`${member.user_id?.firstName || ''} ${member.user_id?.lastName || ''}`.trim() || 'User'}
                                             className="mb-1 mx-auto text-center avatar avatar-xl rounded-circle shadow-sm"
                                             onError={(e) => {
                                               e.target.src = "../assets/images/faces/11.jpg"
                                               e.target.alt = "Default avatar"
                                             }}
                                             style={{
-                                              objectFit: "cover", // Ensures the image fills the square
+                                              objectFit: "cover",
                                             }}
                                           />
                                         ) : (
@@ -312,8 +332,7 @@ export const TaskDetail = () => {
                                             {member.user_id?.firstName} {member.user_id?.lastName}
                                           </p>
                                           <span className="fw-normal text-muted fs-12">
-                                            {member.role || "Team Member"}
-                                          </span>
+Developer                                          </span>
                                         </div>
                                       </div>
                                     </div>
@@ -362,190 +381,188 @@ export const TaskDetail = () => {
                     <div className="card custom-card">
                       <div className="card-body">
                         <div className="d-flex flex-wrap align-items-center justify-content-between">
-                        <div className="d-flex align-items-center mx-auto" style={{ gap: '0.2rem' }}>
-  {Array.from({ length: 7 }).map((_, i) => {
-    const starValue = i + 1;
-    const isFilled = task.score >= starValue;
-    const isHalfFilled = task.score >= starValue - 0.5 && task.score < starValue;
-    
-    // Determine star color based on score
-    const starColorClass = task.score === -1 ? 'text-danger' : 'text-warning';
-    const emptyStarColorClass = task.score === -1 ? 'text-danger-transparent' : 'text-light';
+                          <div className="d-flex align-items-center mx-auto" style={{ gap: '0.2rem' }}>
+                            {Array.from({ length: 7 }).map((_, i) => {
+                              const starValue = i + 1;
+                              const isFilled = task.score >= starValue;
+                              const isHalfFilled = task.score >= starValue - 0.5 && task.score < starValue;
+                              const starColorClass = task.score === -1 ? 'text-danger' : 'text-warning';
+                              const emptyStarColorClass = task.score === -1 ? 'text-danger-transparent' : 'text-light';
 
-    return (
-      <motion.div
-        key={i}
-        initial={{ opacity: 0.3, scale: 0.8 }}
-        animate={
-          starsAnimated
-            ? {
-                opacity: isFilled ? 1 : isHalfFilled ? 0.7 : 0.3,
-                scale: 1,
-              }
-            : {}
-        }
-        transition={{
-          delay: i * 0.15,
-          duration: 0.5,
-          type: "spring",
-          stiffness: 300,
-        }}
-        style={{ fontSize: '1rem' }}
-      >
-        <div style={{ position: "relative", display: "inline-block" }}>
-          {/* Empty star background - will be red-transparent when score is -1 */}
-          <i className={`ri-star-fill fs-2 mx-2 ${emptyStarColorClass}`} />
-
-          {/* Filled portion - will be red when score is -1 */}
-          {(isFilled || task.score === -1) && (  // Modified this line to always show if score is -1
-            <motion.i
-              className={`ri-star-fill fs-2 mx-2 ${starColorClass}`}
-              style={{
-                position: "absolute",
-                left: 0,
-                top: 0,
-              }}
-              initial={{ clipPath: "inset(0 100% 0 0)" }}
-              animate={
-                starsAnimated
-                  ? {
-                      clipPath: "inset(0 0% 0 0)",
-                    }
-                  : {}
-              }
-              transition={{
-                delay: i * 0.15,
-                duration: 0.6,
-                ease: "easeOut",
-              }}
-            />
-          )}
-
-          {/* Half-filled portion - will be red when score is -1 */}
-          {(isHalfFilled || task.score === -1) && (  // Modified this line to always show if score is -1
-            <motion.div
-              style={{
-                position: "absolute",
-                left: 0,
-                top: 0,
-                width: "50%",
-                overflow: "hidden",
-              }}
-              initial={{ width: 0 }}
-              animate={starsAnimated ? { width: "50%" } : {}}
-              transition={{
-                delay: i * 0.15,
-                duration: 0.4,
-              }}
-            >
-              <i className={`ri-star-fill fs-2 mx-2 ${starColorClass}`} />
-            </motion.div>
-          )}
-        </div>
-      </motion.div>
-    );
-  })}
-  <motion.span
-    className={`ms-3 fw-semibold fs-6 ${task.score === -1 ? 'text-danger' : ''}`}
-    initial={{ opacity: 0 }}
-    animate={starsAnimated ? { opacity: 1 } : {}}
-    transition={{ delay: 1.2 }}
-  >
-    ({task.score?.toFixed(1) || 0}/7)
-  </motion.span>
-</div>
-
+                              return (
+                                <motion.div
+                                  key={i}
+                                  initial={{ opacity: 0.3, scale: 0.8 }}
+                                  animate={
+                                    starsAnimated
+                                      ? {
+                                          opacity: isFilled ? 1 : isHalfFilled ? 0.7 : 0.3,
+                                          scale: 1,
+                                        }
+                                      : {}
+                                  }
+                                  transition={{
+                                    delay: i * 0.15,
+                                    duration: 0.5,
+                                    type: "spring",
+                                    stiffness: 300,
+                                  }}
+                                  style={{ fontSize: '1rem' }}
+                                >
+                                  <div style={{ position: "relative", display: "inline-block" }}>
+                                    <i className={`ri-star-fill fs-2 mx-2 ${emptyStarColorClass}`} />
+                                    {(isFilled || task.score === -1) && (
+                                      <motion.i
+                                        className={`ri-star-fill fs-2 mx-2 ${starColorClass}`}
+                                        style={{
+                                          position: "absolute",
+                                          left: 0,
+                                          top: 0,
+                                        }}
+                                        initial={{ clipPath: "inset(0 100% 0 0)" }}
+                                        animate={
+                                          starsAnimated
+                                            ? {
+                                                clipPath: "inset(0 0% 0 0)",
+                                              }
+                                            : {}
+                                        }
+                                        transition={{
+                                          delay: i * 0.15,
+                                          duration: 0.6,
+                                          ease: "easeOut",
+                                        }}
+                                      />
+                                    )}
+                                    {(isHalfFilled || task.score === -1) && (
+                                      <motion.div
+                                        style={{
+                                          position: "absolute",
+                                          left: 0,
+                                          top: 0,
+                                          width: "50%",
+                                          overflow: "hidden",
+                                        }}
+                                        initial={{ width: 0 }}
+                                        animate={starsAnimated ? { width: "50%" } : {}}
+                                        transition={{
+                                          delay: i * 0.15,
+                                          duration: 0.4,
+                                        }}
+                                      >
+                                        <i className={`ri-star-fill fs-2 mx-2 ${starColorClass}`} />
+                                      </motion.div>
+                                    )}
+                                  </div>
+                                </motion.div>
+                              );
+                            })}
+                            <motion.span
+                              className={`ms-3 fw-semibold fs-6 ${task.score === -1 ? 'text-danger' : ''}`}
+                              initial={{ opacity: 0 }}
+                              animate={starsAnimated ? { opacity: 1 } : {}}
+                              transition={{ delay: 1.2 }}
+                            >
+                              ({task.score?.toFixed(1) || 0}/7)
+                            </motion.span>
+                          </div>
                         </div>
                       </div>
                     </div>
                   </div>
-<br />
-          <div className="mt-1 ">
-          <h6 className="mb-3 ms-5 mx-auto">✨ How the score is calculated:</h6>
-          <div className="row g-1">
-          <div className="col-md-5 ms-5">  {/* Added ms-3 here */}
-          <div className="p-2 border rounded ">
-                <p className="fw-semibold mb-1">Starting the Task</p>
-                <ul className="list-unstyled mb-0">
-                  <li className="d-flex justify-content-between">
-                    <span>Started before start date:</span>
-                    <span className="fw-bold text-success">+2</span>
-                  </li>
-                  <li className="d-flex justify-content-between">
-                    <span>Started on start date:</span>
-                    <span className="fw-bold text-success">+1</span>
-                  </li>
-                  <li className="d-flex justify-content-between gap-1">  {/* gap-1 = 0.25rem (~4px) */}
-  <span>Started after start date:</span>
-  <span className="fw-bold text-danger">-1</span>
-</li>
-                </ul>
-              </div>
-            </div>
-            <div className="col-md-5 ms-5 mb-4">  {/* Added ms-3 here */}
-            <div className="p-2 border rounded">
-                <p className="fw-semibold mb-1">Completing the Task</p>
-                <ul className="list-unstyled mb-0">
-                
-                  <li className="d-flex justify-content-between">
-                    <span>Completed 1 day early:</span>
-                    <span className="fw-bold text-success">+1.5</span>
-                  </li>
-                  <li className="d-flex justify-content-between">
-                    <span>Completed on time:</span>
-                    <span className="fw-bold text-success">+1</span>
-                  </li>
-                  <li className="d-flex justify-content-between">
-                    <span>Completed late:</span>
-                    <span className="fw-bold text-danger">-1</span>
-                  </li>
-                </ul>
-              </div>
-            </div>
-            <div className="col-md-5 ms-5">
-              <div className="p-2 border rounded ">
-                <p className="fw-semibold mb-1">Priority Bonus</p>
-                <ul className="list-unstyled mb-0">
-                  <li className="d-flex justify-content-between">
-                    <span>High priority:</span>
-                    <span className="fw-bold text-success">+3</span>
-                  </li>
-                  <li className="d-flex justify-content-between">
-                    <span>Medium priority:</span>
-                    <span className="fw-bold text-success">+2</span>
-                  </li>
-                  <li className="d-flex justify-content-between">
-                    <span>Low priority:</span>
-                    <span className="fw-bold text-success">+1</span>
-                  </li>
-                </ul>
-              </div>
-            </div>
-
-            <div className="col-md-5 ms-5">
-              <div className="p-2 border rounded ">
-                <p className="fw-semibold mb-1">Score Range</p>
-                <ul className="list-unstyled mb-0">
-                  <li className="d-flex justify-content-between">
-                    <span>Minimum possible:</span>
-                    <span className="fw-bold">-1</span>
-                  </li>
-                  <li className="d-flex justify-content-between">
-                    <span>Maximum possible:</span>
-                    <span className="fw-bold">7</span>
-                  </li>
-                  <li className="d-flex justify-content-between">
-                    <span>Your score:</span>
-                    <span className="fw-bold text-primary">{task.score?.toFixed(1) || 0}</span>
-                  </li>
-                </ul>
-              </div>
-            </div>
-          </div>
-        </div>
-        <br />
+                  <br />
+                  <div className="mt-1 ">
+                    <h6 className="mb-3 ms-5 mx-auto">✨ How the score is calculated:</h6>
+                    <div className="row g-1">
+                      <div className="col-md-5 ms-5">
+                        <div className="p-2 border rounded ">
+                          <p className="fw-semibold mb-1">Starting the Task</p>
+                          <ul className="list-unstyled mb-0">
+                            <li className="d-flex justify-content-between">
+                              <span>Started before start date:</span>
+                              <span className="fw-bold text-success">+2</span>
+                            </li>
+                            <li className="d-flex justify-content-between">
+                              <span>Started on start date:</span>
+                              <span className="fw-bold text-success">+1</span>
+                            </li>
+                            <li className="d-flex justify-content-between gap-1">
+                              <span>Started after start date:</span>
+                              <span className="fw-bold text-danger">-1</span>
+                            </li>
+                          </ul>
+                        </div>
+                      </div>
+                      <div className="col-md-5 ms-5 mb-4">
+                        <div className="p-2 border rounded">
+                          <p className="fw-semibold mb-1">Completing the Task</p>
+                          <ul className="list-unstyled mb-0">
+                            <li className="d-flex justify-content-between">
+                              <span>Completed 1 day early:</span>
+                              <span className="fw-bold text-success">+1.5</span>
+                            </li>
+                            <li className="d-flex justify-content-between">
+                              <span>Completed on time:</span>
+                              <span className="fw-bold text-success">+1</span>
+                            </li>
+                            <li className="d-flex justify-content-between">
+                              <span>Completed late:</span>
+                              <span className="fw-bold text-danger">-1</span>
+                            </li>
+                          </ul>
+                        </div>
+                      </div>
+                      <div className="col-md-5 ms-5">
+                        <div className="p-2 border rounded ">
+                          <p className="fw-semibold mb-1">Priority Bonus</p>
+                          <ul className="list-unstyled mb-0">
+                            <li className="d-flex justify-content-between">
+                              <span>High priority:</span>
+                              <span className="fw-bold text-success">+3</span>
+                            </li>
+                            <li className="d-flex justify-content-between">
+                              <span>Medium priority:</span>
+                              <span className="fw-bold text-success">+2</span>
+                            </li>
+                            <li className="d-flex justify-content-between">
+                              <span>Low priority:</span>
+                              <span className="fw-bold text-success">+1</span>
+                            </li>
+                          </ul>
+                        </div>
+                      </div>
+                      <div className="col-md-5 ms-5">
+                        <div className="p-2 border rounded ">
+                          <p className="fw-semibold mb-1">Score Range</p>
+                          <ul className="list-unstyled mb-0">
+                            <li className="d-flex justify-content-between">
+                              <span>Minimum possible:</span>
+                              <span className="fw-bold">-1</span>
+                            </li>
+                            <li className="d-flex justify-content-between">
+                              <span>Maximum possible:</span>
+                              <span className="fw-bold">7</span>
+                            </li>
+                            <li className="d-flex justify-content-between">
+                              <span>Your score:</span>
+                              <span className="fw-bold text-primary">{task.score?.toFixed(1) || 0}</span>
+                            </li>
+                          </ul>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <br />
                 </div>
-
+                <div
+                  className="tab-pane fade border-0 p-0"
+                  id="comments-tab-pane"
+                  role="tabpanel"
+                  aria-labelledby="comments-tab-pane"
+                  tabIndex={0}
+                >
+                  <TaskCommentsTab taskId={task._id} projectData={task.project_id} />
+                </div>
                 <div
                   className="tab-pane fade border-0 p-0"
                   id="delivery-tab-pane"
@@ -582,7 +599,7 @@ export const TaskDetail = () => {
         <div className="col-xxl-3">
           <div className="card custom-card">
             <div className="card-header">
-              <div className="card-title me-1"> {task.project_id.name}</div>
+              <div className="card-title me-1"> {task.project_id?.name}</div>
             </div>
             <div className="card-body p-0">
               {task.project_id ? (
@@ -620,7 +637,6 @@ export const TaskDetail = () => {
                         </div>
                       </div>
                     </li>
-
                     <li className="list-group-item p-3 border-top-0">
                       <div className="d-flex align-items-center flex-wrap gap-2">
                         {task.project_id.manager_id?.image ? (
@@ -691,7 +707,9 @@ export const TaskDetail = () => {
                   <div className="p-3">
                     <div className="d-flex align-items-center justify-content-between mt-3">
                       <span className="fw-semibold">Tasks in Project:</span>
-                      <span className="badge bg-primary rounded-pill">{task.project_id.tasks?.length || 0}</span>
+                      <span className="badge bg-primary rounded-pill">
+                        {task.project_id.tasks?.length || 0}
+                      </span>
                     </div>
                   </div>
                 </>

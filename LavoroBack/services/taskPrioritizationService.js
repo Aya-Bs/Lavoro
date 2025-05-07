@@ -1,6 +1,7 @@
 const { PythonShell } = require('python-shell');
 const path = require('path');
 const Task = require('../models/Task');
+const TeamMember = require('../models/teamMember');
 const NodeCache = require('node-cache');
 
 // Cache des prédictions pour 10 secondes seulement (très court pour voir les changements rapidement)
@@ -45,26 +46,37 @@ class TaskPrioritizationService {
 
     initPythonShell() {
         try {
-            this.pythonShell = new PythonShell('predict.py', {
-                mode: 'json',
-                pythonPath: 'python', // Utiliser Python global
-                scriptPath: path.join(__dirname, '../ML_Prioritazing'),
-                pythonOptions: ['-u']
-            });
+            // Vérifier si le chemin du script Python existe
+            const scriptPath = path.join(__dirname, '../ML_Prioritazing');
 
-            this.pythonShell.on('error', (err) => {
-                console.error('PythonShell Error:', err);
-                this.reconnectPythonShell();
-            });
+            try {
+                this.pythonShell = new PythonShell('predict.py', {
+                    mode: 'json',
+                    pythonPath: 'python', // Utiliser Python global
+                    scriptPath: scriptPath,
+                    pythonOptions: ['-u']
+                });
 
-            this.pythonShell.on('close', () => {
-                console.log('PythonShell closed, reconnecting...');
-                this.reconnectPythonShell();
-            });
+                this.pythonShell.on('error', (err) => {
+                    console.error('PythonShell Error:', err);
+                    this.pythonShell = null; // Réinitialiser pour utiliser le mode de secours
+                    this.reconnectPythonShell();
+                });
 
-            console.log('TaskPrioritization PythonShell initialized successfully');
+                this.pythonShell.on('close', () => {
+                    console.log('PythonShell closed, reconnecting...');
+                    this.pythonShell = null; // Réinitialiser pour utiliser le mode de secours
+                    this.reconnectPythonShell();
+                });
+
+                console.log('TaskPrioritization PythonShell initialized successfully');
+            } catch (initError) {
+                console.log('Failed to initialize PythonShell, will use fallback prioritization:', initError.message);
+                this.pythonShell = null; // S'assurer que le shell est null pour utiliser le mode de secours
+            }
         } catch (err) {
             console.error('Failed to initialize TaskPrioritization PythonShell:', err);
+            this.pythonShell = null; // S'assurer que le shell est null pour utiliser le mode de secours
         }
     }
 
@@ -89,7 +101,46 @@ class TaskPrioritizationService {
 
         return new Promise((resolve, reject) => {
             if (!this.pythonShell) {
-                return reject(new Error('PythonShell not initialized'));
+                console.log('PythonShell not initialized, returning tasks with default priority scores');
+
+                // Créer des scores de priorité par défaut basés sur la priorité manuelle et la deadline
+                const tasksWithDefaultScores = tasks.map(task => {
+                    // Calculer un score basé sur la priorité
+                    let priorityScore = 0;
+                    switch(task.priority) {
+                        case 'High': priorityScore = 80; break;
+                        case 'Medium': priorityScore = 50; break;
+                        case 'Low': priorityScore = 30; break;
+                        default: priorityScore = 50;
+                    }
+
+                    // Ajuster le score en fonction de la deadline si elle existe
+                    if (task.deadline) {
+                        const now = new Date();
+                        const deadline = new Date(task.deadline);
+                        const daysUntilDeadline = Math.ceil((deadline - now) / (1000 * 60 * 60 * 24));
+
+                        // Ajuster le score en fonction de la proximité de la deadline
+                        if (daysUntilDeadline <= 1) {
+                            priorityScore += 20; // Très urgent
+                        } else if (daysUntilDeadline <= 3) {
+                            priorityScore += 10; // Urgent
+                        } else if (daysUntilDeadline <= 7) {
+                            priorityScore += 5; // Assez urgent
+                        }
+                    }
+
+                    // Ajouter le score et autres propriétés nécessaires
+                    return {
+                        ...task,
+                        priority_score: priorityScore,
+                        raw_priority_score: priorityScore,
+                        days_until_deadline: task.deadline ?
+                            Math.ceil((new Date(task.deadline) - new Date()) / (1000 * 60 * 60 * 24)) : null
+                    };
+                });
+
+                return resolve(tasksWithDefaultScores);
             }
 
             const timeout = setTimeout(() => {
@@ -205,18 +256,84 @@ class TaskPrioritizationService {
     // Récupérer et prioriser les tâches d'un utilisateur
     async getPrioritizedTasksForUser(userId) {
         try {
-            // Récupérer toutes les tâches assignées à l'utilisateur qui ne sont pas terminées
-            const tasks = await Task.find({
-                assigned_to: userId,
-                status: { $ne: 'Done' }
-            }).lean();
+            console.log(`Recherche des tâches pour l'utilisateur: ${userId}`);
 
+            // Trouver d'abord tous les teamMembers où cet utilisateur est le user_id
+            const teamMembers = await TeamMember.find({ user_id: userId });
+            console.log(`TeamMembers trouvés: ${teamMembers.length}`, teamMembers);
+
+            // Extraire les IDs des teamMembers
+            const teamMemberIds = teamMembers.map(member => member._id);
+            console.log(`IDs des TeamMembers: ${teamMemberIds}`);
+
+            // Récupérer toutes les tâches assignées à ces teamMembers qui ne sont pas terminées
+            // Utiliser une approche différente pour la requête
+            const tasks = await Task.find({
+                status: { $ne: 'Done' }
+            }).lean().then(allTasks => {
+                // Filtrer manuellement pour trouver les tâches qui contiennent au moins un des teamMemberIds
+                return allTasks.filter(task => {
+                    if (!task.assigned_to || !Array.isArray(task.assigned_to)) {
+                        return false;
+                    }
+
+                    // Convertir les ObjectId en strings pour la comparaison
+                    const assignedToStrings = task.assigned_to.map(id => id.toString());
+                    const teamMemberIdStrings = teamMemberIds.map(id => id.toString());
+
+                    // Vérifier si au moins un des teamMemberIds est présent dans assigned_to
+                    return assignedToStrings.some(id => teamMemberIdStrings.includes(id));
+                });
+            });
+            console.log(`Tâches trouvées: ${tasks.length}`);
+
+            // Afficher les détails de la requête pour le débogage
             if (tasks.length === 0) {
+                console.log(`Aucune tâche trouvée avec la requête: assigned_to: { $in: [${teamMemberIds}] }, status: { $ne: 'Done' }`);
+
+                // Vérifier si des tâches existent pour ces teamMembers sans le filtre de statut
+                const allTasks = await Task.find({
+                    assigned_to: { $in: teamMemberIds }
+                }).lean();
+                console.log(`Tâches sans filtre de statut: ${allTasks.length}`);
+
+                // Vérifier la structure des tâches dans la base de données
+                const sampleTasks = await Task.find().limit(2).lean();
+                console.log('Exemple de structure de tâches dans la base de données:', sampleTasks);
+
+                // Vérifier si des tâches existent avec n'importe quel assigned_to
+                const anyAssignedTasks = await Task.find({ assigned_to: { $exists: true, $ne: [] } }).limit(5).lean();
+                console.log(`Tâches avec assigned_to non vide: ${anyAssignedTasks.length}`);
+                if (anyAssignedTasks.length > 0) {
+                    console.log('Exemple de tâche avec assigned_to:', anyAssignedTasks[0]);
+                    console.log('Type de assigned_to:', Array.isArray(anyAssignedTasks[0].assigned_to) ? 'Array' : typeof anyAssignedTasks[0].assigned_to);
+                    console.log('Contenu de assigned_to:', anyAssignedTasks[0].assigned_to);
+
+                    // Essayer une requête différente pour voir si le problème est lié à la syntaxe de la requête
+                    const alternativeQuery = await Task.find({ "assigned_to": { $elemMatch: { $in: teamMemberIds } } }).lean();
+                    console.log(`Résultat de la requête alternative: ${alternativeQuery.length} tâches trouvées`);
+
+                    // Essayer une autre approche avec $or
+                    const orQuery = await Task.find({
+                        $or: teamMemberIds.map(id => ({ "assigned_to": id }))
+                    }).lean();
+                    console.log(`Résultat de la requête $or: ${orQuery.length} tâches trouvées`);
+
+                    // Vérifier si les teamMemberIds sont valides en recherchant directement par ID
+                    for (const memberId of teamMemberIds) {
+                        const directQuery = await Task.find({ "assigned_to": memberId }).lean();
+                        console.log(`Recherche directe pour memberId ${memberId}: ${directQuery.length} tâches trouvées`);
+                    }
+                }
+
                 return [];
             }
 
+            console.log('Tâches trouvées avant priorisation:', tasks);
+
             // Prédire les priorités
             const prioritizedTasks = await this.predictTaskPriorities(tasks);
+            console.log(`Tâches priorisées: ${prioritizedTasks.length}`);
 
             return prioritizedTasks;
         } catch (error) {
