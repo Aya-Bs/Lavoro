@@ -1,0 +1,14 @@
+/* Styles to fix the landing page header on top */
+.app-header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    z-index: 1000;
+    background-color: white; /* Ensure header background is opaque */
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1); /* Optional shadow for separation */
+}
+
+.landing-page-wrapper .main-content {
+    padding-top: 70px; /* Adjust padding to header height to avoid content overlap */
+}

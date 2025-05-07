@@ -49,6 +49,7 @@ import PrioritizedTasks from "./Tasks/PrioritizedTasks";
 import File from "./fileManager/file"
 import TaskAssignement from "./Tasks/taskAssignement";
 import Calendar from "./Tasks/calendar";
+import LandingPage from "./Landing";
 
 // ProtectedRoute component to check authentication and roles
 const ProtectedRoute = ({ children, allowedRoles }) => {
@@ -120,6 +121,7 @@ function App() {
         <RefreshHandler setIsAuthenticated={setIsAuthenticated} />
         <Routes>
           {/* Public routes */}
+          <Route path="/home" element={<LandingPage />} />
 
           <Route path="/signin" element={<SignIn />} />
           <Route path="/signup" element={<SignUp />} />
