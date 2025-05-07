@@ -32,6 +32,10 @@ import CreateTeam from "./team/createTeam";
 import TeamCards from "./team/teamList";
 import TeamDetailsPage from "./team/teamDetails";
 import UpdateTeam from "./team/updateTeam";
+import { SearchSlashIcon } from "lucide-react";
+import SearchTeam from "./team/searchTeam";
+import TeamArchive from "./team/teamArchiveList";
+import TeamArchiveDetailsPage from "./team/teamArchiveDetails";
 import BestPerformerPage from "./pages/BestPerformerPage";
 import ChatComponent from "./chat/ChatComponent";
 import SearchMember from "./team/searchMember";
@@ -44,6 +48,12 @@ import { CreateTask } from "./Tasks/createTask";
 import { TaskList } from "./Tasks/tasksList";
 import { TaskDetail } from "./Tasks/taskDetail";
 import { MyTasks } from "./Tasks/myTasks";
+import { AITaskGenerator } from "./Tasks/createTaskWithAI";
+import KanbanBoard from "./Tasks/KanbanBoard";
+import DeveloperDashboard from "./Tasks/DeveloperDashboard";
+import DeveloperKanbanBoard from "./Tasks/DeveloperKanbanBoard";
+import DeveloperTaskDetail from "./Tasks/DeveloperTaskDetail";
+
 import ReportsList from "./reports/ReportsList";
 import PrioritizedTasks from "./Tasks/PrioritizedTasks";
 import File from "./fileManager/file"
@@ -134,6 +144,7 @@ function App() {
 
           {/* Protected routes with role-based access */}
           <Route element={<Layout />}>
+
             {/* Common routes for all authenticated users */}
             <Route path="/home" element={
               <ProtectedRoute>
@@ -343,11 +354,37 @@ function App() {
               </ProtectedRoute>
             } />
 
-            <Route path="/taskdetails/:taskId" element={
-              <ProtectedRoute allowedRoles={['Team Manager', 'Admin']}>
-                <TaskDetail />
-              </ProtectedRoute>
-            } />
+<Route path="/taskdetails/:taskId" element={
+  <ProtectedRoute allowedRoles={['Team Manager', 'Admin']}>
+    <TaskDetail />
+  </ProtectedRoute>
+} />
+<Route path="/generateTasksAI" element={
+  <ProtectedRoute allowedRoles={['Team Manager', 'Admin']}>
+    <AITaskGenerator />
+  </ProtectedRoute>
+} />
+<Route path="/generateTasksAI/:id" element={
+  <ProtectedRoute allowedRoles={['Team Manager', 'Admin']}>
+    <AITaskGenerator />
+  </ProtectedRoute>
+} />
+<Route path="/projects/:projectId/kanban" element={
+  <ProtectedRoute allowedRoles={['Team Manager', 'Admin', 'Project Manager']}>
+    <KanbanBoard />
+  </ProtectedRoute>
+} />
+<Route path="/developer-kanban" element={
+  <ProtectedRoute allowedRoles={['Developer']}>
+    <DeveloperKanbanBoard />
+  </ProtectedRoute>
+} />
+<Route path="/developer/taskdetails/:taskId" element={
+  <ProtectedRoute allowedRoles={['Developer']}>
+    <DeveloperTaskDetail />
+  </ProtectedRoute>
+} />
+
 
 
 
@@ -357,7 +394,53 @@ function App() {
                 <Sales />
               </ProtectedRoute>
             } />
+                    <Route path="/createTeam" element={
+              <ProtectedRoute allowedRoles={[ 'Admin', 'Team Manager']}>
+                <CreateTeam />
+              </ProtectedRoute>
+            } />
 
+            <Route path="/teamsList" element={
+              <ProtectedRoute allowedRoles={['Project Manager', 'Admin', 'Team Manager', 'Developer']}>
+                <TeamCards />
+              </ProtectedRoute>
+            } />
+
+            <Route path="/teams/teamDetails/:id" element={
+              <ProtectedRoute allowedRoles={['Project Manager', 'Admin', 'Team Manager', 'Developer']}>
+                <TeamDetailsPage />
+              </ProtectedRoute>
+            } />
+
+            <Route path="/teams/updateTeam/:id" element={
+              <ProtectedRoute allowedRoles={[ 'Admin', 'Team Manager']}>
+                <UpdateTeam />
+              </ProtectedRoute>
+            } />
+
+            <Route path="/teams/searchTeam" element={
+              <ProtectedRoute allowedRoles={['Project Manager', 'Admin', 'Team Manager', 'Developer']}>
+                <SearchTeam />
+              </ProtectedRoute>
+            } />
+
+            <Route path="/teams/teamArchive" element={
+              <ProtectedRoute allowedRoles={['Project Manager', 'Admin', 'Team Manager']}>
+                <TeamArchive />
+              </ProtectedRoute>
+            } />
+            <Route path="/teams/teamArchiveDetails/:id" element={
+              <ProtectedRoute allowedRoles={['Project Manager', 'Admin', 'Team Manager']}>
+                <TeamArchiveDetailsPage />
+              </ProtectedRoute>
+            } />
+
+
+                      <Route path="/developer-dashboard" element={
+              <ProtectedRoute allowedRoles={['Developer', 'Team Manager']}>
+                <DeveloperDashboard />
+</ProtectedRoute>
+} />
             {/* Reports route */}
             <Route path="/reports" element={
               <ProtectedRoute allowedRoles={['Team Manager', 'Admin']}>
@@ -372,6 +455,11 @@ function App() {
               </ProtectedRoute>
             } />
           </Route>
+
+
+
+
+
         </Routes>
       </BrowserRouter>
     </GoogleOAuthProvider>

@@ -17,11 +17,18 @@ const Sidebar = ({ userRole }) => {
               <span className="category-name">Main</span>
             </li>
             <li className="slide">
+              <Link to="/developer-dashboard" className="side-menu__item">
+                <i className="ri-user-line side-menu__icon"></i>
+                <span className="side-menu__label">Dashboard</span>
+              </Link>
+            </li>
+            <li className="slide">
               <Link to="/profile" className="side-menu__item">
                 <i className="ri-user-line side-menu__icon"></i>
                 <span className="side-menu__label">Profile</span>
               </Link>
             </li>
+            
 
             <li className={`slide has-sub ${isPagesOpen ? "open" : ""}`}>
             <li className="slide__category">
@@ -43,6 +50,13 @@ const Sidebar = ({ userRole }) => {
                   My Tasks
                   </Link>
                 </li>
+                <li className="slide">
+                  <Link to="/developer-kanban" className="side-menu__item">
+                  Kanban Board
+                  </Link>
+                </li>
+
+                
 
              </ul>
             </li>
@@ -240,8 +254,13 @@ Member of the year                  </Link>
                 <span className="side-menu__label">Messagerie</span>
               </Link>
             </li>
-
-
+            <li className="slide">
+              <Link to="/teams/teamArchive" className="side-menu__item">
+                <i className="ri-file-list-line side-menu__icon"></i>
+                <span className="side-menu__label">Teams Archive</span>
+              </Link>
+            </li>
+            
           </>
         );
 
@@ -330,6 +349,12 @@ Member of the year                  </Link>
               <Link to="/teamsList" className="side-menu__item">
                 <i className="ri-team-line side-menu__icon"></i>
                 <span className="side-menu__label">Teams List</span>
+              </Link>
+            </li>
+            <li className="slide">
+              <Link to="/teams/teamArchive" className="side-menu__item">
+                <i className="ri-file-list-line side-menu__icon"></i>
+                <span className="side-menu__label">Teams Archive</span>
               </Link>
             </li>
             <li className="slide">

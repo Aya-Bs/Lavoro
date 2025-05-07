@@ -791,9 +791,7 @@ useEffect(() => {
               >
                 <i className="ri-database-line p-1 rounded-circle bg-primary-transparent klist me-2 fs-16" />
                 File Manger
-                <span className="badge bg-primary1 text-fixed-white ms-auto fs-9">
-                  2
-                </span>
+                
               </a>
             </li>
             

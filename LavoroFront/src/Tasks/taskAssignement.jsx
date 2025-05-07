@@ -55,6 +55,7 @@ export default function TaskAssignement() {
   // Fonction pour assigner la tâche
 const assignTask = async () => {
   if (!taskId) return -1;
+  console.log("Assigning task:", taskId);
   
   setLoading(true);
   try {

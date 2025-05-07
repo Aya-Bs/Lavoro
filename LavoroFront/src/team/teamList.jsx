@@ -57,7 +57,7 @@ const TeamCards = () => {
         <h5>No teams found</h5>
         <button
           className="btn btn-primary mt-3"
-          onClick={() => navigate('/teams/create')}
+          onClick={() => navigate('/createTeam')}
         >
           <i className="ri-team-line me-2"></i>Create New Team
         </button>
@@ -81,7 +81,7 @@ const TeamCards = () => {
           <div className="btn-list">
             <button
               className="btn btn-outline-primary me-2"
-              onClick={() => navigate('/teams/search')}
+              onClick={() => navigate('/teams/searchTeam')}
             >
               <i className="ri-search-line me-1"></i> Search Teams
             </button>

@@ -463,8 +463,7 @@ export const CreateTask = () => {
                                     </h6>
                                     <div className="mb-2">
                                       <span className="badge bg-info-transparent fw-xxl">
-                                        {selectedMember.role}
-                                      </span>
+Developer                                      </span>
                                     </div>
                                   </div>
                                 </div>
@@ -562,7 +561,14 @@ export const CreateTask = () => {
                   </div>
                   <br />
 
-                  <div className="card-footer border-top border-blockstart-dashed d-sm-flex justify-content-end">
+                  <div className="card-footer border-top border-blockstart-dashed d-sm-flex justify-content-between">
+                  <button 
+                  type="button"  // Add this line
+                  className="btn btn-info btn-wave"
+                  onClick={() => navigate('/generateTasksAI')}
+                >
+                  <i className="ri-magic-line me-1"></i> AI Assistant
+                </button>
                     <button type="submit" className="btn btn-primary mb-2 mb-sm-0" disabled={loading}>
                       {loading ? (
                         <>
@@ -575,6 +581,7 @@ export const CreateTask = () => {
                         </>
                       )}
                     </button>
+
                   </div>
                 </form>
               </div>

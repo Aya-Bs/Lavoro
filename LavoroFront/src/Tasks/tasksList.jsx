@@ -822,7 +822,6 @@ export const TaskList = () => {
                                                                 <div className="fw-medium">
                                                                     {user.firstName || 'Unknown'} {user.lastName || ''}
                                                                 </div>
-                                                                <small className="text-muted">{member.role || 'No role'}</small>
                                                             </div>
                                                         </div>
                                                     </div>
@@ -935,7 +934,6 @@ export const TaskList = () => {
                                                                 <div className="fw-medium">
                                                                     {user.firstName || 'Unknown'} {user.lastName || ''}
                                                                 </div>
-                                                                <small className="text-muted">{member.role || 'No role'}</small>
                                                             </div>
                                                         </div>
                                                     </div>
