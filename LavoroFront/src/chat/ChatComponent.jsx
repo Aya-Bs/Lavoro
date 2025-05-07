@@ -555,30 +555,57 @@ const ChatComponent = () => {
         try {
             if (activeChat.type === 'direct') {
                 try {
+                    console.log("Fetching conversation between users", currentUser._id, "and", activeChat.user._id);
                     const response = await chatClient.getConversation(
                         currentUser._id,
                         activeChat.user._id
                     );
-                    if (response && response.messages) {
-                        if (response.messages && response.messages.length > 0) {
+
+                    console.log("Conversation response:", response);
+
+                    if (response && Array.isArray(response.messages)) {
+                        if (response.messages.length > 0) {
                             console.log("Found messages for conversation:", response.messages);
-                            setMessages(response.messages);
+                            // Assurez-vous que chaque message a un ID et un expéditeur
+                            const processedMessages = response.messages.map(msg => {
+                                // Si le message n'a pas d'ID, en générer un temporaire
+                                if (!msg._id) {
+                                    msg._id = `temp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+                                }
+                                // Ajouter des informations sur l'expéditeur si nécessaire
+                                if (msg.sender_id === currentUser._id) {
+                                    msg.sender = currentUser;
+                                } else if (!msg.sender) {
+                                    msg.sender = activeChat.user;
+                                }
+                                return msg;
+                            });
+                            setMessages(processedMessages);
                         } else {
                             console.log("No messages found in response, checking if we have a lastMessage");
                             // Vérifier si nous avons un dernier message dans la conversation active
                             if (activeChat.lastMessage && activeChat.lastMessage.message !== "Démarrer une conversation...") {
                                 console.log("Using lastMessage from activeChat:", activeChat.lastMessage);
-                                setMessages([activeChat.lastMessage]);
+                                const lastMsg = {...activeChat.lastMessage};
+                                if (!lastMsg._id) {
+                                    lastMsg._id = `temp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+                                }
+                                if (lastMsg.sender_id === currentUser._id) {
+                                    lastMsg.sender = currentUser;
+                                } else if (!lastMsg.sender) {
+                                    lastMsg.sender = activeChat.user;
+                                }
+                                setMessages([lastMsg]);
                             } else {
-                                console.log("No lastMessage found, using mock data");
-                                // Utiliser des messages fictifs
-                                setMessages(generateMockMessages(activeChat.user._id));
+                                console.log("No lastMessage found, using empty array");
+                                // Utiliser un tableau vide au lieu de messages fictifs
+                                setMessages([]);
                             }
                         }
                     } else {
-                        console.log("Invalid response format, using mock data");
-                        // Utiliser des messages fictifs
-                        setMessages(generateMockMessages(activeChat.user._id));
+                        console.log("Invalid response format, using empty array");
+                        // Utiliser un tableau vide au lieu de messages fictifs
+                        setMessages([]);
                     }
                 } catch (error) {
                     console.error('Error loading direct messages:', error);
@@ -1401,62 +1428,72 @@ const ChatComponent = () => {
                     </div>
                     {/* Page Header Close */}
 
-                    <div className="main-chart-wrapper gap-lg-0 gap-0 mb-0 d-lg-flex" style={{ height: 'calc(100vh - 180px)' }}>
-                        {/* Chat Sidebar */}
-                        <ChatSidebar
-                            conversations={filteredConversations}
-                            groups={filteredGroups}
-                            contacts={filteredContacts}
-                            activeChat={activeChat}
-                            activeTab={activeTab}
-                            setActiveTab={setActiveTab}
-                            onChatSelect={handleChatSelect}
-                            searchQuery={searchQuery}
-                            onSearch={handleSearch}
-                            currentUser={currentUser}
-                            onCreateGroup={() => setShowCreateGroupModal(true)}
-                        />
+                    <div className="container-fluid">
+                        <div className="row justify-content-center">
+                            <div className="col-12">
+                                <div className="main-chart-wrapper mb-0 d-flex" style={{ height: 'calc(100vh - 180px)', gap: '30px' }}>
+                                    {/* Chat Sidebar - Limité à 30% de la largeur avec marge à gauche */}
+                                    <div className="chat-sidebar-container" style={{ width: '30%', maxWidth: '350px', minWidth: '280px', marginLeft: '20px' }}>
+                                        <ChatSidebar
+                                            conversations={filteredConversations}
+                                            groups={filteredGroups}
+                                            contacts={filteredContacts}
+                                            activeChat={activeChat}
+                                            activeTab={activeTab}
+                                            setActiveTab={setActiveTab}
+                                            onChatSelect={handleChatSelect}
+                                            searchQuery={searchQuery}
+                                            onSearch={handleSearch}
+                                            currentUser={currentUser}
+                                            onCreateGroup={() => setShowCreateGroupModal(true)}
+                                        />
+                                    </div>
 
-                        {/* Chat Window */}
-                        {activeChat ? (
-                            <ChatWindow
-                                chat={activeChat}
-                                messages={messages}
-                                currentUser={currentUser}
-                                onSendMessage={handleSendMessage}
-                                isLoading={isLoading}
-                            />
-                        ) : (
-                            <div className="chat-window-placeholder">
-                                <div className="text-center welcome-chat-container">
-                                    <div className="welcome-chat-icon">
-                                        <i className="ri-chat-smile-3-line"></i>
-                                    </div>
-                                    <h4 className="welcome-chat-title">Bienvenue dans votre espace de discussion!</h4>
-                                    <p className="welcome-chat-subtitle">Sélectionnez une conversation dans la liste pour commencer à échanger</p>
-                                    <div className="welcome-chat-features">
-                                        <div className="welcome-feature">
-                                            <i className="ri-message-2-line"></i>
-                                            <span>Messages instantanés</span>
-                                        </div>
-                                        <div className="welcome-feature">
-                                            <i className="ri-group-line"></i>
-                                            <span>Discussions de groupe</span>
-                                        </div>
-                                        <div className="welcome-feature">
-                                            <i className="ri-attachment-2"></i>
-                                            <span>Partage de fichiers</span>
-                                        </div>
-                                    </div>
-                                    <div className="welcome-chat-action">
-                                        <button className="btn btn-primary" onClick={() => setActiveTab('contacts')}>
-                                            <i className="ri-user-add-line me-1"></i>
-                                            Nouvelle conversation
-                                        </button>
+                                    {/* Chat Window - Prend le reste de l'espace avec marge à droite */}
+                                    <div className="chat-window-container" style={{ flex: '1', minWidth: '0', marginRight: '10px' }}>
+                                        {activeChat ? (
+                                            <ChatWindow
+                                                chat={activeChat}
+                                                messages={messages}
+                                                currentUser={currentUser}
+                                                onSendMessage={handleSendMessage}
+                                                isLoading={isLoading}
+                                            />
+                                        ) : (
+                                            <div className="chat-window-placeholder">
+                                                <div className="text-center welcome-chat-container">
+                                                    <div className="welcome-chat-icon">
+                                                        <i className="ri-chat-smile-3-line"></i>
+                                                    </div>
+                                                    <h4 className="welcome-chat-title">Bienvenue dans votre espace de discussion!</h4>
+                                                    <p className="welcome-chat-subtitle">Sélectionnez une conversation dans la liste pour commencer à échanger</p>
+                                                    <div className="welcome-chat-features">
+                                                        <div className="welcome-feature">
+                                                            <i className="ri-message-2-line"></i>
+                                                            <span>Messages instantanés</span>
+                                                        </div>
+                                                        <div className="welcome-feature">
+                                                            <i className="ri-group-line"></i>
+                                                            <span>Discussions de groupe</span>
+                                                        </div>
+                                                        <div className="welcome-feature">
+                                                            <i className="ri-attachment-2"></i>
+                                                            <span>Partage de fichiers</span>
+                                                        </div>
+                                                    </div>
+                                                    <div className="welcome-chat-action">
+                                                        <button className="btn btn-primary" onClick={() => setActiveTab('contacts')}>
+                                                            <i className="ri-user-add-line me-1"></i>
+                                                            Nouvelle conversation
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
                             </div>
-                        )}
+                        </div>
                     </div>
                 </div>
 

@@ -9,11 +9,85 @@ const Project = require('../models/Project');
 const TeamMember = require('../models/teamMember');
 const jwt = require('jsonwebtoken');
 const { generateAITasks } = require('../utils/tasksCreation');
-
+const { Octokit } = require('octokit');
 
 
 
 const ObjectId = mongoose.Types.ObjectId;
+
+
+exports.exportToGitHub = async (req, res) => {
+  try {
+    const taskId = req.params.id;
+
+    const task = await Task.findById(taskId)
+  .populate({
+    path: 'assigned_to',
+    populate: {
+      path: 'user_id',
+      model: 'user',
+      select: 'firstName lastName'
+    }
+  })
+  .populate('project_id')
+  .lean(); // Optional: lean() if you want plain JS object
+
+
+    if (!task) {
+      return res.status(404).json({ message: 'Task not found' });
+    }
+
+    // Extract assignee names
+    const assigneeNames = task.assigned_to.map(member => {
+      if (member.user_id) {
+        return `- ${member.user_id.firstName} ${member.user_id.lastName || ''}`;
+      }
+      return '- Unknown';
+    }).join('\n');
+
+    const issueBody = `
+### Project: ${task.project_id?.name || 'No project associated'}
+
+*Task:* ${task.title}
+
+*Description:*
+${task.description || 'No description provided.'}
+
+*Priority:* ${task.priority}
+*Status:* ${task.status}
+*Deadline:* ${task.deadline ? new Date(task.deadline).toDateString() : 'N/A'}
+*Assigned Developers:*
+${assigneeNames || '- Unassigned'}
+
+Created from internal task ID: \`${task._id}\`
+`;
+
+    const octokit = new Octokit({ auth: process.env.GITHUB_TOKEN });
+
+    const response = await octokit.rest.issues.create({
+      owner: process.env.GITHUB_REPO_OWNER,
+      repo: process.env.GITHUB_REPO_NAME,
+      title: `[${task.project_id?.name || 'No Project'}] ${task.title}`,
+      body: issueBody,
+      labels: task.tags || [] // Include tags as labels
+    });
+
+    res.json({
+      message: 'Issue created successfully',
+      issueUrl: response.data.html_url,
+      issueNumber: response.data.number
+    });
+
+  } catch (error) {
+    console.error('GitHub export error:', error);
+    res.status(500).json({
+      message: 'Error exporting task to GitHub',
+      error: error.message
+    });
+  }
+};
+
+
 
 exports.getTasksByUser = async (req, res) => {
   try {

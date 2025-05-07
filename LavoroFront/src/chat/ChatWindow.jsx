@@ -269,18 +269,39 @@ const ChatWindow = ({ chat, messages, currentUser, onSendMessage, isLoading }) =
         }
     };
 
-    // Group messages by date
+    // Group messages by date with additional validation
     const groupMessagesByDate = () => {
         const groups = {};
 
+        if (!Array.isArray(messages)) {
+            console.error("Messages is not an array:", messages);
+            return groups;
+        }
+
         messages.forEach(message => {
-            const date = new Date(message.sent_at).toLocaleDateString('fr-FR');
-            if (!groups[date]) {
-                groups[date] = [];
+            if (!message) {
+                console.warn("Undefined message found in messages array");
+                return;
             }
-            groups[date].push(message);
+
+            if (!message.sent_at) {
+                console.warn("Message without sent_at found:", message);
+                // Ajouter une date par défaut
+                message.sent_at = new Date().toISOString();
+            }
+
+            try {
+                const date = new Date(message.sent_at).toLocaleDateString('fr-FR');
+                if (!groups[date]) {
+                    groups[date] = [];
+                }
+                groups[date].push(message);
+            } catch (error) {
+                console.error("Error processing message date:", error, message);
+            }
         });
 
+        console.log("Grouped messages by date:", groups);
         return groups;
     };
 
@@ -294,7 +315,7 @@ const ChatWindow = ({ chat, messages, currentUser, onSendMessage, isLoading }) =
     const chatStatus = chat.type === 'direct' ? chat.user.status || 'offline' : '';
 
     return (
-        <div className="chat-window border">
+        <div className="chat-window border d-flex flex-column">
             {/* Chat Header */}
             <div className="chat-header d-flex align-items-center justify-content-between p-3 border-bottom">
                 <div className="d-flex align-items-center">
@@ -340,7 +361,7 @@ const ChatWindow = ({ chat, messages, currentUser, onSendMessage, isLoading }) =
             </div>
 
             {/* Chat Content */}
-            <div className="chat-content" id="main-chat-content" ref={chatContentRef}>
+            <div className="chat-content flex-grow-1" id="main-chat-content" ref={chatContentRef}>
                 {isLoading ? (
                     <div className="d-flex justify-content-center align-items-center h-100">
                         <div className="spinner-border text-primary" role="status">
@@ -352,7 +373,9 @@ const ChatWindow = ({ chat, messages, currentUser, onSendMessage, isLoading }) =
                         {Object.keys(messageGroups).map(date => (
                             <React.Fragment key={date}>
                                 <li className="chat-day-label">
-                                    <span>{date === new Date().toLocaleDateString('fr-FR') ? "Aujourd'hui" : date}</span>
+                                    <div className="text-center my-3">
+                                        <span className="date-label px-3 py-1">{date === new Date().toLocaleDateString('fr-FR') ? "Aujourd'hui" : date}</span>
+                                    </div>
                                 </li>
                                 {messageGroups[date].map((message, index) => {
                                     // Gérer le cas où sender_id est un objet avec une propriété _id
@@ -362,8 +385,15 @@ const ChatWindow = ({ chat, messages, currentUser, onSendMessage, isLoading }) =
                                     const currentUserId = currentUser._id;
                                     const isCurrentUser = senderId === currentUserId;
 
-                                    // Log pour débogage
-                                    console.log(`Message ${index}: senderId=${senderId}, currentUserId=${currentUserId}, isCurrentUser=${isCurrentUser}`);
+                                    // Log détaillé pour débogage
+                                    console.log(`Message ${index}:`, {
+                                        message: message.message,
+                                        senderId: senderId,
+                                        currentUserId: currentUserId,
+                                        isCurrentUser: isCurrentUser,
+                                        sender: message.sender,
+                                        fullMessage: message
+                                    });
 
                                     return (
                                         <li key={index} className={isCurrentUser ? "chat-item-end" : "chat-item-start"}>
@@ -371,7 +401,7 @@ const ChatWindow = ({ chat, messages, currentUser, onSendMessage, isLoading }) =
                                                 {!isCurrentUser && (
                                                     <div className="chat-user-profile">
                                                         <span className={`avatar avatar-md ${chat.type === 'direct' ? chatStatus : ''}`}>
-                                                            <img
+                                                             <img
                                                                 src={chat.type === 'direct' ?
                                                                     chatImage :
                                                                     (message.sender?.profileImage ||
@@ -382,7 +412,8 @@ const ChatWindow = ({ chat, messages, currentUser, onSendMessage, isLoading }) =
                                                                     (message.sender?.name ||
                                                                      `${message.sender?.firstName || ''} ${message.sender?.lastName || ''}`.trim() ||
                                                                      'Utilisateur')}
-                                                            />
+                                                            /> 
+
                                                         </span>
                                                     </div>
                                                 )}
@@ -610,8 +641,8 @@ const ChatWindow = ({ chat, messages, currentUser, onSendMessage, isLoading }) =
             </div>
 
             {/* Zone de saisie de message (nouvelle implémentation) */}
-            <div className="chat-message-input-container">
-                <form onSubmit={handleSubmit} className="chat-message-form">
+            <div className="chat-message-input-container mt-auto" style={{ width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}>
+                <form onSubmit={handleSubmit} className="chat-message-form" style={{ display: 'flex', width: '100%', maxWidth: '100%' }}>
                     <input
                         type="file"
                         ref={fileInputRef}
@@ -621,18 +652,39 @@ const ChatWindow = ({ chat, messages, currentUser, onSendMessage, isLoading }) =
                     />
                     <button
                         type="button"
-                        className="btn btn-primary1-light btn-icon chat-message-button"
+                        className="btn btn-primary1-light btn-icon chat-message-button attachment-btn"
                         onClick={handleAttachmentClick}
+                        style={{
+                            flexShrink: 0,
+                            width: '40px',
+                            height: '40px',
+                            borderRadius: '50%',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            marginRight: '10px',
+                            marginLeft: '20px',
+
+                        }}
                     >
-                        <i className="ri-attachment-2"></i>
+                        <i className="ri-attachment-2" style={{ fontSize: '18px' }}></i>
                     </button>
-                    <div className="position-relative">
+                    <div className="position-relative" style={{ flexShrink: 0 }}>
                         <button
                             type="button"
                             className="btn btn-icon btn-primary2 emoji-picker chat-message-button"
                             onClick={toggleEmojiPicker}
+                            style={{
+                                width: '40px',
+                                height: '40px',
+                                borderRadius: '50%',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                marginRight: '10px'
+                            }}
                         >
-                            <i className="ri-emotion-line"></i>
+                            <i className="ri-emotion-line" style={{ fontSize: '18px' }}></i>
                         </button>
                         {showEmojiPicker && (
                             <div
@@ -656,13 +708,27 @@ const ChatWindow = ({ chat, messages, currentUser, onSendMessage, isLoading }) =
                         value={messageText}
                         onChange={handleMessageChange}
                         ref={messageInputRef}
+                        style={{ flex: '1 1 auto', minWidth: '600px', width: '100%' }}
                     />
-                    <button type="submit" className="btn btn-primary btn-icon chat-message-button">
-                        <i className="ri-send-plane-2-line"></i>
+                    <button
+                        type="submit"
+                        className="btn btn-primary btn-icon chat-message-button"
+                        style={{
+                            flexShrink: 0,
+                            width: '40px',
+                            height: '40px',
+                            borderRadius: '50%',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            marginLeft: '20px'
+                        }}
+                    >
+                        <i className="ri-send-plane-2-line" style={{ fontSize: '18px' }}></i>
                     </button>
                 </form>
                 {attachment && (
-                    <div className="attachment-preview mt-2 p-2 border rounded">
+                    <div className="attachment-preview mt-2 p-2 border rounded" style={{ width: '100%', boxSizing: 'border-box' }}>
                         <div className="d-flex align-items-center justify-content-between">
                             <div className="d-flex align-items-center">
                                 {attachment.type.startsWith('image/') ? (
@@ -697,10 +763,7 @@ const ChatWindow = ({ chat, messages, currentUser, onSendMessage, isLoading }) =
                 )}
             </div>
 
-            {/* Chat Footer - Gardé vide mais présent pour maintenir la structure */}
-            <div className="chat-footer" style={{ position: 'sticky', bottom: 0, zIndex: 10, height: '0', padding: '0', border: 'none' }}>
-                {/* Le footer est conservé mais vidé pour ne pas perturber la structure existante */}
-            </div>
+
         </div>
     );
 };

@@ -227,7 +227,7 @@ const WinnersPodium = () => {
   const filteredPredictMembers = predictMembers.filter(
     (member) =>
       member.user_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      member.role?.toLowerCase().includes(searchTerm.toLowerCase()),
+      member.role.toLowerCase().includes(searchTerm.toLowerCase()),
   )
 
   // Format date
@@ -471,7 +471,7 @@ const WinnersPodium = () => {
                         </div>
                         <div className="participant-info">
                           <h5 className="participant-name">{member.user_name}</h5>
-                          <div className="participant-role">{member.role}</div>
+                          <div className="participant-role">Developer</div>
                           <div className="participant-metrics">
                             <div className="metric">
                               <span className="metric-label">Performance:</span>
@@ -609,7 +609,7 @@ const WinnersPodium = () => {
                     />
                   </div>
                   <h5 className="mb-1">{selectedMember.user_name}</h5>
-                  <p className="text-muted mb-2">{selectedMember.role || "Team Member"}</p>
+                  <p className="text-muted mb-2">Developer</p>
 
                   {/* Badges */}
                   <div className="d-flex justify-content-center gap-2 mb-3 flex-wrap">

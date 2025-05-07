@@ -25,6 +25,7 @@ router.put('/updateCalendarDates/:taskId', taskController.updateTaskCalendarDate
 router.post('/confirm-assignment', taskController.confirmAssignment);
 
 
+router.post('/:id/export-to-github', auth, taskController.exportToGitHub);
 
 
 

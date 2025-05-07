@@ -55,11 +55,51 @@ export const getUserChats = async (userId) => {
 // Get conversation between two users
 export const getConversation = async (userId, otherUserId) => {
     try {
+        console.log(`Fetching conversation between ${userId} and ${otherUserId}`);
         const response = await api.get(`/conversation/${userId}/${otherUserId}`);
-        return response.data.data;
+
+        // Log the raw response for debugging
+        console.log('Raw conversation response:', response);
+
+        // Validate and process the response
+        if (response.data && response.data.data) {
+            // Ensure messages is an array
+            if (!response.data.data.messages) {
+                console.warn('No messages array in response, creating empty array');
+                response.data.data.messages = [];
+            } else if (!Array.isArray(response.data.data.messages)) {
+                console.warn('Messages is not an array, converting to array:', response.data.data.messages);
+                response.data.data.messages = [response.data.data.messages];
+            }
+
+            // Process each message to ensure it has required properties
+            response.data.data.messages = response.data.data.messages.map(msg => {
+                if (!msg) return null;
+
+                // Ensure message has an ID
+                if (!msg._id) {
+                    msg._id = `temp_${Date.now()}_${Math.floor(Math.random() * 1000000)}`;
+                }
+
+                // Ensure message has sent_at
+                if (!msg.sent_at) {
+                    msg.sent_at = new Date().toISOString();
+                }
+
+                return msg;
+            }).filter(msg => msg !== null); // Remove any null messages
+
+            console.log('Processed conversation data:', response.data.data);
+            return response.data.data;
+        } else {
+            console.warn('Invalid response format:', response.data);
+            // Return a valid empty response
+            return { messages: [] };
+        }
     } catch (error) {
         console.error('Error fetching conversation:', error);
-        throw error;
+        // Return a valid empty response instead of throwing
+        return { messages: [] };
     }
 };
 

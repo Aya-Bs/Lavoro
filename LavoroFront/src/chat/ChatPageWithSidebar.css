@@ -31,10 +31,11 @@
 
 /* Styles pour le wrapper principal */
 .chat-page .main-chart-wrapper {
-    margin: 0 !important;
+    margin: 0 auto !important;
     padding: 0 !important;
     gap: 0 !important;
     height: calc(100vh - 180px) !important;
+    max-width: 1200px !important;
 }
 
 /* Styles pour la sidebar du chat */
@@ -50,12 +51,24 @@
     flex: 1 !important;
     border-radius: 0 !important;
     height: 100% !important;
+    display: flex !important;
+    flex-direction: column !important;
 }
 
 /* Styles pour le contenu du chat */
 .chat-page .chat-content,
 .chat-page #main-chat-content {
-    height: calc(100vh - 280px) !important;
+    flex: 1 !important;
+    height: auto !important;
+    min-height: 0 !important;
+    overflow-y: auto !important;
+}
+
+/* Styles pour la zone de saisie de message */
+.chat-page .chat-message-input-container {
+    width: 100% !important;
+    max-width: 100% !important;
+    flex-shrink: 0 !important;
 }
 
 /* Styles pour les onglets */
@@ -88,6 +101,13 @@
 
     .chat-page .chat-content,
     .chat-page #main-chat-content {
-        height: calc(100vh - 680px) !important;
+        flex: 1 !important;
+        height: auto !important;
+        min-height: 0 !important;
+    }
+
+    .chat-page .chat-message-input-container {
+        width: 100% !important;
+        max-width: 100% !important;
     }
 }

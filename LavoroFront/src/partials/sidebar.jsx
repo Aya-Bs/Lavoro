@@ -207,12 +207,19 @@ Member of the year                  </Link>
                   </Link>
                 </li>
 
+                <li className="slide">
+              <Link to="/teams/teamArchive" className="side-menu__item">
+              Teams Archive
+              </Link>
+            </li>
+
                 
                 <li className="slide">
                   <Link to="/reports" className="side-menu__item">
                     Reports
                   </Link>
                 </li>
+
 
               </ul>
             </li>
@@ -258,12 +265,7 @@ Member of the year                  </Link>
                 <span className="side-menu__label">Messagerie</span>
               </Link>
             </li>
-            <li className="slide">
-              <Link to="/teams/teamArchive" className="side-menu__item">
-                <i className="ri-file-list-line side-menu__icon"></i>
-                <span className="side-menu__label">Teams Archive</span>
-              </Link>
-            </li>
+            
             
           </>
         );
