@@ -41,18 +41,18 @@ const SearchMember = () => {
 
         // Fetch skills
         const skillsResponse = await axios.get(
-          "http://localhost:3000/skills/getSkills", 
+          "http://localhost:3000/skills/getSkills",
           { headers: { Authorization: `Bearer ${token}` } }
         );
         if (skillsResponse.data.success) setSkills(skillsResponse.data.data);
 
         // Fetch all devs
         const usersResponse = await axios.get(
-          "http://localhost:3000/users/getAllDev", 
+          "http://localhost:3000/users/getAllDev",
           { headers: { Authorization: `Bearer ${token}` } }
         );
         setUsers(usersResponse.data.data);
-        
+
         // Fetch user skills
         if (usersResponse.data.data.length > 0) {
           const userIds = usersResponse.data.data.map(user => user._id);
@@ -83,7 +83,7 @@ const SearchMember = () => {
 
     // Apply search filter
     if (debouncedSearchTerm.trim() !== '') {
-      result = result.filter(user => 
+      result = result.filter(user =>
         `${user.firstName} ${user.lastName}`.toLowerCase().includes(debouncedSearchTerm.toLowerCase())
       );
     }
@@ -133,17 +133,17 @@ const SearchMember = () => {
     }
     return () => clearTimeout(timer); // Nettoyage du timer
   }, [alert.show]);
-  
+
   const handleAddTeamMember = async (userId) => {
     try {
       const token = localStorage.getItem('token');
+
       const response = await axios.post(
         'http://localhost:3000/teamMember/addTeamMembers',
         {
           team_id: id,
           user_id: userId,
-          skills: userSkills[userId]?.map(skill => skill._id) || [],
-          role: 'Developer'
+          skills: userSkills[userId]?.map(skill => skill._id) || []
         },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -153,11 +153,11 @@ const SearchMember = () => {
         message: 'Member added successfully!',
         type: 'success'
       });
-      
+
       console.log('Response:', response.data);
     } catch (error) {
       console.error('Error:', error);
-      
+
       // Afficher l'alerte d'erreur
       setAlert({
         show: true,
@@ -200,9 +200,9 @@ const SearchMember = () => {
       {alert.show && (
         <div className={`alert alert-${alert.type} alert-dismissible fade show`} role="alert">
           {alert.message}
-          <button 
-            type="button" 
-            className="btn-close" 
+          <button
+            type="button"
+            className="btn-close"
             onClick={() => setAlert({ show: false, message: '', type: '' })}
           ></button>
         </div>
@@ -210,7 +210,7 @@ const SearchMember = () => {
 
         <div className="row">
           <div className="col-xl-12">
-            <SearchCard 
+            <SearchCard
               skills={skills}
               selectedSkills={selectedSkills}
               setSelectedSkills={setSelectedSkills}
@@ -226,9 +226,9 @@ const SearchMember = () => {
 
         <div className="row">
           <div className="col-xl-12">
-            <ResultsTabs 
-              users={currentUsers} 
-              userSkills={userSkills} 
+            <ResultsTabs
+              users={currentUsers}
+              userSkills={userSkills}
               onAddTeamMember={handleAddTeamMember}
               totalUsers={filteredUsers.length}
               usersPerPage={usersPerPage}
@@ -242,7 +242,7 @@ const SearchMember = () => {
   );
 };
 
-const SearchCard = ({ 
+const SearchCard = ({
   skills,
   selectedSkills,
   setSelectedSkills,
@@ -254,9 +254,9 @@ const SearchCard = ({
   setFilterOption
 }) => {
   const handleSkillClick = (skill) => {
-    setSelectedSkills(prev => 
-      prev.some(s => s._id === skill._id) 
-        ? prev.filter(s => s._id !== skill._id) 
+    setSelectedSkills(prev =>
+      prev.some(s => s._id === skill._id)
+        ? prev.filter(s => s._id !== skill._id)
         : [...prev, skill]
     );
   };
@@ -273,9 +273,9 @@ const SearchCard = ({
       <div className="card-body p-0">
         <div className="p-3 border-bottom">
           <div className="input-group mb-3 search-result-input gap-2">
-            <input 
-              type="text" 
-              className="form-control form-control-lg bg-light rounded-pill" 
+            <input
+              type="text"
+              className="form-control form-control-lg bg-light rounded-pill"
               placeholder="Explore Here ..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
@@ -288,11 +288,11 @@ const SearchCard = ({
 
           <div className="d-flex gap-2 flex-wrap">
             {skills.map((skill) => (
-              <button 
-                key={skill._id} 
+              <button
+                key={skill._id}
                 className={`badge border text-default rounded-pill ${
-                  selectedSkills.some(s => s._id === skill._id) 
-                    ? 'bg-primary1 text-white' 
+                  selectedSkills.some(s => s._id === skill._id)
+                    ? 'bg-primary1 text-white'
                     : 'bg-light'
                 }`}
                 onClick={() => handleSkillClick(skill)}
@@ -301,11 +301,11 @@ const SearchCard = ({
                 {selectedSkills.some(s => s._id === skill._id) && <span className="ms-1">×</span>}
               </button>
             ))}
-            
+
             {skills.length === 0 && <span className="text-muted">No skills found</span>}
-            
+
             <div className="ms-auto">
-              <button 
+              <button
                 className="text-primary text-decoration-underline fw-medium mx-2 bg-transparent border-0"
                 onClick={handleClearAll}
               >
@@ -317,8 +317,8 @@ const SearchCard = ({
 
         <div className="p-3 d-flex gap-2 justify-content-between flex-wrap align-items-center">
           <div className="text-muted">
-            {selectedSkills.length > 0 
-              ? `${selectedSkills.length} skill(s) selected` 
+            {selectedSkills.length > 0
+              ? `${selectedSkills.length} skill(s) selected`
               : `Total of ${skills.length} skills available`
             }
           </div>
@@ -350,7 +350,7 @@ const SortDropdown = ({ sortOption, setSortOption }) => {
       <ul className="dropdown-menu">
         {options.map(option => (
           <li key={option.value}>
-            <button 
+            <button
               className={`dropdown-item ${sortOption === option.value ? 'active' : ''}`}
               onClick={() => setSortOption(option.value)}
             >
@@ -379,7 +379,7 @@ const FilterDropdown = ({ filterOption, setFilterOption }) => {
       <ul className="dropdown-menu">
         {options.map(option => (
           <li key={option.value}>
-            <button 
+            <button
               className={`dropdown-item ${filterOption === option.value ? 'active' : ''}`}
               onClick={() => setFilterOption(option.value)}
             >
@@ -409,9 +409,9 @@ const TabNavigation = () => (
   </div>
 );
 
-const ResultsTabs = ({ 
-  users = [], 
-  userSkills = {}, 
+const ResultsTabs = ({
+  users = [],
+  userSkills = {},
   onAddTeamMember,
   totalUsers,
   usersPerPage,
@@ -422,7 +422,7 @@ const ResultsTabs = ({
     <div className="tab-pane p-0 border-0 show active" id="search-all" role="tabpanel">
       <AllResults users={users} userSkills={userSkills} onAddTeamMember={onAddTeamMember} />
       {totalUsers > usersPerPage && (
-        <Pagination 
+        <Pagination
           usersPerPage={usersPerPage}
           totalUsers={totalUsers}
           currentPage={currentPage}
@@ -449,9 +449,9 @@ const AllResults = ({ users = [], userSkills = {}, onAddTeamMember }) => (
                   <div className="d-flex align-items-center">
                     <div>
                       <span className="avatar avatar-xl bg-primary bg-opacity-10 border">
-                      <img 
+                      <img
                           src={
-                            user.image?.startsWith('http') || 
+                            user.image?.startsWith('http') ||
                             user.image?.startsWith('//')
                               ? user.image
                               : `http://localhost:3000${user.image}`
@@ -474,8 +474,8 @@ const AllResults = ({ users = [], userSkills = {}, onAddTeamMember }) => (
                     </div>
                   </div>
                   <div className="btn-list">
-                    <button 
-                      className="btn btn-sm btn-icon btn-warning-light me-0" 
+                    <button
+                      className="btn btn-sm btn-icon btn-warning-light me-0"
                       title="Add Member"
                       onClick={() => onAddTeamMember(user._id)}
                     >
@@ -523,15 +523,15 @@ const Pagination = ({ usersPerPage, totalUsers, currentPage, paginate }) => {
     if (totalPages <= 5) {
       return Array.from({ length: totalPages }, (_, i) => i + 1);
     }
-    
+
     if (currentPage <= 3) {
       return [1, 2, 3, 4, '...', totalPages];
     }
-    
+
     if (currentPage >= totalPages - 2) {
       return [1, '...', totalPages - 3, totalPages - 2, totalPages - 1, totalPages];
     }
-    
+
     return [1, '...', currentPage - 1, currentPage, currentPage + 1, '...', totalPages];
   };
 
@@ -539,25 +539,25 @@ const Pagination = ({ usersPerPage, totalUsers, currentPage, paginate }) => {
     <nav aria-label="Page navigation" className="pagination-style-4 mt-4">
       <ul className="pagination text-center justify-content-center gap-1">
         <li className={`page-item ${currentPage === 1 ? 'disabled' : ''}`}>
-          <button 
-            className="page-link" 
+          <button
+            className="page-link"
             onClick={() => paginate(currentPage - 1)}
             disabled={currentPage === 1}
           >
             Previous
           </button>
         </li>
-        
+
         {getPageNumbers().map((number, index) => (
-          <li 
-            key={index} 
+          <li
+            key={index}
             className={`page-item ${currentPage === number ? 'active' : ''} ${number === '...' ? 'disabled' : ''}`}
           >
             {number === '...' ? (
               <span className="page-link">...</span>
             ) : (
-              <button 
-                className="page-link" 
+              <button
+                className="page-link"
                 onClick={() => paginate(number)}
               >
                 {number}
@@ -565,10 +565,10 @@ const Pagination = ({ usersPerPage, totalUsers, currentPage, paginate }) => {
             )}
           </li>
         ))}
-        
+
         <li className={`page-item ${currentPage === totalPages ? 'disabled' : ''}`}>
-          <button 
-            className="page-link" 
+          <button
+            className="page-link"
             onClick={() => paginate(currentPage + 1)}
             disabled={currentPage === totalPages}
           >

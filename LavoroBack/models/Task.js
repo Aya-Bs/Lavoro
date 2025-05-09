@@ -11,6 +11,7 @@ const TaskSchema = new Schema({
     priority: { type: String, enum: ['Low', 'Medium', 'High'], default: 'Medium' },
     deadline: { type: Date },
     start_date: { type: Date },
+    completion_date: { type: Date }, // Date à laquelle la tâche a été complétée
     estimated_duration: { type: Number },
     tags: [{ type: String }],
     requiredSkills: [{ type: String, required: true }],

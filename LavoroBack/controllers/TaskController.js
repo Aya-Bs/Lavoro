@@ -7,9 +7,52 @@ const User = require('../models/user');
 const Role = require('../models/role');
 const Project = require('../models/Project');
 const TeamMember = require('../models/teamMember');
+const Team = require('../models/team');
 const jwt = require('jsonwebtoken');
 const { generateAITasks } = require('../utils/tasksCreation');
 const { Octokit } = require('octokit');
+
+// ID du rôle Developer (à utiliser directement)
+const DEVELOPER_ROLE_ID = '67b1daed09554728c8601e13';
+
+// Fonction utilitaire pour mettre à jour directement le score de performance d'un utilisateur
+const updateUserPerformanceScore = async (userId, pointsToAdd) => {
+  try {
+    console.log(`Mise à jour directe du score pour l'utilisateur ${userId}, points à ajouter: ${pointsToAdd}`);
+
+    // Récupérer l'utilisateur actuel pour obtenir son score
+    const user = await User.findById(userId);
+    if (!user) {
+      console.error(`Utilisateur non trouvé: ${userId}`);
+      return false;
+    }
+
+    // Calculer le nouveau score
+    const currentScore = user.performancePoints || 0;
+    const newScore = Math.max(0, currentScore + pointsToAdd);
+
+    console.log(`Score actuel: ${currentScore}, Nouveau score: ${newScore}`);
+
+    // Mettre à jour directement dans la base de données
+    const result = await User.updateOne(
+      { _id: userId },
+      { $set: { performancePoints: newScore } }
+    );
+
+    console.log(`Résultat de la mise à jour:`, result);
+
+    if (result.modifiedCount === 1) {
+      console.log(`Score mis à jour avec succès pour l'utilisateur ${userId}`);
+      return true;
+    } else {
+      console.error(`Échec de la mise à jour du score pour l'utilisateur ${userId}`);
+      return false;
+    }
+  } catch (error) {
+    console.error(`Erreur lors de la mise à jour du score:`, error);
+    return false;
+  }
+};
 
 
 
@@ -1034,7 +1077,9 @@ exports.completeTask = async (req, res) => {
   const { taskId } = req.params;
 
   try {
-    const oldTask = await Task.findById(taskId);
+    const oldTask = await Task.findById(taskId)
+      .populate('assigned_to');
+
     if (!oldTask) {
       return res.status(404).json({ message: 'Task not found' });
     }
@@ -1043,9 +1088,13 @@ exports.completeTask = async (req, res) => {
       return res.status(400).json({ message: 'Task must be in "In Progress" status' });
     }
 
+    // Mettre à jour la tâche avec le statut "Done" et la date d'achèvement
     const updatedTask = await Task.findByIdAndUpdate(
       taskId,
-      { status: 'Done' },
+      {
+        status: 'Done',
+        completion_date: new Date() // Ajouter la date d'achèvement
+      },
       { new: true }
     );
 
@@ -1053,11 +1102,152 @@ exports.completeTask = async (req, res) => {
     updatedTask.score = calculateTaskScore(updatedTask, oldTask);
     await updatedTask.save();
 
+    // Mettre à jour le score de performance du membre d'équipe
+    if (oldTask.assigned_to && oldTask.assigned_to.length > 0) {
+      // Pour chaque membre d'équipe assigné à la tâche
+      for (const teamMemberId of oldTask.assigned_to) {
+        // Récupérer le membre d'équipe
+        let teamMember = await TeamMember.findById(teamMemberId);
+
+        // Si le membre d'équipe n'existe pas, on le crée avec l'ID du rôle Developer
+        if (!teamMember) {
+          console.log('Membre d\'équipe non trouvé, création d\'un nouveau membre...');
+
+          // Récupérer les informations de la tâche pour obtenir le projet et l'utilisateur
+          const task = await Task.findById(taskId).populate('project_id');
+          if (!task || !task.project_id) {
+            console.error('Impossible de créer un membre d\'équipe: tâche ou projet non trouvé');
+            continue; // Passer au membre suivant
+          }
+
+          // Récupérer l'équipe associée au projet
+          const team = await Team.findOne({ project_id: task.project_id._id });
+          if (!team) {
+            console.error('Impossible de créer un membre d\'équipe: équipe non trouvée pour le projet');
+            continue; // Passer au membre suivant
+          }
+
+          // Créer un nouveau membre d'équipe sans spécifier le rôle
+          teamMember = new TeamMember({
+            team_id: team._id,
+            user_id: teamMemberId, // Utiliser l'ID du membre comme ID utilisateur
+            skills: [],
+            performance_score: 0,
+            total_tasks_completed: 0
+          });
+
+          try {
+            await teamMember.save();
+            console.log('Nouveau membre d\'équipe créé avec succès');
+          } catch (memberError) {
+            console.error('Erreur lors de la création du membre d\'équipe:', memberError);
+            continue; // Passer au membre suivant
+          }
+        }
+
+        // Si le membre d'équipe existe maintenant
+        if (teamMember) {
+          // Récupérer l'utilisateur associé au membre d'équipe
+          const user = await User.findById(teamMember.user_id);
+          if (!user) {
+            console.error(`Utilisateur non trouvé pour le membre d'équipe ${teamMember._id}`);
+            continue; // Passer au membre suivant
+          }
+
+          console.log('Utilisateur trouvé:', user._id);
+          console.log('Score de performance actuel:', user.performancePoints || 0);
+
+          // Calculer les points en fonction des critères
+          let pointsEarned = 0;
+          const completionDate = new Date(); // Date d'achèvement = maintenant
+          const deadline = oldTask.deadline;
+
+          // Définir diffHours en dehors du bloc conditionnel
+          let diffHours = null;
+
+          if (deadline) {
+            // Calculer la différence entre la date d'achèvement et la date limite
+            diffHours = (deadline - completionDate) / (1000 * 60 * 60);
+            console.log('Différence en heures:', diffHours);
+
+            if (diffHours < 0) {
+              // Tâche en retard
+              pointsEarned = -1;
+              console.log('Tâche en retard, points gagnés:', pointsEarned);
+            } else if (diffHours >= 2) {
+              // Tâche terminée 2 heures ou plus avant la deadline
+              pointsEarned = 3;
+              console.log('Tâche terminée 2h+ avant deadline, points gagnés:', pointsEarned);
+            } else if (diffHours >= 1) {
+              // Tâche terminée 1 heure avant la deadline
+              pointsEarned = 2;
+              console.log('Tâche terminée 1h avant deadline, points gagnés:', pointsEarned);
+            } else {
+              // Tâche terminée dans le délai
+              pointsEarned = 1;
+              console.log('Tâche terminée dans le délai, points gagnés:', pointsEarned);
+            }
+          } else {
+            console.log('Pas de deadline définie, points par défaut: 1');
+            pointsEarned = 1; // Si pas de deadline, on donne 1 point par défaut
+          }
+
+          // Mettre à jour les statistiques du membre d'équipe
+          const oldTotalTasks = teamMember.total_tasks_completed || 0;
+          teamMember.total_tasks_completed = oldTotalTasks + 1;
+
+          // Mettre à jour le taux de complétion du membre d'équipe
+          if (teamMember.total_tasks_completed > 0) {
+            // Récupérer la valeur de diffHours calculée précédemment ou définir une valeur par défaut
+            // Si diffHours n'est pas défini (par exemple si pas de deadline), on suppose que la tâche est à l'heure
+            const taskIsLate = deadline && diffHours < 0;
+
+            const missedDeadlines = teamMember.missed_deadlines || 0;
+            const newMissedDeadlines = taskIsLate ? missedDeadlines + 1 : missedDeadlines;
+            teamMember.missed_deadlines = newMissedDeadlines;
+
+            const tasksOnTime = teamMember.total_tasks_completed - newMissedDeadlines;
+            teamMember.completion_rate = (tasksOnTime / teamMember.total_tasks_completed) * 100;
+            console.log('- Taux de complétion: ' + teamMember.completion_rate.toFixed(2) + '%');
+          }
+
+          // Mettre à jour les statistiques du membre d'équipe dans la base de données
+          try {
+            const statsUpdateResult = await TeamMember.updateOne(
+              { _id: teamMember._id },
+              {
+                $set: {
+                  total_tasks_completed: teamMember.total_tasks_completed,
+                  missed_deadlines: teamMember.missed_deadlines,
+                  completion_rate: teamMember.completion_rate
+                }
+              }
+            );
+
+            console.log('Résultat de la mise à jour des statistiques du membre:', statsUpdateResult);
+
+            // Mettre à jour le score de performance de l'utilisateur
+            const success = await updateUserPerformanceScore(user._id, pointsEarned);
+
+            if (success) {
+              console.log(`Score de performance mis à jour avec succès pour l'utilisateur ${user._id}`);
+            } else {
+              console.error(`Échec de la mise à jour du score pour l'utilisateur ${user._id}`);
+            }
+          } catch (updateError) {
+            console.error('Erreur lors de la mise à jour:', updateError);
+          }
+        }
+      }
+    }
+
     res.status(200).json({
       success: true,
-      data: updatedTask
+      data: updatedTask,
+      message: 'Task completed successfully and performance scores updated'
     });
   } catch (error) {
+    console.error('Error completing task:', error);
     res.status(500).json({
       success: false,
       message: 'Error completing task',
@@ -1321,15 +1511,187 @@ exports.updateTaskStatus = async (req, res) => {
       const { taskId } = req.params;
       const { status, order } = req.body;
 
+      // Récupérer la tâche avant la mise à jour
+      const oldTask = await Task.findById(taskId)
+        .populate('assigned_to');
+
+      if (!oldTask) {
+        return res.status(404).json({ message: 'Task not found' });
+      }
+
+      // Préparer les données de mise à jour
+      const updateData = { status, order };
+
+      // Si le statut passe à "Done", ajouter la date d'achèvement
+      if (status === 'Done' && oldTask.status !== 'Done') {
+        updateData.completion_date = new Date();
+      }
+
+      // Mettre à jour la tâche
       const updatedTask = await Task.findByIdAndUpdate(
           taskId,
-          { status, order },
+          updateData,
           { new: true }
       );
 
-      res.json(updatedTask);
+      // Si le statut passe à "Done", mettre à jour le score de performance des membres d'équipe
+      if (status === 'Done' && oldTask.status !== 'Done' && oldTask.assigned_to && oldTask.assigned_to.length > 0) {
+        console.log('Mise à jour du score de performance pour les membres d\'équipe:', oldTask.assigned_to);
+
+        // Pour chaque membre d'équipe assigné à la tâche
+        for (const teamMemberId of oldTask.assigned_to) {
+          console.log('Traitement du membre d\'équipe:', teamMemberId);
+
+          // Récupérer le membre d'équipe
+          let teamMember = await TeamMember.findById(teamMemberId);
+          console.log('Membre d\'équipe trouvé:', teamMember ? 'Oui' : 'Non');
+
+          // Si le membre d'équipe n'existe pas, on le crée avec l'ID du rôle Developer
+          if (!teamMember) {
+            console.log('Membre d\'équipe non trouvé, création d\'un nouveau membre...');
+
+            // Récupérer les informations de la tâche pour obtenir le projet et l'utilisateur
+            const task = await Task.findById(taskId).populate('project_id');
+            if (!task || !task.project_id) {
+              console.error('Impossible de créer un membre d\'équipe: tâche ou projet non trouvé');
+              continue; // Passer au membre suivant
+            }
+
+            // Récupérer l'équipe associée au projet
+            const team = await Team.findOne({ project_id: task.project_id._id });
+            if (!team) {
+              console.error('Impossible de créer un membre d\'équipe: équipe non trouvée pour le projet');
+              continue; // Passer au membre suivant
+            }
+
+            // Créer un nouveau membre d'équipe sans spécifier le rôle
+            teamMember = new TeamMember({
+              team_id: team._id,
+              user_id: teamMemberId, // Utiliser l'ID du membre comme ID utilisateur
+              skills: [],
+              performance_score: 0,
+              total_tasks_completed: 0
+            });
+
+            try {
+              await teamMember.save();
+              console.log('Nouveau membre d\'équipe créé avec succès');
+            } catch (memberError) {
+              console.error('Erreur lors de la création du membre d\'équipe:', memberError);
+              continue; // Passer au membre suivant
+            }
+          }
+
+          // Si le membre d'équipe existe maintenant
+          if (teamMember) {
+            // Récupérer l'utilisateur associé au membre d'équipe
+            const user = await User.findById(teamMember.user_id);
+            if (!user) {
+              console.error(`Utilisateur non trouvé pour le membre d'équipe ${teamMember._id}`);
+              continue; // Passer au membre suivant
+            }
+
+            console.log('Utilisateur trouvé:', user._id);
+            console.log('Score de performance actuel:', user.performancePoints || 0);
+
+            // Calculer les points en fonction des critères
+            let pointsEarned = 0;
+            const completionDate = new Date(); // Date d'achèvement = maintenant
+            const deadline = oldTask.deadline;
+
+            // Définir diffHours en dehors du bloc conditionnel
+            let diffHours = null;
+
+            if (deadline) {
+              // Calculer la différence entre la date d'achèvement et la date limite
+              diffHours = (deadline - completionDate) / (1000 * 60 * 60);
+              console.log('Différence en heures:', diffHours);
+
+              if (diffHours < 0) {
+                // Tâche en retard
+                pointsEarned = -1;
+                console.log('Tâche en retard, points gagnés:', pointsEarned);
+              } else if (diffHours >= 2) {
+                // Tâche terminée 2 heures ou plus avant la deadline
+                pointsEarned = 3;
+                console.log('Tâche terminée 2h+ avant deadline, points gagnés:', pointsEarned);
+              } else if (diffHours >= 1) {
+                // Tâche terminée 1 heure avant la deadline
+                pointsEarned = 2;
+                console.log('Tâche terminée 1h avant deadline, points gagnés:', pointsEarned);
+              } else {
+                // Tâche terminée dans le délai
+                pointsEarned = 1;
+                console.log('Tâche terminée dans le délai, points gagnés:', pointsEarned);
+              }
+            } else {
+              console.log('Pas de deadline définie, points par défaut: 1');
+              pointsEarned = 1; // Si pas de deadline, on donne 1 point par défaut
+            }
+
+            // Mettre à jour les statistiques du membre d'équipe
+            const oldTotalTasks = teamMember.total_tasks_completed || 0;
+            teamMember.total_tasks_completed = oldTotalTasks + 1;
+
+            // Mettre à jour le taux de complétion du membre d'équipe
+            if (teamMember.total_tasks_completed > 0) {
+              // Récupérer la valeur de diffHours calculée précédemment ou définir une valeur par défaut
+              // Si diffHours n'est pas défini (par exemple si pas de deadline), on suppose que la tâche est à l'heure
+              const taskIsLate = deadline && diffHours < 0;
+
+              const missedDeadlines = teamMember.missed_deadlines || 0;
+              const newMissedDeadlines = taskIsLate ? missedDeadlines + 1 : missedDeadlines;
+              teamMember.missed_deadlines = newMissedDeadlines;
+
+              const tasksOnTime = teamMember.total_tasks_completed - newMissedDeadlines;
+              teamMember.completion_rate = (tasksOnTime / teamMember.total_tasks_completed) * 100;
+              console.log('- Taux de complétion: ' + teamMember.completion_rate.toFixed(2) + '%');
+            }
+
+            // Mettre à jour les statistiques du membre d'équipe dans la base de données
+            try {
+              const statsUpdateResult = await TeamMember.updateOne(
+                { _id: teamMember._id },
+                {
+                  $set: {
+                    total_tasks_completed: teamMember.total_tasks_completed,
+                    missed_deadlines: teamMember.missed_deadlines,
+                    completion_rate: teamMember.completion_rate
+                  }
+                }
+              );
+
+              console.log('Résultat de la mise à jour des statistiques du membre:', statsUpdateResult);
+
+              // Mettre à jour le score de performance de l'utilisateur
+              const success = await updateUserPerformanceScore(user._id, pointsEarned);
+
+              if (success) {
+                console.log(`Score de performance mis à jour avec succès pour l'utilisateur ${user._id}`);
+              } else {
+                console.error(`Échec de la mise à jour du score pour l'utilisateur ${user._id}`);
+              }
+            } catch (updateError) {
+              console.error('Erreur lors de la mise à jour:', updateError);
+            }
+          }
+        }
+      }
+
+      res.json({
+        success: true,
+        data: updatedTask,
+        message: status === 'Done' && oldTask.status !== 'Done' ?
+          'Task marked as completed and performance scores updated' :
+          'Task status updated successfully'
+      });
   } catch (error) {
-      res.status(500).json({ error: error.message });
+      console.error('Error updating task status:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Error updating task status',
+        error: error.message
+      });
   }
 };
 

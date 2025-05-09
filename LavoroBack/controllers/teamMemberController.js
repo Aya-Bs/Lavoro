@@ -6,6 +6,222 @@ const mongoose = require('mongoose');
 const nodemailer = require('nodemailer');
 const Team = require('../models/team');
 const Project = require('../models/Project');
+const Role = require('../models/role');
+
+// Récupérer l'utilisateur avec le meilleur score de performance
+exports.getBestPerformer = async (req, res) => {
+  try {
+    // Trouver l'utilisateur avec le meilleur score de performance
+    const bestPerformer = await User.findOne({
+      performancePoints: { $gt: 0 } // Seulement les utilisateurs avec des scores positifs
+    })
+    .sort({ performancePoints: -1 }) // Trier par score de performance (décroissant)
+    .limit(1); // Limiter à un seul résultat
+
+    if (!bestPerformer) {
+      return res.status(404).json({
+        success: false,
+        message: 'Aucun utilisateur avec un score de performance trouvé'
+      });
+    }
+
+    // Récupérer les équipes dont l'utilisateur est membre
+    const teamMemberships = await TeamMember.find({ user_id: bestPerformer._id })
+      .populate('team_id', 'name')
+      .populate('tasks');
+
+    // Calculer des statistiques réelles basées sur les tâches
+    let tasksCompleted = 0;
+    let tasksEarly = 0;
+    let tasksOnTime = 0;
+    let tasksLate = 0;
+    let totalPointsEarned = 0;
+    let teamNames = [];
+
+    // Parcourir toutes les appartenances d'équipe pour collecter les tâches
+    teamMemberships.forEach(membership => {
+      if (membership.team_id && membership.team_id.name) {
+        teamNames.push(membership.team_id.name);
+      }
+
+      const tasks = membership.tasks || [];
+
+      // Parcourir les tâches pour calculer les statistiques
+      tasks.forEach(task => {
+        if (task.status === 'completed' || task.status === 'Done') {
+          tasksCompleted++;
+
+          // Calculer la différence entre la date d'achèvement et la date limite
+          const completionDate = new Date(task.completion_date);
+          const deadline = new Date(task.deadline);
+
+          // Calculer la différence en heures
+          const diffHours = (deadline - completionDate) / (1000 * 60 * 60);
+
+          if (diffHours < 0) {
+            // Tâche en retard
+            tasksLate++;
+            totalPointsEarned -= 1; // -1 point pour une tâche en retard
+          } else if (diffHours >= 2) {
+            // Tâche terminée 2 heures ou plus avant la deadline
+            tasksEarly++;
+            totalPointsEarned += 3; // +3 points
+          } else if (diffHours >= 1) {
+            // Tâche terminée 1 heure avant la deadline
+            tasksEarly++;
+            totalPointsEarned += 2; // +2 points
+          } else {
+            // Tâche terminée dans le délai
+            tasksOnTime++;
+            totalPointsEarned += 1; // +1 point
+          }
+        }
+      });
+    });
+
+    const completionRate = tasksCompleted > 0
+      ? ((tasksEarly + tasksOnTime) / tasksCompleted) * 100
+      : 0;
+
+    // Formater la réponse
+    const performerWithStats = {
+      id: bestPerformer._id,
+      firstName: bestPerformer.firstName,
+      lastName: bestPerformer.lastName,
+      image: bestPerformer.image,
+      email: bestPerformer.email,
+      teamNames: teamNames.join(', '),
+      performancePoints: bestPerformer.performancePoints,
+      stats: {
+        tasksCompleted,
+        tasksEarly,
+        tasksOnTime,
+        tasksLate,
+        completionRate,
+        totalPointsEarned
+      }
+    };
+
+    res.status(200).json(performerWithStats);
+  } catch (error) {
+    console.error('Erreur lors de la récupération du meilleur performeur:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Erreur serveur',
+      error: error.message
+    });
+  }
+};
+
+// Récupérer les meilleurs performeurs (top N)
+exports.getTopPerformers = async (req, res) => {
+  try {
+    // Récupérer le nombre de performeurs à afficher (par défaut 3)
+    const limit = parseInt(req.query.limit) || 3;
+
+    // Trouver les utilisateurs avec les meilleurs scores de performance
+    const topPerformers = await User.find({
+      performancePoints: { $gt: 0 } // Seulement les utilisateurs avec des scores positifs
+    })
+    .sort({ performancePoints: -1 }) // Trier par score de performance (décroissant)
+    .limit(limit); // Limiter au nombre demandé
+
+    if (topPerformers.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Aucun utilisateur avec un score de performance trouvé'
+      });
+    }
+
+    // Formater la réponse pour chaque performeur avec des statistiques réelles
+    const performersWithStats = await Promise.all(topPerformers.map(async (performer) => {
+      // Récupérer les équipes dont l'utilisateur est membre
+      const teamMemberships = await TeamMember.find({ user_id: performer._id })
+        .populate('team_id', 'name')
+        .populate('tasks');
+
+      // Calculer des statistiques réelles basées sur les tâches
+      let tasksCompleted = 0;
+      let tasksEarly = 0;
+      let tasksOnTime = 0;
+      let tasksLate = 0;
+      let totalPointsEarned = 0;
+      let teamNames = [];
+
+      // Parcourir toutes les appartenances d'équipe pour collecter les tâches
+      teamMemberships.forEach(membership => {
+        if (membership.team_id && membership.team_id.name) {
+          teamNames.push(membership.team_id.name);
+        }
+
+        const tasks = membership.tasks || [];
+
+        // Parcourir les tâches pour calculer les statistiques
+        tasks.forEach(task => {
+          if (task.status === 'completed' || task.status === 'Done') {
+            tasksCompleted++;
+
+            // Calculer la différence entre la date d'achèvement et la date limite
+            const completionDate = new Date(task.completion_date);
+            const deadline = new Date(task.deadline);
+
+            // Calculer la différence en heures
+            const diffHours = (deadline - completionDate) / (1000 * 60 * 60);
+
+            if (diffHours < 0) {
+              // Tâche en retard
+              tasksLate++;
+              totalPointsEarned -= 1; // -1 point pour une tâche en retard
+            } else if (diffHours >= 2) {
+              // Tâche terminée 2 heures ou plus avant la deadline
+              tasksEarly++;
+              totalPointsEarned += 3; // +3 points
+            } else if (diffHours >= 1) {
+              // Tâche terminée 1 heure avant la deadline
+              tasksEarly++;
+              totalPointsEarned += 2; // +2 points
+            } else {
+              // Tâche terminée dans le délai
+              tasksOnTime++;
+              totalPointsEarned += 1; // +1 point
+            }
+          }
+        });
+      });
+
+      const completionRate = tasksCompleted > 0
+        ? ((tasksEarly + tasksOnTime) / tasksCompleted) * 100
+        : 0;
+
+      return {
+        id: performer._id,
+        firstName: performer.firstName,
+        lastName: performer.lastName,
+        fullName: `${performer.firstName} ${performer.lastName}`,
+        image: performer.image,
+        teamNames: teamNames.join(', '),
+        points: performer.performancePoints,
+        stats: {
+          tasksCompleted,
+          tasksEarly,
+          tasksOnTime,
+          tasksLate,
+          completionRate,
+          totalPointsEarned
+        }
+      };
+    }));
+
+    res.status(200).json(performersWithStats);
+  } catch (error) {
+    console.error('Erreur lors de la récupération des meilleurs performeurs:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Erreur serveur',
+      error: error.message
+    });
+  }
+};
 
 
 exports.getTeamMemberById = async (req, res) => {
@@ -18,9 +234,9 @@ exports.getTeamMemberById = async (req, res) => {
       .populate('skills');
 
     if (!teamMember) {
-      return res.status(404).json({ 
-        success: false, 
-        message: 'Team member not found for this user ID' 
+      return res.status(404).json({
+        success: false,
+        message: 'Team member not found for this user ID'
       });
     }
 
@@ -28,7 +244,7 @@ exports.getTeamMemberById = async (req, res) => {
     const responseData = {
       id: teamMember._id,
       teamId: teamMember.team_id,
-      name: teamMember.user_id 
+      name: teamMember.user_id
         ? `${teamMember.user_id.firstName || ''} ${teamMember.user_id.lastName || ''}`.trim()
         : 'Unknown',
       role: teamMember.role,
@@ -49,10 +265,10 @@ exports.getTeamMemberById = async (req, res) => {
 
   } catch (error) {
     console.error('Error fetching team member by user ID:', error);
-    res.status(500).json({ 
-      success: false, 
+    res.status(500).json({
+      success: false,
       message: 'Server error while fetching team member',
-      error: error.message 
+      error: error.message
     });
   }
 };
@@ -109,9 +325,9 @@ exports.addTeamMember = async (req, res) => {
       }
 
       // Vérification si le membre existe déjà dans l'équipe
-      const existingMember = await TeamMember.findOne({ 
-          team_id: team_id, 
-          user_id: user_id 
+      const existingMember = await TeamMember.findOne({
+          team_id: team_id,
+          user_id: user_id
       });
 
       if (existingMember) {
@@ -135,11 +351,10 @@ exports.addTeamMember = async (req, res) => {
           });
       }
 
-      // Création du nouveau membre d'équipe
+      // Création du nouveau membre d'équipe sans spécifier le rôle
       const newTeamMember = new TeamMember({
           team_id: team_id,
           user_id: user_id,
-          role : user.role._id,
           skills: skills,
           performance_score: 0,
           completed_tasks_count: 0
@@ -159,7 +374,7 @@ exports.addTeamMember = async (req, res) => {
 
       // URL de connexion (à adapter selon votre frontend)
       const loginUrl = `localhost:4200/signin`;
-      
+
       // Options de l'email avec template amélioré
       const mailOptions = {
           from: `"Gestion d'Équipe" <${process.env.EMAIL_USER}>`,
@@ -184,9 +399,9 @@ exports.addTeamMember = async (req, res) => {
               <p style="margin-top: 30px;">Cliquez ci-dessous pour accéder à votre espace :</p>
               <div style="text-align: center; margin: 30px 0;">
                 <a href="http://localhost:5173/ProjectDash"
-                  style="background: linear-gradient(90deg, #ff33cc, #cc00ff); 
-                          color: white; padding: 15px 30px; 
-                          border-radius: 30px; font-weight: bold; 
+                  style="background: linear-gradient(90deg, #ff33cc, #cc00ff);
+                          color: white; padding: 15px 30px;
+                          border-radius: 30px; font-weight: bold;
                           text-decoration: none; font-size: 16px;
                           box-shadow: 0 0 15px #ff33cc, 0 0 30px #cc00ff;">
                   🎉 Accéder à mon espace
@@ -250,10 +465,10 @@ exports.getAllMemberTask = async (req, res) => {
     const members = await TeamMember.find({})
       .populate('user_id', 'firstName lastName image')
       .lean();
-    
+
     // Filter out any invalid members
     const validMembers = members.filter(member => member?._id);
-    
+
     res.status(200).json({
       success: true,
       data: validMembers
@@ -303,6 +518,94 @@ exports.getAllMembers = async (req, res) => {
 };
 
 
+// Fonction utilitaire pour mettre à jour le score de performance
+const updateMemberScore = async (teamMemberId, pointsToAdd) => {
+  try {
+    console.log(`Mise à jour directe du score pour le membre ${teamMemberId}, points à ajouter: ${pointsToAdd}`);
+
+    // Récupérer le membre actuel pour obtenir son score
+    const member = await TeamMember.findById(teamMemberId);
+    if (!member) {
+      console.error(`Membre d'équipe non trouvé: ${teamMemberId}`);
+      return null;
+    }
+
+    // Calculer le nouveau score
+    const currentScore = member.performance_score || 0;
+    const newScore = Math.max(0, currentScore + pointsToAdd);
+
+    console.log(`Score actuel: ${currentScore}, Nouveau score: ${newScore}`);
+
+    // Mettre à jour directement dans la base de données
+    const result = await TeamMember.updateOne(
+      { _id: teamMemberId },
+      { $set: { performance_score: newScore } }
+    );
+
+    console.log(`Résultat de la mise à jour:`, result);
+
+    if (result.modifiedCount === 1) {
+      console.log(`Score mis à jour avec succès pour ${teamMemberId}`);
+      return newScore;
+    } else {
+      console.error(`Échec de la mise à jour du score pour ${teamMemberId}`);
+      return null;
+    }
+  } catch (error) {
+    console.error(`Erreur lors de la mise à jour du score:`, error);
+    return null;
+  }
+};
+
+// Fonction pour mettre à jour directement le score de performance d'un membre d'équipe
+exports.updatePerformanceScore = async (req, res) => {
+  try {
+    const { teamMemberId } = req.params;
+    const { points } = req.body;
+
+    if (!teamMemberId || points === undefined) {
+      return res.status(400).json({
+        success: false,
+        message: 'teamMemberId et points sont requis'
+      });
+    }
+
+    // Utiliser la fonction utilitaire pour mettre à jour le score
+    const newScore = await updateMemberScore(teamMemberId, parseInt(points));
+
+    if (newScore === null) {
+      return res.status(500).json({
+        success: false,
+        message: 'Échec de la mise à jour du score de performance'
+      });
+    }
+
+    // Récupérer le membre mis à jour pour la réponse
+    const updatedMember = await TeamMember.findById(teamMemberId);
+
+    console.log('Membre récupéré après mise à jour:', updatedMember);
+    console.log('Score vérifié après mise à jour:', updatedMember.performance_score);
+
+    res.status(200).json({
+      success: true,
+      message: 'Score de performance mis à jour avec succès',
+      data: {
+        teamMemberId: updatedMember._id,
+        oldScore: currentScore,
+        newScore: updatedMember.performance_score,
+        pointsAdded: parseInt(points)
+      }
+    });
+  } catch (error) {
+    console.error('Erreur lors de la mise à jour du score de performance:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Erreur serveur',
+      error: error.message
+    });
+  }
+};
+
 exports.getAll = async (req, res) => {
   try {
       // Récupérer tous les membres d'équipe avec les informations utilisateur associées
@@ -343,6 +646,107 @@ exports.getAll = async (req, res) => {
   }
 };
 
+// Mettre à jour les scores de performance des membres d'équipe
+exports.updatePerformanceScores = async (req, res) => {
+  try {
+    // Récupérer tous les membres d'équipe avec leurs tâches
+    const members = await TeamMember.find()
+      .populate('tasks');
+
+    if (!members || members.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Aucun membre d\'équipe trouvé'
+      });
+    }
+
+    // Tableau pour stocker les résultats des mises à jour
+    const updateResults = [];
+
+    // Traiter chaque membre d'équipe
+    for (const member of members) {
+      // Calculer des statistiques réelles basées sur les tâches
+      const tasks = member.tasks || [];
+      let tasksCompleted = 0;
+      let tasksEarly = 0;
+      let tasksOnTime = 0;
+      let tasksLate = 0;
+      let totalPointsEarned = 0;
+
+      // Parcourir les tâches pour calculer les statistiques
+      tasks.forEach(task => {
+        if (task.status === 'completed') {
+          tasksCompleted++;
+
+          // Calculer la différence entre la date d'achèvement et la date limite
+          const completionDate = new Date(task.completion_date);
+          const deadline = new Date(task.deadline);
+
+          // Calculer la différence en heures
+          const diffHours = (deadline - completionDate) / (1000 * 60 * 60);
+
+          if (diffHours < 0) {
+            // Tâche en retard
+            tasksLate++;
+            totalPointsEarned -= 1; // -1 point pour une tâche en retard
+          } else if (diffHours >= 2) {
+            // Tâche terminée 2 heures ou plus avant la deadline
+            tasksEarly++;
+            totalPointsEarned += 3; // +3 points
+          } else if (diffHours >= 1) {
+            // Tâche terminée 1 heure avant la deadline
+            tasksEarly++;
+            totalPointsEarned += 2; // +2 points
+          } else {
+            // Tâche terminée dans le délai
+            tasksOnTime++;
+            totalPointsEarned += 1; // +1 point
+          }
+        }
+      });
+
+      // Mettre à jour le membre d'équipe avec les nouvelles statistiques
+      member.total_tasks_completed = tasksCompleted;
+      member.missed_deadlines = tasksLate;
+      member.performance_score = Math.max(0, totalPointsEarned); // Assurer que le score n'est pas négatif
+
+      // Calculer d'autres métriques de performance
+      if (tasksCompleted > 0) {
+        member.completion_rate = ((tasksEarly + tasksOnTime) / tasksCompleted) * 100;
+        member.task_efficiency = (tasksEarly / tasksCompleted) * 100;
+        member.deadline_adherence = ((tasksCompleted - tasksLate) / tasksCompleted) * 100;
+      }
+
+      // Sauvegarder les modifications
+      await member.save();
+
+      // Ajouter le résultat à notre tableau
+      updateResults.push({
+        memberId: member._id,
+        name: member.user_id ? `${member.user_id.firstName} ${member.user_id.lastName}` : 'Inconnu',
+        newPerformanceScore: member.performance_score,
+        tasksCompleted,
+        tasksEarly,
+        tasksOnTime,
+        tasksLate
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: `Scores de performance mis à jour pour ${updateResults.length} membres d'équipe`,
+      data: updateResults
+    });
+  } catch (error) {
+    console.error('Erreur lors de la mise à jour des scores de performance:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Erreur serveur',
+      error: error.message
+    });
+  }
+};
+
 
 // exports.getTeamMemberById = async (req, res) => {
 //   try {
@@ -360,7 +764,7 @@ exports.getAll = async (req, res) => {
 //     const responseData = {
 //       id: teamMember._id,
 //       teamId: teamMember.team_id,
-//       name: teamMember.user_id 
+//       name: teamMember.user_id
 //         ? `${teamMember.user_id.firstName || ''} ${teamMember.user_id.lastName || ''}`.trim()
 //         : 'Unknown',
 //       role: teamMember.role,
@@ -381,10 +785,10 @@ exports.getAll = async (req, res) => {
 
 //   } catch (error) {
 //     console.error('Error:', error);
-//     res.status(500).json({ 
-//       success: false, 
+//     res.status(500).json({
+//       success: false,
 //       message: 'Server error',
-//       error: error.message 
+//       error: error.message
 //     });
 //   }
 // };

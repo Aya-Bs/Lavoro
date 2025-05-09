@@ -36,7 +36,7 @@ import { SearchSlashIcon } from "lucide-react";
 import SearchTeam from "./team/searchTeam";
 import TeamArchive from "./team/teamArchiveList";
 import TeamArchiveDetailsPage from "./team/teamArchiveDetails";
-import BestPerformerPage from "./pages/BestPerformerPage";
+import BestPerformerPage from "./BestPerformer/BestPerformerPage";
 import ChatComponent from "./chat/ChatComponent";
 import SearchMember from "./team/searchMember";
 import MemberDetails from "./team/memberDetails";

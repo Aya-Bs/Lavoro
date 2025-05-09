@@ -12,8 +12,8 @@ const PerformancePodium = () => {
         setLoading(true);
         const token = localStorage.getItem('token');
 
-        // Récupérer les 3 meilleurs performeurs
-        const response = await axios.get('http://localhost:3000/users/top-performers?limit=3', {
+        // Récupérer les 3 meilleurs performeurs parmi les membres d'équipe
+        const response = await axios.get('http://localhost:3000/teamMember/top-performers?limit=3', {
           headers: {
             'Authorization': `Bearer ${token}`
           }
