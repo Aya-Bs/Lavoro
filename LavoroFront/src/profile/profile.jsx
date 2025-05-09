@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import UpdateProfile from "./updateProfile";
 import ProfileSecurity from "./profileSecurity";
 
@@ -12,6 +12,7 @@ const Profile = () => {
   const [token, setToken] = useState('');
   const [message, setMessage] = useState('');
   const navigate = useNavigate();
+  const location = useLocation();
   const [activeTab, setActiveTab] = useState("profile-about-tab-pane");
   const [tasks, setTasks] = useState([]);
 
@@ -56,6 +57,18 @@ const Profile = () => {
           console.log("Parsed skills in Profile:", fetchedSkills);
 
           setUser({ ...response.data, skills: fetchedSkills });
+
+          // Check if we came from the award page
+          console.log("Navigation state:", location.state);
+
+          if (location.state && location.state.showAward && location.state.awardDetails) {
+            // Show a notification about the new award
+            setTimeout(() => {
+              alert(`Congratulations! You've received a new award: ${location.state.awardDetails.name}`);
+              // Set the active tab to profile-about-tab-pane to show the awards section
+              setActiveTab("profile-about-tab-pane");
+            }, 500);
+          }
         } else {
           navigate("/signin");
         }
@@ -74,7 +87,7 @@ const Profile = () => {
     fetchUserInfo();
 
     return () => clearTimeout(timeout);
-  }, [navigate]);
+  }, [navigate, location]);
 
   // Fonction pour récupérer les activités
   const fetchActivities = async () => {
@@ -96,11 +109,11 @@ const Profile = () => {
 
       console.log("Tasks response:", response.data);
       setTasks(response.data);
-      
+
     } catch (err) {
       console.error("Full error:", err);
       console.error("Error response:", err.response?.data);
-      
+
       if (err.response?.status === 401) {
         localStorage.removeItem('token');
         navigate('/signin');
@@ -110,7 +123,7 @@ const Profile = () => {
       setTasks([]);
     }
   };
-  
+
   // Charger les activités lorsque l'onglet est activé
   useEffect(() => {
     if (activeTab === "activities-tab-pane") {
@@ -375,16 +388,16 @@ const Profile = () => {
                           aria-labelledby="security-tab"
                           tabIndex={0}
                         >
-                          <ProfileSecurity 
-                            user={user} 
-                            handleEnable2FA={handleEnable2FA} 
-                            handleVerify2FA={handleVerify2FA} 
-                            handleDisable2FA={handleDisable2FA} 
-                            qrCodeUrl={qrCodeUrl} 
-                            showQRCode={showQRCode} 
-                            token={token} 
-                            setToken={setToken} 
-                            message={message} 
+                          <ProfileSecurity
+                            user={user}
+                            handleEnable2FA={handleEnable2FA}
+                            handleVerify2FA={handleVerify2FA}
+                            handleDisable2FA={handleDisable2FA}
+                            qrCodeUrl={qrCodeUrl}
+                            showQRCode={showQRCode}
+                            token={token}
+                            setToken={setToken}
+                            message={message}
                           />
                         </div>
                       </div>
@@ -611,6 +624,65 @@ const AboutTab = ({ user }) => {
             <span className="text-muted">No skills available.</span>
           )}
         </div>
+      </li>
+
+      {/* New Awards/Badges section */}
+      <li className="list-group-item p-3">
+        <span className="fw-medium fs-15 d-block mb-3">Awards & Achievements :</span>
+        <p className="text-muted mb-3">Recognition for outstanding performance and contributions:</p>
+
+        {user.awards && user.awards.length > 0 ? (
+          <div className="awards-container">
+            {user.awards.map((award, index) => (
+              <div key={index} className="award-badge mb-3">
+                <div className="d-flex align-items-center">
+                  <div className="award-icon me-3">
+                    <span className={`avatar avatar-md ${
+                      award.name === 'Top Performer' ? 'bg-warning' :
+                      award.name === 'Silver Performer' ? 'bg-secondary' :
+                      award.name === 'Bronze Performer' ? 'bg-danger' : 'bg-primary'
+                    }`}>
+                      <i className={award.icon || 'ri-award-line'} style={{ fontSize: '24px' }}></i>
+                    </span>
+                  </div>
+                  <div className="award-details">
+                    <h6 className="mb-1">{award.name}</h6>
+                    <p className="text-muted mb-1">{award.description}</p>
+                    <small className="text-muted">
+                      Awarded on {new Date(award.date).toLocaleDateString()}
+                    </small>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-4">
+            <div className="mb-3">
+              <i className="ri-award-line" style={{ fontSize: '48px', opacity: '0.5' }}></i>
+            </div>
+            <p className="text-muted">No awards received yet. Keep up the good work!</p>
+          </div>
+        )}
+
+        <style jsx>{`
+          .award-badge {
+            padding: 15px;
+            border-radius: 8px;
+            background-color: var(--custom-white);
+            border: 1px solid var(--default-border);
+            transition: all 0.3s ease;
+          }
+
+          .award-badge:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+          }
+
+          .award-icon i {
+            color: white;
+          }
+        `}</style>
       </li>
       <li className="list-group-item p-3">
         <span className="fw-medium fs-15 d-block mb-3">Social Media :</span>
