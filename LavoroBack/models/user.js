@@ -9,7 +9,7 @@ const userSchema = new mongoose.Schema({
   email: { type: String, required: true, unique: true },
 
   password_hash: { type: String,  },
- 
+
   role: { type: mongoose.Schema.Types.ObjectId, ref: 'role', default: null },
 
   image: { type: String },
@@ -21,35 +21,52 @@ const userSchema = new mongoose.Schema({
   updated_at: { type: Date, default: Date.now },
 
   last_activity: { type: Date, default: Date.now },
-  
+
   is_active: { type: Boolean, default: true },
 
   verificationToken: {type : String},
 
   isVerified: { type: Boolean, default: false },
 
-  resetPasswordToken: { type: String },  
-  resetPasswordExpires: { type: Date },  
+  resetPasswordToken: { type: String },
+  resetPasswordExpires: { type: Date },
 
   loginAttempts: { type: Number, default: 0 },
   lockUntil: { type: Date, default: null },
 
   provider: {
     type: String,
-   
-    enum: ["Google","Microsoft", "GitHub"], 
+
+    enum: ["Google","Microsoft", "GitHub"],
   },
   provider_id: {
     type: String,
-   
+
   },
-  twoFactorSecret: { type: String }, 
-  twoFactorEnabled: { type: Boolean, default: false }, 
-  performancePoints: { type: Number, default: 0 }, 
+  twoFactorSecret: { type: String },
+  twoFactorEnabled: { type: Boolean, default: false },
+  performancePoints: { type: Number, default: 0 },
   skills: { type: [String], default: [] },
-  
+
   description: { type: String, default: '' },
 
+  awards: [{
+    type: {
+      type: String,
+      enum: ['performance', 'achievement', 'recognition'],
+      required: true
+    },
+    name: {
+      type: String,
+      required: true
+    },
+    description: String,
+    date: {
+      type: Date,
+      default: Date.now
+    },
+    icon: String
+  }]
 
 });
 
