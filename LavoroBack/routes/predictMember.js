@@ -74,9 +74,9 @@ router.get("/predict-all", async (req, res) => {
     user_id: prediction.user_id,
     user_name: prediction.user_details.name,
     user_image: prediction.user_details.image,
-    team_name: prediction.team_id.name,
-    project_id: prediction.team_id.project_id?._id,
-    project_name: prediction.team_id.project_id?.name, 
+    team_name: prediction.team_id?.name,
+    project_id: prediction.team_id?.project_id?._id,
+    project_name: prediction.team_id?.project_id?.name, 
 
     experience_level: prediction.experience_level,  
     total_tasks_completed: prediction.total_tasks_completed,  
@@ -102,9 +102,9 @@ router.get("/predict-all", async (req, res) => {
                 name: prediction.user_details.name,
                 image: prediction.user_details.image
             },
-            team_name: prediction.team_id.name,
-            project_id: prediction.team_id.project_id._id,
-            project_name: prediction.team_id.project_id.name, // Now this will work
+            team_name: prediction.team_id?.name,
+            project_id: prediction.team_id?.project_id?._id,
+            project_name: prediction.team_id?.project_id?.name, // Now this will work
             rank: sortedPredictions.indexOf(prediction) + 1
         }));
 
