@@ -1,15 +1,25 @@
 const { GoogleGenAI } = require('@google/genai'); 
 const genAI = new GoogleGenAI({ apiKey: "AIzaSyBhOHuAkp504kk4bfCmCXheEZQD2u8f_v8" });
+const Task = require('../models/Task');
+const mongoose = require('mongoose');
 
 async function generateAITasks(projectId, projectName, projectDescription) {
     try {
+      if (!projectId || !mongoose.Types.ObjectId.isValid(projectId)) {
+        throw new Error("Invalid project ID");
+      }
+  
+      const existingTasks = await Task.find({ project_id: projectId }).select('title -_id');
+      const existingTaskTitles = existingTasks.map(t => t.title);
+      
         // Preparing the input for the AI model
         const response = await genAI.models.generateContent({
           model: "gemini-2.0-flash",
           contents: [
             {
               parts: [
-                { text: `You are a project manager. Generate 5-8 IT related, realistic tasks for the project below.
+                { text: `You are a project manager. Generate **5-8 new, unique IT-related tasks** for this project.  
+**Avoid repeating** these existing tasks: ${existingTaskTitles.join(", ") || "None yet"}
       
 **Project Name:** ${projectName}
 **Description:** ${projectDescription}
@@ -23,6 +33,7 @@ For each task, return a JSON array with:
 - start_date: YYYY-MM-DD (before deadline)
 - estimated_duration: number (days)
 - tags: string[] (e.g., ["backend", "auth"])
+- requiredSkills: string[] (e.g., ["JavaScript", "React", "Node.js"])
 
 Return ONLY the JSON array. Example:
 [
@@ -35,6 +46,7 @@ Return ONLY the JSON array. Example:
     "start_date": "2024-09-10",
     "estimated_duration": 3,
     "tags": ["backend", "database"]
+    "requiredSkills": ["MongoDB", "Database Design"]
   }
 ]` }
               ]
@@ -54,6 +66,7 @@ Return ONLY the JSON array. Example:
 // Example usage:
  //generateAITasks("123", "EcoTracker", "A carbon footprint app")
 //  .then(tasks => console.log(tasks));
+/*
 (async () => {
     const projectId = "67f92d3eb11be2926f42a473"; // Your test ID
     const tasks = await generateAITasks(
@@ -63,6 +76,6 @@ Return ONLY the JSON array. Example:
     );
     
     console.log("Generated Tasks:", tasks);
-  })();
+  })();*/
 
 module.exports = { generateAITasks };

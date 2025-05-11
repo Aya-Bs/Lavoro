@@ -483,8 +483,8 @@ exports.getAllTasks = async (req, res) => {
       priority,
       project_id,
       assigned_to,
-      page = 1,
-      limit = 10
+      page,
+      limit
     } = req.query;
 
     // Get the current user ID from the request
@@ -498,11 +498,8 @@ exports.getAllTasks = async (req, res) => {
     if (project_id) filter.project_id = project_id;
     if (assigned_to) filter.assigned_to = assigned_to;
 
-    // Calculate pagination
-    const skip = (page - 1) * limit;
-
-    // Get tasks with population and pagination
-    const tasks = await Task.find(filter)
+    // Create query
+    let query = Task.find(filter)
       .populate('project_id', 'name status')
       .populate({
         path: 'assigned_to',
@@ -513,23 +510,39 @@ exports.getAllTasks = async (req, res) => {
         }
       })
       .populate('created_by', 'firstName lastName') // Populate creator info
-      .skip(skip)
-      .limit(parseInt(limit))
       .sort({ deadline: 1 });
+
+    // Apply pagination only if both page and limit are provided
+    if (page && limit) {
+      const skip = (parseInt(page) - 1) * parseInt(limit);
+      query = query.skip(skip).limit(parseInt(limit));
+    }
+
+    // Get tasks with population
+    const tasks = await query;
 
     // Get total count for pagination info
     const totalTasks = await Task.countDocuments(filter);
 
-    res.status(200).json({
+    // Prepare response
+    const response = {
       success: true,
       data: tasks,
-      pagination: {
+    };
+
+    // Add pagination info only if pagination was applied
+    if (page && limit) {
+      response.pagination = {
         currentPage: parseInt(page),
-        totalPages: Math.ceil(totalTasks / limit),
+        totalPages: Math.ceil(totalTasks / parseInt(limit)),
         totalTasks,
         tasksPerPage: parseInt(limit)
-      }
-    });
+      };
+    } else {
+      response.totalTasks = totalTasks;
+    }
+
+    res.status(200).json(response);
   } catch (error) {
     console.error('Error fetching tasks:', error);
     res.status(500).json({
@@ -1049,12 +1062,28 @@ async function generateAndFormatTasks(name, description, projectId, created_by) 
     start_date: new Date(task.start_date),
     status: task.status || 'Not Started',
     assigned_to: [],
-    created_by // Add the creator ID
+    created_by,
+    requiredSkills: task.requiredSkills || [] // Ensure this exists
   }));
 
   return await Task.insertMany(tasks);
 }
 
+async function generateTasksWithoutSaving(name, description, projectId) {
+  const aiResponse = await generateAITasks(projectId, name, description);
+  const rawTasks = cleanAIResponse(aiResponse);
+
+  return rawTasks.map(task => ({
+    ...task,
+    project_id: projectId,
+    deadline: new Date(task.deadline),
+    start_date: new Date(task.start_date),
+    status: task.status || 'Not Started',
+    assigned_to: [],
+    requiredSkills: task.requiredSkills || [] // Ensure this exists
+  }));
+}
+/*
 // New helper function that only generates tasks without saving them
 async function generateTasksWithoutSaving(name, description, projectId) {
   const aiResponse = await generateAITasks(name, description);
@@ -1071,6 +1100,7 @@ async function generateTasksWithoutSaving(name, description, projectId) {
   }));
 
 }
+  */
 
 function cleanAIResponse(response) {
   const cleaned = response
@@ -1169,6 +1199,7 @@ exports.saveTasks = async (req, res) => {
       estimated_duration: task.estimated_duration || 1,
       tags: task.tags || [],
       assigned_to: task.assigned_to || [],
+      requiredSkills: task.requiredSkills || [], // Include required skills
       created_by // Add the creator ID
     }));
 
@@ -1793,13 +1824,13 @@ exports.exportToGitHub = async (req, res) => {
 
 **Task:** ${task.title}
 
-**Description:**  
+**Description:**
 ${task.description || '_No description provided._'}
 
-**Priority:** ${task.priority}  
-**Status:** ${task.status}  
-**Deadline:** ${task.deadline ? new Date(task.deadline).toDateString() : 'N/A'}  
-**Assigned Developers:**  
+**Priority:** ${task.priority}
+**Status:** ${task.status}
+**Deadline:** ${task.deadline ? new Date(task.deadline).toDateString() : 'N/A'}
+**Assigned Developers:**
 ${assigneeNames || '- Unassigned'}
 
 Created from internal task ID: \`${task._id}\`
@@ -1815,17 +1846,17 @@ Created from internal task ID: \`${task._id}\`
       labels: task.tags || [] // Include tags as labels
     });
 
-    res.json({ 
-      message: 'Issue created successfully', 
+    res.json({
+      message: 'Issue created successfully',
       issueUrl: response.data.html_url,
       issueNumber: response.data.number
     });
 
   } catch (error) {
     console.error('GitHub export error:', error);
-    res.status(500).json({ 
+    res.status(500).json({
       message: 'Error exporting task to GitHub',
-      error: error.message 
+      error: error.message
     });
   }
 };

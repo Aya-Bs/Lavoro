@@ -16,6 +16,11 @@ const TaskSchema = new Schema({
     requiredSkills: [{ type: String, required: true }],
     created_at: { type: Date, default: Date.now },
     score : { type: Number, default: 0 },
+    githubIssue: {
+        id: Number,  
+        url: String, 
+        syncEnabled: { type: Boolean, default: true }
+      }
 
 });
 

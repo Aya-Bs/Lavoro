@@ -36,4 +36,3 @@ const Project = new Schema({
 });
 Project.index({ name: 'text' });
 module.exports = mongo.model('Project', Project);
-

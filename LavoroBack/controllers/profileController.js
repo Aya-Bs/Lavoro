@@ -9,7 +9,7 @@ const speakeasy = require('speakeasy');
 
 const jwt = require('jsonwebtoken');
 
-
+/*
 // Update user profile (without password handling)
 exports.updateProfile = async (req, res) => {
   try {
@@ -65,6 +65,88 @@ exports.updateProfile = async (req, res) => {
       lastName: req.body.lastName || user.lastName,
       phone_number: req.body.phoneNumber || user.phone_number,
     };
+
+    if (imagePath !== user.image) {
+      updateData.image = imagePath;
+    }
+
+    const updatedUser = await User.findByIdAndUpdate(userId, updateData, { new: true });
+
+    if (!updatedUser) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    await AccountActivityLog.create({
+      userId: updatedUser._id,
+      action: 'User Updated Profile',
+    });
+
+    res.status(200).json({ message: 'Profil mis à jour avec succès' });
+  } catch (error) {
+    console.error("Backend error:", error);
+    res.status(500).json({ message: error.message });
+  }
+};
+*/
+exports.updateProfile = async (req, res) => {
+  try {
+    const authHeader = req.headers['authorization'];
+    const token = authHeader && authHeader.split(' ')[1];
+
+    if (!token) {
+      return res.status(401).json({ message: 'No token provided' });
+    }
+
+    let decoded;
+    try {
+      decoded = jwt.verify(token, process.env.JWT_SECRET);
+    } catch (err) {
+      return res.status(403).json({ message: 'Invalid or expired token' });
+    }
+
+    const userId = decoded._id;
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: 'Utilisateur non trouvé' });
+    }
+
+    let imagePath = user.image; // Default to existing image
+
+    // Handle new file upload (from multer, if used)
+    if (req.file) {
+      imagePath = '/imagesUser/' + req.file.filename;
+    }
+
+    // Handle base64 image from FormData
+    if (req.body.image && req.body.image.startsWith("data:image")) {
+      const base64Data = req.body.image.replace(/^data:image\/png;base64,/, "");
+      const filename = `public/imagesUser/${Date.now()}-captured.png`;
+      try {
+        fs.writeFileSync(filename, base64Data, "base64");
+        imagePath = filename.replace("public", "");
+      } catch (err) {
+        console.error("Error writing image file:", err);
+        return res.status(500).json({ message: "Failed to save image" });
+      }
+    } else if (req.body.image === "") {
+      // Clear the image and delete the old file if it exists
+      if (user.image && fs.existsSync(`public/${user.image}`)) {
+        fs.unlinkSync(`public/${user.image}`);
+      }
+      imagePath = "";
+    }
+
+    // Prepare update data
+    const updateData = {
+      firstName: req.body.firstName || user.firstName,
+      lastName: req.body.lastName || user.lastName,
+      phone_number: req.body.phoneNumber || user.phone_number,
+      description: req.body.description || user.description,
+      skills: req.body.skills || user.skills,
+    
+    ...(imagePath !== user.image && { image: imagePath })
+  };
+  
 
     if (imagePath !== user.image) {
       updateData.image = imagePath;
