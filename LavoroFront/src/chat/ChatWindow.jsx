@@ -7,7 +7,12 @@ import EmojiPicker from 'emoji-picker-react';
 // API URL for file uploads
 const API_URL = 'http://localhost:3000';
 
-const ChatWindow = ({ chat, messages, currentUser, onSendMessage, isLoading }) => {
+const ChatWindow = ({ chat = {}, messages = [], currentUser = {}, onSendMessage, isLoading = false }) => {
+    // Vérifier si l'objet chat est correctement initialisé
+    if (!chat || typeof chat !== 'object') {
+        console.error('Chat object is not properly initialized:', chat);
+        chat = { type: 'direct', user: {}, name: 'Conversation' };
+    }
     const [messageText, setMessageText] = useState('');
     const [attachment, setAttachment] = useState(null);
     const [isTyping, setIsTyping] = useState(false);
@@ -27,6 +32,46 @@ const ChatWindow = ({ chat, messages, currentUser, onSendMessage, isLoading }) =
             chatContentRef.current.scrollTop = chatContentRef.current.scrollHeight;
         }
     }, [messages]);
+
+    // Force re-render when edited messages change
+    useEffect(() => {
+        // This effect will run on component mount and when messages change
+        // It ensures that any locally edited messages are applied
+
+        // Create a unique key for this chat to track if we've already processed it
+        const chatKey = `chat_processed_${chat.type}_${chat.type === 'direct' ? chat.user?._id : chat._id}`;
+
+        // Check if we've already processed this chat in this session
+        if (!sessionStorage.getItem(chatKey) && messages.length > 0) {
+            console.log("First load of this chat, checking for locally edited messages");
+
+            // Look for any edited messages for this chat
+            let hasEditedMessages = false;
+
+            messages.forEach(message => {
+                if (message && message._id) {
+                    const storageKey = `edited_message_${message._id}`;
+                    if (localStorage.getItem(storageKey)) {
+                        hasEditedMessages = true;
+                    }
+                }
+            });
+
+            // If we found edited messages, force a re-render by updating the messages
+            if (hasEditedMessages && typeof onSendMessage === 'function') {
+                console.log("Found locally edited messages, forcing re-render");
+
+                // Use setTimeout to avoid state update during render
+                setTimeout(() => {
+                    // This will trigger the groupMessagesByDate function which applies the edits
+                    onSendMessage(null, null, [...messages]);
+                }, 100);
+            }
+
+            // Mark this chat as processed
+            sessionStorage.setItem(chatKey, 'true');
+        }
+    }, [chat, messages, onSendMessage]);
 
     // Close emoji picker when clicking outside
     useEffect(() => {
@@ -77,48 +122,77 @@ const ChatWindow = ({ chat, messages, currentUser, onSendMessage, isLoading }) =
         if (!editingMessage || editText.trim() === '') return;
 
         try {
+            console.log("Saving edited message:", {
+                messageId: editingMessage._id,
+                oldText: editingMessage.message,
+                newText: editText,
+                chatType: chat.type
+            });
+
+            // Create a copy of the edited message with updated content
+            const updatedMessage = {
+                ...editingMessage,
+                message: editText,
+                edited: true,
+                edited_at: new Date().toISOString()
+            };
+
+            // Update the message in the local state immediately
+            const updatedMessages = messages.map(msg =>
+                msg._id === editingMessage._id ? updatedMessage : msg
+            );
+
+            // Log the updated messages array
+            console.log("Updated messages array:", updatedMessages.map(m => ({
+                id: m._id,
+                message: m.message,
+                sender: m.sender ? m.sender.name : 'Unknown'
+            })));
+
+            // Update the messages state through the parent component
+            if (typeof onSendMessage === 'function') {
+                console.log("Calling onSendMessage with updated messages");
+                onSendMessage(null, null, updatedMessages);
+            }
+
+            // Store the updated message in localStorage to ensure persistence
+            const storageKey = `edited_message_${editingMessage._id}`;
+            localStorage.setItem(storageKey, JSON.stringify(updatedMessage));
+            console.log("Saved edited message to localStorage:", storageKey);
+
+            // Now handle the API updates based on chat type
             if (chat.type === 'direct') {
                 // Use socket.io to update the message
                 chatClient.emitUpdateMessage({
                     message_id: editingMessage._id,
                     new_message: editText
                 });
-
-                // Update the message in the UI immediately
-                const updatedMessages = messages.map(msg =>
-                    msg._id === editingMessage._id
-                        ? { ...msg, message: editText, edited: true, edited_at: new Date() }
-                        : msg
-                );
-
-                // Update the messages state through the parent component
-                if (typeof onSendMessage === 'function') {
-                    // This is a workaround to update the messages state in the parent component
-                    // Ideally, we would have a separate callback for updating messages
-                    onSendMessage(null, null, updatedMessages);
-                }
             } else if (chat.type === 'group') {
-                // Use socket.io to update the group message
-                chatClient.emitUpdateGroupMessage({
-                    message_id: editingMessage._id,
-                    new_message: editText
-                });
+                try {
+                    // Use both direct API call and socket.io for redundancy
+                    console.log("Updating group message with ID:", editingMessage._id, "New message:", editText);
 
-                // Update the message in the UI immediately
-                const updatedMessages = messages.map(msg =>
-                    msg._id === editingMessage._id
-                        ? { ...msg, message: editText, edited: true, edited_at: new Date() }
-                        : msg
-                );
+                    // Direct API call to update the message
+                    const apiResponse = await chatClient.updateGroupMessage(editingMessage._id, editText);
+                    console.log("API response for group message update:", apiResponse);
 
-                // Update the messages state through the parent component
-                if (typeof onSendMessage === 'function') {
-                    // This is a workaround to update the messages state in the parent component
-                    onSendMessage(null, null, updatedMessages);
+                    // Also emit socket event for real-time updates to other users
+                    chatClient.emitUpdateGroupMessage({
+                        message_id: editingMessage._id,
+                        new_message: editText,
+                        group_id: chat._id
+                    });
+
+                    console.log("Group message update requests sent");
+                } catch (error) {
+                    console.error("Error in API/socket update for group message:", error);
+                    // Even if these fail, the UI is already updated
                 }
             }
         } catch (error) {
-            console.error('Error updating message:', error);
+            console.error('Error in handleSaveEdit:', error);
+            // Even if there's an error, we don't revert the UI change
+            alert("Votre message a été modifié localement, mais il pourrait y avoir un problème de synchronisation avec le serveur.");
         } finally {
             // Reset editing state
             setEditingMessage(null);
@@ -134,9 +208,10 @@ const ChatWindow = ({ chat, messages, currentUser, onSendMessage, isLoading }) =
 
     // Handle delete message
     const handleDeleteMessage = async (message) => {
-        if (!window.confirm('Are you sure you want to delete this message?')) return;
-
+        // Suppression de la confirmation window.confirm
         try {
+            console.log("Deleting message:", message._id);
+
             // Remove the message from the UI immediately
             const updatedMessages = messages.filter(msg => msg._id !== message._id);
 
@@ -145,28 +220,27 @@ const ChatWindow = ({ chat, messages, currentUser, onSendMessage, isLoading }) =
                 onSendMessage(null, null, updatedMessages);
             }
 
+            // Also remove any locally stored edited version of this message
+            const storageKey = `edited_message_${message._id}`;
+            localStorage.removeItem(storageKey);
+            console.log("Removed locally stored message:", storageKey);
+
             // Then send the delete request to the server
             if (chat.type === 'direct') {
                 // Delete direct message
                 await chatClient.deleteMessage(message._id);
+                console.log("Direct message deleted on server");
             } else if (chat.type === 'group') {
                 // Delete group message
                 await chatClient.deleteGroupMessage(message._id);
+                console.log("Group message deleted on server");
             }
         } catch (error) {
             console.error('Error deleting message:', error);
-            // If there was an error, refresh the messages to restore the deleted message
-            if (chat.type === 'direct' && chat.user) {
-                const conversation = await chatClient.getConversation(currentUser._id, chat.user._id);
-                if (conversation && conversation.messages) {
-                    onSendMessage(null, null, conversation.messages);
-                }
-            } else if (chat.type === 'group') {
-                const groupMessages = await chatClient.getGroupMessages(chat._id, currentUser._id);
-                if (groupMessages) {
-                    onSendMessage(null, null, groupMessages);
-                }
-            }
+
+            // If there was an error, we don't restore the message to keep the UI consistent
+            // Instead, we'll just log the error and continue
+            console.log("Message was removed from UI but there was an error with the server request");
         }
     };
 
@@ -278,7 +352,43 @@ const ChatWindow = ({ chat, messages, currentUser, onSendMessage, isLoading }) =
             return groups;
         }
 
-        messages.forEach(message => {
+        // Apply any locally edited messages from localStorage
+        const processedMessages = messages.map(message => {
+            if (!message || !message._id) {
+                console.warn("Invalid message found in messages array:", message);
+                return message;
+            }
+
+            // Check if this message has a locally stored edit
+            const storageKey = `edited_message_${message._id}`;
+            const storedEditedMessage = localStorage.getItem(storageKey);
+
+            if (storedEditedMessage) {
+                try {
+                    const editedMessage = JSON.parse(storedEditedMessage);
+                    console.log(`Found locally edited message ${message._id}:`, {
+                        original: message.message,
+                        edited: editedMessage.message
+                    });
+
+                    // Merge the stored edit with the original message to preserve all properties
+                    return {
+                        ...message,
+                        message: editedMessage.message,
+                        edited: true,
+                        edited_at: editedMessage.edited_at || new Date().toISOString()
+                    };
+                } catch (error) {
+                    console.error("Error parsing stored edited message:", error);
+                    return message;
+                }
+            }
+
+            return message;
+        });
+
+        // Process the messages (with applied edits) into date groups
+        processedMessages.forEach(message => {
             if (!message) {
                 console.warn("Undefined message found in messages array");
                 return;
@@ -301,67 +411,166 @@ const ChatWindow = ({ chat, messages, currentUser, onSendMessage, isLoading }) =
             }
         });
 
-        console.log("Grouped messages by date:", groups);
+        console.log("Grouped messages by date:", Object.keys(groups).map(date => ({
+            date,
+            messageCount: groups[date].length
+        })));
+
         return groups;
     };
 
     const messageGroups = groupMessagesByDate();
 
-    // Get chat name and image
-    const chatName = chat.type === 'direct' ? chat.user.name : chat.name;
+    // Get chat name and image with proper error handling
+    const chatName = chat.type === 'direct'
+        ? (chat.user && chat.user.name
+            ? chat.user.name
+            : (chat.user && (chat.user.firstName || chat.user.lastName)
+                ? `${chat.user.firstName || ''} ${chat.user.lastName || ''}`.trim()
+                : 'Utilisateur'))
+        : (chat.name || 'Groupe');
+
     const chatImage = chat.type === 'direct'
-        ? (chat.user.profileImage || "../assets/images/faces/6.jpg")
-        : (chat.avatar || "../assets/images/faces/17.jpg");
-    const chatStatus = chat.type === 'direct' ? chat.user.status || 'offline' : '';
+        ? (chat.user && chat.user.profileImage
+            ? (chat.user.profileImage.startsWith('http')
+                ? chat.user.profileImage
+                : `${API_URL}/${chat.user.profileImage.replace(/^\//, '')}`)
+            : (chat.user && chat.user.image
+                ? (chat.user.image.startsWith('http')
+                    ? chat.user.image
+                    : `${API_URL}/${chat.user.image.replace(/^\//, '')}`)
+                : "../assets/images/faces/6.jpg"))
+        : (chat.avatar
+            ? (chat.avatar.startsWith('http')
+                ? chat.avatar
+                : `${API_URL}/${chat.avatar.replace(/^\//, '')}`)
+            : "../assets/images/faces/17.jpg");
+
+    const chatStatus = chat.type === 'direct'
+        ? (chat.user && chat.user.status ? chat.user.status : 'offline')
+        : '';
+
+    // Déterminer si le mode sombre est actif
+    const [isDarkMode, setIsDarkMode] = useState(
+        document.documentElement.getAttribute('data-theme-mode') === 'dark'
+    );
+
+    // Mettre à jour isDarkMode lorsque le thème change
+    useEffect(() => {
+        const checkDarkMode = () => {
+            const darkModeEnabled = document.documentElement.getAttribute('data-theme-mode') === 'dark';
+            setIsDarkMode(darkModeEnabled);
+        };
+
+        // Vérifier au chargement
+        checkDarkMode();
+
+        // Observer les changements d'attribut sur l'élément HTML
+        const observer = new MutationObserver(mutations => {
+            mutations.forEach(mutation => {
+                if (mutation.attributeName === 'data-theme-mode') {
+                    checkDarkMode();
+                }
+            });
+        });
+
+        observer.observe(document.documentElement, { attributes: true });
+
+        return () => {
+            observer.disconnect();
+        };
+    }, []);
+
+    // Styles pour le mode sombre
+    const darkModeStyles = {
+        backgroundColor: '#212529',
+        color: '#dee2e6',
+        borderColor: '#495057'
+    };
 
     return (
-        <div className="chat-window border d-flex flex-column">
-            {/* Chat Header */}
-            <div className="chat-header d-flex align-items-center justify-content-between p-3 border-bottom">
+        <div className="chat-window border d-flex flex-column" style={isDarkMode ? darkModeStyles : {}}>
+            {/* Chat Header - Improved design */}
+            <div className="chat-header" style={{
+                ...(isDarkMode ? darkModeStyles : {}),
+                borderBottom: isDarkMode ? '1px solid #495057' : '1px solid #e9ecef',
+                padding: '15px 20px',
+                boxShadow: isDarkMode ? '0 2px 8px rgba(0, 0, 0, 0.2)' : '0 2px 8px rgba(0, 0, 0, 0.05)',
+                position: 'relative',
+                zIndex: 10
+            }}>
                 <div className="d-flex align-items-center">
-                    <span className={`avatar avatar-md ${chatStatus} me-2`}>
-                        <img className="chatimageperson" src={chatImage} alt={chatName} />
+                    <span className={`avatar avatar-md ${chatStatus} me-3`}>
+                        <img className="chatimageperson" src={chatImage} alt={chatName} style={{
+                            objectFit: 'cover',
+                            boxShadow: '0 2px 5px rgba(0,0,0,0.1)'
+                        }} />
                     </span>
                     <div>
-                        <p className="mb-0 fw-semibold chatnameperson">{chatName}</p>
+                        <p className="mb-0 fw-semibold chatnameperson" style={{
+                            fontSize: '1.2rem',
+                            color: isDarkMode ? '#ffffff' : 'inherit',
+                            fontWeight: 'bold',
+                            textShadow: isDarkMode ? '0 1px 2px rgba(0,0,0,0.2)' : 'none'
+                        }}>
+                            {chatName || 'Conversation'}
+                            {/* Débogage - à supprimer en production */}
+                            {console.log('Chat info:', {
+                                chatName,
+                                chatType: chat.type,
+                                chatUser: chat.user,
+                                chatId: chat._id
+                            })}
+                        </p>
                         {chat.type === 'direct' && (
-                            <p className="mb-0 fs-12 text-muted chatpersonstatus">
+                            <p className="mb-0 fs-12 chatpersonstatus" style={{
+                                color: chatStatus === 'online'
+                                    ? (isDarkMode ? '#4ade80' : '#28a745')
+                                    : (isDarkMode ? '#d1d5db' : '#6c757d'),
+                                fontWeight: '500',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '5px'
+                            }}>
+                                <span style={{
+                                    display: 'inline-block',
+                                    width: '8px',
+                                    height: '8px',
+                                    borderRadius: '50%',
+                                    backgroundColor: chatStatus === 'online'
+                                        ? (isDarkMode ? '#4ade80' : '#28a745')
+                                        : (isDarkMode ? '#d1d5db' : '#6c757d')
+                                }}></span>
                                 {chatStatus === 'online' ? 'En ligne' : 'Hors ligne'}
                             </p>
                         )}
                         {chat.type === 'group' && (
-                            <p className="mb-0 fs-12 text-muted">
+                            <p className="mb-0 fs-12" style={{
+                                color: isDarkMode ? '#d1d5db' : '#6c757d',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '5px'
+                            }}>
+                                <i className="ri-group-line" style={{ fontSize: '14px' }}></i>
                                 {chat.members?.length || 0} membres
                             </p>
                         )}
                     </div>
                 </div>
                 <div className="d-flex align-items-center">
-                    <button className="btn btn-sm btn-icon btn-primary-light me-1">
-                        <i className="ri-phone-line"></i>
-                    </button>
-                    <button className="btn btn-sm btn-icon btn-primary-light me-1">
-                        <i className="ri-vidicon-line"></i>
-                    </button>
-                    <button className="btn btn-sm btn-icon btn-primary-light me-1 d-lg-none responsive-chat-close">
+                    {/* Bouton de fermeture pour la version mobile uniquement */}
+                    <button className="btn btn-sm btn-icon btn-primary-light me-2 d-lg-none responsive-chat-close" style={{
+                        backgroundColor: 'rgba(var(--bs-danger-rgb), 0.1)',
+                        color: 'var(--bs-danger)',
+                        border: 'none'
+                    }}>
                         <i className="ri-close-line"></i>
                     </button>
-                    <div className="dropdown">
-                        <button className="btn btn-sm btn-icon btn-primary-light" data-bs-toggle="dropdown">
-                            <i className="ri-more-2-fill"></i>
-                        </button>
-                        <ul className="dropdown-menu">
-                            <li><a className="dropdown-item" href="javascript:void(0);"><i className="ri-user-line me-2"></i>Voir le profil</a></li>
-                            <li><a className="dropdown-item" href="javascript:void(0);"><i className="ri-image-line me-2"></i>Médias partagés</a></li>
-                            <li><a className="dropdown-item" href="javascript:void(0);"><i className="ri-delete-bin-line me-2"></i>Supprimer la conversation</a></li>
-                            <li><a className="dropdown-item" href="javascript:void(0);"><i className="ri-spam-2-line me-2"></i>Bloquer</a></li>
-                        </ul>
-                    </div>
                 </div>
             </div>
 
             {/* Chat Content */}
-            <div className="chat-content flex-grow-1" id="main-chat-content" ref={chatContentRef}>
+            <div className="chat-content flex-grow-1" id="main-chat-content" ref={chatContentRef} style={isDarkMode ? darkModeStyles : {}}>
                 {isLoading ? (
                     <div className="d-flex justify-content-center align-items-center h-100">
                         <div className="spinner-border text-primary" role="status">
@@ -396,31 +605,84 @@ const ChatWindow = ({ chat, messages, currentUser, onSendMessage, isLoading }) =
                                     });
 
                                     return (
-                                        <li key={index} className={isCurrentUser ? "chat-item-end" : "chat-item-start"}>
-                                            <div className="chat-list-inner">
-                                                {!isCurrentUser && (
+                                        <li key={index} className={isCurrentUser ? "chat-item-end" : "chat-item-start"} style={{
+                                            display: 'flex',
+                                            justifyContent: isCurrentUser ? 'flex-end' : 'flex-start',
+                                            width: '100%',
+                                            marginBottom: '20px'  /* Augmentation de l'espacement entre les messages */
+                                        }}>
+                                           <div className="chat-list-inner" style={{
+                                               maxWidth: '500px',  /* Augmentation de la largeur maximale */
+                                               display: 'flex',
+                                               flexDirection: isCurrentUser ? 'row-reverse' : 'row'
+                                           }}>  {/* Largeur fixe augmentée */}
+                                                {/* Afficher l'avatar pour tous les messages dans les groupes, ou seulement pour les autres utilisateurs dans les conversations directes */}
+                                                {(chat.type === 'group' || !isCurrentUser) && (
                                                     <div className="chat-user-profile">
                                                         <span className={`avatar avatar-md ${chat.type === 'direct' ? chatStatus : ''}`}>
                                                              <img
-                                                                src={chat.type === 'direct' ?
-                                                                    chatImage :
-                                                                    (message.sender?.profileImage ||
-                                                                     message.sender?.image ||
-                                                                     "../assets/images/faces/6.jpg")}
+                                                                src={chat.type === 'direct'
+                                                                    ? chatImage
+                                                                    : isCurrentUser
+                                                                        ? (currentUser.profileImage
+                                                                            ? (currentUser.profileImage.startsWith('http')
+                                                                                ? currentUser.profileImage
+                                                                                : `${API_URL}/${currentUser.profileImage.replace(/^\//, '')}`)
+                                                                            : currentUser.image
+                                                                                ? (currentUser.image.startsWith('http')
+                                                                                    ? currentUser.image
+                                                                                    : `${API_URL}/${currentUser.image.replace(/^\//, '')}`)
+                                                                                : "https://ui-avatars.com/api/?name=" + encodeURIComponent(currentUser.name || currentUser.firstName || 'User') + "&background=4a6bff&color=fff")
+                                                                        : (message.sender?.profileImage
+                                                                            ? (message.sender.profileImage.startsWith('http')
+                                                                                ? message.sender.profileImage
+                                                                                : `${API_URL}/${message.sender.profileImage.replace(/^\//, '')}`)
+                                                                            : message.sender?.image
+                                                                                ? (message.sender.image.startsWith('http')
+                                                                                    ? message.sender.image
+                                                                                    : `${API_URL}/${message.sender.image.replace(/^\//, '')}`)
+                                                                                : "https://ui-avatars.com/api/?name=" + encodeURIComponent(message.sender?.name || message.sender?.firstName || 'User') + "&background=4a6bff&color=fff")}
                                                                 alt={chat.type === 'direct' ?
                                                                     chatName :
-                                                                    (message.sender?.name ||
-                                                                     `${message.sender?.firstName || ''} ${message.sender?.lastName || ''}`.trim() ||
-                                                                     'Utilisateur')}
-                                                            /> 
+                                                                    isCurrentUser
+                                                                        ? 'Moi'
+                                                                        : (message.sender?.name ||
+                                                                           `${message.sender?.firstName || ''} ${message.sender?.lastName || ''}`.trim() ||
+                                                                           'Utilisateur')}
+                                                            />
 
                                                         </span>
                                                     </div>
                                                 )}
-                                                <div className={isCurrentUser ? "me-3" : "ms-3"}>
-                                                    <div className="main-chat-msg">
+                                                <div className={isCurrentUser ? "me-3" : "ms-3"} style={{
+                                                    textAlign: isCurrentUser ? 'right' : 'left',
+                                                    width: '100%'
+                                                }}>
+                                                    <div className="main-chat-msg" style={{
+                                                        backgroundColor: isDarkMode
+                                                            ? (isCurrentUser ? 'rgba(13, 110, 253, 0.2)' : '#212529')
+                                                            : (isCurrentUser ? '#4a6bff' : '#f1f3f5'),
+                                                        color: isDarkMode
+                                                            ? '#dee2e6'
+                                                            : (isCurrentUser ? 'white' : '#333'),
+                                                        marginLeft: isCurrentUser ? 'auto' : '0',
+                                                        marginRight: isCurrentUser ? '0' : 'auto',
+                                                        padding: '12px 16px',  /* Padding augmenté */
+                                                        borderRadius: '18px',  /* Coins plus arrondis */
+                                                        minWidth: '120px',     /* Largeur minimale pour les courts messages */
+                                                        boxShadow: isDarkMode ? '0 2px 4px rgba(0, 0, 0, 0.2)' : '0 1px 2px rgba(0,0,0,0.1)',  /* Ombre adaptée */
+                                                        borderColor: isDarkMode ? '#495057' : 'transparent',
+                                                        borderWidth: isDarkMode ? '1px' : '0',
+                                                        borderStyle: 'solid'
+                                                    }}>
                                                         {chat.type === 'group' && (
-                                                            <div className="sender-name mb-1 fw-bold" style={{ color: isCurrentUser ? '#28a745' : '#4a6bff', textAlign: isCurrentUser ? 'right' : 'left' }}>
+                                                            <div className="sender-name mb-1 fw-bold" style={{
+                                                                color: isCurrentUser ? '#28a745' : '#4a6bff',
+                                                                textAlign: isCurrentUser ? 'right' : 'left',
+                                                                fontSize: '0.9rem',
+                                                                fontWeight: 'bold',
+                                                                marginBottom: '4px'
+                                                            }}>
                                                                 {isCurrentUser ? 'Moi' :
                                                                  (message.sender?.name ||
                                                                  `${message.sender?.firstName || ''} ${message.sender?.lastName || ''}`.trim() ||
@@ -542,17 +804,34 @@ const ChatWindow = ({ chat, messages, currentUser, onSendMessage, isLoading }) =
                                                                             </button>
                                                                         </div>
                                                                     )}
-                                                                    <p className="mb-0">{message.message}</p>
-                                                                    {message.edited && (
-                                                                        <div style={{
-                                                                            fontSize: '11px',
-                                                                            color: '#adb5bd',
-                                                                            marginTop: '2px',
-                                                                            fontStyle: 'italic'
-                                                                        }}>
-                                                                            (edited {message.edited_at ? format(new Date(message.edited_at), 'HH:mm', { locale: fr }) : ''})
-                                                                        </div>
-                                                                    )}
+                                                          <p className="mb-0" style={{
+    fontSize: '1rem',  /* Taille de police légèrement augmentée */
+    lineHeight: '1.5',  /* Interligne confortable */
+    margin: '0 0 4px 0', /* Marge basse légèrement augmentée */
+    maxWidth: '100%',     /* Largeur maximale */
+    overflowWrap: 'break-word',
+    hyphens: 'auto',
+    wordBreak: 'break-word', /* Gestion des mots longs */
+    textAlign: isCurrentUser ? 'right' : 'left', /* Alignement du texte */
+    padding: '2px 0',  /* Ajout d'un peu de padding vertical */
+    color: isDarkMode ? '#dee2e6' : 'inherit'  /* Couleur adaptée au mode nuit */
+}}>
+    {message.message}
+</p>
+{message.edited && (
+    <div style={{
+        fontSize: '0.8rem',    /* Plus petit */
+        color: isDarkMode
+            ? (isCurrentUser ? 'rgba(255,255,255,0.7)' : '#adb5bd')
+            : (isCurrentUser ? 'rgba(255,255,255,0.65)' : '#adb5bd'), /* Adapté au thème et au mode */
+        marginTop: '2px',      /* Espacement réduit */
+        fontStyle: 'italic',
+        lineHeight: '1.2',     /* Interligne serré */
+        textAlign: isCurrentUser ? 'right' : 'left' /* Alignement du texte */
+    }}>
+        (modifié {message.edited_at ? format(new Date(message.edited_at), 'HH:mm', { locale: fr }) : ''})
+    </div>
+)}
                                                                 </>
                                                             )}
                                                             {message.attachment && (
@@ -620,8 +899,13 @@ const ChatWindow = ({ chat, messages, currentUser, onSendMessage, isLoading }) =
                                                             )}
                                                         </div>
                                                     </div>
-                                                    <span className="chatting-user-info">
-                                                        <span>{isCurrentUser ? 'Moi' : (chat.type === 'direct' ? chatName : '')}</span>
+                                                    <span className="chatting-user-info" style={{
+                                                        textAlign: isCurrentUser ? 'right' : 'left',
+                                                        display: 'block',
+                                                        fontSize: '0.8rem',
+                                                        color: isDarkMode ? '#adb5bd' : '#6c757d',
+                                                        marginTop: '4px'
+                                                    }}>
                                                         <span className="msg-sent-time">{formatTime(message.sent_at)}</span>
                                                     </span>
                                                 </div>
@@ -640,9 +924,19 @@ const ChatWindow = ({ chat, messages, currentUser, onSendMessage, isLoading }) =
                 )}
             </div>
 
-            {/* Zone de saisie de message (nouvelle implémentation) */}
-            <div className="chat-message-input-container mt-auto" style={{ width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}>
-                <form onSubmit={handleSubmit} className="chat-message-form" style={{ display: 'flex', width: '100%', maxWidth: '100%' }}>
+            {/* Zone de saisie de message (améliorée) */}
+            <div className="chat-message-input-container mt-auto" style={{
+                padding: '15px 20px',
+                width: '100%',
+                boxSizing: 'border-box',
+                ...(isDarkMode ? darkModeStyles : {})
+            }}>
+                <form onSubmit={handleSubmit} className="chat-message-form" style={{
+                    display: 'flex',
+                    width: '100%',
+                    gap: '10px',
+                    alignItems: 'center'
+                }}>
                     <input
                         type="file"
                         ref={fileInputRef}
@@ -655,34 +949,39 @@ const ChatWindow = ({ chat, messages, currentUser, onSendMessage, isLoading }) =
                         className="btn btn-primary1-light btn-icon chat-message-button attachment-btn"
                         onClick={handleAttachmentClick}
                         style={{
-                            flexShrink: 0,
-                            width: '40px',
-                            height: '40px',
-                            borderRadius: '50%',
+                            backgroundColor: isDarkMode ? '#212529' : 'rgba(var(--bs-primary-rgb), 0.1)',
+                            color: isDarkMode ? '#dee2e6' : 'var(--bs-primary)',
+                            border: isDarkMode ? '1px solid #495057' : 'none',
+                            width: '45px',
+                            height: '45px',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
-                            marginRight: '10px',
-                            marginLeft: '20px',
-
+                            borderRadius: '50%',
+                            flexShrink: 0
                         }}
+                        title="Joindre un fichier"
                     >
                         <i className="ri-attachment-2" style={{ fontSize: '18px' }}></i>
                     </button>
-                    <div className="position-relative" style={{ flexShrink: 0 }}>
+                    <div className="position-relative">
                         <button
                             type="button"
                             className="btn btn-icon btn-primary2 emoji-picker chat-message-button"
                             onClick={toggleEmojiPicker}
                             style={{
-                                width: '40px',
-                                height: '40px',
-                                borderRadius: '50%',
+                                backgroundColor: isDarkMode ? '#212529' : 'rgba(var(--bs-primary-rgb), 0.1)',
+                                color: isDarkMode ? '#dee2e6' : 'var(--bs-primary)',
+                                border: isDarkMode ? '1px solid #495057' : 'none',
+                                width: '45px',
+                                height: '45px',
                                 display: 'flex',
                                 alignItems: 'center',
                                 justifyContent: 'center',
-                                marginRight: '10px'
+                                borderRadius: '50%',
+                                flexShrink: 0
                             }}
+                            title="Ajouter un emoji"
                         >
                             <i className="ri-emotion-line" style={{ fontSize: '18px' }}></i>
                         </button>
@@ -708,53 +1007,96 @@ const ChatWindow = ({ chat, messages, currentUser, onSendMessage, isLoading }) =
                         value={messageText}
                         onChange={handleMessageChange}
                         ref={messageInputRef}
-                        style={{ flex: '1 1 auto', minWidth: '600px', width: '100%' }}
+                        style={{
+                            flex: '1 1 auto',
+                            minWidth: '300px',
+                            width: '100%',
+                            height: '45px',
+                            fontSize: '1rem',
+                            padding: '10px 15px',
+                            backgroundColor: isDarkMode ? '#212529' : '',
+                            color: isDarkMode ? '#dee2e6' : '',
+                            borderColor: isDarkMode ? '#495057' : ''
+                        }}
                     />
                     <button
                         type="submit"
                         className="btn btn-primary btn-icon chat-message-button"
                         style={{
-                            flexShrink: 0,
-                            width: '40px',
-                            height: '40px',
-                            borderRadius: '50%',
+                            backgroundColor: isDarkMode ? '#0d6efd' : 'var(--bs-primary)',
+                            color: 'white',
+                            border: isDarkMode ? '1px solid #0d6efd' : 'none',
+                            width: '45px',
+                            height: '45px',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
-                            marginLeft: '20px'
+                            borderRadius: '50%',
+                            flexShrink: 0
                         }}
+                        title="Envoyer"
                     >
                         <i className="ri-send-plane-2-line" style={{ fontSize: '18px' }}></i>
                     </button>
                 </form>
                 {attachment && (
-                    <div className="attachment-preview mt-2 p-2 border rounded" style={{ width: '100%', boxSizing: 'border-box' }}>
+                    <div className="attachment-preview mt-3 p-3 border rounded" style={{
+                        width: '100%',
+                        boxSizing: 'border-box',
+                        backgroundColor: 'rgba(var(--bs-primary-rgb), 0.03)',
+                        borderColor: 'rgba(var(--bs-primary-rgb), 0.2)',
+                        borderRadius: '0.75rem'
+                    }}>
                         <div className="d-flex align-items-center justify-content-between">
                             <div className="d-flex align-items-center">
-                                {attachment.type.startsWith('image/') ? (
-                                    <i className="ri-image-line me-2 text-success"></i>
-                                ) : attachment.type.startsWith('video/') ? (
-                                    <i className="ri-video-line me-2 text-danger"></i>
-                                ) : attachment.type.includes('pdf') ? (
-                                    <i className="ri-file-pdf-line me-2 text-danger"></i>
-                                ) : attachment.type.includes('word') || attachment.type.includes('document') ? (
-                                    <i className="ri-file-word-line me-2 text-primary"></i>
-                                ) : attachment.type.includes('excel') || attachment.type.includes('sheet') ? (
-                                    <i className="ri-file-excel-line me-2 text-success"></i>
-                                ) : attachment.type.includes('zip') || attachment.type.includes('compressed') ? (
-                                    <i className="ri-file-zip-line me-2 text-warning"></i>
-                                ) : (
-                                    <i className="ri-file-line me-2 text-muted"></i>
-                                )}
+                                <div style={{
+                                    width: '40px',
+                                    height: '40px',
+                                    borderRadius: '50%',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    backgroundColor: 'rgba(var(--bs-primary-rgb), 0.1)',
+                                    marginRight: '12px'
+                                }}>
+                                    {attachment.type.startsWith('image/') ? (
+                                        <i className="ri-image-line fs-20 text-success"></i>
+                                    ) : attachment.type.startsWith('video/') ? (
+                                        <i className="ri-video-line fs-20 text-danger"></i>
+                                    ) : attachment.type.includes('pdf') ? (
+                                        <i className="ri-file-pdf-line fs-20 text-danger"></i>
+                                    ) : attachment.type.includes('word') || attachment.type.includes('document') ? (
+                                        <i className="ri-file-word-line fs-20 text-primary"></i>
+                                    ) : attachment.type.includes('excel') || attachment.type.includes('sheet') ? (
+                                        <i className="ri-file-excel-line fs-20 text-success"></i>
+                                    ) : attachment.type.includes('zip') || attachment.type.includes('compressed') ? (
+                                        <i className="ri-file-zip-line fs-20 text-warning"></i>
+                                    ) : (
+                                        <i className="ri-file-line fs-20 text-muted"></i>
+                                    )}
+                                </div>
                                 <div>
-                                    <span className="d-block">{attachment.name}</span>
+                                    <span className="d-block fw-medium" style={{ maxWidth: '250px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                        {attachment.name}
+                                    </span>
                                     <small className="text-muted">{(attachment.size / 1024).toFixed(2)} KB</small>
                                 </div>
                             </div>
                             <button
                                 type="button"
-                                className="btn btn-sm btn-icon btn-danger"
+                                className="btn btn-sm btn-icon"
                                 onClick={() => setAttachment(null)}
+                                style={{
+                                    backgroundColor: 'rgba(var(--bs-danger-rgb), 0.1)',
+                                    color: 'var(--bs-danger)',
+                                    border: 'none',
+                                    width: '32px',
+                                    height: '32px',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    borderRadius: '50%'
+                                }}
                             >
                                 <i className="ri-close-line"></i>
                             </button>

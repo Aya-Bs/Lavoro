@@ -9,6 +9,9 @@ import ChatPopup from './ChatPopup';
 import CreateGroupModal from './CreateGroupModal';
 import addGlobalStyles from './globalStyles';
 
+// URL de base de l'API pour les images
+const API_URL = 'http://localhost:3000';
+
 const ChatComponent = () => {
     // Ajouter les styles globaux au chargement du composant
     useEffect(() => {
@@ -28,6 +31,37 @@ const ChatComponent = () => {
     const [viewMode, setViewMode] = useState('fullscreen'); // 'fullscreen', 'popup', or 'floating'
     const [showPopup, setShowPopup] = useState(false);
     const [showCreateGroupModal, setShowCreateGroupModal] = useState(false);
+
+    // Déterminer si le mode sombre est actif
+    const [isDarkMode, setIsDarkMode] = useState(
+        document.documentElement.getAttribute('data-theme-mode') === 'dark'
+    );
+
+    // Mettre à jour isDarkMode lorsque le thème change
+    useEffect(() => {
+        const checkDarkMode = () => {
+            const darkModeEnabled = document.documentElement.getAttribute('data-theme-mode') === 'dark';
+            setIsDarkMode(darkModeEnabled);
+        };
+
+        // Vérifier au chargement
+        checkDarkMode();
+
+        // Observer les changements d'attribut sur l'élément HTML
+        const observer = new MutationObserver(mutations => {
+            mutations.forEach(mutation => {
+                if (mutation.attributeName === 'data-theme-mode') {
+                    checkDarkMode();
+                }
+            });
+        });
+
+        observer.observe(document.documentElement, { attributes: true });
+
+        return () => {
+            observer.disconnect();
+        };
+    }, []);
 
     // Get current user from localStorage or fetch from API
     useEffect(() => {
@@ -249,11 +283,26 @@ const ChatComponent = () => {
                 const groupsResponse = await chatClient.getUserGroups(userId);
                 console.log("Groups response:", groupsResponse);
                 if (groupsResponse && Array.isArray(groupsResponse)) {
-                    console.log("Setting groups:", groupsResponse);
-                    setGroups(groupsResponse);
+                    // Format avatar paths for all groups
+                    const formattedGroups = groupsResponse.map(group => {
+                        if (group.avatar) {
+                            // If the avatar path doesn't start with http or /, add the API_URL
+                            if (!group.avatar.startsWith('http') && !group.avatar.startsWith('/')) {
+                                group.avatar = `${API_URL}/${group.avatar}`;
+                            } else if (group.avatar.startsWith('/')) {
+                                // If it starts with /, just add the API_URL
+                                group.avatar = `${API_URL}${group.avatar}`;
+                            }
+                            console.log("Formatted group avatar path:", group.avatar);
+                        }
+                        return group;
+                    });
+
+                    console.log("Setting groups with formatted avatars:", formattedGroups);
+                    setGroups(formattedGroups);
 
                     // Sauvegarder les groupes dans le localStorage
-                    chatClient.saveGroupsToLocalStorage(userId, groupsResponse);
+                    chatClient.saveGroupsToLocalStorage(userId, formattedGroups);
                 } else {
                     console.warn("Invalid groups response format or empty data, trying localStorage");
 
@@ -570,7 +619,7 @@ const ChatComponent = () => {
                             const processedMessages = response.messages.map(msg => {
                                 // Si le message n'a pas d'ID, en générer un temporaire
                                 if (!msg._id) {
-                                    msg._id = `temp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+                                    msg._id = `temp_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
                                 }
                                 // Ajouter des informations sur l'expéditeur si nécessaire
                                 if (msg.sender_id === currentUser._id) {
@@ -588,7 +637,7 @@ const ChatComponent = () => {
                                 console.log("Using lastMessage from activeChat:", activeChat.lastMessage);
                                 const lastMsg = {...activeChat.lastMessage};
                                 if (!lastMsg._id) {
-                                    lastMsg._id = `temp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+                                    lastMsg._id = `temp_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
                                 }
                                 if (lastMsg.sender_id === currentUser._id) {
                                     lastMsg.sender = currentUser;
@@ -619,16 +668,93 @@ const ChatComponent = () => {
                         currentUser._id
                     );
                     if (response && response.messages && response.messages.length > 0) {
-                        setMessages(response.messages);
+                        // Assurez-vous que chaque message a un ID et des informations sur l'expéditeur
+                        const processedMessages = response.messages.map(msg => {
+                            // Si le message n'a pas d'ID, en générer un temporaire
+                            if (!msg._id) {
+                                msg._id = `temp_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
+                            }
+
+                            // Ajouter des informations sur l'expéditeur si nécessaire
+                            if (msg.sender_id === currentUser._id) {
+                                // Si c'est l'utilisateur actuel, utiliser ses informations
+                                msg.sender = {
+                                    _id: currentUser._id,
+                                    name: currentUser.name || `${currentUser.firstName || ''} ${currentUser.lastName || ''}`.trim() || 'Moi',
+                                    profileImage: currentUser.profileImage || currentUser.image,
+                                    email: currentUser.email
+                                };
+                            } else if (!msg.sender || !msg.sender.name) {
+                                // Si l'expéditeur n'est pas défini ou n'a pas de nom, essayer de le trouver dans les membres du groupe
+                                const sender = activeChat.members?.find(member => member._id === msg.sender_id);
+                                if (sender) {
+                                    msg.sender = {
+                                        _id: sender._id,
+                                        name: sender.name || `${sender.firstName || ''} ${sender.lastName || ''}`.trim() || 'Utilisateur',
+                                        profileImage: sender.profileImage || sender.image,
+                                        email: sender.email
+                                    };
+                                }
+                            }
+
+                            console.log("Processed group message:", {
+                                message: msg.message,
+                                sender_id: msg.sender_id,
+                                sender: msg.sender
+                            });
+
+                            return msg;
+                        });
+
+                        setMessages(processedMessages);
                     } else {
                         console.log("No group messages found or invalid response, using mock data");
-                        // Utiliser des messages fictifs
-                        setMessages(generateMockMessages(activeChat._id, true));
+                        // Utiliser des messages fictifs avec des informations complètes sur l'expéditeur
+                        const mockMessages = generateMockMessages(activeChat._id, true);
+
+                        // Ajouter des informations sur l'expéditeur pour chaque message fictif
+                        mockMessages.forEach(msg => {
+                            if (msg.sender_id === currentUser._id) {
+                                msg.sender = {
+                                    _id: currentUser._id,
+                                    name: currentUser.name || `${currentUser.firstName || ''} ${currentUser.lastName || ''}`.trim() || 'Moi',
+                                    profileImage: currentUser.profileImage || currentUser.image,
+                                    email: currentUser.email
+                                };
+                            } else if (!msg.sender || !msg.sender.name) {
+                                // Trouver l'expéditeur dans les membres du groupe
+                                const sender = activeChat.members?.find(member => member._id === msg.sender_id);
+                                if (sender) {
+                                    msg.sender = {
+                                        _id: sender._id,
+                                        name: sender.name || `${sender.firstName || ''} ${sender.lastName || ''}`.trim() || 'Utilisateur',
+                                        profileImage: sender.profileImage || sender.image,
+                                        email: sender.email
+                                    };
+                                }
+                            }
+                        });
+
+                        setMessages(mockMessages);
                     }
                 } catch (error) {
                     console.error('Error loading group messages:', error);
-                    // En cas d'erreur, utiliser des messages fictifs
-                    setMessages(generateMockMessages(activeChat._id, true));
+                    // En cas d'erreur, utiliser des messages fictifs avec des informations complètes sur l'expéditeur
+                    const mockMessages = generateMockMessages(activeChat._id, true);
+
+                    // Ajouter des informations sur l'expéditeur pour chaque message fictif
+                    mockMessages.forEach(msg => {
+                        if (msg.sender_id === currentUser._id) {
+                            msg.sender = {
+                                _id: currentUser._id,
+                                name: currentUser.name || `${currentUser.firstName || ''} ${currentUser.lastName || ''}`.trim() || 'Moi',
+                                profileImage: currentUser.profileImage || currentUser.image,
+                                email: currentUser.email
+                            };
+                        }
+                    });
+
+                    setMessages(mockMessages);
                 }
             }
         } catch (error) {
@@ -755,7 +881,13 @@ const ChatComponent = () => {
                         message: finalMessage,
                         sent_at: new Date().toISOString(),
                         read_by: [currentUser._id],
-                        sender: currentUser // Ajouter les informations de l'expéditeur
+                        // Ajouter des informations complètes sur l'expéditeur
+                        sender: {
+                            _id: currentUser._id,
+                            name: currentUser.name || `${currentUser.firstName || ''} ${currentUser.lastName || ''}`.trim() || 'Moi',
+                            profileImage: currentUser.profileImage || currentUser.image,
+                            email: currentUser.email
+                        }
                     };
 
                     // Ajouter le message à la liste des messages
@@ -821,6 +953,35 @@ const ChatComponent = () => {
                 activeChat.type === 'group' &&
                 data.message.group_id === activeChat._id
             ) {
+                // S'assurer que le message a des informations complètes sur l'expéditeur
+                if (data.message.sender_id && !data.message.sender) {
+                    // Si l'expéditeur est l'utilisateur actuel
+                    if (data.message.sender_id === currentUser._id) {
+                        data.message.sender = {
+                            _id: currentUser._id,
+                            name: currentUser.name || `${currentUser.firstName || ''} ${currentUser.lastName || ''}`.trim() || 'Moi',
+                            profileImage: currentUser.profileImage || currentUser.image,
+                            email: currentUser.email
+                        };
+                    } else {
+                        // Essayer de trouver l'expéditeur dans les membres du groupe
+                        const sender = activeChat.members?.find(member => member._id === data.message.sender_id);
+                        if (sender) {
+                            data.message.sender = {
+                                _id: sender._id,
+                                name: sender.name || `${sender.firstName || ''} ${sender.lastName || ''}`.trim() || 'Utilisateur',
+                                profileImage: sender.profileImage || sender.image,
+                                email: sender.email
+                            };
+                        } else if (data.sender) {
+                            // Utiliser les informations de l'expéditeur fournies dans les données
+                            data.message.sender = data.sender;
+                        }
+                    }
+                }
+
+                console.log("Received group message with sender:", data.message.sender);
+
                 setMessages((prevMessages) => {
                     // Vérifier si le message existe déjà (éviter les doublons)
                     const messageExists = prevMessages.some(
@@ -884,6 +1045,32 @@ const ChatComponent = () => {
                 activeChat.type === 'group' &&
                 message.group_id === activeChat._id
             ) {
+                // S'assurer que le message a des informations complètes sur l'expéditeur
+                if (message.sender_id && !message.sender) {
+                    // Si l'expéditeur est l'utilisateur actuel
+                    if (message.sender_id === currentUser._id) {
+                        message.sender = {
+                            _id: currentUser._id,
+                            name: currentUser.name || `${currentUser.firstName || ''} ${currentUser.lastName || ''}`.trim() || 'Moi',
+                            profileImage: currentUser.profileImage || currentUser.image,
+                            email: currentUser.email
+                        };
+                    } else {
+                        // Essayer de trouver l'expéditeur dans les membres du groupe
+                        const sender = activeChat.members?.find(member => member._id === message.sender_id);
+                        if (sender) {
+                            message.sender = {
+                                _id: sender._id,
+                                name: sender.name || `${sender.firstName || ''} ${sender.lastName || ''}`.trim() || 'Utilisateur',
+                                profileImage: sender.profileImage || sender.image,
+                                email: sender.email
+                            };
+                        }
+                    }
+                }
+
+                console.log("Confirmed group message with sender:", message.sender);
+
                 setMessages((prevMessages) => {
                     // Vérifier si le message existe déjà (éviter les doublons)
                     const messageExists = prevMessages.some(
@@ -897,6 +1084,10 @@ const ChatComponent = () => {
                         return prevMessages.map((m) => {
                             if (m._id.startsWith('temp_') && m.message === message.message &&
                                 new Date(m.sent_at).getTime() > new Date().getTime() - 60000) {
+                                // Conserver les informations sur l'expéditeur du message temporaire si elles sont plus complètes
+                                if (m.sender && (!message.sender || !message.sender.name)) {
+                                    message.sender = m.sender;
+                                }
                                 return message;
                             }
                             return m;
@@ -928,6 +1119,8 @@ const ChatComponent = () => {
 
         // Listen for group message updates
         chatClient.onGroupMessageUpdated((data) => {
+            console.log("Received group message update:", data);
+
             // If the message is from the active group, update it in messages
             if (
                 activeChat &&
@@ -935,25 +1128,62 @@ const ChatComponent = () => {
                 data.groupId === activeChat._id
             ) {
                 setMessages((prevMessages) => {
-                    return prevMessages.map(msg =>
-                        msg._id === data.messageId
-                            ? { ...msg, message: data.newMessage, edited: true, edited_at: data.edited_at }
-                            : msg
-                    );
+                    // Preserve sender information when updating the message
+                    return prevMessages.map(msg => {
+                        if (msg._id === data.messageId) {
+                            // Keep all existing properties of the message, just update the content and edited status
+                            return {
+                                ...msg,
+                                message: data.newMessage,
+                                edited: true,
+                                edited_at: data.edited_at || new Date().toISOString()
+                            };
+                        }
+                        return msg;
+                    });
+                });
+
+                // Also update the message in the groups list if it's the last message
+                setGroups(prevGroups => {
+                    return prevGroups.map(group => {
+                        if (group._id === activeChat._id &&
+                            group.lastMessage &&
+                            group.lastMessage._id === data.messageId) {
+                            return {
+                                ...group,
+                                lastMessage: {
+                                    ...group.lastMessage,
+                                    message: data.newMessage,
+                                    edited: true,
+                                    edited_at: data.edited_at || new Date().toISOString()
+                                }
+                            };
+                        }
+                        return group;
+                    });
                 });
             }
         });
 
         // Listen for message deletions
         chatClient.onMessageDeleted((messageId) => {
+            console.log("Message deleted event received:", messageId);
+
             // Remove the message from the UI
             setMessages((prevMessages) => {
                 return prevMessages.filter(msg => msg._id !== messageId);
             });
+
+            // Also remove any locally stored edited version of this message
+            const storageKey = `edited_message_${messageId}`;
+            localStorage.removeItem(storageKey);
+            console.log("Removed locally stored message:", storageKey);
         });
 
         // Listen for group message deletions
         chatClient.onGroupMessageDeleted((data) => {
+            console.log("Group message deleted event received:", data);
+
             // If the message is from the active group, remove it from messages
             if (
                 activeChat &&
@@ -963,6 +1193,11 @@ const ChatComponent = () => {
                 setMessages((prevMessages) => {
                     return prevMessages.filter(msg => msg._id !== data.messageId);
                 });
+
+                // Also remove any locally stored edited version of this message
+                const storageKey = `edited_message_${data.messageId}`;
+                localStorage.removeItem(storageKey);
+                console.log("Removed locally stored group message:", storageKey);
             }
         });
 
@@ -1378,11 +1613,29 @@ const ChatComponent = () => {
 
     // Handle group creation
     const handleGroupCreated = (newGroup) => {
-        console.log('New group created:', newGroup);
+        console.log('New group created in ChatComponent:', newGroup);
+
+        // Ensure the avatar path is properly formatted
+        if (newGroup && newGroup.avatar) {
+            console.log('Original group avatar path:', newGroup.avatar);
+
+            // If the avatar path doesn't start with http or /, add the API_URL
+            if (!newGroup.avatar.startsWith('http') && !newGroup.avatar.startsWith('/')) {
+                newGroup.avatar = `${API_URL}/${newGroup.avatar}`;
+            } else if (newGroup.avatar.startsWith('/')) {
+                // If it starts with /, just add the API_URL
+                newGroup.avatar = `${API_URL}${newGroup.avatar}`;
+            }
+
+            console.log('Formatted group avatar path:', newGroup.avatar);
+        } else {
+            console.log('No avatar found for the new group');
+        }
 
         // Add the new group to the groups list
         setGroups(prevGroups => {
             const updatedGroups = [newGroup, ...prevGroups];
+            console.log('Updated groups list:', updatedGroups);
 
             // Save groups to localStorage
             if (currentUser && currentUser._id) {
@@ -1397,7 +1650,8 @@ const ChatComponent = () => {
 
         // Select the new group
         setTimeout(() => {
-            onChatSelect(newGroup, 'group');
+            console.log('Selecting new group:', newGroup);
+            handleChatSelect(newGroup, 'group');
         }, 100);
     };
 
@@ -1431,9 +1685,14 @@ const ChatComponent = () => {
                     <div className="container-fluid">
                         <div className="row justify-content-center">
                             <div className="col-12">
-                                <div className="main-chart-wrapper mb-0 d-flex" style={{ height: 'calc(100vh - 180px)', gap: '30px' }}>
-                                    {/* Chat Sidebar - Limité à 30% de la largeur avec marge à gauche */}
-                                    <div className="chat-sidebar-container" style={{ width: '30%', maxWidth: '350px', minWidth: '280px', marginLeft: '20px' }}>
+                                <div className="main-chart-wrapper mb-0 d-flex" style={{ height: 'calc(100vh - 180px)', gap: '0', marginTop: '15px' }}>
+                                    {/* Chat Sidebar - Fixed width for better alignment */}
+                                    <div className="chat-sidebar-container" style={{
+                                        width: '400px',
+                                        minWidth: '400px',
+                                        maxWidth: '4000px',
+                                        marginRight: '0'
+                                    }}>
                                         <ChatSidebar
                                             conversations={filteredConversations}
                                             groups={filteredGroups}
@@ -1449,8 +1708,13 @@ const ChatComponent = () => {
                                         />
                                     </div>
 
-                                    {/* Chat Window - Prend le reste de l'espace avec marge à droite */}
-                                    <div className="chat-window-container" style={{ flex: '1', minWidth: '0', marginRight: '10px' }}>
+                                    {/* Chat Window - Direct alignment with sidebar */}
+                                    <div className="chat-window-container" style={{
+                                        flex: '1',
+                                        minWidth: '0',
+                                        marginLeft: '0',
+                                        borderLeft: '0px solid var(--bs-border-color)'
+                                    }}>
                                         {activeChat ? (
                                             <ChatWindow
                                                 chat={activeChat}
@@ -1460,30 +1724,208 @@ const ChatComponent = () => {
                                                 isLoading={isLoading}
                                             />
                                         ) : (
-                                            <div className="chat-window-placeholder">
-                                                <div className="text-center welcome-chat-container">
-                                                    <div className="welcome-chat-icon">
+                                            <div className="chat-window-placeholder" style={{
+                                                display: 'flex',
+                                                flexDirection: 'column',
+                                                justifyContent: 'center',
+                                                alignItems: 'center',
+                                                height: '100%',
+                                                width: '100%',
+                                                backgroundColor: isDarkMode ? '#212529' : '#f8f9fa',
+                                                borderRadius: '0',
+                                                padding: '0'
+                                            }}>
+                                                <div className="text-center welcome-chat-container" style={{
+                                                    width: '100%',
+                                                    maxWidth: '100%',
+                                                    padding: '40px',
+                                                    backgroundColor: isDarkMode ? '#212529' : '#f8f9fa',
+                                                    borderRadius: '0',
+                                                    boxShadow: 'none'
+                                                }}>
+                                                    <div className="welcome-chat-icon" style={{
+                                                        fontSize: '40px',
+                                                        color: '#4a6bff',
+                                                        marginBottom: '15px',
+                                                        background: 'rgba(74, 107, 255, 0.1)',
+                                                        width: '80px',
+                                                        height: '80px',
+                                                        borderRadius: '50%',
+                                                        display: 'flex',
+                                                        justifyContent: 'center',
+                                                        alignItems: 'center',
+                                                        margin: '0 auto 15px',
+                                                        boxShadow: isDarkMode ? '0 5px 15px rgba(74, 107, 255, 0.2)' : '0 5px 15px rgba(74, 107, 255, 0.2)'
+                                                    }}>
                                                         <i className="ri-chat-smile-3-line"></i>
                                                     </div>
-                                                    <h4 className="welcome-chat-title">Bienvenue dans votre espace de discussion!</h4>
-                                                    <p className="welcome-chat-subtitle">Sélectionnez une conversation dans la liste pour commencer à échanger</p>
-                                                    <div className="welcome-chat-features">
-                                                        <div className="welcome-feature">
-                                                            <i className="ri-message-2-line"></i>
-                                                            <span>Messages instantanés</span>
+                                                    <h4 className="welcome-chat-title" style={{
+                                                        fontSize: '24px',
+                                                        fontWeight: 'bold',
+                                                        marginBottom: '10px',
+                                                        color: isDarkMode ? '#ffffff' : '#212529'
+                                                    }}>Bienvenue dans votre espace de discussion!</h4>
+                                                    <p className="welcome-chat-subtitle" style={{
+                                                        fontSize: '14px',
+                                                        marginBottom: '20px',
+                                                        color: isDarkMode ? '#adb5bd' : '#6c757d',
+                                                        maxWidth: '500px',
+                                                        margin: '0 auto 20px'
+                                                    }}>Sélectionnez une conversation dans la liste pour commencer à échanger</p>
+                                                    <div className="welcome-chat-features" style={{
+                                                        display: 'flex',
+                                                        justifyContent: 'center',
+                                                        marginBottom: '20px',
+                                                        flexWrap: 'wrap',
+                                                        gap: '15px'
+                                                    }}>
+                                                        <div className="welcome-feature" style={{
+                                                            display: 'flex',
+                                                            flexDirection: 'column',
+                                                            alignItems: 'center',
+                                                            padding: '15px',
+                                                            borderRadius: '8px',
+                                                            backgroundColor: isDarkMode ? '#343a40' : 'white',
+                                                            width: '130px',
+                                                            transition: 'all 0.2s ease',
+                                                            cursor: 'pointer',
+                                                            boxShadow: isDarkMode ? '0 2px 6px rgba(0, 0, 0, 0.2)' : '0 2px 6px rgba(0, 0, 0, 0.1)'
+                                                        }} onMouseOver={(e) => {
+                                                            e.currentTarget.style.transform = 'translateY(-3px)';
+                                                            e.currentTarget.style.boxShadow = isDarkMode ? '0 4px 8px rgba(0, 0, 0, 0.3)' : '0 4px 8px rgba(0, 0, 0, 0.1)';
+                                                        }}
+                                                           onMouseOut={(e) => {
+                                                            e.currentTarget.style.transform = 'translateY(0)';
+                                                            e.currentTarget.style.boxShadow = isDarkMode ? '0 2px 6px rgba(0, 0, 0, 0.2)' : '0 2px 6px rgba(0, 0, 0, 0.1)';
+                                                           }}>
+                                                            <div style={{
+                                                                width: '40px',
+                                                                height: '40px',
+                                                                borderRadius: '50%',
+                                                                backgroundColor: 'rgba(74, 107, 255, 0.1)',
+                                                                display: 'flex',
+                                                                justifyContent: 'center',
+                                                                alignItems: 'center',
+                                                                marginBottom: '8px'
+                                                            }}>
+                                                                <i className="ri-message-2-line" style={{
+                                                                    fontSize: '20px',
+                                                                    color: '#4a6bff'
+                                                                }}></i>
+                                                            </div>
+                                                            <span style={{
+                                                                fontWeight: '500',
+                                                                fontSize: '13px',
+                                                                color: isDarkMode ? '#e9ecef' : '#495057'
+                                                            }}>Messages instantanés</span>
                                                         </div>
-                                                        <div className="welcome-feature">
-                                                            <i className="ri-group-line"></i>
-                                                            <span>Discussions de groupe</span>
+                                                        <div className="welcome-feature" style={{
+                                                            display: 'flex',
+                                                            flexDirection: 'column',
+                                                            alignItems: 'center',
+                                                            padding: '15px',
+                                                            borderRadius: '8px',
+                                                            backgroundColor: isDarkMode ? '#343a40' : 'white',
+                                                            width: '130px',
+                                                            transition: 'all 0.2s ease',
+                                                            cursor: 'pointer',
+                                                            boxShadow: isDarkMode ? '0 2px 6px rgba(0, 0, 0, 0.2)' : '0 2px 6px rgba(0, 0, 0, 0.1)'
+                                                        }} onMouseOver={(e) => {
+                                                            e.currentTarget.style.transform = 'translateY(-3px)';
+                                                            e.currentTarget.style.boxShadow = isDarkMode ? '0 4px 8px rgba(0, 0, 0, 0.3)' : '0 4px 8px rgba(0, 0, 0, 0.1)';
+                                                        }}
+                                                           onMouseOut={(e) => {
+                                                            e.currentTarget.style.transform = 'translateY(0)';
+                                                            e.currentTarget.style.boxShadow = isDarkMode ? '0 2px 6px rgba(0, 0, 0, 0.2)' : '0 2px 6px rgba(0, 0, 0, 0.1)';
+                                                           }}>
+                                                            <div style={{
+                                                                width: '40px',
+                                                                height: '40px',
+                                                                borderRadius: '50%',
+                                                                backgroundColor: 'rgba(74, 107, 255, 0.1)',
+                                                                display: 'flex',
+                                                                justifyContent: 'center',
+                                                                alignItems: 'center',
+                                                                marginBottom: '8px'
+                                                            }}>
+                                                                <i className="ri-group-line" style={{
+                                                                    fontSize: '20px',
+                                                                    color: '#4a6bff'
+                                                                }}></i>
+                                                            </div>
+                                                            <span style={{
+                                                                fontWeight: '500',
+                                                                fontSize: '13px',
+                                                                color: isDarkMode ? '#e9ecef' : '#495057'
+                                                            }}>Discussions de groupe</span>
                                                         </div>
-                                                        <div className="welcome-feature">
-                                                            <i className="ri-attachment-2"></i>
-                                                            <span>Partage de fichiers</span>
+                                                        <div className="welcome-feature" style={{
+                                                            display: 'flex',
+                                                            flexDirection: 'column',
+                                                            alignItems: 'center',
+                                                            padding: '15px',
+                                                            borderRadius: '8px',
+                                                            backgroundColor: isDarkMode ? '#343a40' : 'white',
+                                                            width: '130px',
+                                                            transition: 'all 0.2s ease',
+                                                            cursor: 'pointer',
+                                                            boxShadow: isDarkMode ? '0 2px 6px rgba(0, 0, 0, 0.2)' : '0 2px 6px rgba(0, 0, 0, 0.1)'
+                                                        }} onMouseOver={(e) => {
+                                                            e.currentTarget.style.transform = 'translateY(-3px)';
+                                                            e.currentTarget.style.boxShadow = isDarkMode ? '0 4px 8px rgba(0, 0, 0, 0.3)' : '0 4px 8px rgba(0, 0, 0, 0.1)';
+                                                        }}
+                                                           onMouseOut={(e) => {
+                                                            e.currentTarget.style.transform = 'translateY(0)';
+                                                            e.currentTarget.style.boxShadow = isDarkMode ? '0 2px 6px rgba(0, 0, 0, 0.2)' : '0 2px 6px rgba(0, 0, 0, 0.1)';
+                                                           }}>
+                                                            <div style={{
+                                                                width: '40px',
+                                                                height: '40px',
+                                                                borderRadius: '50%',
+                                                                backgroundColor: 'rgba(74, 107, 255, 0.1)',
+                                                                display: 'flex',
+                                                                justifyContent: 'center',
+                                                                alignItems: 'center',
+                                                                marginBottom: '8px'
+                                                            }}>
+                                                                <i className="ri-attachment-2" style={{
+                                                                    fontSize: '20px',
+                                                                    color: '#4a6bff'
+                                                                }}></i>
+                                                            </div>
+                                                            <span style={{
+                                                                fontWeight: '500',
+                                                                fontSize: '13px',
+                                                                color: isDarkMode ? '#e9ecef' : '#495057'
+                                                            }}>Partage de fichiers</span>
                                                         </div>
                                                     </div>
-                                                    <div className="welcome-chat-action">
-                                                        <button className="btn btn-primary" onClick={() => setActiveTab('contacts')}>
-                                                            <i className="ri-user-add-line me-1"></i>
+                                                    <div className="welcome-chat-action" style={{
+                                                        marginTop: '20px'
+                                                    }}>
+                                                        <button className="btn btn-primary"
+                                                                onClick={() => setActiveTab('contacts')}
+                                                                style={{
+                                                                    padding: '8px 16px',
+                                                                    fontSize: '14px',
+                                                                    borderRadius: '6px',
+                                                                    backgroundColor: '#4a6bff',
+                                                                    border: 'none',
+                                                                    boxShadow: '0 3px 6px rgba(74, 107, 255, 0.2)',
+                                                                    transition: 'all 0.2s ease',
+                                                                    fontWeight: '500'
+                                                                }}
+                                                                onMouseOver={(e) => {
+                                                                    e.currentTarget.style.backgroundColor = '#3a5bff';
+                                                                    e.currentTarget.style.transform = 'translateY(-2px)';
+                                                                    e.currentTarget.style.boxShadow = '0 5px 10px rgba(74, 107, 255, 0.3)';
+                                                                }}
+                                                                onMouseOut={(e) => {
+                                                                    e.currentTarget.style.backgroundColor = '#4a6bff';
+                                                                    e.currentTarget.style.transform = 'translateY(0)';
+                                                                    e.currentTarget.style.boxShadow = '0 3px 6px rgba(74, 107, 255, 0.2)';
+                                                                }}>
+                                                            <i className="ri-user-add-line me-1" style={{ fontSize: '14px' }}></i>
                                                             Nouvelle conversation
                                                         </button>
                                                     </div>
