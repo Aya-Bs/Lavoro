@@ -12,6 +12,26 @@ const TeamDetailsPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const swiperRef = useRef(null);
+  const [isTeamManager, setIsTeamManager] = useState(false);
+
+useEffect(() => {
+  const fetchUserRole = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) return;
+
+      const response = await axios.get("http://localhost:3000/users/me", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      setIsTeamManager(response.data?.role?.RoleName === 'Team Manager');
+    } catch (err) {
+      console.error("Error fetching user info:", err);
+    }
+  };
+
+  fetchUserRole();
+}, []);
 
   // Initialize Swiper for team members
   useEffect(() => {
@@ -105,7 +125,7 @@ const TeamDetailsPage = () => {
       </div>
     );
   }
-  
+
   const handleDeleteTeam = async () => {
     try {
       const result = await Swal.fire({
@@ -117,13 +137,13 @@ const TeamDetailsPage = () => {
         cancelButtonColor: '#d33',
         confirmButtonText: 'Yes, delete it!'
       });
-  
+
       if (result.isConfirmed) {
         const response = await axios.delete(
             `http://localhost:3000/teams/deleteTeam/${id}`,
-            { withCredentials: true } 
+            { withCredentials: true }
           );
-  
+
         await Swal.fire('Deleted!', 'Team deleted successfully.', 'success');
         navigate('/teamsList');
       }
@@ -144,9 +164,9 @@ const TeamDetailsPage = () => {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         }
       });
-  
+
       const team = teamResponse.data.data;
-      
+
       // Check project status
       if (team.project_id?.status === 'In Progress') {
         await Swal.fire({
@@ -156,7 +176,7 @@ const TeamDetailsPage = () => {
         });
         return;
       }
-  
+
       // Proceed with confirmation
       const result = await Swal.fire({
         title: 'Archive Team?',
@@ -167,7 +187,7 @@ const TeamDetailsPage = () => {
         cancelButtonColor: '#d33',
         confirmButtonText: 'Yes, archive it!'
       });
-  
+
       if (result.isConfirmed) {
         const response = await axios.post(
           `http://localhost:3000/teams/archive/${id}`,
@@ -178,7 +198,7 @@ const TeamDetailsPage = () => {
             }
           }
         );
-  
+
         if (response.status === 200) {
           await Swal.fire('Archived!', 'Team archived successfully.', 'success');
           navigate('/teams/teamArchive');
@@ -210,6 +230,8 @@ const TeamDetailsPage = () => {
                     Teams
                   </a>
                 </li>
+                <span className="mx-1">→</span>
+
                 <li className="breadcrumb-item active" aria-current="page">
                   Team Details
                 </li>
@@ -217,14 +239,7 @@ const TeamDetailsPage = () => {
             </nav>
             <h1 className="page-title fw-medium fs-18 mb-0">Team Details</h1>
           </div>
-          <div className="btn-list">
-            <button className="btn btn-white btn-wave">
-              <i className="ri-filter-3-line align-middle me-1 lh-1"></i> Filter
-            </button>
-            <button className="btn btn-primary btn-wave me-0">
-              <i className="ri-share-forward-line me-1"></i> Share
-            </button>
-          </div>
+
         </div>
         {/* Page Header Close */}
 
@@ -263,9 +278,13 @@ const TeamDetailsPage = () => {
                                 overflow: 'visible'
                                 }}>
                               <img
-                                src="/assets/images/team.png"
+                                src= "/assets/images/team.png"
                                 alt={`${team.manager_id?.firstName} ${team.manager_id?.lastName}`}
                                 className="rounded-circle"
+                                onError={(e) => {
+                                  e.target.onerror = null;
+                                  e.target.src = "https://via.placeholder.com/50?text=Team";
+                                }}
                               />
                             </span>
                           </div>
@@ -276,41 +295,34 @@ const TeamDetailsPage = () => {
                               </a>
                             </h5>
                             <a href="#" className="fs-12 text-muted" onClick={(e) => e.preventDefault()}>
-                              <i className="bi bi-building me-1"></i>
+                              <i className="ri-building-line me-1"></i>
                               {team.project_id?.name || 'No project assigned'}
                             </a>
                             <div className="d-flex mt-3">
                               <div>
                                 <p className="mb-1">
-                                  <i className="bi bi-people me-1"></i>
+                                  <i className="ri-team-line me-1"></i>
                                   {team.members?.length || 0} Members
                                 </p>
                                 <p>
-                                  <i className="bi bi-person-check me-1"></i>
+                                  <i className="ri-user-star-line me-1"></i>
                                   Manager: {team.manager_id?.firstName} {team.manager_id?.lastName}
                                 </p>
                               </div>
-                                
+
                             </div>
                             <div className="popular-tags">
                   <span className={`badge rounded-pill ${team.status === 'Active' ? 'bg-success-transparent' : 'bg-secondary-transparent'}`}>
-                    <i className="bi bi-circle-fill me-1"></i> {team.status}
+                    <i className="ri-checkbox-blank-circle-fill me-1"></i> {team.status}
                   </span>
-                  
-                  
+
+
                 </div>
                           </div>
                         </div>
                       </div>
                       <div className="text-end ms-auto">
-                        <button
-                          className="rounded-pill btn btn-icon btn-primary-light btn-wave btn-sm"
-                          data-bs-toggle="tooltip"
-                          data-bs-placement="top"
-                          title="Save"
-                        >
-                          <i className="ri-bookmark-line"></i>
-                        </button>
+
                         <div className="d-flex gap-2 flex-wrap mt-3 justify-content-end">
                           <button
                             className="btn mb-0 btn-primary"
@@ -318,7 +330,7 @@ const TeamDetailsPage = () => {
                           >
                             Edit Team
                           </button>
-                          <button 
+                          <button
                             className="btn mb-0 btn-icon btn-danger-light btn-wave"
                             onClick={handleDeleteTeam}
                             data-bs-toggle="tooltip"
@@ -327,11 +339,9 @@ const TeamDetailsPage = () => {
                             >
                             <i className="ri-delete-bin-line"></i>
                             </button>
-                          <button className="btn mb-0 btn-icon btn-primary2-light btn-wave me-0">
-                            <i className="ri-share-line"></i>
-                          </button>
+
                         </div>
-                        
+
                       </div>
                     </div>
                   </div>
@@ -347,7 +357,7 @@ const TeamDetailsPage = () => {
                   {team.description || 'No description available for this team.'}
                 </p>
                 <div className="popular-tags">
-                  
+
                   {team.tags?.map((tag, index) => (
                     <span key={index} className="badge rounded-pill bg-primary-transparent me-1">
                       {tag}
@@ -356,12 +366,12 @@ const TeamDetailsPage = () => {
                 </div>
                 <div className="mt-3">
                   <p className="mb-1">
-                    <i className="bi bi-calendar-event me-1"></i>
+                    <i className="ri-calendar-event-line me-1"></i>
                     Created: {new Date(team.created_at).toLocaleDateString()}
                   </p>
                   <p>
-                    <i className="bi bi-arrow-repeat me-1"></i>
-                    Last Updated: {new Date(team.updated_at).toLocaleDateString()}
+                  <i className="ri-calendar-event-line me-1"></i>
+                  Last Updated: {new Date(team.updated_at).toLocaleDateString()}
                   </p>
                 </div>
               </div>
@@ -487,43 +497,7 @@ const TeamDetailsPage = () => {
               </div>
             </div>
 
-            <div className="card custom-card">
-              <div className="card-header">
-                <div className="card-title">Team Statistics</div>
-              </div>
-              <div className="card-body">
-                <div className="mb-3">
-                  <div className="d-flex justify-content-between mb-2">
-                    <span className="text-muted">Capacity</span>
-                    <span className="fw-medium">{team.capacity || 0} hrs/week</span>
-                  </div>
-                  <div className="progress progress-sm">
-                    <div
-                      className="progress-bar bg-primary"
-                      style={{ width: `${Math.min(team.capacity || 0, 100)}%` }}
-                    ></div>
-                  </div>
-                </div>
-                <div className="mb-3">
-                  <div className="d-flex justify-content-between mb-2">
-                    <span className="text-muted">Active Tasks</span>
-                    <span className="fw-medium">12</span>
-                  </div>
-                  <div className="progress progress-sm">
-                    <div className="progress-bar bg-warning" style={{ width: '60%' }}></div>
-                  </div>
-                </div>
-                <div className="mb-0">
-                  <div className="d-flex justify-content-between mb-2">
-                    <span className="text-muted">Completed Tasks</span>
-                    <span className="fw-medium">24</span>
-                  </div>
-                  <div className="progress progress-sm">
-                    <div className="progress-bar bg-success" style={{ width: '80%' }}></div>
-                  </div>
-                </div>
-              </div>
-            </div>
+
             <div className="card custom-card">
                 <TeamHistoryTimeline />
             </div>
@@ -538,16 +512,13 @@ const TeamDetailsPage = () => {
                 </button>
                 <button
                   className="btn btn-outline-secondary btn-wave w-100 mb-2"
-                  onClick={() => navigate(`/overviewPro/${team.project_id?._id || ''}`)}
+                  onClick={() => navigate(`/overviewPro/${team.project_id?._id || ''}`, {
+                    state: { isTeamManager: true } // Assuming team managers view from here
+                  })}
                 >
                   <i className="ri-briefcase-line me-2"></i> View Project
                 </button>
-                <button
-                  className="btn btn-outline-info btn-wave w-100 mb-2"
-                  onClick={() => navigate(`/teams/${team._id}/tasks`)}
-                >
-                  <i className="ri-task-line me-2"></i> View Tasks
-                </button>
+
                 <button
                   className="btn btn-outline-danger btn-wave w-100"
                   onClick={handleArchiveTeam}

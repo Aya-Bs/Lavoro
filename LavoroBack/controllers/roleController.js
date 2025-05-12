@@ -54,3 +54,27 @@ exports.deleteRole = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
+// Get a role by name
+exports.getRoleByName = async (req, res) => {
+  try {
+    const roleName = req.params.name;
+    const role = await Role.findOne({ RoleName: roleName });
+
+    if (!role) {
+      return res.status(404).json({
+        success: false,
+        message: `Role with name "${roleName}" not found`
+      });
+    }
+
+    res.status(200).json(role);
+  } catch (error) {
+    console.error('Error fetching role by name:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching role',
+      error: error.message
+    });
+  }
+};

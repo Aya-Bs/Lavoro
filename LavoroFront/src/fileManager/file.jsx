@@ -45,7 +45,7 @@ const File = () => {
         setUser(userResponse.data);
 
         // Fetch files based on current folder
-        const filesEndpoint = currentFolder 
+        const filesEndpoint = currentFolder
           ? `http://localhost:3000/files/folders/${currentFolder}`
           : "http://localhost:3000/files/shared";
 
@@ -74,7 +74,7 @@ const File = () => {
 
         const usersArray = usersResponse.data.data;
         setAllUsers(usersArray.filter(u => u._id !== userResponse.data._id));
-        
+
       } catch (err) {
         console.error("Error fetching data:", err);
         if (err.response?.status === 401) {
@@ -96,27 +96,27 @@ const File = () => {
                 `http://localhost:3000/files/${fileId}`,
                 { headers: { Authorization: `Bearer ${token}` } }
             );
-            
+
             // Refresh the files list
             const filesResponse = await axios.get(
-                currentFolder 
+                currentFolder
                     ? `http://localhost:3000/files/folders/${currentFolder}`
                     : "http://localhost:3000/files/shared",
                 { headers: { Authorization: `Bearer ${token}` } }
             );
-            
+
             if (currentFolder) {
                 setFiles(filesResponse.data.files || []);
             } else {
                 setFiles(filesResponse.data.ownedFiles || []);
                 setSharedFiles(filesResponse.data.sharedFiles || []);
             }
-            
+
         } catch (err) {
             console.error("Error deleting file:", err);
             alert('Failed to delete file');
         }
-    
+
 };
 
   // Fetch folder contents when a folder is clicked
@@ -127,12 +127,12 @@ const File = () => {
         `http://localhost:3000/files/folders/${folderId}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      
+
       setCurrentFolder(folderId);
       setFiles(response.data.files || []);
       setFolders(response.data.folder?.sub_folders || []);
       setActiveTab('all'); // Switch to all files view when entering a folder
-      
+
     } catch (err) {
       console.error("Error fetching folder contents:", err);
       alert('Failed to load folder contents');
@@ -146,7 +146,7 @@ const File = () => {
 
     const formData = new FormData();
     formData.append('file', file);
-    
+
     // Include current folder in upload if set
     if (currentFolder) {
       formData.append('folder_id', currentFolder);
@@ -155,8 +155,8 @@ const File = () => {
     try {
       const token = localStorage.getItem('token');
       const response = await axios.post(
-        "http://localhost:3000/files/upload", 
-        formData, 
+        "http://localhost:3000/files/upload",
+        formData,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -186,7 +186,7 @@ const File = () => {
         const url = window.URL.createObjectURL(new Blob([response.data]));
         const link = document.createElement('a');
         link.href = url;
-        
+
         // Extract filename from content-disposition header if available
         let filename = 'download';
         const contentDisposition = response.headers['content-disposition'];
@@ -196,7 +196,7 @@ const File = () => {
                 filename = filenameMatch[1];
             }
         }
-        
+
         link.setAttribute('download', filename);
         document.body.appendChild(link);
         link.click();
@@ -207,52 +207,24 @@ const File = () => {
     }
 };
 
-//   const handleDownload = async (fileId) => {
-//     try {
-//       const token = localStorage.getItem('token');
-//       const response = await axios.get(
-//         `http://localhost:3000/files/file/${fileId}?download=true`
-// ,
-//         {
-//           headers: { Authorization: `Bearer ${token}` },
-//           responseType: 'blob', // Important for binary data
-//         }
-//       );
-  
-//       // Create a URL and simulate download
-//       const url = window.URL.createObjectURL(new Blob([response.data]));
-//       const link = document.createElement('a');
-//       link.href = url;
-//       link.setAttribute('download', 'filename.ext'); // You might want to extract the name dynamically
-//       document.body.appendChild(link);
-//       link.click();
-//       document.body.removeChild(link);
-  
-//     } catch (err) {
-//       console.error("Error downloading file:", err);
-//       alert('Failed to download file');
-//     }
-//   };
-  
 
-  // Handle file sharing
   const handleShare = async () => {
     try {
       const token = localStorage.getItem('token');
       await axios.post(
         `http://localhost:3000/files/share/${shareFileId}`,
-        { 
+        {
           userIds: usersToShare,
           permission,
-          makePublic 
+          makePublic
         },
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      
+
       setShowShareModal(false);
       setUsersToShare([]);
       setMakePublic(false);
-      
+
       // Refresh files list
       const filesResponse = await axios.get("http://localhost:3000/files/shared", {
         headers: { Authorization: `Bearer ${token}` }
@@ -267,9 +239,9 @@ const File = () => {
 
   // Toggle user selection for sharing
   const toggleUserSelection = (userId) => {
-    setUsersToShare(prev => 
-      prev.includes(userId) 
-        ? prev.filter(id => id !== userId) 
+    setUsersToShare(prev =>
+      prev.includes(userId)
+        ? prev.filter(id => id !== userId)
         : [...prev, userId]
     );
   };
@@ -290,25 +262,25 @@ const File = () => {
 
       const response = await axios.post(
         "http://localhost:3000/files/folders/create",
-        { 
+        {
           name: newFolderName,
-          parentFolder: currentFolder 
+          parentFolder: currentFolder
         },
-        { 
-          headers: { 
+        {
+          headers: {
             Authorization: `Bearer ${token}`,
             'Content-Type': 'application/json'
-          } 
+          }
         }
       );
-      
+
       if (response.data.success) {
         // Refresh folders list
         const foldersResponse = await axios.get("http://localhost:3000/files/folders", {
           headers: { Authorization: `Bearer ${token}` }
         });
         setFolders(foldersResponse.data.folders);
-        
+
         setNewFolderName('');
         // Close modal
         document.getElementById('create-folder').classList.remove('show');
@@ -333,25 +305,34 @@ const File = () => {
       if (response.data.success) {
         // Refresh files list
         const filesResponse = await axios.get(
-          currentFolder 
+          currentFolder
             ? `http://localhost:3000/files/folders/${currentFolder}`
             : "http://localhost:3000/files/shared",
           { headers: { Authorization: `Bearer ${token}` } }
         );
-        
+
         if (currentFolder) {
           setFiles(filesResponse.data.files || []);
         } else {
           setFiles(filesResponse.data.ownedFiles || []);
           setSharedFiles(filesResponse.data.sharedFiles || []);
         }
-        
+
         setShowMoveModal(false);
       }
     } catch (err) {
       console.error("Error moving file:", err);
       alert('Failed to move file');
     }
+  };
+
+  // Open share modal
+  const openShareModal = (fileId) => {
+    setShareFileId(fileId);
+    setUsersToShare([]);
+    setMakePublic(false);
+    setPermission('view');
+    setShowShareModal(true);
   };
 
   // Open move file modal
@@ -363,7 +344,7 @@ const File = () => {
   // Get current files based on active tab and current folder
   const getCurrentFiles = () => {
     let result = [];
-    
+
     if (activeTab === 'all') {
       result = [...files, ...sharedFiles];
     } else if (activeTab === 'owned') {
@@ -376,7 +357,7 @@ const File = () => {
 
     // Filter by search term if set
     if (searchTerm) {
-      result = result.filter(file => 
+      result = result.filter(file =>
         file.file_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         file.file_type.toLowerCase().includes(searchTerm.toLowerCase())
       );
@@ -441,17 +422,17 @@ const File = () => {
   // Navigate back to parent folder
   const navigateToParentFolder = async () => {
     if (!currentFolder) return;
-    
+
     try {
       const token = localStorage.getItem('token');
       const folderResponse = await axios.get(
         `http://localhost:3000/files/folders/${currentFolder}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      
+
       const parentFolder = folderResponse.data.folder?.parent_folder;
       setCurrentFolder(parentFolder || null);
-      
+
       if (parentFolder) {
         const parentResponse = await axios.get(
           `http://localhost:3000/files/folders/${parentFolder}`,
@@ -467,7 +448,7 @@ const File = () => {
         );
         setFiles(filesResponse.data.ownedFiles || []);
         setSharedFiles(filesResponse.data.sharedFiles || []);
-        
+
         const foldersResponse = await axios.get(
           "http://localhost:3000/files/folders",
           { headers: { Authorization: `Bearer ${token}` } }
@@ -507,6 +488,7 @@ const File = () => {
                 <li className="breadcrumb-item">
                   <a href="javascript:void(0);">Pages</a>
                 </li>
+                <span className="mx-1">→</span>
                 <li className="breadcrumb-item active" aria-current="page">
                   File Manager
                 </li>
@@ -514,14 +496,7 @@ const File = () => {
             </nav>
             <h1 className="page-title fw-medium fs-18 mb-0">File Manager</h1>
           </div>
-          <div className="btn-list">
-            <button className="btn btn-white btn-wave">
-              <i className="ri-filter-3-line align-middle me-1 lh-1" /> Filter
-            </button>
-            <button className="btn btn-primary btn-wave me-0">
-              <i className="ri-share-forward-line me-1" /> Share
-            </button>
-          </div>
+          
         </div>
 
         {/* Main Content */}
@@ -658,7 +633,7 @@ const File = () => {
                   {/* Folder Navigation Breadcrumb */}
                   <div className="d-flex p-3 align-items-center border-bottom">
                     {currentFolder && (
-                      <button 
+                      <button
                         className="btn btn-sm btn-outline-secondary me-2"
                         onClick={navigateToParentFolder}
                       >
@@ -666,8 +641,8 @@ const File = () => {
                       </button>
                     )}
                     <div className="breadcrumb mb-0">
-                      <span 
-                        className="breadcrumb-item" 
+                      <span
+                        className="breadcrumb-item"
                         style={{ cursor: 'pointer' }}
                         onClick={() => {
                           setCurrentFolder(null);
@@ -709,7 +684,7 @@ const File = () => {
                           <i className="ri-search-line" />
                         </button>
                       </div>
-                      <button 
+                      <button
                         className="btn btn-sm btn-light"
                         onClick={() => currentFolder ? fetchFolderContents(currentFolder) : window.location.reload()}
                       >
@@ -727,7 +702,7 @@ const File = () => {
                       )}
                     </div>
                   </div>
-                  
+
                   {/* Quick Access Folders (shown when not in Folders tab) */}
                   {activeTab !== 'folders' && (
                     <div className="p-3 file-folders-container">
@@ -744,7 +719,7 @@ const File = () => {
                       <div className="row mb-3">
                         {/* Images Folder */}
                         <div className="col-xxl-4 col-xl-6 col-lg-6 col-md-6">
-                          <div 
+                          <div
                             className="card custom-card shadow-none border"
                             onClick={() => openCategoryModal('image')}
                             style={{ cursor: 'pointer' }}
@@ -764,7 +739,7 @@ const File = () => {
                                   </a>
                                   <span className="fs-12 text-muted">
                                     {Math.round(
-                                      currentFiles.filter(f => f.file_type === 'image').length / 
+                                      currentFiles.filter(f => f.file_type === 'image').length /
                                       (totalFiles || 1) * 100
                                     )}% Used
                                   </span>
@@ -784,10 +759,10 @@ const File = () => {
                             </div>
                           </div>
                         </div>
-                        
+
                         {/* Videos Folder */}
                         <div className="col-xxl-4 col-xl-6 col-lg-6 col-md-6">
-                          <div 
+                          <div
                             className="card custom-card shadow-none border"
                             onClick={() => openCategoryModal('video')}
                             style={{ cursor: 'pointer' }}
@@ -807,7 +782,7 @@ const File = () => {
                                   </a>
                                   <span className="fs-12 text-muted">
                                     {Math.round(
-                                      currentFiles.filter(f => f.file_type === 'video').length / 
+                                      currentFiles.filter(f => f.file_type === 'video').length /
                                       (totalFiles || 1) * 100
                                     )}% Used
                                   </span>
@@ -827,10 +802,10 @@ const File = () => {
                             </div>
                           </div>
                         </div>
-                        
+
                         {/* Documents Folder */}
                         <div className="col-xxl-4 col-xl-6 col-lg-6 col-md-6">
-                          <div 
+                          <div
                             className="card custom-card shadow-none border"
                             onClick={() => openCategoryModal('document')}
                             style={{ cursor: 'pointer' }}
@@ -850,7 +825,7 @@ const File = () => {
                                   </a>
                                   <span className="fs-12 text-muted">
                                     {Math.round(
-                                      currentFiles.filter(f => f.file_type === 'document').length / 
+                                      currentFiles.filter(f => f.file_type === 'document').length /
                                       (totalFiles || 1) * 100
                                     )}% Used
                                   </span>
@@ -870,10 +845,10 @@ const File = () => {
                             </div>
                           </div>
                         </div>
-                        
+
                         {/* Audio Folder */}
                         <div className="col-xxl-4 col-xl-6 col-lg-6 col-md-6">
-                          <div 
+                          <div
                             className="card custom-card shadow-none border"
                             onClick={() => openCategoryModal('audio')}
                             style={{ cursor: 'pointer' }}
@@ -893,7 +868,7 @@ const File = () => {
                                   </a>
                                   <span className="fs-12 text-muted">
                                     {Math.round(
-                                      currentFiles.filter(f => f.file_type === 'audio').length / 
+                                      currentFiles.filter(f => f.file_type === 'audio').length /
                                       (totalFiles || 1) * 100
                                     )}% Used
                                   </span>
@@ -913,10 +888,10 @@ const File = () => {
                             </div>
                           </div>
                         </div>
-                        
+
                         {/* Archives Folder */}
                         <div className="col-xxl-4 col-xl-6 col-lg-6 col-md-6">
-                          <div 
+                          <div
                             className="card custom-card shadow-none border"
                             onClick={() => openCategoryModal('archive')}
                             style={{ cursor: 'pointer' }}
@@ -936,7 +911,7 @@ const File = () => {
                                   </a>
                                   <span className="fs-12 text-muted">
                                     {Math.round(
-                                      currentFiles.filter(f => f.file_type === 'archive').length / 
+                                      currentFiles.filter(f => f.file_type === 'archive').length /
                                       (totalFiles || 1) * 100
                                     )}% Used
                                   </span>
@@ -959,7 +934,7 @@ const File = () => {
 
                         {/* Folders Card */}
                         <div className="col-xxl-4 col-xl-6 col-lg-6 col-md-6">
-                          <div 
+                          <div
                             className="card custom-card shadow-none border"
                             onClick={() => setActiveTab('folders')}
                             style={{ cursor: 'pointer' }}
@@ -979,7 +954,7 @@ const File = () => {
                                   </a>
                                   <span className="fs-12 text-muted">
                                     {Math.round(
-                                      folders.length / 
+                                      folders.length /
                                       (folders.length + files.length + sharedFiles.length || 1) * 100
                                     )}% Used
                                   </span>
@@ -1001,22 +976,22 @@ const File = () => {
                       </div>
                     </div>
                   )}
-                  
+
                   {/* Folders List (shown when Folders tab is active) */}
                   {activeTab === 'folders' && (
                     <div className="p-3">
                       <div className="row">
                         {folders
-                          .filter(folder => 
-                            (!currentFolder && !folder.parent_folder) || 
+                          .filter(folder =>
+                            (!currentFolder && !folder.parent_folder) ||
                             (currentFolder && folder.parent_folder === currentFolder)
                           )
-                          .filter(folder => 
+                          .filter(folder =>
                             folder.name.toLowerCase().includes(searchTerm.toLowerCase())
                           )
                           .map(folder => (
                             <div className="col-xxl-4 col-xl-6 col-lg-6 col-md-6" key={folder._id}>
-                              <div 
+                              <div
                                 className="card custom-card shadow-none border folder-card"
                                 onClick={() => fetchFolderContents(folder._id)}
                                 style={{ cursor: 'pointer' }}
@@ -1047,7 +1022,7 @@ const File = () => {
                       </div>
                     </div>
                   )}
-                  
+
                   {/* Files List (shown when not in Folders tab) */}
                   {activeTab !== 'folders' && (
                     <div className="p-3">
@@ -1085,7 +1060,7 @@ const File = () => {
                                   <td>{new Date(file.uploaded_at).toLocaleDateString()}</td>
                                   <td>
                                     <div className="hstack gap-2 fs-15">
-                                      <button 
+                                      <button
                                         className="btn btn-icon btn-sm btn-primary2-light"
                                         onClick={() => handleDownload(file._id)}
                                       >
@@ -1093,13 +1068,13 @@ const File = () => {
                                       </button>
                                       {activeTab !== 'shared' && (
                                         <>
-                                          <button 
+                                          <button
                                             className="btn btn-icon btn-sm btn-primary-light"
                                             onClick={() => openShareModal(file._id)}
                                           >
                                             <i className="ri-share-forward-line" />
                                           </button>
-                                          <button 
+                                          <button
                                             className="btn btn-icon btn-sm btn-warning-light"
                                             onClick={() => openMoveModal(file._id)}
                                           >
@@ -1107,7 +1082,7 @@ const File = () => {
                                           </button>
                                         </>
                                       )}
-                                      <button 
+                                      <button
     className="btn btn-icon btn-sm btn-danger-light"
     onClick={() => handleDelete(file._id)}
 >
@@ -1169,7 +1144,7 @@ const File = () => {
                     const typeFiles = currentFiles.filter(f => f.file_type === type);
                     const totalSize = typeFiles.reduce((acc, file) => acc + file.file_size, 0);
                     const percentage = totalFiles > 0 ? (typeFiles.length / totalFiles * 100).toFixed(0) : 0;
-                    
+
                     return (
                       <li className="list-group-item" key={type}>
                         <div className="d-flex align-items-center gap-3">
@@ -1305,10 +1280,10 @@ const File = () => {
                       ))}
                     </div>
                   </div>
-                  
+
                   <div className="mb-3">
                     <label className="form-label">Permission:</label>
-                    <select 
+                    <select
                       className="form-select"
                       value={permission}
                       onChange={(e) => setPermission(e.target.value)}
@@ -1354,7 +1329,7 @@ const File = () => {
                 </div>
                 <div className="modal-body">
                   <div className="list-group" style={{ maxHeight: '300px', overflowY: 'auto' }}>
-                    <div 
+                    <div
                       className="list-group-item list-group-item-action"
                       onClick={() => handleMoveFile(fileToMove, null)}
                     >
@@ -1368,7 +1343,7 @@ const File = () => {
                       </div>
                     </div>
                     {folders.map(folder => (
-                      <div 
+                      <div
                         key={folder._id}
                         className="list-group-item list-group-item-action"
                         onClick={() => handleMoveFile(fileToMove, folder._id)}
@@ -1446,14 +1421,14 @@ const File = () => {
                             <td>{new Date(file.uploaded_at).toLocaleDateString()}</td>
                             <td>
                               <div className="hstack gap-2 fs-15">
-                                <button 
+                                <button
                                   className="btn btn-icon btn-sm btn-primary2-light"
                                   onClick={() => handleDownload(file._id)}
                                 >
                                   <i className="ri-download-line" />
                                 </button>
                                 {activeTab !== 'shared' && (
-                                  <button 
+                                  <button
                                     className="btn btn-icon btn-sm btn-primary-light"
                                     onClick={() => openShareModal(file._id)}
                                   >
@@ -1503,8 +1478,8 @@ const File = () => {
                       </button>
                       <ul className="dropdown-menu">
                         <li>
-                          <button 
-                            className="dropdown-item" 
+                          <button
+                            className="dropdown-item"
                             onClick={() => {
                               setShowShareModal(true);
                               setShareFileId(fileDetails._id);
@@ -1630,8 +1605,8 @@ const File = () => {
               </button>
               <ul className="dropdown-menu">
                 <li>
-                  <button 
-                    className="dropdown-item" 
+                  <button
+                    className="dropdown-item"
                     onClick={() => {
                       setShowShareModal(true);
                       setShareFileId(fileDetails._id);
@@ -1647,8 +1622,8 @@ const File = () => {
                   </button>
                 </li>
                 <li>
-                  <button 
-                    className="dropdown-item text-danger" 
+                  <button
+                    className="dropdown-item text-danger"
                     onClick={() => {
                       handleDelete(fileDetails._id);
                       setShowFileDetails(false);
@@ -1668,14 +1643,14 @@ const File = () => {
             </button>
           </div>
         </div>
-        
+
         <div className="filemanager-file-details" id="filemanager-file-details">
           {/* File Preview Section */}
           <div className="p-3 border-bottom border-block-end-dashed" style={{ maxHeight: '400px', overflow: 'auto' }}>
             {fileDetails.file_type === 'image' && (
               <div className="text-center">
-                <img 
-                  src={fileDetails.file_url} 
+                <img
+                  src={fileDetails.file_url}
                   alt={fileDetails.file_name}
                   className="img-fluid rounded"
                   style={{ maxHeight: '350px' }}
@@ -1685,7 +1660,7 @@ const File = () => {
                 />
               </div>
             )}
-            
+
             {fileDetails.file_type === 'video' && (
               <div className="ratio ratio-16x9">
                 <video controls className="rounded">
@@ -1694,7 +1669,7 @@ const File = () => {
                 </video>
               </div>
             )}
-            
+
             {fileDetails.file_type === 'audio' && (
               <div className="text-center">
                 <div className="mb-3">
@@ -1706,13 +1681,13 @@ const File = () => {
                 </audio>
               </div>
             )}
-            
+
             {fileDetails.file_type === 'document' && (
               <div className="text-center">
                 {['pdf'].includes(fileDetails.file_extension) ? (
-                  <iframe 
+                  <iframe
                     src={`https://docs.google.com/viewer?url=${encodeURIComponent(fileDetails.file_url)}&embedded=true`}
-                    className="w-100" 
+                    className="w-100"
                     style={{ height: '350px', border: 'none' }}
                     title={fileDetails.file_name}
                   ></iframe>
@@ -1720,7 +1695,7 @@ const File = () => {
                   <div className="d-flex flex-column align-items-center justify-content-center" style={{ height: '200px' }}>
                     <i className="ri-file-text-line fs-1 text-muted"></i>
                     <p className="mt-2">Preview not available for this document type</p>
-                    <button 
+                    <button
                       className="btn btn-primary mt-2"
                       onClick={() => handleDownload(fileDetails._id)}
                     >
@@ -1730,14 +1705,14 @@ const File = () => {
                 )}
               </div>
             )}
-            
+
             {!['image', 'video', 'audio', 'document'].includes(fileDetails.file_type) && (
               <div className="text-center py-4">
                 <div className="avatar avatar-xxl">
                   {getFileIcon(fileDetails.file_type)}
                 </div>
                 <p className="mt-2">No preview available for this file type</p>
-                <button 
+                <button
                   className="btn btn-primary mt-2"
                   onClick={() => handleDownload(fileDetails._id)}
                 >
@@ -1746,37 +1721,37 @@ const File = () => {
               </div>
             )}
           </div>
-          
+
           {/* File Info Section */}
           <div className="p-3">
             <h6 className="fw-semibold mb-3">{fileDetails.file_name}</h6>
-            
+
             <div className="row">
               <div className="col-md-6">
                 <div className="mb-3">
                   <p className="mb-1 text-muted">Type</p>
                   <p className="fw-medium">{fileDetails.file_type}</p>
                 </div>
-                
+
                 <div className="mb-3">
                   <p className="mb-1 text-muted">Size</p>
                   <p className="fw-medium">{formatFileSize(fileDetails.file_size)}</p>
                 </div>
               </div>
-              
+
               <div className="col-md-6">
                 <div className="mb-3">
                   <p className="mb-1 text-muted">Uploaded</p>
                   <p className="fw-medium">{new Date(fileDetails.uploaded_at).toLocaleDateString()}</p>
                 </div>
-                
+
                 <div className="mb-3">
                   <p className="mb-1 text-muted">Format</p>
                   <p className="fw-medium text-uppercase">{fileDetails.file_extension}</p>
                 </div>
               </div>
             </div>
-            
+
             <div className="mb-3">
               <p className="mb-1 text-muted">Owner</p>
               <div className="d-flex align-items-center">
@@ -1804,7 +1779,7 @@ const File = () => {
                 </span>
               </div>
             </div>
-            
+
             {fileDetails.shared_with && fileDetails.shared_with.length > 0 && (
               <div className="mb-3">
                 <p className="mb-2 fw-medium">Shared With</p>
@@ -1843,9 +1818,9 @@ const File = () => {
                 </div>
               </div>
             )}
-            
+
             <div className="mt-4">
-              <button 
+              <button
                 className="btn btn-primary w-100"
                 onClick={() => handleDownload(fileDetails._id)}
               >

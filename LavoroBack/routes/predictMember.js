@@ -30,14 +30,14 @@ router.get("/predict-all", async (req, res) => {
                   select: 'name' // Assuming your Project model has a 'name' field
                 }
               });
-        
+
         if (!members.length) return res.status(404).send("No members found");
 
         // Step 2: Predict all members and handle potential undefined user
         const predictionResults = [];
         for (const member of members) {
             const prediction = await predictMember(member);
-            
+
             // Safely handle user details
             const userDetails = member.user_id ? {
                 name: `${member.user_id.firstName || ''} ${member.user_id.lastName || ''}`.trim(),
@@ -60,7 +60,7 @@ router.get("/predict-all", async (req, res) => {
         }
 
         // Step 3: Sort by performance_score (descending)
-        const sortedPredictions = predictionResults.sort((a, b) => 
+        const sortedPredictions = predictionResults.sort((a, b) =>
             b.predicted_score - a.predicted_score
         );
 
@@ -74,12 +74,12 @@ router.get("/predict-all", async (req, res) => {
     user_id: prediction.user_id,
     user_name: prediction.user_details.name,
     user_image: prediction.user_details.image,
-    team_name: prediction.team_id.name,
-    project_id: prediction.team_id.project_id?._id,
-    project_name: prediction.team_id.project_id?.name, 
+    team_name: prediction.team_id?.name,
+    project_id: prediction.team_id?.project_id?._id,
+    project_name: prediction.team_id?.project_id?.name,
 
-    experience_level: prediction.experience_level,  
-    total_tasks_completed: prediction.total_tasks_completed,  
+    experience_level: prediction.experience_level,
+    total_tasks_completed: prediction.total_tasks_completed,
     role: prediction.role,
     productivity: prediction.predicted_productivity,
     performance_score: prediction.predicted_score,
@@ -95,16 +95,17 @@ router.get("/predict-all", async (req, res) => {
         const topThree = sortedPredictions.slice(0, 3).map(prediction => ({
             predicted_score: prediction.predicted_score,
             predicted_productivity: prediction.predicted_productivity,
-            experience_level: prediction.experience_level, 
-    total_tasks_completed: prediction.total_tasks_completed, 
-    performance_score: prediction.performance_score, 
+            experience_level: prediction.experience_level,
+            total_tasks_completed: prediction.total_tasks_completed,
+            performance_score: prediction.performance_score,
             user: {
+                _id: prediction.user_id, // Include the user ID
                 name: prediction.user_details.name,
                 image: prediction.user_details.image
             },
-            team_name: prediction.team_id.name,
-            project_id: prediction.team_id.project_id._id,
-            project_name: prediction.team_id.project_id.name, // Now this will work
+            team_name: prediction.team_id?.name,
+            project_id: prediction.team_id?.project_id?._id,
+            project_name: prediction.team_id?.project_id?.name,
             rank: sortedPredictions.indexOf(prediction) + 1
         }));
 
@@ -139,7 +140,7 @@ function predictMember(member) {
         let output = "";
         python.stdout.on("data", (data) => output += data.toString());
         python.stderr.on("data", (data) => console.error(`stderr: ${data}`));
-        
+
         python.on("close", (code) => {
             if (code !== 0) return reject("Prediction failed");
             resolve(JSON.parse(output));
@@ -151,26 +152,114 @@ function predictMember(member) {
 router.get('/award/:userId', async (req, res) => {
     try {
       const userId = req.params.userId;
-      
+
       // Validate the userId is a valid MongoDB ObjectId
       if (!mongoose.Types.ObjectId.isValid(userId)) {
         return res.status(400).json({ error: 'Invalid user ID format' });
       }
-  
+
       const predictMember = await PredictMember.findOne({ user_id: userId })
         .select('-__v') // Exclude version key
         .lean(); // Convert to plain JavaScript object
-  
+
       if (!predictMember) {
         return res.status(404).json({ error: 'PredictMember data not found' });
       }
-  
+
       res.json(predictMember);
     } catch (error) {
       console.error('Error fetching predictMember:', error);
       res.status(500).json({ error: 'Server error while fetching predictMember data' });
     }
   });
+
+// New endpoint to award a badge to a user
+router.post('/award/:userId', async (req, res) => {
+  try {
+    const userId = req.params.userId;
+
+    // Validate the userId is a valid MongoDB ObjectId
+    if (!mongoose.Types.ObjectId.isValid(userId)) {
+      return res.status(400).json({ error: 'Invalid user ID format' });
+    }
+
+    // Find the user
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    // Find the predict member to get their rank
+    const predictMember = await PredictMember.findOne({ user_id: userId }).lean();
+    if (!predictMember) {
+      return res.status(404).json({ error: 'PredictMember data not found' });
+    }
+
+    // Check if the user already has a performance award
+    const existingAward = user.awards && user.awards.find(award =>
+      award.type === 'performance' && award.name === 'Top Performer'
+    );
+
+    if (existingAward) {
+      return res.status(400).json({
+        error: 'User already has this award',
+        award: existingAward
+      });
+    }
+
+    // Create the award based on rank
+    let awardDetails;
+    if (predictMember.rank === 1) {
+      awardDetails = {
+        type: 'performance',
+        name: 'Top Performer',
+        description: 'Awarded for being the #1 performer in the team',
+        icon: 'ri-trophy-line gold'
+      };
+    } else if (predictMember.rank === 2) {
+      awardDetails = {
+        type: 'performance',
+        name: 'Silver Performer',
+        description: 'Awarded for being the #2 performer in the team',
+        icon: 'ri-medal-line silver'
+      };
+    } else if (predictMember.rank === 3) {
+      awardDetails = {
+        type: 'performance',
+        name: 'Bronze Performer',
+        description: 'Awarded for being the #3 performer in the team',
+        icon: 'ri-award-line bronze'
+      };
+    } else {
+      awardDetails = {
+        type: 'recognition',
+        name: 'Team Contributor',
+        description: 'Recognized for valuable contributions to the team',
+        icon: 'ri-team-line'
+      };
+    }
+
+    // Add the award to the user
+    if (!user.awards) {
+      user.awards = [];
+    }
+    user.awards.push(awardDetails);
+    await user.save();
+
+    res.json({
+      message: 'Award added successfully',
+      award: awardDetails,
+      user: {
+        id: user._id,
+        name: `${user.firstName} ${user.lastName}`,
+        awards: user.awards
+      }
+    });
+  } catch (error) {
+    console.error('Error awarding badge:', error);
+    res.status(500).json({ error: 'Server error while awarding badge' });
+  }
+});
 
 
 router.get("/predict/:id", async (req, res) => {
@@ -222,3 +311,7 @@ router.get("/predict/:id", async (req, res) => {
 
 
 module.exports = router;
+
+
+
+

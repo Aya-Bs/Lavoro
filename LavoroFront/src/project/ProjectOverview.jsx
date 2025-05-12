@@ -327,7 +327,7 @@ const handleDelete = async (projectId) => {
   <i className="ri-play-line align-middle me-1 lh-1" /> Start Project
 </button>
 )}
-    {showAddTeamButton && (
+      {isTeamManager && showAddTeamButton && (
                 <button
                   className="btn btn-primary btn-wave"
                   onClick={handleAddTeam}

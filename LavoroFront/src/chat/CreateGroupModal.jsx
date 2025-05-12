@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import * as chatClient from './chatClient.js';
 
+// URL de base de l'API pour les images
+const API_URL = 'http://localhost:3000';
+
 const CreateGroupModal = ({ isOpen, onClose, onGroupCreated, currentUser, contacts }) => {
     const [groupName, setGroupName] = useState('');
     const [groupDescription, setGroupDescription] = useState('');
@@ -90,8 +93,33 @@ const CreateGroupModal = ({ isOpen, onClose, onGroupCreated, currentUser, contac
                 members: [...selectedContacts.map(c => c._id), currentUser._id] // Include current user
             };
 
+            console.log("Creating group with data:", groupData);
+            console.log("Group avatar:", groupAvatar ? {
+                name: groupAvatar.name,
+                type: groupAvatar.type,
+                size: groupAvatar.size
+            } : "No avatar");
+
             // Create group
             const newGroup = await chatClient.createGroup(groupData, groupAvatar);
+
+            console.log("New group created:", newGroup);
+            console.log("Group avatar path:", newGroup.avatar);
+
+            // Ensure the avatar path is properly formatted
+            if (newGroup && newGroup.avatar) {
+                console.log("Original avatar path:", newGroup.avatar);
+
+                // If the avatar path doesn't start with http or /, add the API_URL
+                if (!newGroup.avatar.startsWith('http') && !newGroup.avatar.startsWith('/')) {
+                    newGroup.avatar = `${API_URL}/${newGroup.avatar}`;
+                } else if (newGroup.avatar.startsWith('/')) {
+                    // If it starts with /, just add the API_URL
+                    newGroup.avatar = `${API_URL}${newGroup.avatar}`;
+                }
+
+                console.log("Formatted avatar path:", newGroup.avatar);
+            }
 
             // Notify parent component
             if (onGroupCreated) {
@@ -327,8 +355,18 @@ const CreateGroupModal = ({ isOpen, onClose, onGroupCreated, currentUser, contac
                                                     color: '#fff'
                                                 }}>
                                                     <img
-                                                        src={contact.profileImage || `https://ui-avatars.com/api/?name=${encodeURIComponent(contact.name)}&background=4a6bff&color=fff`}
-                                                        alt={contact.name}
+                                                        src={
+                                                            contact.profileImage
+                                                                ? (contact.profileImage.startsWith('http')
+                                                                    ? contact.profileImage
+                                                                    : `${API_URL}/${contact.profileImage.replace(/^\//, '')}`)
+                                                                : contact.image
+                                                                    ? (contact.image.startsWith('http')
+                                                                        ? contact.image
+                                                                        : `${API_URL}/${contact.image.replace(/^\//, '')}`)
+                                                                    : `https://ui-avatars.com/api/?name=${encodeURIComponent(contact.name || contact.firstName || 'User')}&background=4a6bff&color=fff`
+                                                        }
+                                                        alt={contact.name || `${contact.firstName || ''} ${contact.lastName || ''}`.trim() || 'Utilisateur'}
                                                         style={{
                                                             width: '24px',
                                                             height: '24px',
@@ -336,6 +374,11 @@ const CreateGroupModal = ({ isOpen, onClose, onGroupCreated, currentUser, contac
                                                             marginRight: '6px',
                                                             objectFit: 'cover',
                                                             border: '1px solid #2c3034'
+                                                        }}
+                                                        onError={(e) => {
+                                                            console.log("Image error for contact:", contact.name || contact.firstName);
+                                                            e.target.onerror = null;
+                                                            e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(contact.name || contact.firstName || 'User')}&background=4a6bff&color=fff`;
                                                         }}
                                                     />
                                                     <span style={{ color: '#fff' }}>{contact.name}</span>
@@ -432,8 +475,18 @@ const CreateGroupModal = ({ isOpen, onClose, onGroupCreated, currentUser, contac
                                                                 )}
                                                             </div>
                                                             <img
-                                                                src={contact.profileImage || `https://ui-avatars.com/api/?name=${encodeURIComponent(contact.name)}&background=4a6bff&color=fff`}
-                                                                alt={contact.name}
+                                                                src={
+                                                                    contact.profileImage
+                                                                        ? (contact.profileImage.startsWith('http')
+                                                                            ? contact.profileImage
+                                                                            : `${API_URL}/${contact.profileImage.replace(/^\//, '')}`)
+                                                                        : contact.image
+                                                                            ? (contact.image.startsWith('http')
+                                                                                ? contact.image
+                                                                                : `${API_URL}/${contact.image.replace(/^\//, '')}`)
+                                                                            : `https://ui-avatars.com/api/?name=${encodeURIComponent(contact.name || contact.firstName || 'User')}&background=4a6bff&color=fff`
+                                                                }
+                                                                alt={contact.name || `${contact.firstName || ''} ${contact.lastName || ''}`.trim() || 'Utilisateur'}
                                                                 style={{
                                                                     width: '24px',
                                                                     height: '24px',
@@ -441,6 +494,11 @@ const CreateGroupModal = ({ isOpen, onClose, onGroupCreated, currentUser, contac
                                                                     marginRight: '6px',
                                                                     objectFit: 'cover',
                                                                     border: '1px solid #2c3034'
+                                                                }}
+                                                                onError={(e) => {
+                                                                    console.log("Image error for contact:", contact.name || contact.firstName);
+                                                                    e.target.onerror = null;
+                                                                    e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(contact.name || contact.firstName || 'User')}&background=4a6bff&color=fff`;
                                                                 }}
                                                             />
                                                             <span style={{ fontSize: '14px', color: '#fff' }}>{contact.name}</span>

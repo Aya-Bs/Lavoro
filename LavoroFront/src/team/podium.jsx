@@ -13,7 +13,7 @@ const WinnersPodium = () => {
   const [predictMembers, setPredictMembers] = useState([])
   const [loading, setLoading] = useState(false)
   const [revealStage, setRevealStage] = useState(0) // Start directly at countdown
-  const [countdown, setCountdown] = useState(5) // Starting from 5
+  const [counter, setCounter] = useState(0) // Starting from 0 and counting up
   const [currentUserIndex, setCurrentUserIndex] = useState(0)
   const [activeView, setActiveView] = useState("winners") // "winners" or "participants"
   const [selectedMember, setSelectedMember] = useState(null)
@@ -53,7 +53,14 @@ const WinnersPodium = () => {
 
         // Fetch predictions
         const response = await axios.get("http://localhost:3000/predict/predict-all")
-        setPredictions(response.data.results) // Already sorted by backend
+        const results = response.data.results || [] // Already sorted by backend
+        setPredictions(results)
+
+        // If predictions are loaded and we have at least 3 entries, we can stop the countdown
+        if (results.length >= 3 && revealStage === 0) {
+          // We'll let the countdown useEffect handle the transition to reveal stage
+          console.log("Predictions loaded, preparing to reveal podium")
+        }
 
         // Fetch predict members
         const predictMembersResponse = await axios.get("http://localhost:3000/predict/all")
@@ -67,9 +74,9 @@ const WinnersPodium = () => {
     }
 
     fetchData()
-  }, [])
+  }, [revealStage])
 
-  
+
   // Cycle through user images during countdown
   useEffect(() => {
     if (revealStage === 0 && allUsers.length > 0 && activeView === "winners") {
@@ -80,18 +87,21 @@ const WinnersPodium = () => {
     }
   }, [revealStage, allUsers, activeView])
 
-  // Handle countdown and reveal sequence
+  // Handle counter and reveal sequence
   useEffect(() => {
     if (activeView !== "winners") return
 
-    if (revealStage === 0 && countdown > 0) {
-      // Countdown phase
+    // Check if predictions data is loaded and has at least 3 entries
+    const predictionsLoaded = predictions && predictions.length >= 3 && !loading
+
+    if (revealStage === 0 && !predictionsLoaded) {
+      // Continue counting up until predictions are loaded
       const timer = setTimeout(() => {
-        setCountdown(countdown - 1)
+        setCounter(prevCounter => prevCounter + 1)
       }, 1000)
       return () => clearTimeout(timer)
-    } else if (revealStage === 0 && countdown === 0) {
-      // Start reveal sequence with 3rd place
+    } else if (revealStage === 0 && predictionsLoaded) {
+      // Start reveal sequence with 3rd place when predictions are loaded
       const timer = setTimeout(() => {
         setRevealStage(1)
         playDrumrollSound()
@@ -110,7 +120,7 @@ const WinnersPodium = () => {
       }, 2500)
       return () => clearTimeout(timer)
     }
-  }, [revealStage, countdown, activeView])
+  }, [revealStage, counter, activeView, predictions, loading])
 
   // Confetti effect for 1st place
   const triggerConfetti = () => {
@@ -181,12 +191,30 @@ const WinnersPodium = () => {
     }
   };
 
-  const handleAwardClick = (userId) => {
-    // Only navigate if user has rank 1
-      state: { showAward: true }
+  const handleAwardClick = async (userId) => {
+    try {
+      console.log("Award button clicked with userId:", userId);
 
-      // You might want to pass the user ID if needed
-  
+      if (!userId) {
+        console.error("User ID is undefined or null");
+        alert("Cannot award prize: User ID is missing");
+        return;
+      }
+
+      // Call the API to award the badge to the user
+      const response = await axios.post(`http://localhost:3000/predict/award/${userId}`);
+
+ 
+    } catch (error) {
+      console.error('Error awarding badge:', error);
+      console.error('Error details:', error.response?.data);
+
+      // Show error message
+      if (error.response?.data?.error === 'User already has this award') {
+      } else {
+        alert(`Failed to award badge: ${error.response?.data?.error || error.message}`);
+      }
+    }
   };
 
   // Helper function to get image URL
@@ -227,25 +255,15 @@ const WinnersPodium = () => {
   const filteredPredictMembers = predictMembers.filter(
     (member) =>
       member.user_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      member.role?.toLowerCase().includes(searchTerm.toLowerCase()),
+      member.role.toLowerCase().includes(searchTerm.toLowerCase()),
   )
 
-  // Format date
-  const formatDate = (dateString) => {
-    const date = new Date(dateString)
-    return date.toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    })
-  }
+  // No longer needed, removed unused formatDate function
 
   // Reset podium
   const handleRestart = () => {
     setRevealStage(0)
-    setCountdown(5)
+    setCounter(0)
     setActiveView("winners")
   }
 
@@ -291,8 +309,8 @@ const WinnersPodium = () => {
                   </div>
                 </a>
               </li>
-              
-              
+
+
             </ul>
           </div>
         </div>
@@ -337,10 +355,10 @@ const WinnersPodium = () => {
                 {/* Light rays background */}
                 <div className="light-rays"></div>
 
-                {/* Countdown at the top */}
+                {/* Counter at the top */}
                 {revealStage === 0 && (
                   <div className="countdown-title">
-                    <div className="countdown-number">{countdown}</div>
+                    <div className="countdown-number">{counter}</div>
                   </div>
                 )}
 
@@ -471,13 +489,13 @@ const WinnersPodium = () => {
                         </div>
                         <div className="participant-info">
                           <h5 className="participant-name">{member.user_name}</h5>
-                          <div className="participant-role">{member.role}</div>
+                          <div className="participant-role">Developer</div>
                           <div className="participant-metrics">
                             <div className="metric">
                               <span className="metric-label">Performance:</span>
                               <span className="metric-value">{member.performance_score.toFixed(1)}</span>
                             </div>
-                          
+
                             <div className="metric">
                               <span className="metric-label">Rank:</span>
                               <span className="metric-value">{member.rank}</span>
@@ -488,7 +506,7 @@ const WinnersPodium = () => {
                           <button className="btn btn-sm btn-icon btn-primary" title="View Details">
                             <i className="ri-eye-line"></i>
                           </button>
-                         
+
                         </div>
                       </div>
                     ))
@@ -536,20 +554,20 @@ const WinnersPodium = () => {
 
                 <div className="winner-stats">
     <h6 className="mb-3">Performance Stats</h6>
-    
+
     {/* Experience Level */}
     <div className="mb-3">
         <div className="d-flex justify-content-between mb-1">
             <span>Experience Level</span>
             <span>
-                {predictions[0].experience_level === 1 ? "Junior" : 
+                {predictions[0].experience_level === 1 ? "Junior" :
                  predictions[0].experience_level === 2 ? "Mid" : "Senior"}
             </span>
         </div>
         <div className="progress" style={{ height: "6px" }}>
-            <div 
-                className="progress-bar bg-warning" 
-                style={{ width: `${predictions[0].experience_level * 33.33}%` }} 
+            <div
+                className="progress-bar bg-warning"
+                style={{ width: `${predictions[0].experience_level * 33.33}%` }}
             ></div>
         </div>
     </div>
@@ -561,9 +579,9 @@ const WinnersPodium = () => {
             <span>{predictions[0].total_tasks_completed}</span>
         </div>
         <div className="progress" style={{ height: "6px" }}>
-            <div 
-                className="progress-bar bg-primary" 
-                style={{ width: `${Math.min(predictions[0].total_tasks_completed, 100)}%` }} 
+            <div
+                className="progress-bar bg-primary"
+                style={{ width: `${Math.min(predictions[0].total_tasks_completed, 100)}%` }}
             ></div>
         </div>
     </div>
@@ -575,26 +593,26 @@ const WinnersPodium = () => {
             <span>{predictions[0].predicted_score.toFixed(1)}%</span>
         </div>
         <div className="progress" style={{ height: "6px" }}>
-            <div 
-                className="progress-bar bg-success" 
-                style={{ width: `${predictions[0].predicted_score.toFixed(1)}%` }} 
+            <div
+                className="progress-bar bg-success"
+                style={{ width: `${predictions[0].predicted_score.toFixed(1)}%` }}
             ></div>
         </div>
     </div>
 </div>
                 <div className="mt-4">
                 {predictions[0] && (
-      <button 
+      <button
         className="btn btn-primary w-100 mb-2"
-        onClick={() => handleAwardClick(predictions[0].user._id)}
-        disabled={predictions[0].rank !== 1}
+        onClick={() => {
+          console.log("Full prediction data:", predictions[0]);
+          handleAwardClick(predictions[0].user._id);
+        }}
       >
         <i className="ri-trophy-line me-1"></i> Award Prize
       </button>
     )}
-                  <button className="btn btn-outline-primary w-100">
-                    <i className="ri-mail-line me-1"></i> Send Congratulations
-                  </button>
+                  
                 </div>
               </div>
             ) : activeView === "participants" && selectedMember ? (
@@ -609,7 +627,7 @@ const WinnersPodium = () => {
                     />
                   </div>
                   <h5 className="mb-1">{selectedMember.user_name}</h5>
-                  <p className="text-muted mb-2">{selectedMember.role || "Team Member"}</p>
+                  <p className="text-muted mb-2">Developer</p>
 
                   {/* Badges */}
                   <div className="d-flex justify-content-center gap-2 mb-3 flex-wrap">
@@ -641,14 +659,14 @@ const WinnersPodium = () => {
         <div className="d-flex justify-content-between mb-1">
             <span>Experience Level</span>
             <span>
-                {selectedMember.experience_level === 1 ? "Junior" : 
+                {selectedMember.experience_level === 1 ? "Junior" :
                  selectedMember.experience_level === 2 ? "Mid" : "Senior"}
             </span>
         </div>
         <div className="progress" style={{ height: "6px" }}>
-            <div 
-                className="progress-bar bg-warning" 
-                style={{ width: `${selectedMember.experience_level * 33.33}%` }} 
+            <div
+                className="progress-bar bg-warning"
+                style={{ width: `${selectedMember.experience_level * 33.33}%` }}
             ></div>
         </div>
     </div>
@@ -660,13 +678,13 @@ const WinnersPodium = () => {
             <span>{selectedMember.total_tasks_completed}</span>
         </div>
         <div className="progress" style={{ height: "6px" }}>
-            <div 
-                className="progress-bar bg-primary" 
-                style={{ width: `${Math.min(selectedMember.total_tasks_completed, 100)}%` }} 
+            <div
+                className="progress-bar bg-primary"
+                style={{ width: `${Math.min(selectedMember.total_tasks_completed, 100)}%` }}
             ></div>
         </div>
     </div>
-                
+
                 </div>
 
                 {/* Additional Information */}
@@ -682,12 +700,12 @@ const WinnersPodium = () => {
                       <span className="text-muted">Project:</span>
                       <span>{selectedMember.project_name}</span>
                     </li>
-                  
+
                   </ul>
                 </div>
 
                 {/* Actions */}
-                
+
               </div>
             ) : (
               <div className="text-center py-5">
@@ -917,10 +935,19 @@ const WinnersPodium = () => {
 
         .countdown-number {
           font-size: 120px;
-          font-weight: 800;
-          color: white;
+          font-weight: 600;
+          color: gray;
           text-shadow: 0 0 20px rgba(255, 255, 255, 0.5);
           animation: pulse 1s infinite alternate;
+        }
+
+        .loading-text {
+          font-size: 24px;
+          font-weight: 600;
+          color: white;
+          text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+          margin-top: -20px;
+          opacity: 0.8;
         }
 
         /* Light rays background */
@@ -1027,7 +1054,7 @@ const WinnersPodium = () => {
           font-size: 42px;
           font-weight: 800;
           margin-bottom: -70px;
-          color: white;
+          color: gray;
           text-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
           animation: title-glow 2s infinite alternate;
         }
@@ -1249,38 +1276,38 @@ const WinnersPodium = () => {
           .main-podium-container {
             flex-direction: column;
           }
-          
+
           .podium-navigation, .winner-details {
             width: 100%;
             margin-bottom: 1rem;
           }
-          
+
           .podium-main-nav {
             display: flex;
             flex-wrap: wrap;
             gap: 0.5rem;
           }
-          
+
           .podium-main-nav li {
             margin-bottom: 0;
           }
         }
-        
+
         @media (max-width: 768px) {
           .podium-wrapper, .podium-container {
             max-width: 100%;
             height: 400px;
           }
-          
+
           .podium-block {
             width: 140px;
           }
-          
+
           .winner-image, .cycling-image {
             width: 90px;
             height: 90px;
           }
-          
+
           .second-place, .third-place, .second-place-preview, .third-place-preview {
             margin-right: -10px;
             margin-left: -10px;
@@ -1289,7 +1316,7 @@ const WinnersPodium = () => {
           .winners-title {
             font-size: 30px;
           }
-          
+
           .countdown-number {
             font-size: 80px;
           }
@@ -1312,21 +1339,21 @@ const WinnersPodium = () => {
             margin-top: 1rem;
           }
         }
-        
+
         @media (max-width: 480px) {
           .podium-block {
             width: 100px;
           }
-          
+
           .winner-image, .cycling-image {
             width: 70px;
             height: 70px;
           }
-          
+
           .winner-name {
             font-size: 14px;
           }
-          
+
           .winner-score {
             font-size: 20px;
           }

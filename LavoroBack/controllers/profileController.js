@@ -120,7 +120,7 @@ exports.updateProfile = async (req, res) => {
     // Handle base64 image from FormData
     if (req.body.image && req.body.image.startsWith("data:image")) {
       const base64Data = req.body.image.replace(/^data:image\/png;base64,/, "");
-      const filename = `public/imagesUser/${Date.now()}-captured.png`;
+      const filename =`public/imagesUser/${Date.now()}-captured.png`;
       try {
         fs.writeFileSync(filename, base64Data, "base64");
         imagePath = filename.replace("public", "");

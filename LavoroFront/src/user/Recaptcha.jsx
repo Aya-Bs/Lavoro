@@ -15,7 +15,6 @@ function Recaptcha({ onChange, onExpired }) {
         sitekey="6LeQYtgqAAAAAFGCH68E2ZixGjw4KraKpfRwJ6us"
         onChange={onChange}
         onExpired={handleExpired}
-        theme="dark" // Set dark mode
       />
     </div>
   );

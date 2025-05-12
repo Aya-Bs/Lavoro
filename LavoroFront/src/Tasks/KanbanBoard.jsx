@@ -87,7 +87,9 @@ const KanbanBoard = () => {
                     <nav>
                         <ol className="breadcrumb mb-1">
                             <li className="breadcrumb-item"><a href="javascript:void(0);">Apps</a></li>
+                            <span className="mx-1">→</span>
                             <li className="breadcrumb-item"><a href="javascript:void(0);">Task</a></li>
+                            <span className="mx-1">→</span>
                             <li className="breadcrumb-item active" aria-current="page">Kanban Board</li>
                         </ol>
                     </nav>
@@ -145,11 +147,7 @@ const KanbanBoard = () => {
                                                 <span key={tag} className="badge bg-info-transparent">{tag}</span>
                                             ))}
                                         </div>
-                                        <div>
-                                            <a href={`/taskdetails/${task._id}`} className="btn btn-sm btn-light">
-                                                <i className="ri-eye-line"></i>
-                                            </a>
-                                        </div>
+                                        
                                     </div>
                                     <div className="card-body">
                                         <h6 className="fw-medium mb-1 fs-15">{task.title || 'Untitled Task'}</h6>
@@ -172,10 +170,7 @@ const KanbanBoard = () => {
                                                     <>
                                                         {task.assigned_to.slice(0, 3).map((member, idx) => (
                                                             <span key={member._id || `member-${idx}`} className="avatar avatar-sm avatar-rounded">
-                                                                <img
-                                                                    src={member.user_id?.image || '../assets/images/faces/11.jpg'}
-                                                                    alt={member.user_id ? `${member.user_id.firstName} ${member.user_id.lastName}` : 'Team Member'}
-                                                                />
+                                                                
                                                             </span>
                                                         ))}
                                                         {task.assigned_to.length > 3 && (

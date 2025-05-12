@@ -346,16 +346,13 @@ useEffect(() => {
             <nav>
               <ol className="breadcrumb mb-1">
                 <li className="breadcrumb-item"><a href="#" onClick={(e) => e.preventDefault()}>Teams</a></li>
+                <span className="mx-1">→</span>
                 <li className="breadcrumb-item active" aria-current="page">Create Team</li>
               </ol>
             </nav>
             <h1 className="page-title fw-medium fs-18 mb-0">Create Team</h1>
           </div>
-          <div className="btn-list">
-            <button className="btn btn-white btn-wave">
-              <i className="ri-filter-3-line align-middle me-1 lh-1"></i> Filter
-            </button>
-          </div>
+          
         </div>
         {/* Page Header Close */}
 
@@ -602,10 +599,19 @@ useEffect(() => {
           }}
         >
           <img
-            src={member.image || '/assets/images/faces/1.jpg'}
-            alt={member.firstName}
-            className="avatar avatar-xs rounded-circle me-2"
-          />
+  src={
+    member.image
+      ? member.image.startsWith('http') // Check if it's already a full URL
+        ? member.image // Use as-is if full URL
+        : `http://localhost:3000${member.image}` // Prepend server URL if relative
+      : 'https://via.placeholder.com/50' // Fallback if no image
+  }
+  className="avatar avatar-sm me-2"
+  alt={`${member.firstName} ${member.lastName}`}
+  onError={(e) => {
+    e.target.src = 'https://via.placeholder.com/50';
+  }}
+/>
           {member.firstName} {member.lastName}
         </a>
       ))}
@@ -657,11 +663,20 @@ useEffect(() => {
           <div key={memberId} className="d-flex align-items-center justify-content-between mb-2 p-2 border rounded">
             <div className="d-flex align-items-center">
               {member.image ? (
-                <img
-                  src={member.image}
-                  alt={`${member.firstName} ${member.lastName}`}
-                  className="avatar avatar-xs rounded-circle me-2"
-                />
+                 <img
+                 src={
+                   member.image
+                     ? member.image.startsWith('http') // Check if it's already a full URL
+                       ? member.image // Use as-is if full URL
+                       : `http://localhost:3000${member.image}` // Prepend server URL if relative
+                     : 'https://via.placeholder.com/50' // Fallback if no image
+                 }
+                 className="avatar avatar-sm me-2"
+                 alt={`${member.firstName} ${member.lastName}`}
+                 onError={(e) => {
+                   e.target.src = 'https://via.placeholder.com/50';
+                 }}
+               />
               ) : (
                 <span className="avatar avatar-xs bg-primary text-white rounded-circle me-2">
                   {(member.firstName || '').charAt(0)}

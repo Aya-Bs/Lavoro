@@ -19,8 +19,8 @@ const BestPerformer = () => {
         setLoading(true);
         const token = localStorage.getItem('token');
 
-        // Appel API pour récupérer l'utilisateur avec le plus de points
-        const response = await axios.get('http://localhost:3000/users/best-performer', {
+        // Appel API pour récupérer le membre d'équipe avec le meilleur score de performance
+        const response = await axios.get('http://localhost:3000/teamMember/best-performer', {
           headers: {
             'Authorization': `Bearer ${token}`
           }

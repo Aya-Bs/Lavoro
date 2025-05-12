@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 import BestPerformer from '../Tasks/BestPerformer';
 import PerformancePodium from '../Tasks/PerformancePodium';
 
@@ -10,14 +11,25 @@ const BestPerformerPage = () => {
     const fetchData = async () => {
       try {
         setLoading(true);
+        const token = localStorage.getItem('token');
 
-        // Simuler des statistiques (dans une application réelle, vous feriez un appel API)
+        // Récupérer les statistiques réelles depuis l'API
+        const response = await axios.get('http://localhost:3000/teamMember/best-performer', {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+
+        // Extraire les statistiques du meilleur performeur
+        const performerStats = response.data.stats || {};
+
+        // Mettre à jour les statistiques globales
         setStats({
-          totalTasks: 156,
-          completedOnTime: 132,
-          completedEarly: 87,
-          completedLate: 24,
-          averagePoints: 4.2
+          totalTasks: performerStats.tasksCompleted || 0,
+          completedOnTime: performerStats.tasksOnTime || 0,
+          completedEarly: performerStats.tasksEarly || 0,
+          completedLate: performerStats.tasksLate || 0,
+          averagePoints: response.data.performancePoints || 0
         });
 
         setLoading(false);

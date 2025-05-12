@@ -18,11 +18,14 @@ async function generateAITasks(projectId, projectName, projectDescription) {
           contents: [
             {
               parts: [
-                { text: `You are a project manager. Generate **5-8 new, unique IT-related tasks** for this project.  
+                { text: `You are a project manager. Generate **5-8 new, unique IT-related tasks** for this project.
+                    
 **Avoid repeating** these existing tasks: ${existingTaskTitles.join(", ") || "None yet"}
       
 **Project Name:** ${projectName}
 **Description:** ${projectDescription}
+deadlines and start_date should be in the future and between project start and end dates
+
 
 For each task, return a JSON array with:
 - title: string (e.g., "Implement user login")
@@ -42,8 +45,8 @@ Return ONLY the JSON array. Example:
     "description": "Create collections for user and project data.",
     "priority": "High",
     "status": "Not Started",
-    "deadline": "2024-09-15",
-    "start_date": "2024-09-10",
+    "deadline": "2025-09-15",
+    "start_date": "2025-09-10",
     "estimated_duration": 3,
     "tags": ["backend", "database"]
     "requiredSkills": ["MongoDB", "Database Design"]

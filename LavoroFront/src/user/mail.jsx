@@ -1,10 +1,11 @@
+
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Offcanvas } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
 
 const Mail = () => {
-  const [allEmails, setAllEmails] = useState([]); // Store ALL emails
+  const [allEmails, setAllEmails] = useState([]);
   const [selectedEmail, setSelectedEmail] = useState(null);
   const [showOffcanvas, setShowOffcanvas] = useState(false);
   const [user, setUser] = useState(null);
@@ -60,9 +61,8 @@ const Mail = () => {
         throw new Error('Invalid response format');
       }
 
-      // Store ALL emails belonging to this user
-      const userEmails = response.data.filter(email => 
-        (email.senderUser?._id === userId) || 
+      const userEmails = response.data.filter(email =>
+        (email.senderUser?._id === userId) ||
         (email.receiverUser?._id === userId)
       );
 
@@ -77,10 +77,9 @@ const Mail = () => {
 
     let filtered = allEmails;
 
-    // Apply search filter first
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
-      filtered = filtered.filter(email => 
+      filtered = filtered.filter(email =>
         (email.subject && email.subject.toLowerCase().includes(query)) ||
         (email.text && email.text.toLowerCase().includes(query)) ||
         (email.from && email.from.toLowerCase().includes(query)) ||
@@ -88,29 +87,28 @@ const Mail = () => {
       );
     }
 
-    // Then apply tab filter
     switch(activeTab) {
       case 'inbox':
-        return filtered.filter(email => 
-          email.receiverUser?._id === user._id && 
+        return filtered.filter(email =>
+          email.receiverUser?._id === user._id &&
           !email.isArchived
         );
       case 'sent':
-        return filtered.filter(email => 
-          email.senderUser?._id === user._id && 
+        return filtered.filter(email =>
+          email.senderUser?._id === user._id &&
           !email.isArchived
         );
       case 'starred':
-        return filtered.filter(email => 
-          email.isStarred && 
+        return filtered.filter(email =>
+          email.isStarred &&
           !email.isArchived
         );
       case 'archive':
-        return filtered.filter(email => 
+        return filtered.filter(email =>
           email.isArchived
         );
       default:
-        return filtered.filter(email => 
+        return filtered.filter(email =>
           !email.isArchived
         );
     }
@@ -140,7 +138,6 @@ const Mail = () => {
 
   const handleSearch = (e) => {
     e.preventDefault();
-    // No need to fetch, we already have all emails
   };
 
   const toggleStarEmail = async (emailId) => {
@@ -156,7 +153,6 @@ const Mail = () => {
           },
         }
       );
-      // Refresh emails after update
       if (user) fetchEmails(user._id);
     } catch (error) {
       console.error('Error toggling star:', error);
@@ -178,7 +174,6 @@ const Mail = () => {
           },
         }
       );
-      // Refresh emails after update
       if (user) fetchEmails(user._id);
     } catch (error) {
       console.error('Error toggling archive:', error);
@@ -199,7 +194,6 @@ const Mail = () => {
           },
         }
       );
-      // Refresh emails after delete
       if (user) fetchEmails(user._id);
       setShowOffcanvas(false);
     } catch (error) {
@@ -256,14 +250,7 @@ const Mail = () => {
       <div className="main-mail-container mb-2 gap-2 d-flex">
         <div className="mail-navigation border">
           <div className="d-grid align-items-top p-3 border-bottom border-block-end-dashed">
-            <button
-              className="btn btn-primary d-flex align-items-center justify-content-center"
-              data-bs-toggle="modal"
-              data-bs-target="#mail-Compose"
-            >
-              <i className="ri-add-circle-line fs-16 align-middle me-1" />
-              Compose Mail
-            </button>
+           
           </div>
           <div>
             <ul className="list-unstyled mail-main-nav" id="mail-main-nav">
@@ -280,9 +267,9 @@ const Mail = () => {
                     </span>
                     <span className="flex-fill text-nowrap">Inbox</span>
                     <span className="badge bg-primary2 rounded-pill">
-                      {allEmails.filter(e => 
-                        e.receiverUser?._id === user._id && 
-                        !e.isArchived 
+                      {allEmails.filter(e =>
+                        e.receiverUser?._id === user._id &&
+                        !e.isArchived
                       ).length}
                     </span>
                   </div>
@@ -296,8 +283,8 @@ const Mail = () => {
                     </span>
                     <span className="flex-fill text-nowrap">Sent</span>
                     <span className="badge bg-primary1 rounded-pill">
-                      {allEmails.filter(e => 
-                        e.senderUser?._id === user._id && 
+                      {allEmails.filter(e =>
+                        e.senderUser?._id === user._id &&
                         !e.isArchived
                       ).length}
                     </span>
@@ -333,7 +320,7 @@ const Mail = () => {
             </ul>
           </div>
         </div>
-        
+
         <div className="total-mails border">
           <div className="p-3 d-flex align-items-center border-bottom border-block-end-dashed flex-wrap gap-2">
             <form onSubmit={handleSearch} className="input-group">
@@ -364,8 +351,8 @@ const Mail = () => {
             </div>
             <div className="flex-fill">
               <h6 className="fw-medium mb-0">
-                {activeTab === 'inbox' ? 'Inbox' : 
-                 activeTab === 'sent' ? 'Sent' : 
+                {activeTab === 'inbox' ? 'Inbox' :
+                 activeTab === 'sent' ? 'Sent' :
                  activeTab === 'starred' ? 'Starred' :
                  activeTab === 'archive' ? 'Archive' : 'All Mails'}
               </h6>
@@ -382,10 +369,10 @@ const Mail = () => {
                 <i className="ri-mail-forbid-line fs-40 text-muted mb-3"></i>
                 <h5>No emails found</h5>
                 <p className="text-muted">
-                  {activeTab === 'inbox' 
-                    ? "Your inbox is empty" 
-                    : activeTab === 'sent' 
-                      ? "You haven't sent any emails yet" 
+                  {activeTab === 'inbox'
+                    ? "Your inbox is empty"
+                    : activeTab === 'sent'
+                      ? "You haven't sent any emails yet"
                       : activeTab === 'starred'
                         ? "No starred emails"
                         : activeTab === 'archive'
@@ -398,10 +385,10 @@ const Mail = () => {
                 {filteredEmails.map(email => {
                   const isSent = email.senderUser?._id === user._id;
                   const isReceived = email.receiverUser?._id === user._id;
-                  
+
                   return (
-                    <li 
-                      key={email._id} 
+                    <li
+                      key={email._id}
                       className={`${selectedEmail?._id === email._id ? 'active' : ''} ${email.isStarred ? 'starred-email' : ''}`}
                       onClick={() => handleEmailClick(email._id)}
                     >
@@ -448,57 +435,60 @@ const Mail = () => {
         </div>
 
         {/* Email Details Offcanvas */}
-        <Offcanvas 
-          show={showOffcanvas} 
-          onHide={() => setShowOffcanvas(false)} 
+        <Offcanvas
+          show={showOffcanvas}
+          onHide={() => setShowOffcanvas(false)}
           placement="end"
           className="mail-info-offcanvas"
+          style={{zIndex: 1060}}
         >
           <Offcanvas.Body className="p-0">
             {selectedEmail && (
               <div className="mails-information">
-                <div className="mail-info-header d-flex flex-wrap gap-2 align-items-center p-3">
+                <div className="mail-info-header d-flex flex-wrap gap-2 align-items-center p-3 border-bottom">
                   <span className="avatar avatar-md me-2 avatar-rounded mail-msg-avatar me-1">
-                    {selectedEmail.from?.charAt(0).toUpperCase()}
+                    {selectedEmail.senderUser.email?.charAt(0).toUpperCase()}
                   </span>
                   <div className="flex-fill">
-                    <h6 className="mb-0 fw-medium">{selectedEmail.from?.split('<')[0].trim()}</h6>
-                    <span className="text-muted fs-11">{extractEmailAddress(selectedEmail.from)}</span>
+                    <h6 className="mb-0 fw-medium">{selectedEmail.senderUser.firstName?.split('<')[0].trim()}</h6>
+                    <span className="text-muted fs-11">{extractEmailAddress(selectedEmail.senderUser.email)}</span>
                   </div>
-                  <div className="mail-action-icons">
-                    <button 
-                      className={`btn btn-icon btn-outline-light border ${selectedEmail.isStarred ? 'text-warning' : ''}`} 
+                  <div className="mail-action-icons d-flex align-items-center gap-2">
+                    <button
+                      className={`btn btn-sm btn-icon ${selectedEmail.isStarred ? 'btn-warning' : 'btn-outline-secondary'}`}
                       title="Starred"
                       onClick={() => toggleStarEmail(selectedEmail._id)}
                       disabled={loadingAction}
                     >
                       <i className={`ri-star-${selectedEmail.isStarred ? 'fill' : 'line'}`}></i>
                     </button>
-                    <button 
-                      className={`btn btn-icon btn-outline-light border ms-1 ${selectedEmail.isArchived ? 'text-primary' : ''}`} 
+                    <button
+                      className={`btn btn-sm btn-icon ${selectedEmail.isArchived ? 'btn-primary' : 'btn-outline-secondary'}`}
                       title={selectedEmail.isArchived ? "Unarchive" : "Archive"}
                       onClick={() => toggleArchiveEmail(selectedEmail._id)}
                       disabled={loadingAction}
                     >
                       <i className="ri-archive-line"></i>
                     </button>
-                    <button 
-                      className="btn btn-icon btn-outline-light border ms-1" 
+                    <button
+                      className="btn btn-sm btn-icon btn-outline-danger"
                       title="Delete"
                       onClick={() => deleteEmail(selectedEmail._id)}
                       disabled={loadingAction}
                     >
                       <i className="ri-delete-bin-line"></i>
                     </button>
-                    <button 
-                      type="button" 
-                      className="btn-close btn btn-sm btn-icon border" 
+                    <button
+                      type="button"
+                      className="btn btn-sm btn-icon btn-outline-secondary"
                       onClick={() => setShowOffcanvas(false)}
                       aria-label="Close"
-                    ></button>
+                    >
+                      <i className="ri-close-line"></i>
+                    </button>
                   </div>
                 </div>
-                
+
                 <div className="mail-info-body p-3" id="mail-info-body">
                   <div className="d-sm-flex d-block align-items-center justify-content-between mb-3">
                     <div>
@@ -513,33 +503,13 @@ const Mail = () => {
                       </span>
                     </div>
                   </div>
-                  
+
                   <div className="main-mail-content mb-3">
                     {formatEmailText(selectedEmail.text)}
                   </div>
                 </div>
+
                 
-                <div className="mail-info-footer d-flex flex-wrap gap-2 align-items-center justify-content-between p-3 border-top">
-                  <div>
-                    <button className="btn btn-icon btn-primary-light" title="Print">
-                      <i className="ri-printer-line"></i>
-                    </button>
-                    <button className="btn btn-icon btn-secondary-light ms-1" title="Mark as read">
-                      <i className="ri-mail-open-line"></i>
-                    </button>
-                    <button className="btn btn-icon btn-success-light ms-1" title="Reload">
-                      <i className="ri-refresh-line"></i>
-                    </button>
-                  </div>
-                  <div>
-                    <button className="btn btn-secondary">
-                      <i className="ri-share-forward-line me-1 d-inline-block align-middle"></i>Forward
-                    </button>
-                    <button className="btn btn-primary ms-1">
-                      <i className="ri-reply-all-line me-1 d-inline-block align-middle"></i>Reply
-                    </button>
-                  </div>
-                </div>
               </div>
             )}
           </Offcanvas.Body>

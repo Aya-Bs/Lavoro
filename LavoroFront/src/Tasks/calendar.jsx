@@ -6,14 +6,12 @@ import timeGridPlugin from "@fullcalendar/timegrid"
 import interactionPlugin from "@fullcalendar/interaction"
 import SimpleBar from "simplebar-react"
 import "simplebar-react/dist/simplebar.min.css"
-// Import Bootstrap CSS but not JS components directly
 import 'bootstrap/dist/css/bootstrap.min.css'
 import { Draggable } from "@fullcalendar/interaction"
 import axios from "axios"
 import { useNavigate } from "react-router-dom"
 import Swal from "sweetalert2";
 
-// Simple custom tooltip class
 class CustomTooltip {
   constructor(element, options = {}) {
     this.element = element;
@@ -102,14 +100,11 @@ const Calendar = () => {
   const [calendarTasks, setCalendarTasks] = useState([])
   const [user, setUser] = useState(null)
   const [isLoading, setIsLoading] = useState(true)
-  const [isDarkMode, setIsDarkMode] = useState(false)
   const calendarRef = useRef(null)
   const draggableRef = useRef(null)
-  // Add references for tooltip instances to clean them up properly
   const tooltipInstances = useRef([])
   const navigate = useNavigate()
 
-  // Service intégré pour les tâches
   const taskService = {
     getTasksList: async (userId) => {
       const token = localStorage.getItem("token")
@@ -138,7 +133,6 @@ const Calendar = () => {
   }
 
   const handleRemoveTask = async (taskId) => {
-    // Vérification des permissions
     if (user?.role.RoleName !== "Team Manager") {
       await Swal.fire({
         title: "Permission Denied",
@@ -149,7 +143,6 @@ const Calendar = () => {
       return;
     }
 
-    // Confirmation dialog
     const result = await Swal.fire({
       title: "Are you sure?",
       text: "You won't be able to revert this!",
@@ -162,7 +155,6 @@ const Calendar = () => {
       reverseButtons: true,
     });
 
-    // Si l'utilisateur confirme la suppression
     if (result.isConfirmed) {
       try {
         const token = localStorage.getItem("token");
@@ -175,10 +167,8 @@ const Calendar = () => {
         );
 
         if (response.data.success) {
-          // Mise à jour de l'état local
           setAllTasks((prev) => prev.filter((task) => task._id !== taskId));
 
-          // Message de succès
           await Swal.fire({
             title: "Deleted!",
             text: "The task has been deleted.",
@@ -186,7 +176,6 @@ const Calendar = () => {
             confirmButtonColor: "#3085d6",
           });
 
-          // Rechargement des données si nécessaire
           const tasksResponse = await taskService.getTasksList(user._id);
           if (tasksResponse.success) {
             const tasks = tasksResponse.data;
@@ -218,7 +207,6 @@ const Calendar = () => {
     }
   };
 
-  // Fetch tasks from API
   useEffect(() => {
     const fetchUserAndTasks = async () => {
       try {
@@ -245,7 +233,6 @@ const Calendar = () => {
               setCalendarTasks(tasks.filter((task) => task.start_date || task.deadline))
               setAllTasks(tasks.filter((task) => !task.start_date && !task.deadline))
             } else {
-              // Pour les développeurs, inclure les tâches "Done" avec start_date/deadline
               setCalendarTasks(tasks.filter((task) =>
                 task.calendar_dates?.start ||
                 (task.status === "Done" && (task.start_date || task.deadline))
@@ -273,7 +260,6 @@ const Calendar = () => {
     fetchUserAndTasks()
   }, [navigate])
 
-  // Initialize draggable and dark mode
   useEffect(() => {
     if (!isLoading && user) {
       const containerEl = document.getElementById("external-events");
@@ -290,7 +276,6 @@ const Calendar = () => {
               start = task.start_date ? new Date(task.start_date) : new Date();
               end = task.deadline ? new Date(task.deadline) : moment(start).add(1, "day").toDate();
             } else {
-              // Pour les développeurs, utiliser start_date/deadline comme dates par défaut si elles existent
               if (task.start_date && task.deadline) {
                 start = new Date(task.start_date);
                 end = new Date(task.deadline);
@@ -323,12 +308,6 @@ const Calendar = () => {
         });
       }
 
-      const darkModeMediaQuery = window.matchMedia("(prefers-color-scheme: dark)")
-      setIsDarkMode(darkModeMediaQuery.matches)
-      const handler = (e) => setIsDarkMode(e.matches)
-      darkModeMediaQuery.addListener(handler)
-
-      // Initialize any tooltips for static elements
       const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
       tooltipTriggerList.forEach((tooltipTriggerEl) => {
         const tooltip = new CustomTooltip(tooltipTriggerEl, {
@@ -340,12 +319,10 @@ const Calendar = () => {
       });
 
       return () => {
-        darkModeMediaQuery.removeListener(handler)
         if (draggableRef.current) {
           draggableRef.current.destroy()
         }
 
-        // Cleanup tooltips
         tooltipInstances.current.forEach(tooltip => {
           if (tooltip && typeof tooltip.dispose === 'function') {
             tooltip.dispose();
@@ -356,70 +333,42 @@ const Calendar = () => {
     }
   }, [isLoading, allTasks, user])
 
-  // Appliquer directement les styles au DOM lorsque isDarkMode change
-  useEffect(() => {
-    if (calendarRef.current) {
-      const calendarEl = calendarRef.current.elRef.current
-      if (calendarEl) {
-        const headerCells = calendarEl.querySelectorAll(".fc-col-header, .fc-col-header-cell")
-        const headerTexts = calendarEl.querySelectorAll(".fc-col-header-cell-cushion")
-
-        if (isDarkMode) {
-          headerCells.forEach((cell) => {
-            cell.style.backgroundColor = "#121212"
-            cell.style.borderColor = "rgba(255, 255, 255, 0.2)"
-          })
-
-          headerTexts.forEach((text) => {
-            text.style.color = "#ffffff"
-          })
-        } else {
-          headerCells.forEach((cell) => {
-            cell.style.backgroundColor = "#ffffff"
-            cell.style.borderColor = "#ddd"
-          })
-
-          headerTexts.forEach((text) => {
-            text.style.color = "#212529"
-          })
-        }
-      }
-    }
-  }, [isDarkMode, calendarTasks]) // Dépend aussi de calendarTasks pour s'assurer que le calendrier est rendu
-
   const getTaskClassName = (task) => {
+    let baseClass = "";
     if (task.status === "In Progress") {
-      return "bg-warning-transparent"
+      baseClass = "bg-warning-transparent border-warning";
     } else if (task.status === "Done") {
-      return "bg-success-transparent"
+      baseClass = "bg-success-transparent border-success";
     } else if (task.status === "Not Started") {
       if (task.priority === "High") {
-        return "bg-danger-transparent"
+        baseClass = "bg-danger-transparent border-danger";
       } else if (task.priority === "Medium") {
-        return "bg-info-transparent"
+        baseClass = "bg-info-transparent border-info";
       } else {
-        return "bg-secondary-transparent"
+        baseClass = "bg-secondary-transparent border-secondary";
       }
+    } else {
+      baseClass = "bg-primary-transparent border-primary";
     }
-    return "bg-primary-transparent"
-  }
+    return `${baseClass} border`;
+  };
 
   const getTaskColor = (task) => {
     if (task.status === "In Progress") {
-      return "orange"
+      return "#D97706"; // Darker orange
     } else if (task.status === "Done") {
-      return "green"
+      return "#15803D"; // Darker green
     } else if (task.status === "Not Started") {
       if (task.priority === "High") {
-        return "red"
+        return "#B91C1C"; // Darker red
       } else if (task.priority === "Medium") {
-        return "blue"
+        return "#1E40AF"; // Darker blue
       } else {
-        return "gray"
+        return "#4B5563"; // Darker gray
       }
     }
-    return "blue"
-  }
+    return "#1E3A8A"; // Darker blue as fallback
+  };
 
   const transformTasksToEvents = (tasks) => {
     return tasks.map((task) => {
@@ -431,21 +380,17 @@ const Calendar = () => {
         return isNaN(d.getTime()) ? null : moment(d);
       };
 
-      // Logique inchangée pour Team Manager
       if (user?.role.RoleName === "Team Manager" || task.status === "Done") {
         eventStart = createValidDate(task.start_date) || createValidDate(task.deadline) || moment();
         eventEnd = createValidDate(task.deadline) || moment(eventStart).add(1, 'day');
       }
-      // Correction pour les développeurs
       else {
-        // Priorité aux dates calendar_dates si définies
         if (task.calendar_dates?.start) {
           eventStart = createValidDate(task.calendar_dates.start);
           eventEnd = task.calendar_dates.end
             ? createValidDate(task.calendar_dates.end)
             : moment(eventStart).add(1, 'day');
 
-          // Contrainte aux dates originales start_date/deadline
           if (task.start_date) {
             const minDate = createValidDate(task.start_date);
             if (eventStart.isBefore(minDate)) {
@@ -459,7 +404,6 @@ const Calendar = () => {
             }
           }
         }
-        // Fallback sur start_date/deadline si pas de calendar_dates
         else if (task.start_date || task.deadline) {
           eventStart = task.start_date
             ? createValidDate(task.start_date)
@@ -468,21 +412,18 @@ const Calendar = () => {
             ? createValidDate(task.deadline)
             : createValidDate(task.start_date);
 
-          // Ajustement pour avoir une durée minimale d'un jour
           if (!eventEnd || eventEnd.isSameOrBefore(eventStart)) {
             eventEnd = moment(eventStart).add(1, 'day');
           } else {
-            eventEnd = moment(eventEnd).add(1, 'day'); // Pour inclure le dernier jour
+            eventEnd = moment(eventEnd).add(1, 'day');
           }
         }
-        // Fallback: aujourd'hui si aucune date
         else {
           eventStart = moment();
           eventEnd = moment().add(1, 'day');
         }
       }
 
-      // Validation finale
       if (eventEnd.isSameOrBefore(eventStart)) {
         eventEnd = moment(eventStart).add(1, 'day');
       }
@@ -518,12 +459,10 @@ const Calendar = () => {
         let start = new Date(eventInfo.event.start);
         let end = eventInfo.event.end ? new Date(eventInfo.event.end) : moment(start).add(1, "day").toDate();
 
-        // Logique spécifique développeur
         if (user.role.RoleName === "Developer") {
           const taskStartDate = task.start_date ? new Date(task.start_date) : null;
           const taskDeadline = task.deadline ? new Date(task.deadline) : null;
 
-          // Contrainte aux dates originales
           if (taskStartDate && start < taskStartDate) {
             start = new Date(taskStartDate);
             end = moment(start).add(1, "day").toDate();
@@ -534,7 +473,6 @@ const Calendar = () => {
             start = moment(end).subtract(1, "day").toDate();
           }
 
-          // Calcul de la durée maximale autorisée
           if (taskStartDate && taskDeadline) {
             const maxDuration = moment(taskDeadline).diff(moment(taskStartDate), "days") + 1;
             const desiredDuration = moment(end).diff(moment(start), "days");
@@ -544,7 +482,6 @@ const Calendar = () => {
           }
         }
 
-        // Mise à jour différenciée
         if (user.role.RoleName === "Team Manager" || task.status === "Done") {
           await taskService.updateTaskCalendarDates(taskId, start, end, user._id);
           const updatedTask = {
@@ -576,7 +513,6 @@ const Calendar = () => {
     }
   };
 
-
   const handleEventClick = async (clickInfo) => {
     if (clickInfo.event.extendedProps.status === "Done") {
       return
@@ -586,10 +522,8 @@ const Calendar = () => {
 
     if (task && user) {
       try {
-        // Envoyer null pour supprimer les dates
         await taskService.updateTaskCalendarDates(taskId, null, null, user._id)
 
-        // Créer une copie de la tâche sans les dates
         let taskWithoutDates
 
         if (user.role.RoleName === "Team Manager") {
@@ -600,11 +534,9 @@ const Calendar = () => {
           taskWithoutDates = rest
         }
 
-        // Mettre à jour les états
         setAllTasks((prev) => [...prev, taskWithoutDates])
         setCalendarTasks((prev) => prev.filter((t) => t._id !== taskId))
 
-        // Supprimer l'événement du calendrier
         clickInfo.event.remove()
       } catch (error) {
         console.error("Error removing task from calendar:", error)
@@ -627,7 +559,6 @@ const Calendar = () => {
       let newStart = changeInfo.event.start ? new Date(changeInfo.event.start) : null;
       let newEnd = changeInfo.event.end ? new Date(changeInfo.event.end) : moment(newStart).add(1, "day").toDate();
 
-      // Validation des dates
       if (!newStart || isNaN(newStart.getTime())) {
         throw new Error("Invalid start date");
       }
@@ -635,14 +566,11 @@ const Calendar = () => {
         throw new Error("Invalid end date");
       }
 
-      // Pour les développeurs, vérifier les contraintes de dates
       if (userRole === "Developer") {
         const originalStart = task.start_date ? new Date(task.start_date) : null;
         const originalEnd = task.deadline ? new Date(task.deadline) : null;
 
-        // Si la tâche a des dates originales, on vérifie les contraintes
         if (originalStart && originalEnd) {
-          // On ne permet pas de sortir de l'intervalle original
           if (newStart < originalStart) {
             newStart = new Date(originalStart);
             newEnd = moment(newStart).add(moment(newEnd).diff(moment(newStart), 'days'), 'days').toDate();
@@ -655,7 +583,6 @@ const Calendar = () => {
             }
           }
 
-          // On vérifie que la durée ne dépasse pas la durée originale
           const originalDuration = moment(originalEnd).diff(moment(originalStart), 'days') + 1;
           const newDuration = moment(newEnd).diff(moment(newStart), 'days');
 
@@ -665,21 +592,18 @@ const Calendar = () => {
         }
       }
 
-      // Préparer les données de mise à jour
       const updateData = {
         start: newStart,
         end: newEnd,
         userId: user._id
       };
 
-      // Envoyer la requête
       const response = await taskService.updateTaskCalendarDates(taskId, updateData.start, updateData.end, user._id);
 
       if (!response.success) {
         throw new Error(response.message || "Failed to update dates");
       }
 
-      // Mettre à jour l'état local
       const updatedTasks = calendarTasks.map((t) => {
         if (t._id === taskId) {
           if (userRole === "Team Manager") {
@@ -694,7 +618,6 @@ const Calendar = () => {
               calendar_dates: {
                 start: newStart,
                 end: newEnd,
-                // On conserve les dates originales
                 original_start: t.start_date,
                 original_end: t.deadline
               },
@@ -730,26 +653,22 @@ const Calendar = () => {
   }
 
   return (
-    <div className={`page ${isDarkMode ? "dark-mode" : ""}`}>
+    <div className="page">
       <div className="container-fluid">
         <div className="d-flex align-items-center justify-content-between page-header-breadcrumb flex-wrap gap-2">
           <div>
             <nav>
               <ol className="breadcrumb mb-1">
                 <li className="breadcrumb-item">
-                  <a href="javascript:void(0);">Apps</a>
+                  <a href="javascript:void(0);">Tasks</a>
                 </li>
+                <span className="mx-1">→</span>
                 <li className="breadcrumb-item active" aria-current="page">
                   Task Calendar
                 </li>
               </ol>
             </nav>
             <h1 className="page-title fw-medium fs-18 mb-0">Task Calendar</h1>
-          </div>
-          <div className="btn-list">
-            <button className="btn btn-white btn-wave" data-bs-toggle="tooltip" title="Filter tasks">
-              <i className="ri-filter-3-line align-middle me-1 lh-1"></i> Filter
-            </button>
           </div>
         </div>
 
@@ -800,15 +719,15 @@ const Calendar = () => {
                     } else {
                       const tooltip = new CustomTooltip(arg.el, {
                         title: `
-                                            <strong>${arg.event.title}</strong><br/>
-                                            <em>${arg.event.extendedProps.description || "No description"}</em><br/>
-                                            <strong>Status:</strong> ${arg.event.extendedProps.status}<br/>
-                                            <strong>Priority:</strong> ${arg.event.extendedProps.priority}<br/>
-                                            <strong>Real Start:</strong> ${arg.event.extendedProps.realStartDate}<br/>
-                                            <strong>Real Deadline:</strong> ${arg.event.extendedProps.realDeadline}<br/>
-                                            <strong>Displayed Dates:</strong> ${new Date(arg.event.start).toLocaleDateString()} - ${new Date(arg.event.end).toLocaleDateString()}<br/>
-                                            ${arg.event.extendedProps.tags ? "<strong>Tags:</strong> " + arg.event.extendedProps.tags.join(", ") : ""}
-                                        `,
+                          <strong>${arg.event.title}</strong><br/>
+                          <em>${arg.event.extendedProps.description || "No description"}</em><br/>
+                          <strong>Status:</strong> ${arg.event.extendedProps.status}<br/>
+                          <strong>Priority:</strong> ${arg.event.extendedProps.priority}<br/>
+                          <strong>Real Start:</strong> ${arg.event.extendedProps.realStartDate}<br/>
+                          <strong>Real Deadline:</strong> ${arg.event.extendedProps.realDeadline}<br/>
+                          <strong>Displayed Dates:</strong> ${new Date(arg.event.start).toLocaleDateString()} - ${new Date(arg.event.end).toLocaleDateString()}<br/>
+                          ${arg.event.extendedProps.tags ? "<strong>Tags:</strong> " + arg.event.extendedProps.tags.join(", ") : ""}
+                        `,
                         html: true,
                         placement: "top",
                         trigger: "manual",
@@ -828,13 +747,11 @@ const Calendar = () => {
                       arg.el.addEventListener("mouseleave", hideTooltip);
                       document.addEventListener("click", handleDocumentClick);
 
-                      // Return cleanup function for when the event unmounts
                       return () => {
                         arg.el.removeEventListener("mouseenter", showTooltip);
                         arg.el.removeEventListener("mouseleave", hideTooltip);
                         document.removeEventListener("click", handleDocumentClick);
 
-                        // Find and remove this tooltip from the instances array
                         const index = tooltipInstances.current.indexOf(tooltip);
                         if (index !== -1) {
                           tooltipInstances.current.splice(index, 1);
@@ -843,38 +760,6 @@ const Calendar = () => {
                         tooltip.dispose();
                       };
                     }
-                  }}
-                  datesSet={() => {
-                    // Force l'application des styles après chaque changement de vue
-                    setTimeout(() => {
-                      if (calendarRef.current) {
-                        const calendarEl = calendarRef.current.elRef.current
-                        if (calendarEl) {
-                          const headerCells = calendarEl.querySelectorAll(".fc-col-header, .fc-col-header-cell")
-                          const headerTexts = calendarEl.querySelectorAll(".fc-col-header-cell-cushion")
-
-                          if (isDarkMode) {
-                            headerCells.forEach((cell) => {
-                              cell.style.backgroundColor = "#121212"
-                              cell.style.borderColor = "rgba(255, 255, 255, 0.2)"
-                            })
-
-                            headerTexts.forEach((text) => {
-                              text.style.color = "#ffffff"
-                            })
-                          } else {
-                            headerCells.forEach((cell) => {
-                              cell.style.backgroundColor = "#ffffff"
-                              cell.style.borderColor = "#ddd"
-                            })
-
-                            headerTexts.forEach((text) => {
-                              text.style.color = "#212529"
-                            })
-                          }
-                        }
-                      }
-                    }, 0)
                   }}
                 />
               </div>

@@ -55,6 +55,12 @@ const Sidebar = ({ userRole }) => {
                   Kanban Board
                   </Link>
                 </li>
+                <li className="slide">
+                  <Link to="/meet" className="side-menu__item">
+                   Meet
+                  </Link>
+                </li>
+
 
                 
 
@@ -157,12 +163,18 @@ const Sidebar = ({ userRole }) => {
             <li className="slide__category">
               <span className="category-name">Main</span>
             </li>
+
             <li className="slide">
+            <Link to="/DashTeam" className="side-menu__item">
+                <i className="ri-user-line side-menu__icon"></i>
+                <span className="side-menu__label">Dashboard</span>
+              </Link>
               <Link to="/profile" className="side-menu__item">
                 <i className="ri-user-line side-menu__icon"></i>
                 <span className="side-menu__label">Profile</span>
               </Link>
             </li>
+
 
             <li className="slide__category">
               <span className="category-name">Projects</span>
@@ -203,12 +215,19 @@ Member of the year                  </Link>
                   </Link>
                 </li>
 
+                <li className="slide">
+              <Link to="/teams/teamArchive" className="side-menu__item">
+              Teams Archive
+              </Link>
+            </li>
+
                 
                 <li className="slide">
                   <Link to="/reports" className="side-menu__item">
                     Reports
                   </Link>
                 </li>
+
 
               </ul>
             </li>
@@ -243,6 +262,11 @@ Member of the year                  </Link>
                    Calendar
                   </Link>
                 </li> 
+                <li className="slide">
+                  <Link to="/meet" className="side-menu__item">
+                   Meet
+                  </Link>
+                </li>
              </ul>
             </li>
             <li className="slide__category">
@@ -254,12 +278,7 @@ Member of the year                  </Link>
                 <span className="side-menu__label">Messagerie</span>
               </Link>
             </li>
-            <li className="slide">
-              <Link to="/teams/teamArchive" className="side-menu__item">
-                <i className="ri-file-list-line side-menu__icon"></i>
-                <span className="side-menu__label">Teams Archive</span>
-              </Link>
-            </li>
+            
             
           </>
         );

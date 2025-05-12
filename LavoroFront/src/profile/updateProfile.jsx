@@ -10,6 +10,9 @@ const UpdateProfile = () => {
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
+  const [description, setDescription] = useState("");
+  const [skills, setSkills] = useState([]);
+  const [skillsInputValue, setSkillsInputValue] = useState("");
   const [profileImage, setProfileImage] = useState("");
   const [imageSrc, setImageSrc] = useState(null);
   const [croppedImage, setCroppedImage] = useState(null);
@@ -21,7 +24,9 @@ const UpdateProfile = () => {
     firstName: null,
     lastName: null,
     phoneNumber: null,
-    email: null
+    email: null,
+    description: null,
+    skills: null
   });
 
   const videoRef = useRef(null);
@@ -46,10 +51,46 @@ const UpdateProfile = () => {
         });
 
         if (response.data) {
+          console.log("Raw user data from API:", response.data); // Debug raw data
           setUser(response.data);
           setFirstName(response.data.firstName);
           setLastName(response.data.lastName);
           setPhoneNumber(response.data.phone_number);
+          setDescription(response.data.description || "");
+
+          // Handle skills: robust parsing for all backend cases
+          let fetchedSkills = response.data.skills;
+          console.log("Raw skills from API:", fetchedSkills); // Debug raw skills
+
+          if (Array.isArray(fetchedSkills) && fetchedSkills.length === 1 && typeof fetchedSkills[0] === 'string') {
+            const first = fetchedSkills[0].trim();
+            if (first.startsWith('[') && first.endsWith(']')) {
+              try {
+                fetchedSkills = JSON.parse(first);
+              } catch (e) {
+                fetchedSkills = [];
+              }
+            } else {
+              fetchedSkills = first.split(',').map(s => s.trim()).filter(Boolean);
+            }
+          } else if (typeof fetchedSkills === 'string') {
+            const trimmed = fetchedSkills.trim();
+            if (trimmed.startsWith('[') && trimmed.endsWith(']')) {
+              try {
+                fetchedSkills = JSON.parse(trimmed);
+              } catch (e) {
+                fetchedSkills = [];
+              }
+            } else {
+              fetchedSkills = trimmed.split(',').map(s => s.trim()).filter(Boolean);
+            }
+          } else if (!Array.isArray(fetchedSkills)) {
+            fetchedSkills = [];
+          }
+          fetchedSkills = Array.isArray(fetchedSkills) ? fetchedSkills : [];
+          console.log("Fetched skills (after robust parsing):", fetchedSkills); // Debug parsed skills
+          setSkills(fetchedSkills);
+          setSkillsInputValue(fetchedSkills.join(',')); // Set input display value
           setProfileImage(response.data.image);
         } else {
           navigate("/auth");
@@ -69,7 +110,7 @@ const UpdateProfile = () => {
 
   const validateField = (fieldName, value) => {
     let error = null;
-    
+
     if (fieldName === 'firstName') {
       if (!value) error = 'First name is required.';
       else if (!/^[A-Za-z\s'-]+$/.test(value)) error = 'First name must contain only letters, spaces, hyphens, or apostrophes.';
@@ -90,7 +131,14 @@ const UpdateProfile = () => {
       if (!value) error = 'Email is required.';
       else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) error = 'Please enter a valid email address.';
     }
-    
+    else if (fieldName === 'description') {
+      if (value.length > 500) error = 'Description cannot exceed 500 characters.';
+    }
+    else if (fieldName === 'skills') {
+      if (value.some(skill => skill.length < 2)) error = 'Each skill must be at least 2 characters long.';
+      else if (value.some(skill => !/^[A-Za-z\s-]+$/.test(skill))) error = 'Skills must contain only letters, spaces, or hyphens.';
+    }
+
     setErrors(prev => ({ ...prev, [fieldName]: error }));
     return !error;
   };
@@ -119,7 +167,88 @@ const UpdateProfile = () => {
     validateField('email', value);
   };
 
+  const handleDescriptionChange = (e) => {
+    const value = e.target.value;
+    setDescription(value);
+    validateField('description', value);
+
+    // Define a list of known skills (could be expanded or loaded from elsewhere)
+    const knownSkills = [
+      'javascript', 'nodejs', 'node', 'react', 'express', 'expressjs', 'docker', 'flutter', 'python', 'java', 'c++', 'c#', 'php', 'html', 'css', 'mongodb', 'sql', 'typescript', 'angular', 'vue', 'django', 'spring', 'swift', 'kotlin', 'go', 'rust', 'aws', 'azure', 'gcp', 'firebase', 'graphql', 'redux', 'sass', 'less', 'bootstrap', 'tailwind', 'git', 'github', 'jira', 'linux', 'bash', 'shell', 'matlab', 'r', 'scala', 'perl', 'ruby', 'laravel', 'symfony', 'dotnet', 'android', 'ios', 'xamarin', 'ionic', 'cordova', 'unity', 'unreal', 'threejs', 'nextjs', 'nestjs', 'fastify', 'hapi', 'mocha', 'jest', 'chai', 'enzyme', 'testing-library', 'cypress', 'puppeteer', 'storybook', 
+      'CI/CD','DevOps', 'Nexus', 'Jenkins', 'JUnit', 'SonarQube', 'GitHubAction'
+    ];
+
+    // Combine with current skills (case-insensitive)
+    const currentSkills = Array.isArray(skills) ? skills : [];
+    const lowerSkills = currentSkills.map(s => s.toLowerCase());
+
+    // Normalize description: remove punctuation, lowercase, and split into words
+    const normalizedDesc = value
+      .replace(/[.,\/#!$%^&*;:{}=\-_`~()\[\]"]/g, ' ')
+      .toLowerCase();
+    const descWords = normalizedDesc.split(/\s+/).filter(Boolean);
+
+    // Find new skills in the description (case-insensitive, punctuation-insensitive)
+    const foundSkills = knownSkills.filter(skill => {
+      const normalizedSkill = skill.toLowerCase();
+      return descWords.includes(normalizedSkill) && !lowerSkills.includes(normalizedSkill);
+    });
+
+    if (foundSkills.length > 0) {
+      const newSkills = [...currentSkills, ...foundSkills];
+      setSkills(newSkills);
+      setSkillsInputValue(newSkills.join(','));
+      validateField('skills', newSkills);
+    }
+  };
+
+  const handleSkillsChange = (e) => {
+    const value = e.target.value;
+    setSkillsInputValue(value);
+    const newSkills = value.split(',').map(skill => skill.trim()).filter(skill => skill);
+    console.log("Updated skills:", newSkills);
+    setSkills(newSkills);
+    validateField('skills', newSkills);
+  };
+
+  const handleRemoveSkill = (skillToRemove) => {
+    const updatedSkills = skills.filter(skill => skill !== skillToRemove);
+    console.log("Skills after removal:", updatedSkills);
+    setSkills(updatedSkills);
+    setSkillsInputValue(updatedSkills.join(','));
+    validateField('skills', updatedSkills);
+  };
+
   const handleRestoreChanges = () => {
+    // Also robustly parse skills when restoring changes
+    let restoredSkills = user.skills;
+    if (Array.isArray(restoredSkills) && restoredSkills.length === 1 && typeof restoredSkills[0] === 'string') {
+      const first = restoredSkills[0].trim();
+      if (first.startsWith('[') && first.endsWith(']')) {
+        try {
+          restoredSkills = JSON.parse(first);
+        } catch (e) {
+          restoredSkills = [];
+        }
+      } else {
+        restoredSkills = first.split(',').map(s => s.trim()).filter(Boolean);
+      }
+    } else if (typeof restoredSkills === 'string') {
+      const trimmed = restoredSkills.trim();
+      if (trimmed.startsWith('[') && trimmed.endsWith(']')) {
+        try {
+          restoredSkills = JSON.parse(trimmed);
+        } catch (e) {
+          restoredSkills = [];
+        }
+      } else {
+        restoredSkills = trimmed.split(',').map(s => s.trim()).filter(Boolean);
+      }
+    } else if (!Array.isArray(restoredSkills)) {
+      restoredSkills = [];
+    }
+    restoredSkills = Array.isArray(restoredSkills) ? restoredSkills : [];
+
     Swal.fire({
       title: "Restore Changes?",
       text: "Are you sure you want to discard all changes?",
@@ -134,6 +263,10 @@ const UpdateProfile = () => {
         setFirstName(user.firstName);
         setLastName(user.lastName);
         setPhoneNumber(user.phone_number);
+        setDescription(user.description || "");
+        const restoredSkills = Array.isArray(user.skills) ? user.skills : [];
+        setSkills(restoredSkills);
+        setSkillsInputValue(restoredSkills.join(','));
         setProfileImage(user.image);
         setImageSrc(null);
         setCroppedImage(null);
@@ -141,7 +274,9 @@ const UpdateProfile = () => {
           firstName: null,
           lastName: null,
           phoneNumber: null,
-          email: null
+          email: null,
+          description: null,
+          skills: null
         });
         
         Swal.fire({
@@ -297,8 +432,10 @@ const UpdateProfile = () => {
     const isLastNameValid = validateField('lastName', lastName);
     const isPhoneNumberValid = validateField('phoneNumber', phoneNumber);
     const isEmailValid = validateField('email', user.email);
+    const isDescriptionValid = validateField('description', description);
+    const isSkillsValid = validateField('skills', skills);
     
-    if (!isFirstNameValid || !isLastNameValid || !isPhoneNumberValid || !isEmailValid) {
+    if (!isFirstNameValid || !isLastNameValid || !isPhoneNumberValid || !isEmailValid || !isDescriptionValid || !isSkillsValid) {
       await Swal.fire({
         title: "Validation Error",
         text: "Please fix the errors in the form before submitting.",
@@ -321,6 +458,8 @@ const UpdateProfile = () => {
     formData.append("lastName", lastName);
     formData.append("phoneNumber", phoneNumber);
     formData.append("email", user.email);
+    formData.append("description", description);
+    formData.append("skills", JSON.stringify(skills));
 
     if (croppedImage) {
       const blob = await fetch(croppedImage).then((res) => res.blob());
@@ -369,6 +508,26 @@ const UpdateProfile = () => {
     return <p>Loading...</p>;
   }
 
+  // Define a palette of soft colors to cycle through
+  const colorPalette = [
+    "#f0f4c3", // Light lime
+    "#c8e6c9", // Light green
+    "#b3e5fc", // Light blue
+    "#ffccbc", // Light peach
+    "#d1c4e9", // Light purple
+    "#ffe082", // Light amber
+    "#c5cae9", // Light indigo
+    "#b2dfdb", // Light teal
+  ];
+
+  // Function to get a color based on the skill's index
+  const getSkillColor = (index) => {
+    return colorPalette[index % colorPalette.length];
+  };
+
+  console.log("Skills state before render:", skills);
+  console.log("Skills input value before render:", skillsInputValue);
+
   return (
     <div className="row gap-3 justify-content-center">
       <div className="p-3 border-bottom border-top border-block-end-dashed tab-content">
@@ -392,11 +551,11 @@ const UpdateProfile = () => {
                      src={
                        profileImage
                          ? profileImage.startsWith('data:image') 
-                           ? profileImage // Use as-is for data URLs
+                           ? profileImage
                            : profileImage.startsWith('http') || profileImage.startsWith('https')
-                             ? profileImage // Use as-is for full URLs
-                             : `http://localhost:3000${profileImage}` // Prepend server URL for relative paths
-                         : "https://via.placeholder.com/100" // Fallback if no image
+                             ? profileImage
+                             : `http://localhost:3000${profileImage}`
+                         : "https://via.placeholder.com/100"
                      }
                      alt="Profile"
                      style={{
@@ -491,6 +650,67 @@ const UpdateProfile = () => {
               {errors.email && (
                 <div className="invalid-feedback d-block">{errors.email}</div>
               )}
+            </div>
+            <div className="col-xl-12">
+              <label htmlFor="profile-description" className="form-label">Description :</label>
+              <textarea
+                className={`form-control ${errors.description ? 'is-invalid' : ''}`}
+                id="profile-description"
+                value={description}
+                onChange={handleDescriptionChange}
+                placeholder="Enter a brief description about yourself"
+                rows="3"
+              />
+              {errors.description && (
+                <div className="invalid-feedback d-block">{errors.description}</div>
+              )}
+            </div>
+            <div className="col-xl-12">
+              <label htmlFor="profile-skills" className="form-label">Skills (comma-separated) :</label>
+              <input
+                type="text"
+                className={`form-control ${errors.skills ? 'is-invalid' : ''}`}
+                id="profile-skills"
+                value={skillsInputValue}
+                onChange={handleSkillsChange}
+                placeholder="Enter skills (e.g., JavaScript,Node.js,MongoDB)"
+              />
+              {errors.skills && (
+                <div className="invalid-feedback d-block">{errors.skills}</div>
+              )}
+              <div className="mt-2 d-flex flex-wrap gap-2">
+                {skills.map((skill, index) => (
+                  <span
+                    key={index}
+                    style={{
+                      backgroundColor: getSkillColor(index),
+                      color: "#333",
+                      padding: "5px 10px",
+                      borderRadius: "15px",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      fontSize: "14px",
+                      margin: "5px 0"
+                    }}
+                  >
+                    {skill}
+                    <button
+                      onClick={() => handleRemoveSkill(skill)}
+                      style={{
+                        marginLeft: "8px",
+                        background: "none",
+                        border: "none",
+                        color: "#e74c3c",
+                        cursor: "pointer",
+                        fontSize: "12px",
+                        lineHeight: "1"
+                      }}
+                    >
+                      ✕
+                    </button>
+                  </span>
+                ))}
+              </div>
             </div>
           </div>
         </div>

@@ -5,8 +5,6 @@ const ProjectController = require('../controllers/projectController');
 
 const { getProjectsByStatus } = require('../controllers/projectController'); // Importez la fonction du contrôleur
 const Project = require('../models/Project');
-const auth = require('../middleware/authenticatedToken');
-
 
 
 
@@ -30,7 +28,7 @@ router.get('/projetStatus', async (req, res) => {
 });
 
 
-router.get('/managed-by-me', auth,  ProjectController.getManagedProjects);
+router.get('/managed-by-me',  ProjectController.getManagedProjects);
 
 
 router.post('/createProject', ProjectController.createProject);
@@ -58,7 +56,6 @@ router.get('/:id/history', ProjectController.getProjectHistory); // Add this rou
 router.get('/:id', ProjectController.getProjectById); // Add this route
 router.post('/:id/archive', ProjectController.archiveProject);
 router.post('/:id/unarchive', ProjectController.unarchiveProject);
-router.post('/:id/predict-risk', ProjectController.predictProjectRisk);
 router.delete('/archived-projects/:id', ProjectController.deleteArchivedProject);
 router.get('/archived-projects/:id', ProjectController.getArchivedProjectById);
 

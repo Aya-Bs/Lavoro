@@ -349,6 +349,8 @@ const UpdateTeam = () => {
                   Teams
                 </a>
               </li>
+              <span className="mx-1">→</span>
+
               <li className="breadcrumb-item active" aria-current="page">
                 Edit Team
               </li>
@@ -581,12 +583,21 @@ const UpdateTeam = () => {
                             // setIsDropdownOpen(false);
                           }}
                         >
-                          <img
-                            src={member.image || '/assets/images/faces/1.jpg'}
-                            alt={member.firstName}
-                            className="avatar avatar-xs rounded-circle me-2"
-                          />
-                          {member.firstName} {member.lastName}
+                           <img
+                        src={
+                          member.image
+                            ? member.image.startsWith('http') // Check if it's already a full URL
+                              ? member.image // Use as-is if full URL
+                              : `http://localhost:3000${member.image}` // Prepend server URL if relative
+                            : 'https://via.placeholder.com/50' // Fallback if no image
+                        }
+                        className="avatar avatar-sm me-2"
+                        alt={`${member.firstName} ${member.lastName}`}
+                        onError={(e) => {
+                          e.target.src = 'https://via.placeholder.com/50';
+                        }}
+                      />
+                                                {member.firstName} {member.lastName}
                         </a>
                       ))}
                     {filteredMembers.filter(member => !formData.members.some(id => id === member._id || id === member._id.toString())).length === 0 && (
@@ -622,11 +633,20 @@ const UpdateTeam = () => {
                       <div key={memberIdStr} className="d-flex align-items-center justify-content-between mb-2 p-2 border rounded">
                         <div className="d-flex align-items-center">
                           {member.image ? (
-                            <img
-                              src={member.image || '/assets/images/faces/1.jpg'}
-                              alt={member.firstName}
-                              className="avatar avatar-xs rounded-circle me-2"
-                            />
+                             <img
+                             src={
+                               member.image
+                                 ? member.image.startsWith('http') // Check if it's already a full URL
+                                   ? member.image // Use as-is if full URL
+                                   : `http://localhost:3000${member.image}` // Prepend server URL if relative
+                                 : 'https://via.placeholder.com/50' // Fallback if no image
+                             }
+                             className="avatar avatar-sm me-2"
+                             alt={`${member.firstName} ${member.lastName}`}
+                             onError={(e) => {
+                               e.target.src = 'https://via.placeholder.com/50';
+                             }}
+                           />
                           ) : (
                             <span className="avatar avatar-xs bg-primary text-white rounded-circle me-2">
                               {(member.firstName || '').charAt(0)}

@@ -119,18 +119,7 @@ const RelatedProfiles = ({ teamId , currentMemberId})  => {
                 <div className="card custom-card shadow-none border mb-3 h-100">
                   <div className="card-body p-3 position-relative">
                     {/* Boutons en haut à droite */}
-                    <div className="position-absolute top-0 end-0 mt-2 me-2 d-flex">
-                      <button className="btn btn-sm btn-icon btn-primary-transparent rounded-circle">
-                        <i className="ri-download-cloud-line fs-14"></i>
-                      </button>
-                      <button className="btn btn-sm btn-icon btn-danger-transparent rounded-circle ms-1">
-                        <i className="ri-heart-line fs-14"></i>
-                      </button>
-                      <button className="btn btn-sm btn-icon btn-secondary-transparent rounded-circle ms-1">
-                        <i className="ri-share-line fs-14"></i>
-                      </button>
-                    </div>
-
+                   
                     <div className="d-flex mb-3 align-items-center">
                       <div className="me-3">
                         <span className="avatar avatar-lg avatar-rounded">
@@ -154,7 +143,7 @@ const RelatedProfiles = ({ teamId , currentMemberId})  => {
                       <div className="flex-grow-1">
                         <h6 className="fw-medium mb-1">{relatedMember.name}</h6>
                         <p className="mb-1 text-muted">
-                          {relatedMember.role}
+                          Developer
                         </p>
                         <div className="d-flex align-items-center fs-12 text-muted">
                           <span>Ratings : </span>

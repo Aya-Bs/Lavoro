@@ -9,6 +9,7 @@ const ReportsList = () => {
     const [loading, setLoading] = useState(true);
     const [showReportForm, setShowReportForm] = useState(false);
     const [projects, setProjects] = useState({});  // Stockage des projets par ID
+    const [users, setUsers] = useState({});  // Stockage des utilisateurs par ID
     const navigate = useNavigate();
 
     // Fonction pour supprimer un rapport de la base de données
@@ -111,30 +112,92 @@ const ReportsList = () => {
 
 
 
-    // Fonction pour récupérer tous les projets
-    const fetchAllProjects = async () => {
+    // Fonction pour récupérer tous les utilisateurs
+    const fetchAllUsers = async () => {
         try {
             const token = localStorage.getItem('token');
-            const response = await axios.get('http://localhost:3000/project', {
+            // Utiliser l'endpoint /users/all pour récupérer tous les utilisateurs
+            const response = await axios.get('http://localhost:3000/users/all', {
                 headers: {
                     'Authorization': `Bearer ${token}`,
                     'Content-Type': 'application/json'
                 }
             });
 
-            if (response.data) {
+            if (response.data && response.data.success && Array.isArray(response.data.data)) {
+                const usersData = {};
+                // Convertir le tableau d'utilisateurs en objet avec l'ID comme clé
+                response.data.data.forEach(user => {
+                    if (user && user._id) {
+                        usersData[user._id] = user;
+                    }
+                });
+                console.log('Tous les utilisateurs récupérés:', usersData);
+                setUsers(usersData);
+                return usersData;
+            } else {
+                console.warn('Format de données d\'utilisateurs inattendu:', response.data);
+                return {};
+            }
+        } catch (error) {
+            console.error('Erreur lors de la récupération des utilisateurs:', error);
+            return {};
+        }
+    };
+
+    // Fonction pour récupérer tous les projets
+    const fetchAllProjects = async () => {
+        try {
+            const token = localStorage.getItem('token');
+            // Utiliser l'endpoint /project/dash qui semble fonctionner dans d'autres parties de l'application
+            const response = await axios.get('http://localhost:3000/project/dash', {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            if (response.data && Array.isArray(response.data)) {
                 const projectsData = {};
                 // Convertir le tableau de projets en objet avec l'ID comme clé
                 response.data.forEach(project => {
-                    projectsData[project._id] = project;
+                    if (project && project._id) {
+                        projectsData[project._id] = project;
+                    }
                 });
                 console.log('Tous les projets récupérés:', projectsData);
                 setProjects(projectsData);
                 return projectsData;
+            } else {
+                console.warn('Format de données de projets inattendu:', response.data);
+                return {};
             }
-            return {};
         } catch (error) {
             console.error('Erreur lors de la récupération des projets:', error);
+            // Essayer avec un autre endpoint en cas d'échec
+            try {
+                const token = localStorage.getItem('token');
+                const fallbackResponse = await axios.get('http://localhost:3000/project/all', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (fallbackResponse.data && fallbackResponse.data.data) {
+                    const projectsData = {};
+                    fallbackResponse.data.data.forEach(project => {
+                        if (project && project._id) {
+                            projectsData[project._id] = project;
+                        }
+                    });
+                    console.log('Projets récupérés (fallback):', projectsData);
+                    setProjects(projectsData);
+                    return projectsData;
+                }
+            } catch (fallbackError) {
+                console.error('Erreur lors de la récupération des projets (fallback):', fallbackError);
+            }
             return {};
         }
     };
@@ -150,8 +213,9 @@ const ReportsList = () => {
 
                 console.log('Tentative de récupération des rapports...');
 
-                // Récupérer d'abord tous les projets
+                // Récupérer d'abord tous les projets et utilisateurs
                 const projectsData = await fetchAllProjects();
+                const usersData = await fetchAllUsers();
 
                 // Pour les tests, nous n'envoyons pas le token d'authentification
                 const response = await axios.get('http://localhost:3000/reports/all');
@@ -168,26 +232,70 @@ const ReportsList = () => {
 
                     // Traiter les données pour s'assurer que les informations sont complètes
                     const processedReports = response.data.data.map(report => {
+                        // Créer une copie du rapport pour éviter de modifier l'objet original
+                        const reportCopy = { ...report };
+
                         // Vérifier si reported_user_id est un objet ou juste un ID
-                        if (report.reported_user_id && typeof report.reported_user_id === 'string') {
-                            console.log('Rapport avec ID utilisateur non résolu:', report._id);
-                        }
+                        if (reportCopy.reported_user_id && typeof reportCopy.reported_user_id === 'string') {
+                            console.log('Rapport avec ID utilisateur non résolu:', reportCopy._id);
 
-                        // Vérifier si project_id est un objet ou juste un ID
-                        if (report.project_id && typeof report.project_id === 'string') {
-                            console.log('Rapport avec ID projet non résolu:', report._id);
-
-                            // Essayer de récupérer le projet à partir des données déjà chargées
-                            if (projectsData[report.project_id]) {
-                                report.project_id = {
-                                    _id: report.project_id,
-                                    name: projectsData[report.project_id].name,
-                                    description: projectsData[report.project_id].description
+                            // Vérifier si l'utilisateur existe dans usersData
+                            if (usersData[reportCopy.reported_user_id]) {
+                                console.log('Utilisateur trouvé dans usersData:', usersData[reportCopy.reported_user_id]);
+                                reportCopy.reported_user_id = {
+                                    _id: reportCopy.reported_user_id,
+                                    firstName: usersData[reportCopy.reported_user_id].firstName,
+                                    lastName: usersData[reportCopy.reported_user_id].lastName,
+                                    email: usersData[reportCopy.reported_user_id].email,
+                                    image: usersData[reportCopy.reported_user_id].image
                                 };
+                            } else {
+                                console.warn('Utilisateur non trouvé dans usersData pour ID:', reportCopy.reported_user_id);
                             }
                         }
 
-                        return report;
+                        // Vérifier si project_id est un objet ou juste un ID
+                        if (reportCopy.project_id && typeof reportCopy.project_id === 'string') {
+                            console.log('Rapport avec ID projet non résolu:', reportCopy._id, 'Project ID:', reportCopy.project_id);
+
+                            // Vérifier si le projet existe dans projectsData
+                            if (projectsData[reportCopy.project_id]) {
+                                console.log('Projet trouvé dans projectsData:', projectsData[reportCopy.project_id]);
+                                reportCopy.project_id = {
+                                    _id: reportCopy.project_id,
+                                    name: projectsData[reportCopy.project_id].name,
+                                    description: projectsData[reportCopy.project_id].description
+                                };
+                            } else {
+                                console.warn('Projet non trouvé dans projectsData pour ID:', reportCopy.project_id);
+                            }
+                        }
+
+                        // Vérifier si reporter_id est un objet ou juste un ID
+                        if (reportCopy.reporter_id && typeof reportCopy.reporter_id === 'string') {
+                            console.log('Rapport avec ID reporter non résolu:', reportCopy._id, 'Reporter ID:', reportCopy.reporter_id);
+
+                            // Vérifier si l'utilisateur existe dans usersData
+                            if (usersData[reportCopy.reporter_id]) {
+                                console.log('Reporter trouvé dans usersData:', usersData[reportCopy.reporter_id]);
+                                reportCopy.reporter_id = {
+                                    _id: reportCopy.reporter_id,
+                                    firstName: usersData[reportCopy.reporter_id].firstName,
+                                    lastName: usersData[reportCopy.reporter_id].lastName,
+                                    email: usersData[reportCopy.reporter_id].email,
+                                    image: usersData[reportCopy.reporter_id].image
+                                };
+                            } else {
+                                console.warn('Reporter non trouvé dans usersData pour ID:', reportCopy.reporter_id);
+                            }
+                        }
+
+                        // Vérifier si team_manager_id est un objet ou juste un ID
+                        if (reportCopy.team_manager_id && typeof reportCopy.team_manager_id === 'string') {
+                            console.log('Rapport avec ID team manager non résolu:', reportCopy._id, 'Team Manager ID:', reportCopy.team_manager_id);
+                        }
+
+                        return reportCopy;
                     });
 
                     setReports(processedReports);
@@ -254,8 +362,9 @@ const ReportsList = () => {
         try {
             console.log('Rafraîchissement des rapports...');
 
-            // Récupérer d'abord tous les projets
+            // Récupérer d'abord tous les projets et utilisateurs
             const projectsData = await fetchAllProjects();
+            const usersData = await fetchAllUsers();
 
             const response = await axios.get('http://localhost:3000/reports/all');
 
@@ -264,27 +373,71 @@ const ReportsList = () => {
 
                 // Traiter les données pour s'assurer que les informations sont complètes
                 const processedReports = response.data.data.map(report => {
+                    // Créer une copie du rapport pour éviter de modifier l'objet original
+                    const reportCopy = { ...report };
+
                     // Vérifier si reported_user_id est un objet ou juste un ID
-                    if (report.reported_user_id && typeof report.reported_user_id === 'string') {
-                        console.log('Rapport avec ID utilisateur non résolu:', report._id);
-                    }
+                    if (reportCopy.reported_user_id && typeof reportCopy.reported_user_id === 'string') {
+                        console.log('Rapport avec ID utilisateur non résolu:', reportCopy._id);
 
-                    // Vérifier si project_id est un objet ou juste un ID
-                    if (report.project_id && typeof report.project_id === 'string') {
-                        console.log('Rapport avec ID projet non résolu:', report._id);
-                        console.log('Tous les projets:', projectsData);
-
-                        // Essayer de récupérer le projet à partir des données déjà chargées
-                        if (projectsData[report.project_id]) {
-                            report.project_id = {
-                                _id: report.project_id,
-                                name: projectsData[report.project_id].name,
-                                description: projectsData[report.project_id].description
+                        // Vérifier si l'utilisateur existe dans usersData
+                        if (usersData[reportCopy.reported_user_id]) {
+                            console.log('Utilisateur trouvé dans usersData:', usersData[reportCopy.reported_user_id]);
+                            reportCopy.reported_user_id = {
+                                _id: reportCopy.reported_user_id,
+                                firstName: usersData[reportCopy.reported_user_id].firstName,
+                                lastName: usersData[reportCopy.reported_user_id].lastName,
+                                email: usersData[reportCopy.reported_user_id].email,
+                                image: usersData[reportCopy.reported_user_id].image
                             };
+                        } else {
+                            console.warn('Utilisateur non trouvé dans usersData pour ID:', reportCopy.reported_user_id);
                         }
                     }
 
-                    return report;
+                    // Vérifier si project_id est un objet ou juste un ID
+                    if (reportCopy.project_id && typeof reportCopy.project_id === 'string') {
+                        console.log('Rapport avec ID projet non résolu:', reportCopy._id, 'Project ID:', reportCopy.project_id);
+                        console.log('Tous les projets:', projectsData);
+
+                        // Vérifier si le projet existe dans projectsData
+                        if (projectsData[reportCopy.project_id]) {
+                            console.log('Projet trouvé dans projectsData:', projectsData[reportCopy.project_id]);
+                            reportCopy.project_id = {
+                                _id: reportCopy.project_id,
+                                name: projectsData[reportCopy.project_id].name,
+                                description: projectsData[reportCopy.project_id].description
+                            };
+                        } else {
+                            console.warn('Projet non trouvé dans projectsData pour ID:', reportCopy.project_id);
+                        }
+                    }
+
+                    // Vérifier si reporter_id est un objet ou juste un ID
+                    if (reportCopy.reporter_id && typeof reportCopy.reporter_id === 'string') {
+                        console.log('Rapport avec ID reporter non résolu:', reportCopy._id, 'Reporter ID:', reportCopy.reporter_id);
+
+                        // Vérifier si l'utilisateur existe dans usersData
+                        if (usersData[reportCopy.reporter_id]) {
+                            console.log('Reporter trouvé dans usersData:', usersData[reportCopy.reporter_id]);
+                            reportCopy.reporter_id = {
+                                _id: reportCopy.reporter_id,
+                                firstName: usersData[reportCopy.reporter_id].firstName,
+                                lastName: usersData[reportCopy.reporter_id].lastName,
+                                email: usersData[reportCopy.reporter_id].email,
+                                image: usersData[reportCopy.reporter_id].image
+                            };
+                        } else {
+                            console.warn('Reporter non trouvé dans usersData pour ID:', reportCopy.reporter_id);
+                        }
+                    }
+
+                    // Vérifier si team_manager_id est un objet ou juste un ID
+                    if (reportCopy.team_manager_id && typeof reportCopy.team_manager_id === 'string') {
+                        console.log('Rapport avec ID team manager non résolu:', reportCopy._id, 'Team Manager ID:', reportCopy.team_manager_id);
+                    }
+
+                    return reportCopy;
                 });
 
                 setReports(processedReports);
@@ -308,13 +461,14 @@ const ReportsList = () => {
     return (
         <div className="container-fluid">
             {/* Modal pour le formulaire de rapport */}
-         
+
             {/* Page Header */}
             <div className="d-flex align-items-center justify-content-between page-header-breadcrumb flex-wrap gap-2">
                 <div>
                     <nav>
                         <ol className="breadcrumb mb-1">
-                            <li className="breadcrumb-item"><a href="#!">Pages</a></li>
+                            <li className="breadcrumb-item"><a href="#!">Teams</a></li>
+                            <span className="mx-1">→</span>
                             <li className="breadcrumb-item active" aria-current="page">Rapports</li>
                         </ol>
                     </nav>
@@ -323,7 +477,14 @@ const ReportsList = () => {
                         Réclamations et signalements
                     </h1>
                 </div>
-              
+                <div className="btn-list">
+                    <button
+                        className="btn btn-primary btn-wave"
+                        onClick={() => refreshReports()}
+                    >
+                        <i className="ri-refresh-line me-1"></i> Rafraîchir
+                    </button>
+                </div>
             </div>
             {/* Page Header Close */}
 
@@ -395,19 +556,31 @@ const ReportsList = () => {
                                                                 : 'Utilisateur inconnu'}
                                                         </p>
                                                         <p className="mb-0 fs-11 fw-normal op-8">
-                                                            <strong>Projet:</strong> {report.project_id
-                                                                ? (typeof report.project_id === 'object' && report.project_id.name
-                                                                    ? report.project_id.name
-                                                                    : (typeof report.project_id === 'string'
-                                                                        ? 'Chargement...'
-                                                                        : 'Projet inconnu'))
-                                                                : 'Projet non spécifié'}
+                                                            <strong>Projet:</strong> {
+                                                                (() => {
+                                                                    // Vérifier si project_id est un objet avec une propriété name
+                                                                    if (report.project_id && typeof report.project_id === 'object' && report.project_id.name) {
+                                                                        return report.project_id.name;
+                                                                    }
+
+                                                                    // Si project_id est une chaîne, essayer de trouver le projet dans projectsData
+                                                                    if (report.project_id && typeof report.project_id === 'string') {
+                                                                        const project = projects[report.project_id];
+                                                                        if (project && project.name) {
+                                                                            return project.name;
+                                                                        }
+                                                                        return `ID: ${report.project_id}`;
+                                                                    }
+
+                                                                    // Si project_id n'est pas défini ou est null
+                                                                    return 'Projet non spécifié';
+                                                                })()
+                                                            }
                                                         </p>
+                                                       
                                                     </div>
                                                     <div className="ms-auto fs-12 fw-semibold op-8 text-end">
-                                                        <div className="btn btn-sm btn-icon btn-primary1-light me-1" title="Voir les détails">
-                                                            <i className="ri-eye-line"></i>
-                                                        </div>
+                                                        
                                                         <div
                                                             className="btn btn-sm btn-icon btn-danger"
                                                             title="Supprimer définitivement"

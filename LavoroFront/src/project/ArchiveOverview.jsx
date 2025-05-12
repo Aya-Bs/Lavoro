@@ -12,22 +12,22 @@ export default function ArchiveOverview() {
   const [archivedProjects, setArchivedProjects] = useState([]);
   const navigate = useNavigate();
     const [projectManager, setProjectManager] = useState(null); // State for manager details
-  
-  
-  
+
+
+
   const [currentPage, setCurrentPage] = useState(1); // Current page
     const [itemsPerPage] = useState(7); // Number of items per page
-  
-  
+
+
     // Calculate the index of the first and last item on the current page
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
   const currentHistory = history.slice(indexOfFirstItem, indexOfLastItem);
-  
-  
+
+
   // Calculate the total number of pages
   const totalPages = Math.ceil(history.length / itemsPerPage);
-  
+
   // Handle page change
   const handlePageChange = (pageNumber) => {
     setCurrentPage(pageNumber);
@@ -106,7 +106,7 @@ const handleDownloadPDF = () => {
   const managerName = manager && manager.firstName && manager.lastName
     ? `${manager.firstName} ${manager.lastName}`
     : "Manager not assigned"
-  
+
   pdf.text(`Status: ${archive.originalStatus}`, margin + 10, 132)
   pdf.text(`Manager: ${managerName}`, margin + 10, 142)
   pdf.text(`Budget: ${archive.budget}`, margin + 10, 152)
@@ -119,7 +119,7 @@ const handleDownloadPDF = () => {
   pdf.setTextColor(255, 255, 255)
   pdf.text("TAGS", margin + 5, 189)
 
-  const tags = archive.tags.split(",").map((tag) => tag.trim())
+  const tags = archive.tags ? archive.tags.split(",").map((tag) => tag.trim()) : []
   tags.forEach((tag, index) => {
     const yPos = 200 + index * 10
     drawCircle(pdf, margin + 10, yPos - 3, 3, [255, 255, 255])
@@ -200,7 +200,7 @@ const handleDownloadPDF = () => {
 }
 
 
-  
+
 
   const handleDelete = async (projectId) => {
     Swal.fire({
@@ -217,9 +217,9 @@ const handleDownloadPDF = () => {
           const response = await fetch(`http://localhost:3000/project/archived-projects/${projectId}`, {
             method: 'DELETE',
           });
-  
+
           const data = await response.json();
-  
+
           if (response.ok) {
             Swal.fire('Deleted!', data.message, 'success').then(() => {
               navigate('/archieve');
@@ -239,7 +239,7 @@ const handleDownloadPDF = () => {
 
 
 
-  
+
 
    const handleUnarchive = async (projectId) => {
       try {
@@ -247,13 +247,13 @@ const handleDownloadPDF = () => {
           method: 'POST',
         });
         const data = await response.json();
-  
+
         if (response.ok) {
           // Remove the unarchived project from the state
           setArchivedProjects((prevProjects) =>
             prevProjects.filter((project) => project._id !== projectId)
           );
-  
+
           Swal.fire({
             title: 'Unarchived!',
             text: 'The project has been unarchived successfully.',
@@ -281,7 +281,7 @@ const handleDownloadPDF = () => {
         });
       }
     };
-  
+
 
   // Fetch archive details
   const fetchArchiveDetails = async () => {
@@ -462,7 +462,7 @@ const handleDownloadPDF = () => {
                     </span>
                     <div>
                       <div className="fw-medium mb-0 task-title">
-                        Budget                      
+                        Budget
                       </div>
                       <span className="fs-12 text-muted">{archive.budget} </span>
                     </div>
@@ -473,7 +473,7 @@ const handleDownloadPDF = () => {
                       <i className="ri-user-3-line fs-18 lh-1 align-middle" />
 
                     </span>
-                      
+
   <div>
     <span className="d-block fs-14 fw-medium">
     Team Manager
@@ -569,20 +569,20 @@ const handleDownloadPDF = () => {
               </div>
                 <div className="fs-15 fw-medium mb-2">Tags :</div>
                 <div className="d-flex gap-2 flex-wrap">
-                {archive.tags.split(',').map((tag, index) => (
+                {archive.tags ? archive.tags.split(',').map((tag, index) => (
               <span key={index} className="badge bg-light text-default border">
                 {tag.trim()}
               </span>
-            ))}       
-                  
-                  
+            )) : <span className="badge bg-light text-default border">No tags</span>}
+
+
                 </div>
               </div>
-             
-                 
+
+
             </div>
             <div className="card custom-card overflow-hidden">
-              
+
             </div>
           </div>
 

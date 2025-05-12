@@ -231,6 +231,7 @@ export const MyTasks = () => {
               <li className="breadcrumb-item">
                 <a href="javascript:void(0);">Pages</a>
               </li>
+              <span className="mx-1">→</span>
               <li className="breadcrumb-item active" aria-current="page">
               My Tasks
               </li>
@@ -253,7 +254,7 @@ export const MyTasks = () => {
                 <span className="text-muted d-block fs-12"> My Task list</span>
               </div>
               <div className="ms-auto">
-                <button 
+                <button
                   className="btn btn-primary btn-sm btn-wave"
                   onClick={navigateToPrioritizedTasks}
                 >

@@ -185,21 +185,7 @@ export const DeveloperTaskDetail = () => {
                     Details
                   </button>
                 </li>
-                <li className="nav-item" role="presentation">
-                  <button
-                    className="nav-link p-3"
-                    id="confirmed-tab"
-                    data-bs-toggle="tab"
-                    data-bs-target="#confirm-tab-pane"
-                    type="button"
-                    role="tab"
-                    aria-controls="confirmed-tab"
-                    aria-selected="false"
-                  >
-                    <i className="ri-user-3-line me-2 align-middle" />
-                    Assignees
-                  </button>
-                </li>
+                
                 <li className="nav-item" role="presentation">
                   <button
                     className="nav-link p-3"
@@ -310,96 +296,7 @@ export const DeveloperTaskDetail = () => {
                     </div>
                   </div>
                 </div>
-                <div
-                  className="tab-pane fade border-0 p-0"
-                  id="confirm-tab-pane"
-                  role="tabpanel"
-                  aria-labelledby="confirm-tab-pane"
-                  tabIndex={0}
-                >
-                  <br />
-                  <div className="card custom-card" >
-                    <div className="card-body pb-0">
-                      <div className="swiper testimonialSwiper2">
-                        <div className="swiper-wrapper">
-                          {paginatedAssignees.length > 0 ? (
-                            <div className="swiper-slide">
-                              <div className="row" >
-                                {paginatedAssignees.map((member, index) => (
-                                  <div key={index} className="col-md-6 mb-1">
-                                    <div className="card custom-card overflow-hidden"  style={{ backgroundColor: 'rgb(90, 103, 216, 0.1)' }}>
-                                      <div className="p-3 text-center align-items-center justify-content-start gap-2 border-bottom border-block-end-dashed bg-secondary-transparent">
-                                        {member.user_id?.image ? (
-                                            <img
-                                            src={
-                                                member.user_id?.image && (member.user_id?.image.startsWith('http') || member.user_id?.image.startsWith('https'))
-                                                ? member.user_id?.image
-                                                : member.user_id?.image
-                                                  ? `http://localhost:3000${member.user_id?.image}`
-                                                  : '../assets/images/faces/11.jpg'
-                                            }
-                                            alt={`${member.user_id?.firstName || ''} ${member.user_id?.lastName || ''}`.trim() || 'User'}
-                                            className="mb-1 mx-auto text-center avatar avatar-xl rounded-circle shadow-sm"
-                                            onError={(e) => {
-                                              e.target.src = '../assets/images/faces/11.jpg';
-                                              e.target.alt = 'Default avatar';
-                                            }}
-                                            style={{
-                                              objectFit: 'cover'
-                                            }}
-                                          />
-                                        ) : (
-                                          <div className="mb-2 mx-auto text-center avatar avatar-xl rounded-circle shadow-sm bg-primary d-flex align-items-center justify-content-center">
-                                            <span className="text-white fs-18">
-                                              {member.user_id?.firstName?.charAt(0)}{member.user_id?.lastName?.charAt(0)}
-                                            </span>
-                                          </div>
-                                        )}
-                                        <div className="flex-grow-1">
-                                          <p className="mb-0 fw-semibold h6">
-                                            {member.user_id?.firstName} {member.user_id?.lastName}
-                                          </p>
-                                          <span className="fw-normal text-muted fs-12">
-                                            {member.role || 'Team Member'}
-                                          </span>
-                                        </div>
-                                      </div>
-                                    </div>
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-                          ) : (
-                            <div className="text-center p-4">
-                              <p>No assignees for this task</p>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                      {totalAssigneePages > 1 && (
-                        <div className="d-flex justify-content-center align-items-center mt-0 gap-3">
-                          <button
-                            className="btn btn-sm btn-outline-primary"
-                            onClick={handlePrevPage}
-                            disabled={assigneePage === 0}
-                            aria-label="Previous assignees page"
-                          >
-                            &#8592;
-                          </button>
-                          <button
-                            className="btn btn-sm btn-outline-primary"
-                            onClick={handleNextPage}
-                            disabled={assigneePage === totalAssigneePages - 1}
-                            aria-label="Next assignees page"
-                          >
-                            &#8594;
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-                <div
+                                <div
                   className="tab-pane fade border-0 p-0"
                   id="comments-tab-pane"
                   role="tabpanel"

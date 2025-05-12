@@ -20,7 +20,7 @@ const SearchTeam = () => {
     const navigate = useNavigate();
   // Fetch projects for filter options
   useEffect(() => {
-    
+
 const fetchProjects = async () => {
     try {
       setProjectsLoading(true);
@@ -29,9 +29,9 @@ const fetchProjects = async () => {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         }
       });
-      
+
       console.log('Projects API Response:', response);
-      
+
       // Update this check to match the actual response structure
       if (response.data && Array.isArray(response.data)) {  // Changed from response.data.data
         setProjects(response.data);  // Changed from response.data.data
@@ -119,6 +119,8 @@ const fetchProjects = async () => {
                   Teams
                 </a>
               </li>
+              <span className="mx-1">→</span>
+
               <li className="breadcrumb-item active" aria-current="page">
                 Team Search
               </li>
@@ -258,7 +260,7 @@ const fetchProjects = async () => {
               <div className="col-sm-5 text-sm-end mt-3 mt-sm-0">
                 <div className="btn-group">
                   <button className="btn btn-primary border dropdown-toggle" type="button" data-bs-toggle="dropdown">
-                    Sort By
+                    Sort By  
                   </button>
                   <ul className="dropdown-menu">
                     <li><button className="dropdown-item" onClick={() => handleSortChange('newest')}>Newest</button></li>
@@ -285,7 +287,7 @@ const fetchProjects = async () => {
                         <div className="card-body">
                           <div className="float-end dropdown ms-auto">
                             <a href="#" className="btn btn-white btn-icon btn-sm text-muted rounded-pill" data-bs-toggle="dropdown">
-                              <i className="fe fe-more-vertical"></i>
+                              <i className="ri-more-2-line"></i>
                             </a>
                             <ul className="dropdown-menu dropdown-menu-end">
                               <li><button className="dropdown-item" onClick={() => navigate(`/teams/teamDetails/${team?._id}`)}>View Details</button></li>
@@ -303,7 +305,7 @@ const fetchProjects = async () => {
                                 </a>
                               </h5>
                               <a href="#" className="text-muted" onClick={(e) => e.preventDefault()}>
-                                <i className="bi bi-building me-1"></i>
+                                <i className="ri-building-line me-1"></i>
                                 {team?.project_id?.name || 'No project assigned'}
                               </a>
                             </div>
@@ -315,7 +317,7 @@ const fetchProjects = async () => {
                               </span>
                             ))}
                             <span className={`badge rounded-pill fs-11 ${team?.status === 'Active' ? 'bg-success-transparent' : 'bg-secondary-transparent'}`}>
-                              <i className="bi bi-circle-fill me-1"></i> {team?.status || 'Unknown'}
+                              <i className="ri-checkbox-blank-circle-fill me-1"></i> {team?.status || 'Unknown'}
                             </span>
                             <span className="badge rounded-pill fs-11 bg-primary-transparent">
                               <i className="ri-group-line me-1"></i> {team?.members?.length || 0} Members
@@ -331,7 +333,7 @@ const fetchProjects = async () => {
                               className="btn btn-primary btn-sm d-inline-flex"
                               onClick={() => navigate(`/teams/teamDetails/${team?._id}`)}
                             >
-                              View Team <i className="fe fe-arrow-right ms-2"></i>
+                              View Team <i className="ri-arrow-right-line ms-2"></i>
                             </button>
                           </div>
                         </div>

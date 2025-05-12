@@ -246,8 +246,9 @@ const ChatPopup = ({ onClose, currentUser, onCreateGroup }) => {
     // Styles pour le popup de chat
     const chatPopupStyle = {
         position: 'fixed',
-        bottom: '20px',
-        right: '20px',
+        bottom: expanded ? '50%' : '20px',
+        right: expanded ? '50%' : '20px',
+        transform: expanded ? 'translate(50%, 50%)' : 'none',
         width: expanded ? '90%' : '320px',
         height: expanded ? '80vh' : '500px',
         backgroundColor: '#1e2329',
@@ -288,7 +289,8 @@ const ChatPopup = ({ onClose, currentUser, onCreateGroup }) => {
         flex: 1,
         display: 'flex',
         flexDirection: 'column',
-        overflow: 'hidden'
+        overflow: 'hidden',
+        height: '100%'
     };
 
     const welcomeChatContainerStyle = {

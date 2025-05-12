@@ -36,7 +36,7 @@ import { SearchSlashIcon } from "lucide-react";
 import SearchTeam from "./team/searchTeam";
 import TeamArchive from "./team/teamArchiveList";
 import TeamArchiveDetailsPage from "./team/teamArchiveDetails";
-import BestPerformerPage from "./pages/BestPerformerPage";
+import BestPerformerPage from "./BestPerformer/BestPerformerPage";
 import ChatComponent from "./chat/ChatComponent";
 import SearchMember from "./team/searchMember";
 import MemberDetails from "./team/memberDetails";
@@ -59,6 +59,9 @@ import PrioritizedTasks from "./Tasks/PrioritizedTasks";
 import File from "./fileManager/file"
 import TaskAssignement from "./Tasks/taskAssignement";
 import Calendar from "./Tasks/calendar";
+import Landing from "./Landing";
+import DashTeam from "./team/DashTeam";
+import Meet from "./Tasks/Meet";
 
 // ProtectedRoute component to check authentication and roles
 const ProtectedRoute = ({ children, allowedRoles }) => {
@@ -130,13 +133,13 @@ function App() {
         <RefreshHandler setIsAuthenticated={setIsAuthenticated} />
         <Routes>
           {/* Public routes */}
-
+          <Route path="/" element={<Landing />} />
           <Route path="/signin" element={<SignIn />} />
           <Route path="/signup" element={<SignUp />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/resetpassword" element={<ResetPassword />} />
           <Route path="/verify-email" element={<VerifyEmail />} />
-          <Route path="/" element={<Navigate to="/signin" />} />
+          {/* <Route path="/" element={<Navigate to="/signin" />} /> */}
           <Route path="*" element={<Navigate to="/signin" />} />
 
 
@@ -156,7 +159,18 @@ function App() {
               </ProtectedRoute>
             } />
 
+<Route path="/DashTeam" element={
+              <ProtectedRoute allowedRoles={['Team Manager']}>
+                <DashTeam />
+              </ProtectedRoute>
+            } />
 
+
+<Route path="/meet" element={
+              <ProtectedRoute allowedRoles={['Team Manager', 'Admin','Developer']}>
+                <Meet />
+              </ProtectedRoute>
+            } />
 
             <Route path="/update-profile" element={
               <ProtectedRoute>

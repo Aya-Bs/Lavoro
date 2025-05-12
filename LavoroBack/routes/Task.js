@@ -23,8 +23,10 @@ router.get('/getTaskByIdMember/:id', taskController.getTaskByIdMember);
 router.get('/getTasksList/:userId', taskController.getTasksList);
 router.put('/updateCalendarDates/:taskId', taskController.updateTaskCalendarDates);
 router.post('/confirm-assignment', taskController.confirmAssignment);
+router.get('/my-tasks/:teamMemberId', authenticateUser, taskController.getTasksByTeamMember);
 
 
+router.post('/:id/export-to-github', auth, taskController.exportToGitHub);
 
 
 
@@ -92,8 +94,5 @@ router.get('/check-manager-role', auth, async (req, res) => {
   router.get('/developer-dashboard', auth, taskController.getDeveloperDashboard);
   // routes/task.js
 router.get('/developer-kanban', auth, taskController.getDeveloperKanbanTasks);
-
-router.post('/:id/export-to-github', auth, taskController.exportToGitHub);
-
 
 module.exports = router;

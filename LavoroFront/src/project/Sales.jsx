@@ -396,14 +396,14 @@ export default function Sales() {
   }, []);
 
 
-  
-    
-  
-   
+
+
+
+
 
     return(
- 
- 
+
+
 <>
         <div className="d-flex align-items-center justify-content-between page-header-breadcrumb flex-wrap gap-2">
           <div>
@@ -411,36 +411,14 @@ export default function Sales() {
               <li className="breadcrumb-item">
                 <a href="javascript:void(0);">Dashboards</a>
               </li>
+              <span className="mx-1">→</span>
               <li className="breadcrumb-item active" aria-current="page">
                 Sales
               </li>
             </ol>
             <h1 className="page-title fw-medium fs-18 mb-0">Sales Dashboard</h1>
           </div>
-          <div className="d-flex align-items-center gap-2 flex-wrap">
-            <div className="form-group">
-              <div className="input-group">
-                <div className="input-group-text bg-white border">
-                  {" "}
-                  <i className="ri-calendar-line" />{" "}
-                </div>
-                <input
-                  type="text"
-                  className="form-control breadcrumb-input"
-                  id="daterange"
-                  placeholder="Search By Date Range"
-                />
-              </div>
-            </div>
-            <div className="btn-list">
-              <button className="btn btn-white btn-wave">
-                <i className="ri-filter-3-line align-middle me-1 lh-1" /> Filter
-              </button>
-              <button className="btn btn-primary btn-wave me-0">
-                <i className="ri-share-forward-line me-1" /> Share
-              </button>
-            </div>
-          </div>
+
         </div>
         {/* End::page-header */}
         {/* Start:: row-1 */}
@@ -646,7 +624,7 @@ export default function Sales() {
                   <div className="card-body py-4 px-3">
                     <div className="d-flex gap-3 mb-3 flex-wrap">
                       <div className="avatar avatar-md bg-primary-transparent">
-                      <i className="ri-trending-up fs-5"></i>                    
+                      <i className="ri-trending-up fs-5"></i>
                         </div>
                       <div className="flex-fill d-flex align-items-start justify-content-between flex-wrap">
                         <div>

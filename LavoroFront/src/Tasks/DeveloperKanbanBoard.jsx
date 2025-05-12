@@ -188,21 +188,17 @@ const DeveloperKanbanBoard = () => {
                 <div>
                     <nav>
                         <ol className="breadcrumb mb-1">
-                            <li className="breadcrumb-item"><a href="javascript:void(0);">Apps</a></li>
+                           
+
                             <li className="breadcrumb-item"><a href="javascript:void(0);">Task</a></li>
+                            <span className="mx-1">→</span>
+
                             <li className="breadcrumb-item active" aria-current="page">Kanban Board</li>
                         </ol>
                     </nav>
                     <h1 className="page-title fw-medium fs-18 mb-0">Kanban Board</h1>
                 </div>
-                <div className="btn-list">
-                    <button className="btn btn-white btn-wave">
-                        <i className="ri-filter-3-line align-middle me-1 lh-1"></i> Filter
-                    </button>
-                    <button className="btn btn-primary btn-wave me-0">
-                        <i className="ri-share-forward-line me-1"></i> Share
-                    </button>
-                </div>
+                
             </div>
 
             {/* Kanban Board */}

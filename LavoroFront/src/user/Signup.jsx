@@ -340,7 +340,7 @@ function SignUp() {
   }
 
   return (
-    <div style={back}>
+    <div >
       <div className="row authentication authentication-cover-main mx-0">
         <div className="col-xxl-6 col-xl-7">
           <div className="row justify-content-center align-items-center h-100">

@@ -217,6 +217,8 @@ const TeamArchiveDetailsPage = () => {
                   Archived Teams
                 </a>
               </li>
+              <span className="mx-1">→</span>
+
               <li className="breadcrumb-item active" aria-current="page">
                 Team Archive Details
               </li>

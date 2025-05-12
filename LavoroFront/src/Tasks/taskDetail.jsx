@@ -97,14 +97,20 @@ export const TaskDetail = () => {
               <li className="breadcrumb-item">
                 <a href="javascript:void(0);">Tasks</a>
               </li>
+              <span className="mx-1">→</span>
+
               <li className="breadcrumb-item">
                 <a href="/listTask">Task List</a>
               </li>
+              <span className="mx-1">→</span>
+
               <li className="breadcrumb-item active" aria-current="page">
                 Task Details
               </li>
             </ol>
           </nav>
+          
+          <h1 className="page-title fw-medium fs-18 mb-0">Task Details</h1>
         </div>
       </div>
 
@@ -178,21 +184,7 @@ export const TaskDetail = () => {
                     Comments
                   </button>
                 </li>
-                <li className="nav-item" role="presentation">
-                  <button
-                    className="nav-link p-3"
-                    id="delivered-tab"
-                    data-bs-toggle="tab"
-                    data-bs-target="#delivery-tab-pane"
-                    type="button"
-                    role="tab"
-                    aria-controls="delivered-tab"
-                    aria-selected="false"
-                  >
-                    <i className="ri-checkbox-circle-line me-2 align-middle" />
-                    Progress
-                  </button>
-                </li>
+                
               </ul>
               <div className="tab-content border border-dashed" id="myTabContent">
                 <div
@@ -563,35 +555,7 @@ Developer                                          </span>
                 >
                   <TaskCommentsTab taskId={task._id} projectData={task.project_id} />
                 </div>
-                <div
-                  className="tab-pane fade border-0 p-0"
-                  id="delivery-tab-pane"
-                  role="tabpanel"
-                  aria-labelledby="delivery-tab-pane"
-                  tabIndex={0}
-                >
-                  <div className="p-3 checkout-payment-success my-3">
-                    <div className="mb-4">
-                      <h5 className="text-success fw-semibold">Payment Successful...</h5>
-                    </div>
-                    <div className="mb-4">
-                      <img src="../assets/images/ecommerce/png/24.png" alt="" />
-                    </div>
-                    <div className="mb-4">
-                      <p className="mb-1 fs-14">
-                        You can track your order with Order Id <b>SPK#1FR</b> from{" "}
-                        <a className="link-primary1" href="javascript:void(0);">
-                          <u>Track Order</u>
-                        </a>
-                      </p>
-                      <p className="text-muted">Thankyou for shopping with us.</p>
-                    </div>
-                    <a href="products.html" className="btn btn-primary">
-                      Continue Shopping
-                      <i className="bi bi-cart ms-2" />
-                    </a>
-                  </div>
-                </div>
+                
               </div>
             </div>
           </div>

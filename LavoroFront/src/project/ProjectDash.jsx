@@ -14,14 +14,14 @@ export default function Sales() {
     'Completed': 0,
     'Archived': 0
   });
-  
+
   const [loading, setLoading] = useState(true);
   const [archiveCount, setArchiveCount] = useState(0);
-  
+
   // Refs for chart containers
   const projectsPerMonthChartRef = useRef(null);
   const projectsByStatusChartRef = useRef(null);
-  
+
   // Refs for chart instances
   const projectsPerMonthChartInstance = useRef(null);
   const projectsByStatusChartInstance = useRef(null);
@@ -98,21 +98,21 @@ export default function Sales() {
     const getProjectsByMonth = () => {
       const projectsByStartMonth = Array(12).fill(0);
       const projectsByEndMonth = Array(12).fill(0);
-      
+
       projects.forEach(project => {
         if (project.start_date) {
           const startDate = new Date(project.start_date);
           const startMonth = startDate.getMonth();
           projectsByStartMonth[startMonth]++;
         }
-        
+
         if (project.end_date) {
           const endDate = new Date(project.end_date);
           const endMonth = endDate.getMonth();
           projectsByEndMonth[endMonth]++;
         }
       });
-      
+
       return { projectsByStartMonth, projectsByEndMonth };
     };
 
@@ -266,7 +266,7 @@ const projectsPerMonthOptions = {
     }
   };
     projectsPerMonthChartInstance.current = new ApexCharts(
-      projectsPerMonthChartRef.current, 
+      projectsPerMonthChartRef.current,
       projectsPerMonthOptions
     );
     projectsPerMonthChartInstance.current.render();
@@ -367,7 +367,7 @@ const projectsPerMonthOptions = {
         }
       };
 
-      
+
     projectsByStatusChartInstance.current = new ApexCharts(
       projectsByStatusChartRef.current,
       projectsByStatusOptions
@@ -386,38 +386,16 @@ const projectsPerMonthOptions = {
             <li className="breadcrumb-item">
               <a href="javascript:void(0);">Dashboards</a>
             </li>
+            <span className="mx-1">→</span>
             <li className="breadcrumb-item active" aria-current="page">
               Projects
             </li>
           </ol>
           <h1 className="page-title fw-medium fs-18 mb-0">Projects Dashboard</h1>
         </div>
-        <div className="d-flex align-items-center gap-2 flex-wrap">
-          <div className="form-group">
-            <div className="input-group">
-              <div className="input-group-text bg-white border">
-                {" "}
-                <i className="ri-calendar-line" />{" "}
-              </div>
-              <input
-                type="text"
-                className="form-control breadcrumb-input"
-                id="daterange"
-                placeholder="Search By Date Range"
-              />
-            </div>
-          </div>
-          <div className="btn-list">
-            <button className="btn btn-white btn-wave">
-              <i className="ri-filter-3-line align-middle me-1 lh-1" /> Filter
-            </button>
-            <button className="btn btn-primary btn-wave me-0">
-              <i className="ri-share-forward-line me-1" /> Share
-            </button>
-          </div>
-        </div>
+
       </div>
-  
+
       <div className="row">
         <div className="col-xl-12">
           <div className="row g-3">
@@ -448,7 +426,7 @@ const projectsPerMonthOptions = {
                 </div>
               </div>
             </div>
-  
+
             {/* Not Started */}
             <div className="col-xxl col-xl col-lg-3 col-md-6 col-sm-6">
               <div className="card custom-card overflow-hidden main-content-card">
@@ -476,7 +454,7 @@ const projectsPerMonthOptions = {
                 </div>
               </div>
             </div>
-  
+
             {/* In Progress */}
             <div className="col-xxl col-xl col-lg-3 col-md-6 col-sm-6">
               <div className="card custom-card overflow-hidden main-content-card">
@@ -504,7 +482,7 @@ const projectsPerMonthOptions = {
                 </div>
               </div>
             </div>
-  
+
             {/* Completed */}
             <div className="col-xxl col-xl col-lg-3 col-md-6 col-sm-6">
               <div className="card custom-card overflow-hidden main-content-card">
@@ -532,7 +510,7 @@ const projectsPerMonthOptions = {
                 </div>
               </div>
             </div>
-  
+
             {/* Archived */}
             <div className="col-xxl col-xl col-lg-3 col-md-6 col-sm-6">
               <div className="card custom-card overflow-hidden main-content-card">
@@ -558,7 +536,7 @@ const projectsPerMonthOptions = {
             </div>
           </div>
         </div>
-  
+
         {/* Charts Section */}
         <div className="col-xl-8">
           <div className="row">
@@ -566,7 +544,7 @@ const projectsPerMonthOptions = {
               <div className="card custom-card">
                 <div className="card-header justify-content-between">
                   <div className="card-title">Number of project per month</div>
-                  
+
                 </div>
                 <div className="card-body">
                   <div ref={projectsPerMonthChartRef} id="projects-per-month" />
@@ -575,7 +553,7 @@ const projectsPerMonthOptions = {
             </div>
           </div>
         </div>
-  
+
         <div className="col-xl-4">
           <div className="card custom-card overflow-hidden">
             <div className="card-header pb-0 justify-content-between">

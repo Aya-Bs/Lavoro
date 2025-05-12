@@ -4,6 +4,7 @@ import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js';
 import RelatedProfiles from './relatedProfiles';
 import axios from 'axios';
 import { useParams, useNavigate } from 'react-router-dom';
+import ReportForm from '../reports/ReportForm';
 
 // Enregistrer les composants nécessaires de Chart.js
 ChartJS.register(ArcElement, Tooltip, Legend);
@@ -11,6 +12,9 @@ ChartJS.register(ArcElement, Tooltip, Legend);
 const MemberDetails = () => {
     const [member, setMember] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [showReportForm, setShowReportForm] = useState(false);
+    const [teamInfo, setTeamInfo] = useState(null);
+    const [projectInfo, setProjectInfo] = useState(null);
     const navigate = useNavigate();
     const { id } = useParams();
 
@@ -57,7 +61,7 @@ const MemberDetails = () => {
             try {
                 const token = localStorage.getItem('token');
                 const response = await axios.get(
-                    `http://localhost:3000/teamMember/getTeamMember/${id}`, 
+                    `http://localhost:3000/teamMember/getTeamMember/${id}`,
                     {
                         headers: {
                             'Authorization': `Bearer ${token}`,
@@ -66,7 +70,91 @@ const MemberDetails = () => {
                         withCredentials: true
                     }
                 );
-                setMember(response.data.data);
+
+                const memberData = response.data.data;
+                setMember(memberData);
+
+                // Récupérer les informations sur l'équipe
+                if (memberData && memberData.teamId) {
+                    try {
+                        const teamResponse = await axios.get(
+                            `http://localhost:3000/team/${memberData.teamId}`,
+                            {
+                                headers: {
+                                    'Authorization': `Bearer ${token}`,
+                                    'Content-Type': 'application/json'
+                                },
+                                withCredentials: true
+                            }
+                        );
+
+                        const teamData = teamResponse.data.data;
+                        setTeamInfo(teamData);
+
+                        // Récupérer les informations sur le projet
+                        if (teamData && teamData.project_id) {
+                            try {
+                                const projectResponse = await axios.get(
+                                    `http://localhost:3000/project/getProjectById/${teamData.project_id}`,
+                                    {
+                                        headers: {
+                                            'Authorization': `Bearer ${token}`,
+                                            'Content-Type': 'application/json'
+                                        },
+                                        withCredentials: true
+                                    }
+                                );
+
+                                setProjectInfo(projectResponse.data);
+                            } catch (projectError) {
+                                console.error('Error fetching project:', projectError);
+
+                                // Récupérer un projet par défaut si le projet de l'équipe n'est pas trouvé
+                                try {
+                                    const defaultProjectResponse = await axios.get(
+                                        `http://localhost:3000/project/dash`,
+                                        {
+                                            headers: {
+                                                'Authorization': `Bearer ${token}`,
+                                                'Content-Type': 'application/json'
+                                            },
+                                            withCredentials: true
+                                        }
+                                    );
+
+                                    if (Array.isArray(defaultProjectResponse.data) && defaultProjectResponse.data.length > 0) {
+                                        setProjectInfo(defaultProjectResponse.data[0]);
+                                    }
+                                } catch (defaultProjectError) {
+                                    console.error('Error fetching default project:', defaultProjectError);
+                                }
+                            }
+                        } else {
+                            // Si l'équipe n'a pas de projet, récupérer un projet par défaut
+                            try {
+                                const defaultProjectResponse = await axios.get(
+                                    `http://localhost:3000/project/dash`,
+                                    {
+                                        headers: {
+                                            'Authorization': `Bearer ${token}`,
+                                            'Content-Type': 'application/json'
+                                        },
+                                        withCredentials: true
+                                    }
+                                );
+
+                                if (Array.isArray(defaultProjectResponse.data) && defaultProjectResponse.data.length > 0) {
+                                    setProjectInfo(defaultProjectResponse.data[0]);
+                                }
+                            } catch (defaultProjectError) {
+                                console.error('Error fetching default project:', defaultProjectError);
+                            }
+                        }
+                    } catch (teamError) {
+                        console.error('Error fetching team:', teamError);
+                    }
+                }
+
                 setLoading(true);
             } catch (error) {
                 console.error('Error fetching member:', error);
@@ -77,7 +165,7 @@ const MemberDetails = () => {
 
         fetchMember();
     }, [id]);
-    
+
     if (loading) {
         return <div className="text-center py-4">Loading...</div>;
     }
@@ -135,26 +223,60 @@ const MemberDetails = () => {
 
     return (
         <div className="container-fluid">
+            {/* Report Form Modal */}
+            {showReportForm && (
+                <div className="modal d-block" style={{ backgroundColor: 'rgba(0,0,0,0.5)', marginLeft : '100px' }}>
+                    <div className="modal-dialog modal-dialog-centered modal-lg">
+                        <div className="modal-content">
+                            <div className="modal-header border-0">
+                                <button
+                                    type="button"
+                                    className="btn-close"
+                                    onClick={() => setShowReportForm(false)}
+                                    aria-label="Close"
+                                ></button>
+                            </div>
+                            <div className="modal-body" >
+
+                                <ReportForm
+                                    onClose={() => setShowReportForm(false)}
+                                    onSuccess={() => {
+                                        setShowReportForm(false);
+                                        // Optionally refresh data or show success message
+                                    }}
+                                    initialData={{
+                                        reported_user_id: id, // Pass the current member ID
+                                        hideUserField: true, // Hide the user selection field
+                                        hideProjectField: true, // Hide the project selection field
+                                        memberName: member.name, // Pass the member name for display
+                                        project_id: projectInfo?.project_id || projectInfo?._id, // Pass the project ID
+                                        team_manager_id: teamInfo?.manager_id?._id, // Pass the team manager ID
+                                        teamInfo: teamInfo, // Pass the team info
+                                        projectInfo: projectInfo // Pass the project info
+                                    }}
+                                />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {/* Page Header */}
             <div className="d-flex align-items-center justify-content-between page-header-breadcrumb flex-wrap gap-2">
                 <div>
                     <nav>
                         <ol className="breadcrumb mb-1">
-                            <li className="breadcrumb-item"><a href="#!">Apps</a></li>
-                            <li className="breadcrumb-item"><a href="#!">Jobs</a></li>
-                            <li className="breadcrumb-item active">Candidate Details</li>
+                            
+                            <li className="breadcrumb-item"><a href="#!">Teams</a></li>
+                            <span className="mx-1">→</span>
+                            <li className="breadcrumb-item"><a href="#!">Team List</a></li>
+                            <span className="mx-1">→</span>
+                            <li className="breadcrumb-item active">Member Details</li>
                         </ol>
                     </nav>
-                    <h1 className="page-title fw-medium fs-18 mb-0">Candidate Details</h1>
+                    <h1 className="page-title fw-medium fs-18 mb-0">Member Details</h1>
                 </div>
-                <div className="btn-list">
-                    <button className="btn btn-white btn-wave">
-                        <i className="ri-filter-3-line align-middle me-1"></i> Filter
-                    </button>
-                    <button className="btn btn-primary btn-wave">
-                        <i className="ri-share-forward-line me-1"></i> Share
-                    </button>
-                </div>
+                
             </div>
 
             {/* Main Content */}
@@ -166,8 +288,8 @@ const MemberDetails = () => {
                         <div className="card-body pt-5">
                             <div className="mb-3 lh-1 mt-4">
                                 <span className="avatar avatar-xxl avatar-rounded">
-                                    <img src={member.image.startsWith('http') ? 
-                                        member.image : 
+                                    <img src={member.image.startsWith('http') ?
+                                        member.image :
                                         `http://localhost:3000${member.image}`}
                                         alt={member.name} className="rounded-circle img-fluid shadow" />
                                 </span>
@@ -177,7 +299,7 @@ const MemberDetails = () => {
                                     <h6 className="mb-1 fw-semibold">
                                         <a href="#!">{member.name} <i className="ri-check-line text-success fs-16" title="Verified candidate"></i></a>
                                     </h6>
-                                    <p className="mb-0 text-muted">{member.role}</p>
+                                    <p className="mb-0 text-muted">Developer</p>
                                     <div className="d-flex flex-wrap gap-2 align-items-center fs-12 text-muted">
                                         <p className="mb-0">Ratings: </p>
                                         <div className="min-w-fit-content ms-2">
@@ -203,30 +325,16 @@ const MemberDetails = () => {
                                     </div>
                                 </div>
                                 <div className="btn-list ms-auto">
-                                    <button className="btn btn-primary rounded-pill btn-wave">
-                                        <i className="ri-download-cloud-line me-1"></i> Reclamation                                    </button>
-                                    <button className="btn btn-primary1-light rounded-pill btn-wave">
-                                        <i className="ri-heart-line lh-1 align-middle"></i> Add to wishlist
+                                    <button
+                                        className="btn btn-danger rounded-pill btn-wave"
+                                        onClick={() => setShowReportForm(true)}
+                                    >
+                                        <i className="ri-alarm-warning-line me-1" ></i> Réclamation
                                     </button>
-                                    <button className="btn btn-icon btn-secondary-light rounded-pill btn-wave">
-                                        <i className="ri-share-line fs-18 lh-1 align-middle"></i>
-                                    </button>
+                                    
                                 </div>
                             </div>
-                            <div className="d-flex gap-3 align-items-center flex-wrap mb-3">
-                                <h6 className="mb-0">Availability:</h6>
-                                <div className="popular-tags d-flex gap-2 flex-wrap">
-                                    <span className="badge rounded-pill fs-11 bg-info-transparent">
-                                        <i className="ri-remote-control-line me-1"></i>Full-time
-                                    </span>
-                                    <span className="badge rounded-pill fs-11 bg-danger-transparent">
-                                        <i className="ri-time-line me-1"></i>Immediate Joinee
-                                    </span>
-                                </div>
-                                <a href="#!" className="ms-auto text-secondary px-2 py-1 rounded-pill fs-12 bg-secondary-transparent">
-                                    <i className="ri-chat-1-line me-1"></i> Message Now
-                                </a>
-                            </div>
+                            
                             <div className="d-flex gap-3 align-items-center flex-wrap">
                                 <h6 className="mb-0">Experience Level:</h6>
                                 <div className="popular-tags d-flex gap-2 flex-wrap">

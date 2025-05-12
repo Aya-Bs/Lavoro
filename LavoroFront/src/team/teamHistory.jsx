@@ -120,9 +120,21 @@ const TeamHistoryTimeline = () => {
         );
     }
 
+
+    
+
     // Main timeline rendering
     return (
+        
         <div className="row justify-content-center timeline-3">
+            <style>
+  {`
+    .avatar-initials {
+      color: #000000; /* Dark black text */
+      font-weight: 600; /* Make it slightly bolder */
+    }
+  `}
+</style>
             <div className="col-xxl-11">
                 <div className="card custom-card">
                     <div className="card-header pb-4">
@@ -144,20 +156,20 @@ const TeamHistoryTimeline = () => {
                                             <div className="inner-circle"></div>
                                             <div className={`card custom-card mb-0 border border-opacity-25 border-${colorClass} bg-${colorClass}-transparent ${index % 2 === 0 ? '' : 'content-top'}`}>
                                                 <div className="card-body">
-                                                    <span className="avatar avatar-sm avatar-rounded">
-                                                        {item.changed_by?.image ? (
-                                                            <img 
-                                                                src={item.changed_by.image} 
-                                                                alt={`${item.changed_by.firstName || ''} ${item.changed_by.lastName || ''}`}
-                                                                onError={(e) => {
-                                                                    e.target.onerror = null;
-                                                                    e.target.parentElement.innerHTML = `<span class="avatar-initials">${userInitials}</span>`;
-                                                                }}
-                                                            />
-                                                        ) : (
-                                                            <span className="avatar-initials">{userInitials}</span>
-                                                        )}
-                                                    </span>
+                                                <span className="avatar avatar-sm avatar-rounded">
+  {item.changed_by?.image ? (
+    <img 
+      src={item.changed_by.image} 
+      alt={`${item.changed_by.firstName || ''} ${item.changed_by.lastName || ''}`}
+      onError={(e) => {
+        e.target.onerror = null;
+        e.target.parentElement.innerHTML = `<span class="avatar-initials">${userInitials}</span>`;
+      }}
+    />
+  ) : (
+    <span className="avatar-initials">{userInitials}</span>
+  )}
+</span>
                                                     <p className="fw-medium mt-1 mb-1">
                                                         {changedAt.toLocaleDateString('en-US', {
                                                             year: 'numeric',

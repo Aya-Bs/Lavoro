@@ -53,9 +53,9 @@ export default function TaskAssignement() {
   }, [taskId])
 
   // Fonction pour assigner la tâche
+  // Fonction pour assigner la tâche
 const assignTask = async () => {
   if (!taskId) return -1;
-  console.log("Assigning task:", taskId);
   
   setLoading(true);
   try {
@@ -149,8 +149,8 @@ const assignTask = async () => {
 
   const confirmAssignment = async () => {
     try {
-      if (!assignmentResult?.matches?.[0]?.member_id) {
-        throw new Error("No valid assignment result available");
+      if (!assignmentResult || !assignmentResult?.matches) {
+        throw new Error("No assignment result available");
       }
   
       const response = await fetch('http://localhost:3000/tasks/confirm-assignment', {
@@ -160,7 +160,7 @@ const assignTask = async () => {
         },
         body: JSON.stringify({
           taskId: taskId,
-          teamMemberId: assignmentResult.matches[0].member_id // Fixed path
+          teamMemberId: assignmentResult.matches.member_id
         })
       });
   
@@ -335,7 +335,7 @@ const assignTask = async () => {
                 <div className="stat-row">
                   <div className="stat-dot pink-dot"></div>
                   <span className="text-muted">
-                    Status: <span className="fw-bold stat-value">{isSpinning ? "In progress..." : "Ready"}</span>
+                    Status: <span className="fw-bold stat-value" style={{ color: '#1a365d' }}>{isSpinning ? "In progress..." : "Ready"}</span>
                   </span>
                 </div>
                 <div className="text-decorative-circle"></div>
@@ -389,7 +389,7 @@ const assignTask = async () => {
               
               {/* Nom du membre */}
               {members.length > 0 && (
-                <div className="member-name">
+                <div className="member-name" style={{ color: '#1a365d' }}>
                   {(members[currentImageIndex]?.user?.firstName || "Nom inconnu") + " " + (members[currentImageIndex]?.user?.lastName || "Nom inconnu")}
                 </div>
               )}

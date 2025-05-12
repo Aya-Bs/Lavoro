@@ -240,7 +240,7 @@ function SignIn() {
     
     
       return (
-        <div style={back}>
+        <div >
             <div className="row authentication authentication-cover-main mx-0">
                 <div className="col-xxl-6 col-xl-7">
                     <div className="row justify-content-center align-items-center h-100">
@@ -338,14 +338,14 @@ function SignIn() {
                         </div>
                     </div>
                 </div>
-                <div className="col-xxl-6 col-xl-5 col-lg-12 d-xl-block d-none px-0">
-  <div className="authentication-cover overflow-hidden" >
+                <div className="col-xxl-6 col-xl-5 col-lg-12 d-xl-block d-none px-0" >
+                <div className="authentication-cover overflow-hidden" >
     <div className="aunthentication-cover-content d-flex align-items-center justify-content-center h-100">
       <div className="text-center p-4">
       
           {/* Alternative GIF URLs */}
           <img 
-            src="src/assets/HI.gif" // Replace with your GIF URL
+            src="./public/signin.png" // Replace with your GIF URL
             alt="Project Management Animation"
             style={{
               width: '500px',

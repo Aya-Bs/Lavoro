@@ -18,5 +18,15 @@ router.get('/archived-team/:id', teamController.getArchivedTeamById);
 router.get('/export-archived', teamController.exportArchivedTeams);
 router.get('/history/:teamId', teamController.getTeamHistory);
 
+
+// Team search route
+router.get('/search',  teamController.searchTeams);
+router.get('/getTeamStat', teamController.getTeamStats);
+router.get('/getTeamMember', teamController.getMembersWithPagination);
+router.get('/nbrProject', teamController.getProjectCountPerTeamManager)
+router.get('/countDeveloper', teamController.countDeveloper);
+router.get('/getDeveloper', teamController.getDeveloper);
+//router.get('/getTeamMember', teamController.getAllMembers);
+
 module.exports = router;
 

@@ -312,19 +312,14 @@ const handleSubmit = async (e) => {
               <li className="breadcrumb-item">
                 <a href="#" onClick={(e) => e.preventDefault()}>Projects</a>
               </li>
+              <span className="mx-1">→</span>
               <li className="breadcrumb-item active" aria-current="page">Create Project</li>
             </ol>
           </nav>
+          
           <h1 className="page-title fw-medium fs-18 mb-0">Create Project</h1>
         </div>
-        <div className="btn-list">
-          <button className="btn btn-outline-secondary btn-wave">
-            <i className="ri-filter-3-line align-middle me-1" /> Filter
-          </button>
-          <button className="btn btn-primary btn-wave">
-            <i className="ri-share-forward-line me-1" /> Share
-          </button>
-        </div>
+        
       </div>
 
       <div className="row">

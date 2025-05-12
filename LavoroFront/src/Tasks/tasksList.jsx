@@ -25,7 +25,7 @@ export const TaskList = () => {
     });
     const [currentPage, setCurrentPage] = useState(1);
     const tasksPerPage = 5;
-    const [statusFilter, setStatusFilter] = useState('all'); 
+    const [statusFilter, setStatusFilter] = useState('all');
 
     const fetchCurrentUser = async () => {
         try {
@@ -35,13 +35,13 @@ export const TaskList = () => {
                 navigate('/signin');
                 return;
             }
-            
+
             const response = await axios.get('http://localhost:3000/users/me', {
                 headers: {
                     Authorization: `Bearer ${token}`
                 }
             });
-            
+
             if (response.data) {
                 setCurrentUser(response.data);
                 return response.data._id;
@@ -65,7 +65,7 @@ export const TaskList = () => {
                 headers: {
                     Authorization: `Bearer ${token}`
                 }            });
-            
+
             if (response.data.success) {
                 setTasks(response.data.data);
                 calculateStats(response.data.data);
@@ -111,7 +111,7 @@ export const TaskList = () => {
                 setLoading(false);
             }
         };
-        
+
         initializeData();
     }, []);
 
@@ -144,31 +144,31 @@ export const TaskList = () => {
 
     const handleAssignMembers = async () => {
         if (!currentTask || selectedMembers.length === 0) return;
-      
+
         try {
             setIsAssigning(true);
-            
+
             const response = await axios.patch(
                 `http://localhost:3000/tasks/${currentTask._id}/assign`,
-                { 
+                {
                     memberIds: selectedMembers.filter(id => id)
                 },
-                { 
+                {
                     withCredentials: true,
                     headers: {
                         'Content-Type': 'application/json'
                     }
                 }
             );
-        
+
             if (response.data.success) {
                 // Preserve the existing project_id data when updating
-                setTasks(tasks.map(task => 
-                    task._id === currentTask._id 
-                        ? { ...response.data.data, project_id: task.project_id } 
+                setTasks(tasks.map(task =>
+                    task._id === currentTask._id
+                        ? { ...response.data.data, project_id: task.project_id }
                         : task
                 ));
-                
+
                 Swal.fire({
                     icon: 'success',
                     title: 'Success',
@@ -191,34 +191,34 @@ export const TaskList = () => {
             setSelectedMembers([]);
         }
     };
-    
+
     const handleUnassignMembers = async () => {
         if (!currentTask || selectedUnassignMembers.length === 0) return;
-      
+
         try {
             setIsAssigning(true);
-    
+
             const response = await axios.patch(
                 `http://localhost:3000/tasks/${currentTask._id}/unassign`,
-                { 
+                {
                     memberIds: selectedUnassignMembers.filter(id => id)
                 },
-                { 
+                {
                     withCredentials: true,
                     headers: {
                         'Content-Type': 'application/json'
                     }
                 }
             );
-        
+
             if (response.data.success) {
                 // Preserve the existing project_id data when updating
-                setTasks(tasks.map(task => 
-                    task._id === currentTask._id 
+                setTasks(tasks.map(task =>
+                    task._id === currentTask._id
                         ? { ...response.data.data, project_id: task.project_id }
                         : task
                 ));
-    
+
                 Swal.fire({
                     icon: 'success',
                     title: 'Success',
@@ -242,7 +242,7 @@ export const TaskList = () => {
         }
     };
 
-    
+
     const handleDeleteTask = async (taskId, status) => {
         if (status !== 'Not Started') {
             Swal.fire({
@@ -325,21 +325,21 @@ export const TaskList = () => {
         if (!assignedTo || assignedTo.length === 0) {
             return <span className="text-muted">Not assigned</span>;
         }
-      
+
         const validMembers = assignedTo.filter(member => member && member.user_id);
         const membersToShow = validMembers.slice(0, 4);
         const extraMembersCount = validMembers.length - 4;
-      
+
         return (
             <div className="avatar-list-stacked">
                 {membersToShow.map((member) => {
                     const user = member.user_id;
                     const fullName = `${user.firstName || ''} ${user.lastName || ''}`.trim();
                     const avatarKey = member._id || user._id || Math.random().toString(36).substr(2, 9);
-        
+
                     return (
-                        <span 
-                            key={avatarKey} 
+                        <span
+                            key={avatarKey}
                             className="avatar avatar-sm avatar-rounded"
                             onClick={(e) => {
                                 e.stopPropagation();
@@ -367,16 +367,16 @@ export const TaskList = () => {
                         </span>
                     );
                 })}
-                
+
                 {extraMembersCount > 0 && (
-                    <span 
+                    <span
                         className="avatar avatar-sm avatar-rounded"
                         onClick={(e) => {
                             e.stopPropagation();
                             setCurrentTask(task);
                             setShowUnassignModal(true);
                         }}
-                        style={{ 
+                        style={{
                             cursor: 'pointer',
                             display: 'inline-flex',
                             alignItems: 'center',
@@ -420,9 +420,11 @@ export const TaskList = () => {
                             <li className="breadcrumb-item">
                                 <a href="javascript:void(0);">Apps</a>
                             </li>
+                            <span className="mx-1">→</span>
                             <li className="breadcrumb-item">
                                 <a href="javascript:void(0);">Task</a>
                             </li>
+                            <span className="mx-1">→</span>
                             <li className="breadcrumb-item active" aria-current="page">
                                 Task List View
                             </li>
@@ -432,16 +434,9 @@ export const TaskList = () => {
                         Task List View
                     </h1>
                 </div>
-                <div className="btn-list">
-                    <button className="btn btn-white btn-wave">
-                        <i className="ri-filter-3-line align-middle me-1 lh-1" /> Filter
-                    </button>
-                    <button className="btn btn-primary btn-wave me-0">
-                        <i className="ri-share-forward-line me-1" /> Share
-                    </button>
-                </div>
+
             </div>
-            
+
             <div className="row">
                 <div className="col-xxl-3">
                     <div className="card custom-card overflow-hidden main-content-card">
@@ -512,7 +507,7 @@ export const TaskList = () => {
                     </div>
                 </div>
             </div>
-                       
+
             {/* Task Table */}
             <div className="row">
                 <div className="col-xxl-12 col-xl-12">
@@ -540,8 +535,8 @@ export const TaskList = () => {
                                     </button>
                                     <ul className="dropdown-menu">
                                         <li>
-                                            <a 
-                                                className="dropdown-item" 
+                                            <a
+                                                className="dropdown-item"
                                                 href="javascript:void(0);"
                                                 onClick={() => setStatusFilter('all')}
                                             >
@@ -549,8 +544,8 @@ export const TaskList = () => {
                                             </a>
                                         </li>
                                         <li>
-                                            <a 
-                                                className="dropdown-item" 
+                                            <a
+                                                className="dropdown-item"
                                                 href="javascript:void(0);"
                                                 onClick={() => setStatusFilter('Not Started')}
                                             >
@@ -558,8 +553,8 @@ export const TaskList = () => {
                                             </a>
                                         </li>
                                         <li>
-                                            <a 
-                                                className="dropdown-item" 
+                                            <a
+                                                className="dropdown-item"
                                                 href="javascript:void(0);"
                                                 onClick={() => setStatusFilter('In Progress')}
                                             >
@@ -567,8 +562,8 @@ export const TaskList = () => {
                                             </a>
                                         </li>
                                         <li>
-                                            <a 
-                                                className="dropdown-item" 
+                                            <a
+                                                className="dropdown-item"
                                                 href="javascript:void(0);"
                                                 onClick={() => setStatusFilter('Done')}
                                             >
@@ -579,7 +574,7 @@ export const TaskList = () => {
                                 </div>
                             </div>
                         </div>
-                        
+
                         <div className="card-body p-0">
                             <div className="table-responsive">
                                 <table className="table text-nowrap">
@@ -606,8 +601,8 @@ export const TaskList = () => {
                                     </thead>
                                     <tbody>
                                         {getPaginatedTasks().map(task => (
-                                            <tr 
-                                                className="task-list" 
+                                            <tr
+                                                className="task-list"
                                                 key={`task-${task._id}`}
                                                 onClick={() => navigate(`/taskdetails/${task._id}`)}
                                                 style={{ cursor: 'pointer' }}
@@ -643,7 +638,7 @@ export const TaskList = () => {
                                                     </span>
                                                 </td>
                                                 <td onClick={(e) => e.stopPropagation()}>
-                                                    {renderAssignedAvatars(task.assigned_to, task)} 
+                                                    {renderAssignedAvatars(task.assigned_to, task)}
                                                 </td>
                                                 <td>
                                                     <span className="badge bg-info-transparent">
@@ -652,7 +647,7 @@ export const TaskList = () => {
                                                 </td>
                                                 <td onClick={(e) => e.stopPropagation()}>
                                                     <div className="d-flex align-items-center">
-                                                        <button 
+                                                        <button
                                                             className="btn btn-primary-light btn-icon btn-sm"
                                                             onClick={(e) => {
                                                                 e.stopPropagation();
@@ -662,7 +657,7 @@ export const TaskList = () => {
                                                         >
                                                             <i className="ri-user-add-line" />
                                                         </button>
-                                                        <button 
+                                                        <button
                                                             className="btn btn-danger-light btn-icon ms-1 btn-sm"
                                                             onClick={(e) => {
                                                                 e.stopPropagation();
@@ -684,20 +679,20 @@ export const TaskList = () => {
                                 <nav aria-label="Page navigation" className="pagination-style-4">
                                     <ul className="pagination mb-0 flex-wrap">
                                         <li className={`page-item ${currentPage === 1 ? 'disabled' : ''}`}>
-                                            <button 
-                                                className="page-link" 
+                                            <button
+                                                className="page-link"
                                                 onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
                                             >
                                                 Prev
                                             </button>
                                         </li>
-                                        
+
                                         {Array.from({ length: Math.ceil(getFilteredTasks().length / tasksPerPage) }).map((_, index) => {
                                             const pageNumber = index + 1;
                                             if (
-                                                pageNumber === 1 || 
-                                                pageNumber === 2 || 
-                                                pageNumber === Math.ceil(getFilteredTasks().length / tasksPerPage) - 1 || 
+                                                pageNumber === 1 ||
+                                                pageNumber === 2 ||
+                                                pageNumber === Math.ceil(getFilteredTasks().length / tasksPerPage) - 1 ||
                                                 pageNumber === Math.ceil(getFilteredTasks().length / tasksPerPage) ||
                                                 (pageNumber >= currentPage - 1 && pageNumber <= currentPage + 1)
                                             ) {
@@ -709,7 +704,7 @@ export const TaskList = () => {
                                                     </li>
                                                 );
                                             } else if (
-                                                pageNumber === 3 || 
+                                                pageNumber === 3 ||
                                                 pageNumber === Math.ceil(getFilteredTasks().length / tasksPerPage) - 2
                                             ) {
                                                 return (
@@ -722,10 +717,10 @@ export const TaskList = () => {
                                             }
                                             return null;
                                         })}
-                                        
+
                                         <li className={`page-item ${currentPage === Math.ceil(getFilteredTasks().length / tasksPerPage) ? 'disabled' : ''}`}>
-                                            <button 
-                                                className="page-link text-primary" 
+                                            <button
+                                                className="page-link text-primary"
                                                 onClick={() => setCurrentPage(prev => Math.min(prev + 1, Math.ceil(getFilteredTasks().length / tasksPerPage)))}
                                             >
                                                 Next
@@ -734,7 +729,7 @@ export const TaskList = () => {
                                     </ul>
                                 </nav>
                             </div>
-                        )}                   
+                        )}
                         <br />
                     </div>
                 </div>
@@ -764,16 +759,16 @@ export const TaskList = () => {
                                         <div className="list-group" style={{ maxHeight: '300px', overflowY: 'auto' }}>
                                             {teamMembers.map(member => {
                                                 if (!member || !member._id) return null;
-                                                
+
                                                 const user = member.user_id || {};
                                                 const isAssigned = currentTask?.assigned_to?.some(
                                                     a => a?._id?.toString() === member._id.toString()
                                                 );
-                                                
+
                                                 const memberKey = `member-${member._id}`;
-                                                
+
                                                 return (
-                                                    <div 
+                                                    <div
                                                         key={memberKey}
                                                         className={`list-group-item list-group-item-action ${isAssigned ? 'disabled' : ''}`}
                                                         onClick={() => {
@@ -799,8 +794,8 @@ export const TaskList = () => {
                                                                     disabled={isAssigned}
                                                                 />
                                                             </div>
-                                                            <div className="avatar avatar-sm avatar-rounded me-3" style={{ 
-                                                                width: '40px', 
+                                                            <div className="avatar avatar-sm avatar-rounded me-3" style={{
+                                                                width: '40px',
                                                                 height: '40px',
                                                                 borderRadius: '1px',
                                                                 overflow: 'hidden'
@@ -842,8 +837,8 @@ export const TaskList = () => {
                                 >
                                     Cancel
                                 </button>
-                                <button 
-                                    type="button" 
+                                <button
+                                    type="button"
                                     className="btn btn-primary"
                                     disabled={isAssigning || selectedMembers.length === 0}
                                     onClick={handleAssignMembers}
@@ -885,12 +880,12 @@ export const TaskList = () => {
                                         <div className="list-group" style={{ maxHeight: '300px', overflowY: 'auto' }}>
                                             {currentTask?.assigned_to?.map(member => {
                                                 if (!member || !member._id) return null;
-                                                
+
                                                 const user = member.user_id || {};
                                                 const memberKey = `unassign-member-${member._id}`;
-                                                
+
                                                 return (
-                                                    <div 
+                                                    <div
                                                         key={memberKey}
                                                         className="list-group-item list-group-item-action"
                                                     >
@@ -911,8 +906,8 @@ export const TaskList = () => {
                                                                     }}
                                                                 />
                                                             </div>
-                                                            <div className="avatar avatar-sm avatar-rounded me-3" style={{ 
-                                                                width: '40px', 
+                                                            <div className="avatar avatar-sm avatar-rounded me-3" style={{
+                                                                width: '40px',
                                                                 height: '40px',
                                                                 borderRadius: '1px',
                                                                 overflow: 'hidden'
@@ -954,8 +949,8 @@ export const TaskList = () => {
                                 >
                                     Cancel
                                 </button>
-                                <button 
-                                    type="button" 
+                                <button
+                                    type="button"
                                     className="btn btn-danger"
                                     disabled={isAssigning || selectedUnassignMembers.length === 0}
                                     onClick={handleUnassignMembers}

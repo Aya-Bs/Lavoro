@@ -73,6 +73,8 @@ const TeamCards = () => {
             <nav>
               <ol className="breadcrumb mb-1">
                 <li className="breadcrumb-item"><a href="#" onClick={(e) => e.preventDefault()}>Teams</a></li>
+                <span className="mx-1">→</span>
+
                 <li className="breadcrumb-item active" aria-current="page">Teams List</li>
               </ol>
             </nav>

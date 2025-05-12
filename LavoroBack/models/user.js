@@ -48,7 +48,26 @@ const userSchema = new mongoose.Schema({
   performancePoints: { type: Number, default: 0 }, 
   skills: { type: [String], default: [] },
   
-  description: { type: String, default: '' }
+  description: { type: String, default: '' },
+
+  awards: [{
+    type: {
+      type: String,
+      enum: ['performance', 'achievement', 'recognition'],
+      required: true
+    },
+    name: {
+      type: String,
+      required: true
+    },
+    description: String,
+    date: {
+      type: Date,
+      default: Date.now
+    },
+    icon: String
+  }]
+
 
 
 });

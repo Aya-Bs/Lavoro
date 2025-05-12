@@ -17,7 +17,7 @@ const Chat = require('./models/chat');
 const ChatGroup = require('./models/chatGroup');
 const GroupMessage = require('./models/groupMessage');
 const User = require('./models/user');
-
+const meetRouter = require('./routes/meets');
 // Connect to MongoDB
 mongo
   .connect(db.url)
@@ -48,6 +48,7 @@ const taskPrioritizationRoutes = require('./routes/taskPrioritizationRoutes');
 const predictRouter = require('./routes/predictMember');
 const fileRouter = require('./routes/file');
 
+const notificationRoutes = require('./routes/notificationRoutes');
 
 
 const app = express();
@@ -106,7 +107,7 @@ app.use(
 app.use ('/files',fileRouter);
 app.use('/notifications',notifroute);
 
-
+app.use('/meet', meetRouter);
 // Routes
 app.use('/users', usersRouter);
 // app.use('/', homeRouter);
@@ -118,6 +119,8 @@ app.set('io', io);
 app.use('/tasks',taskRouter);
 app.use('/chat', chatRouter);
 app.use('/predict', predictRouter);
+
+app.use('/notifications', notificationRoutes);
 
 
 

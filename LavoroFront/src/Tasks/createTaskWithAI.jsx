@@ -20,6 +20,9 @@ export const AITaskGenerator = ({ projectId: propProjectId }) => {
   const [loadingProjects, setLoadingProjects] = useState(false);
   const [dateRange, setDateRange] = useState([]);
   const [generatedTasks, setGeneratedTasks] = useState([]);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [currentTask, setCurrentTask] = useState(null);
+  const [editedTask, setEditedTask] = useState(null);
 
   // Fetch projects if no projectId prop
   useEffect(() => {
@@ -109,7 +112,7 @@ export const AITaskGenerator = ({ projectId: propProjectId }) => {
           timerProgressBar: true
         });
 
-        Toast.fire({ icon, title });
+        Swal.fire({ icon, title });
       };
 
       // Validate project ID
@@ -148,7 +151,7 @@ export const AITaskGenerator = ({ projectId: propProjectId }) => {
           timerProgressBar: true
         });
 
-        Toast.fire({
+        Swal.fire({
           icon: 'success',
           title: `${tasks.length} tasks saved successfully`
         });
@@ -171,13 +174,83 @@ export const AITaskGenerator = ({ projectId: propProjectId }) => {
         timerProgressBar: true
       });
 
-      Toast.fire({
+      Swal.fire({
         icon: 'error',
         title: 'Failed to save tasks'
       });
     } finally {
       setSavingTasks(false);
     }
+  };
+
+  // Function to handle task deletion
+  const handleDeleteTask = (index) => {
+    Swal.fire({
+      title: 'Delete Task',
+      text: 'Are you sure you want to delete this task?',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#3085d6',
+      confirmButtonText: 'Yes, delete it!'
+    }).then((result) => {
+      if (result.isConfirmed) {
+        // Remove the task at the specified index
+        setTasks(prevTasks => prevTasks.filter((_, i) => i !== index));
+
+        // Show success toast
+        const Toast = Swal.mixin({
+          toast: true,
+          position: 'top-end',
+          showConfirmButton: false,
+          timer: 2000,
+          timerProgressBar: true
+        });
+
+        Swal.fire({
+          icon: 'success',
+          title: 'Task deleted'
+        });
+      }
+    });
+  };
+
+  // Function to open edit modal
+  const handleEditTask = (task, index) => {
+    setCurrentTask({ ...task, index });
+    setEditedTask({ ...task });
+    setShowEditModal(true);
+  };
+
+  // Function to save edited task
+  const saveEditedTask = () => {
+    if (!currentTask || !editedTask) return;
+
+    // Update the task in the tasks array
+    setTasks(prevTasks => {
+      const newTasks = [...prevTasks];
+      newTasks[currentTask.index] = { ...editedTask };
+      return newTasks;
+    });
+
+    // Close the modal
+    setShowEditModal(false);
+    setCurrentTask(null);
+    setEditedTask(null);
+
+    // Show success toast
+    const Toast = Swal.mixin({
+      toast: true,
+      position: 'top-end',
+      showConfirmButton: false,
+      timer: 2000,
+      timerProgressBar: true
+    });
+
+    Swal.fire({
+      icon: 'success',
+      title: 'Task updated'
+    });
   };
 
   const generateTasks = async () => {
@@ -196,7 +269,7 @@ export const AITaskGenerator = ({ projectId: propProjectId }) => {
           timerProgressBar: true
         });
 
-        Toast.fire({
+        Swal.fire({
           icon: 'error',
           title: 'Please select a project first'
         });
@@ -248,7 +321,7 @@ export const AITaskGenerator = ({ projectId: propProjectId }) => {
         timerProgressBar: true
       });
 
-      Toast.fire({
+      Swal.fire({
         icon: 'success',
         title: `${tasksData.length} tasks generated successfully`
       });
@@ -279,7 +352,7 @@ export const AITaskGenerator = ({ projectId: propProjectId }) => {
         timerProgressBar: true
       });
 
-      Toast.fire({
+      Swal.fire({
         icon: 'error',
         title: 'Failed to generate tasks'
       });
@@ -289,14 +362,29 @@ export const AITaskGenerator = ({ projectId: propProjectId }) => {
   };
 
   return (
-    <div className="card custom-card">
-      <div className="card-header justify-content-between">
-        <div className="d-flex align-items-center">
-          <i className="ri-ai-generate me-2 fs-4"></i>
-          <h5 className="card-title mb-0">AI Task Generator</h5>
-        </div>
-      </div>
+    <>
+     <div className="d-flex align-items-center justify-content-between page-header-breadcrumb flex-wrap gap-2">
+                <div>
+                    <nav>
+                        <ol className="breadcrumb mb-1">
+                            <li className="breadcrumb-item">
+                                <a href="javascript:void(0);">Tasks</a>
+                            </li>
+                            <span className="mx-1">→</span>
+                            <li className="breadcrumb-item active" aria-current="page">
+                                Create Task With AI
+                            </li>
+                        </ol>
+                    </nav>
+                    
+                    <h1 className="page-title fw-medium fs-18 mb-0">
+                    Create Task With AI
+                    </h1>
+                </div>
+            </div>
 
+    <div className="card custom-card">
+   
       <div className="card-body">
         <div className="row gy-3">
           {/* Project Selection (Only shown when no project ID is provided) */}
@@ -473,39 +561,66 @@ export const AITaskGenerator = ({ projectId: propProjectId }) => {
             </div>
 
             <div className="table-responsive" style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.08)', borderRadius: '8px' }}>
-              <table className="table table-hover mb-0">
-                <thead style={{ backgroundColor: '#f8f9fa' }}>
-                  <tr>
-                    <th style={{ borderTopLeftRadius: '8px' }}>Task</th>
-                    <th>Priority</th>
-                    <th>Deadline</th>
-                    <th style={{ borderTopRightRadius: '8px' }}>Duration</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {tasks.map((task, i) => (
-                    <tr key={i} style={{ borderLeft: '3px solid transparent', borderLeftColor: task.priority === 'High' ? '#dc3545' : task.priority === 'Medium' ? '#ffc107' : '#28a745' }}>
-                      <td>
-                        <div className="d-flex flex-column">
-                          <strong>{task.title}</strong>
-                          <p className="text-muted mb-0 small">{task.description}</p>
-                        </div>
-                      </td>
-                      <td>
-                        <span className={`badge bg-${task.priority === 'High' ? 'danger' : task.priority === 'Medium' ? 'warning' : 'success'}`} style={{ fontWeight: 'normal', padding: '5px 10px' }}>
-                          {task.priority}
-                        </span>
-                      </td>
-                      <td>{new Date(task.deadline).toLocaleDateString()}</td>
-                      <td>
-                        <span className="badge bg-light text-dark">
-                          {task.estimated_duration} days
-                        </span>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+            <table className="table table-hover mb-0">
+  <thead style={{ backgroundColor: '#f8f9fa' }}>
+    <tr>
+      <th style={{ borderTopLeftRadius: '8px' }}>Task</th>
+      <th>Priority</th>
+      <th>Required Skills</th>
+      <th>Deadline</th>
+      <th>Duration</th>
+      <th style={{ borderTopRightRadius: '8px' }}>Actions</th>
+    </tr>
+  </thead>
+  <tbody>
+    {tasks.map((task, i) => (
+      <tr key={i} style={{ borderLeft: '3px solid transparent', borderLeftColor: task.priority === 'High' ? '#dc3545' : task.priority === 'Medium' ? '#ffc107' : '#28a745' }}>
+        <td>
+          <div className="d-flex flex-column">
+            <strong>{task.title}</strong>
+            <p className="text-muted mb-0 small">{task.description}</p>
+          </div>
+        </td>
+        <td>
+          <span className={`badge bg-${task.priority === 'High' ? 'danger' : task.priority === 'Medium' ? 'warning' : 'success'}`} style={{ fontWeight: 'normal', padding: '5px 10px' }}>
+            {task.priority}
+          </span>
+        </td>
+        <td>
+          {task.requiredSkills && task.requiredSkills.map((skill, index) => (
+            <span key={index} className="badge bg-info me-1 mb-1">
+              {skill}
+            </span>
+          ))}
+        </td>
+        <td>{new Date(task.deadline).toLocaleDateString()}</td>
+        <td>
+          <span className="badge bg-light text-dark">
+            {task.estimated_duration} days
+          </span>
+        </td>
+        <td>
+          <div className="d-flex">
+            <button
+              className="btn btn-sm btn-primary me-2"
+              onClick={() => handleEditTask(task, i)}
+              title="Edit Task"
+            >
+              <i className="ri-edit-line"></i>
+            </button>
+            <button
+              className="btn btn-sm btn-danger"
+              onClick={() => handleDeleteTask(i)}
+              title="Delete Task"
+            >
+              <i className="ri-delete-bin-line"></i>
+            </button>
+          </div>
+        </td>
+      </tr>
+    ))}
+  </tbody>
+</table>
             </div>
 
             <div className="text-center mt-3">
@@ -516,6 +631,160 @@ export const AITaskGenerator = ({ projectId: propProjectId }) => {
           </div>
         )}
       </div>
+
+      {/* Edit Task Modal */}
+      {showEditModal && editedTask && (
+        <div className="modal fade show" style={{ display: 'block', backgroundColor: 'rgba(0,0,0,0.5)' }} tabIndex="-1">
+          <div className="modal-dialog modal-lg" style={{ marginLeft: '300px' }}>
+            <div className="modal-content">
+              <div className="modal-header">
+                <h5 className="modal-title">Edit Task</h5>
+                <button
+                  type="button"
+                  className="btn-close"
+                  onClick={() => {
+                    setShowEditModal(false);
+                    setCurrentTask(null);
+                    setEditedTask(null);
+                  }}
+                ></button>
+              </div>
+              <div className="modal-body">
+                <div className="row mb-3">
+                  <div className="col-md-12">
+                    <label className="form-label">Title</label>
+                    <input
+                      type="text"
+                      className="form-control"
+                      value={editedTask.title || ''}
+                      onChange={(e) => setEditedTask({...editedTask, title: e.target.value})}
+                    />
+                  </div>
+                </div>
+
+                <div className="row mb-3">
+                  <div className="col-md-12">
+                    <label className="form-label">Description</label>
+                    <textarea
+                      className="form-control"
+                      rows="3"
+                      value={editedTask.description || ''}
+                      onChange={(e) => setEditedTask({...editedTask, description: e.target.value})}
+                    ></textarea>
+                  </div>
+                </div>
+
+                <div className="row mb-3">
+                  <div className="col-md-6">
+                    <label className="form-label">Priority</label>
+                    <select
+                      className="form-select"
+                      value={editedTask.priority || 'Medium'}
+                      onChange={(e) => setEditedTask({...editedTask, priority: e.target.value})}
+                    >
+                      <option value="Low">Low</option>
+                      <option value="Medium">Medium</option>
+                      <option value="High">High</option>
+                    </select>
+                  </div>
+                  <div className="col-md-6">
+                    <label className="form-label">Estimated Duration (days)</label>
+                    <input
+                      type="number"
+                      className="form-control"
+                      value={editedTask.estimated_duration || 1}
+                      min="1"
+                      onChange={(e) => setEditedTask({...editedTask, estimated_duration: parseInt(e.target.value) || 1})}
+                    />
+                  </div>
+                </div>
+
+                <div className="row mb-3">
+                  <div className="col-md-6">
+                    <label className="form-label">Deadline</label>
+                    <input
+                      type="date"
+                      className="form-control"
+                      value={editedTask.deadline ? new Date(editedTask.deadline).toISOString().split('T')[0] : ''}
+                      onChange={(e) => setEditedTask({...editedTask, deadline: e.target.value})}
+                    />
+                  </div>
+                  <div className="col-md-6">
+                    <label className="form-label">Start Date</label>
+                    <input
+                      type="date"
+                      className="form-control"
+                      value={editedTask.start_date ? new Date(editedTask.start_date).toISOString().split('T')[0] : ''}
+                      onChange={(e) => setEditedTask({...editedTask, start_date: e.target.value})}
+                    />
+                  </div>
+                </div>
+
+                <div className="row mb-3">
+                  <div className="col-md-12">
+                    <label className="form-label">Required Skills (comma-separated)</label>
+                    <input
+                      type="text"
+                      className="form-control"
+                      value={(editedTask.requiredSkills || []).join(', ')}
+                      onChange={(e) => {
+                        const skillsArray = e.target.value
+                          .split(',')
+                          .map(skill => skill.trim())
+                          .filter(skill => skill !== '');
+                        setEditedTask({...editedTask, requiredSkills: skillsArray});
+                      }}
+                      placeholder="JavaScript, React, Node.js"
+                    />
+                    <small className="text-muted">Enter skills separated by commas</small>
+                  </div>
+                </div>
+
+                <div className="row mb-3">
+                  <div className="col-md-12">
+                    <label className="form-label">Tags (comma-separated)</label>
+                    <input
+                      type="text"
+                      className="form-control"
+                      value={(editedTask.tags || []).join(', ')}
+                      onChange={(e) => {
+                        const tagsArray = e.target.value
+                          .split(',')
+                          .map(tag => tag.trim())
+                          .filter(tag => tag !== '');
+                        setEditedTask({...editedTask, tags: tagsArray});
+                      }}
+                      placeholder="frontend, backend, feature"
+                    />
+                    <small className="text-muted">Enter tags separated by commas</small>
+                  </div>
+                </div>
+              </div>
+              <div className="modal-footer">
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={() => {
+                    setShowEditModal(false);
+                    setCurrentTask(null);
+                    setEditedTask(null);
+                  }}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-primary"
+                  onClick={saveEditedTask}
+                >
+                  Save Changes
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
+    </>
   );
 };
