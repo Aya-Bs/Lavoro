@@ -13,8 +13,8 @@ const ReportForm = ({ onClose, onSuccess, initialData = {} }) => {
         reason: initialData.reason || '',
         details: initialData.details || '',
         report_date: initialData.report_date || new Date().toISOString().split('T')[0],
-        reporter_id: initialData.team_manager_id || localStorage.getItem('userId') || '', // Utiliser le manager de l'équipe comme reporter
-        team_manager_id: initialData.team_manager_id || '' // Ajouter l'ID du manager de l'équipe
+        reporter_id: initialData.team_manager_id || localStorage.getItem('userId') || '', // Use team manager as reporter
+        team_manager_id: initialData.team_manager_id || '' // Add team manager ID
     });
     const navigate = useNavigate();
 
@@ -27,7 +27,7 @@ const ReportForm = ({ onClose, onSuccess, initialData = {} }) => {
                     return;
                 }
 
-                // Récupérer l'ID de l'utilisateur connecté si ce n'est pas déjà fait
+                // Get logged-in user ID if not already set
                 if (!formData.reporter_id) {
                     try {
                         const userResponse = await axios.get('http://localhost:3000/users/profile', {
@@ -43,11 +43,11 @@ const ReportForm = ({ onClose, onSuccess, initialData = {} }) => {
                             setFormData(prev => ({ ...prev, reporter_id: userId }));
                         }
                     } catch (userError) {
-                        console.error('Erreur lors de la récupération du profil:', userError);
+                        console.error('Error fetching profile:', userError);
                     }
                 }
 
-                // Récupérer la liste des utilisateurs
+                // Fetch users list
                 const usersResponse = await axios.get('http://localhost:3000/users/all', {
                     headers: {
                         'Authorization': `Bearer ${token}`,
@@ -55,7 +55,7 @@ const ReportForm = ({ onClose, onSuccess, initialData = {} }) => {
                     }
                 });
 
-                // Récupérer la liste des projets
+                // Fetch projects list
                 const projectsResponse = await axios.get('http://localhost:3000/project/dash', {
                     headers: {
                         'Authorization': `Bearer ${token}`,
@@ -70,7 +70,7 @@ const ReportForm = ({ onClose, onSuccess, initialData = {} }) => {
                 if (Array.isArray(projectsResponse.data)) {
                     setProjects(projectsResponse.data);
 
-                    // Si nous avons des projets et que le project_id n'est pas défini, utiliser le premier projet
+                    // If we have projects and project_id isn't set, use the first project
                     if (projectsResponse.data.length > 0 && !formData.project_id) {
                         const defaultProject = projectsResponse.data[0];
                         setFormData(prev => ({
@@ -80,7 +80,7 @@ const ReportForm = ({ onClose, onSuccess, initialData = {} }) => {
                     }
                 }
             } catch (error) {
-                console.error('Erreur lors de la récupération des données:', error);
+                console.error('Error fetching data:', error);
             } finally {
                 setLoading(false);
             }
@@ -101,64 +101,60 @@ const ReportForm = ({ onClose, onSuccess, initialData = {} }) => {
         e.preventDefault();
 
         try {
-            // Vérifier que tous les champs requis sont remplis
+            // Verify all required fields are filled
             const requiredFields = [];
 
-            // Vérifier uniquement reported_user_id si le champ est visible
+            // Only check reported_user_id if field is visible
             if (!initialData.hideUserField && !formData.reported_user_id) {
-                requiredFields.push('Membre à signaler');
+                requiredFields.push('Member to report');
             }
 
-            // Vérifier uniquement project_id si le champ est visible
+            // Only check project_id if field is visible
             if (!initialData.hideProjectField && !formData.project_id) {
-                requiredFields.push('Projet concerné');
+                requiredFields.push('Related project');
             }
 
             if (!formData.reason) {
-                requiredFields.push('Raison');
+                requiredFields.push('Reason');
             }
 
             if (!formData.details) {
-                requiredFields.push('Détails');
+                requiredFields.push('Details');
             }
 
             if (requiredFields.length > 0) {
                 Swal.fire({
                     icon: 'warning',
-                    title: 'Champs manquants',
-                    text: `Veuillez remplir les champs suivants: ${requiredFields.join(', ')}`
+                    title: 'Missing fields',
+                    text: `Please fill in the following fields: ${requiredFields.join(', ')}`
                 });
                 return;
             }
 
-            // Si le champ reported_user_id est caché mais que initialData.reported_user_id est défini, l'utiliser
+            // If reported_user_id is hidden but initialData.reported_user_id is set, use it
             if (initialData.hideUserField && initialData.reported_user_id) {
                 formData.reported_user_id = initialData.reported_user_id;
             }
 
-            // Si le champ project_id est caché mais que initialData.projectInfo est défini, utiliser son ID
+            // If project_id is hidden but initialData.projectInfo is set, use its ID
             if (initialData.hideProjectField && initialData.projectInfo) {
                 formData.project_id = initialData.projectInfo._id || initialData.projectInfo.project_id;
             }
 
-            // S'assurer que team_manager_id est défini
+            // Ensure team_manager_id is set
             if (initialData.team_manager_id) {
                 formData.team_manager_id = initialData.team_manager_id;
             }
 
-            // Vérifier que l'ID du reporter est présent
+            // Verify reporter_id is present
             if (!formData.reporter_id) {
-                // Si l'ID n'est pas disponible, utiliser un ID par défaut pour les tests
+                // If ID isn't available, use a default ID for testing
                 setFormData(prev => ({
                     ...prev,
-                    reporter_id: '60d0fe4f5311236168a109ca' // ID de test
+                    reporter_id: '60d0fe4f5311236168a109ca' // Test ID
                 }));
-
-               
-                return; // Sortir pour laisser le useEffect mettre à jour formData
+                return; // Exit to let useEffect update formData
             }
-
-            // This will be replaced by the actual data being submitted
 
             try {
                 // Prepare data for submission
@@ -169,59 +165,55 @@ const ReportForm = ({ onClose, onSuccess, initialData = {} }) => {
                     dataToSubmit.reported_user_id = initialData.reported_user_id;
                 }
 
-                // S'assurer que project_id est toujours défini
+                // Ensure project_id is always set
                 if (!dataToSubmit.project_id || dataToSubmit.project_id === '') {
-                    // Essayer d'abord d'utiliser le projet de l'équipe
+                    // First try to use team project
                     if (initialData.projectInfo && (initialData.projectInfo._id || initialData.projectInfo.project_id)) {
                         dataToSubmit.project_id = initialData.projectInfo._id || initialData.projectInfo.project_id;
                     }
-                    // Sinon, utiliser le premier projet disponible
+                    // Otherwise use first available project
                     else if (projects.length > 0) {
                         dataToSubmit.project_id = projects[0]._id;
                     }
-                    // Si aucun projet n'est disponible, utiliser un ID par défaut (à remplacer par un ID valide)
+                    // If no project available, use default ID
                     else {
-                        // ID de projet par défaut (à remplacer par un ID valide dans votre système)
                         dataToSubmit.project_id = "64f8b0e5e6f5d1a1e7c5a1b2";
                     }
                 }
 
-                // S'assurer que team_manager_id est défini
+                // Ensure team_manager_id is set
                 if (initialData.team_manager_id) {
                     dataToSubmit.team_manager_id = initialData.team_manager_id;
-                    // Définir également reporter_id sur team_manager_id
+                    // Also set reporter_id to team_manager_id
                     dataToSubmit.reporter_id = initialData.team_manager_id;
                 } else {
-                    // Si team_manager_id n'est pas défini, utiliser reporter_id comme team_manager_id
+                    // If team_manager_id isn't set, use reporter_id as team_manager_id
                     dataToSubmit.team_manager_id = dataToSubmit.reporter_id;
                 }
 
-                // S'assurer que reporter_id est défini
+                // Ensure reporter_id is set
                 if (!dataToSubmit.reporter_id || dataToSubmit.reporter_id === '') {
-                    // Utiliser l'ID de l'utilisateur stocké dans localStorage
+                    // Use user ID from localStorage
                     const userId = localStorage.getItem('userId');
                     if (userId) {
                         dataToSubmit.reporter_id = userId;
-                        // Si team_manager_id n'est pas défini, utiliser également cet ID
+                        // If team_manager_id isn't set, also use this ID
                         if (!dataToSubmit.team_manager_id || dataToSubmit.team_manager_id === '') {
                             dataToSubmit.team_manager_id = userId;
                         }
                     } else {
-                        // ID par défaut si aucun ID n'est disponible
+                        // Default ID if no ID available
                         dataToSubmit.reporter_id = "60d0fe4f5311236168a109ca";
                         dataToSubmit.team_manager_id = "60d0fe4f5311236168a109ca";
                     }
                 }
 
-                // Log the actual data being submitted
-                console.log('Envoi des données:', dataToSubmit);
+                console.log('Submitting data:', dataToSubmit);
 
-                // Pour les tests, ne pas envoyer le token d'authentification
                 const response = await axios.post('http://localhost:3000/reports/create', dataToSubmit);
 
-                console.log('Réponse du serveur:', response.data);
+                console.log('Server response:', response.data);
 
-                // Fermer le modal et rafraîchir la liste
                 if (onClose) {
                     onClose();
                 }
@@ -230,19 +222,16 @@ const ReportForm = ({ onClose, onSuccess, initialData = {} }) => {
                     onSuccess();
                 }
 
-                // Afficher une popup simplifiée de confirmation avec SweetAlert2
                 Swal.fire({
                     icon: 'success',
-                    title: 'Rapport créé avec succès!',
-                    text: 'Votre signalement a été enregistré et sera traité prochainement.',
+                    title: 'Report created successfully!',
+                    text: 'Your report has been recorded and will be processed soon.',
                     confirmButtonText: 'OK'
                 });
             } catch (apiError) {
-                console.error('Erreur API:', apiError);
+                console.error('API Error:', apiError);
 
-                // Si le rapport a été créé malgré l'erreur (problème de réponse)
                 if (apiError.response && apiError.response.status === 201) {
-                    // Fermer le modal et rafraîchir la liste
                     if (onClose) {
                         onClose();
                     }
@@ -251,11 +240,10 @@ const ReportForm = ({ onClose, onSuccess, initialData = {} }) => {
                         onSuccess();
                     }
 
-                    // Afficher une popup de succès simplifiée
                     Swal.fire({
                         icon: 'success',
-                        title: 'Rapport créé avec succès!',
-                        text: 'Votre signalement a été enregistré et sera traité prochainement.',
+                        title: 'Report created successfully!',
+                        text: 'Your report has been recorded and will be processed soon.',
                         confirmButtonText: 'OK'
                     });
                 } else {
@@ -263,17 +251,16 @@ const ReportForm = ({ onClose, onSuccess, initialData = {} }) => {
                 }
             }
         } catch (error) {
-            console.error('Erreur lors de la création du rapport:', error);
+            console.error('Error creating report:', error);
 
-            // Afficher les détails de l'erreur pour le débogage
-            const errorMessage = error.response?.data?.message || 'Une erreur est survenue lors de la création du rapport';
+            const errorMessage = error.response?.data?.message || 'An error occurred while creating the report';
             const errorDetails = error.response?.data?.error || error.message;
 
             Swal.fire({
                 icon: 'error',
-                title: 'Erreur',
+                title: 'Error',
                 text: errorMessage,
-                footer: `<div class="text-danger">Détails: ${errorDetails}</div>`
+                footer: `<div class="text-danger">Details: ${errorDetails}</div>`
             });
         }
     };
@@ -282,7 +269,7 @@ const ReportForm = ({ onClose, onSuccess, initialData = {} }) => {
         return (
             <div className="d-flex justify-content-center align-items-center" style={{ height: '200px' }}>
                 <div className="spinner-border text-primary" role="status">
-                    <span className="visually-hidden">Chargement...</span>
+                    <span className="visually-hidden">Loading...</span>
                 </div>
             </div>
         );
@@ -294,8 +281,8 @@ const ReportForm = ({ onClose, onSuccess, initialData = {} }) => {
                 <div className="card-title">
                     <i className="ri-error-warning-line text-danger me-2"></i>
                     {initialData.memberName ?
-                        `Signaler ${initialData.memberName}` :
-                        'Signaler un membre'
+                        `Report ${initialData.memberName}` :
+                        'Report a member'
                     }
                 </div>
             </div>
@@ -307,14 +294,14 @@ const ReportForm = ({ onClose, onSuccess, initialData = {} }) => {
                             <h6 className="fw-bold mb-1">Important</h6>
                             <p className="mb-0">
                                 {initialData.memberName ?
-                                    `Vous êtes en train de signaler ${initialData.memberName}. ` :
+                                    `You are about to report ${initialData.memberName}. ` :
                                     ''
                                 }
                                 {initialData.teamInfo && initialData.teamInfo.manager_id ?
-                                    `Cette réclamation sera soumise au nom de ${initialData.teamInfo.manager_id.firstName} ${initialData.teamInfo.manager_id.lastName} (Manager de l'équipe). ` :
-                                    'Cette réclamation sera transmise au responsable de l\'équipe concernée. '
+                                    `This report will be submitted on behalf of ${initialData.teamInfo.manager_id.firstName} ${initialData.teamInfo.manager_id.lastName} (Team Manager). ` :
+                                    'This report will be forwarded to the relevant team manager. '
                                 }
-                                Veuillez fournir des informations précises et objectives.
+                                Please provide accurate and objective information.
                             </p>
                         </div>
                     </div>
@@ -323,7 +310,7 @@ const ReportForm = ({ onClose, onSuccess, initialData = {} }) => {
                     {/* Hide user field if hideUserField is true */}
                     {!initialData.hideUserField && (
                         <div className="mb-3">
-                            <label htmlFor="reported_user_id" className="form-label">Membre à signaler</label>
+                            <label htmlFor="reported_user_id" className="form-label">Member to report</label>
                             <select
                                 id="reported_user_id"
                                 name="reported_user_id"
@@ -333,7 +320,7 @@ const ReportForm = ({ onClose, onSuccess, initialData = {} }) => {
                                 required
                                 disabled={initialData.reported_user_id ? true : false}
                             >
-                                <option value="">Sélectionner un membre</option>
+                                <option value="">Select a member</option>
                                 {users.map(user => (
                                     <option key={user._id} value={user._id}>
                                         {user.firstName} {user.lastName}
@@ -346,17 +333,17 @@ const ReportForm = ({ onClose, onSuccess, initialData = {} }) => {
                     {/* Hide project field if hideProjectField is true, but show project info */}
                     {initialData.hideProjectField && initialData.projectInfo ? (
                         <div className="mb-3">
-                            <label className="form-label">Projet concerné</label>
+                            <label className="form-label">Related project</label>
                             <div className="form-control bg-light">
                                 {initialData.projectInfo.name}
                             </div>
                             <small className="form-text text-muted">
-                                Le projet est automatiquement sélectionné en fonction de l'équipe du membre.
+                                The project is automatically selected based on the member's team.
                             </small>
                         </div>
                     ) : !initialData.hideProjectField && (
                         <div className="mb-3">
-                            <label htmlFor="project_id" className="form-label">Projet concerné</label>
+                            <label htmlFor="project_id" className="form-label">Related project</label>
                             <select
                                 id="project_id"
                                 name="project_id"
@@ -365,7 +352,7 @@ const ReportForm = ({ onClose, onSuccess, initialData = {} }) => {
                                 onChange={handleChange}
                                 required
                             >
-                                <option value="">Sélectionner un projet</option>
+                                <option value="">Select a project</option>
                                 {projects.map(project => (
                                     <option key={project._id} value={project._id}>
                                         {project.name}
@@ -376,7 +363,7 @@ const ReportForm = ({ onClose, onSuccess, initialData = {} }) => {
                     )}
 
                     <div className="mb-3">
-                        <label htmlFor="reason" className="form-label">Raison</label>
+                        <label htmlFor="reason" className="form-label">Reason</label>
                         <select
                             id="reason"
                             name="reason"
@@ -385,17 +372,17 @@ const ReportForm = ({ onClose, onSuccess, initialData = {} }) => {
                             onChange={handleChange}
                             required
                         >
-                            <option value="">Sélectionner une raison</option>
-                            <option value="Inappropriate Behavior">Comportement inapproprié</option>
-                            <option value="Performance Issues">Problèmes de performance</option>
-                            <option value="Attendance Problems">Problèmes de présence</option>
-                            <option value="Communication Issues">Problèmes de communication</option>
-                            <option value="Other">Autre</option>
+                            <option value="">Select a reason</option>
+                            <option value="Inappropriate Behavior">Inappropriate Behavior</option>
+                            <option value="Performance Issues">Performance Issues</option>
+                            <option value="Attendance Problems">Attendance Problems</option>
+                            <option value="Communication Issues">Communication Issues</option>
+                            <option value="Other">Other</option>
                         </select>
                     </div>
 
                     <div className="mb-3">
-                        <label htmlFor="details" className="form-label">Détails</label>
+                        <label htmlFor="details" className="form-label">Details</label>
                         <textarea
                             id="details"
                             name="details"
@@ -421,10 +408,10 @@ const ReportForm = ({ onClose, onSuccess, initialData = {} }) => {
                     </div>
 
                     <div className="d-flex justify-content-end gap-2">
-                        <button type="button" className="btn btn-light" onClick={onClose}>Annuler</button>
+                        <button type="button" className="btn btn-light" onClick={onClose}>Cancel</button>
                         <button type="submit" className="btn btn-danger">
                             <i className="ri-alarm-warning-line me-1"></i>
-                            Soumettre la réclamation
+                            Submit Report
                         </button>
                     </div>
                 </form>

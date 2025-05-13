@@ -495,7 +495,7 @@ const ChatWindow = ({ chat = {}, messages = [], currentUser = {}, onSendMessage,
                 ...(isDarkMode ? darkModeStyles : {}),
                 borderBottom: isDarkMode ? '1px solid #495057' : '1px solid #e9ecef',
                 padding: '15px 20px',
-                boxShadow: isDarkMode ? '0 2px 8px rgba(0, 0, 0, 0.2)' : '0 2px 8px rgba(0, 0, 0, 0.05)',
+                boxShadow: isDarkMode ? '0 2px 8px rgba(255, 255, 255, 0.2)' : '0 2px 8px rgba(255, 255, 255, 0.05)',
                 position: 'relative',
                 zIndex: 10
             }}>
@@ -503,7 +503,7 @@ const ChatWindow = ({ chat = {}, messages = [], currentUser = {}, onSendMessage,
                     <span className={`avatar avatar-md ${chatStatus} me-3`}>
                         <img className="chatimageperson" src={chatImage} alt={chatName} style={{
                             objectFit: 'cover',
-                            boxShadow: '0 2px 5px rgba(0,0,0,0.1)'
+                            boxShadow: '0 2px 5px rgba(255, 255, 255, 0.1)'
                         }} />
                     </span>
                     <div>
@@ -511,7 +511,7 @@ const ChatWindow = ({ chat = {}, messages = [], currentUser = {}, onSendMessage,
                             fontSize: '1.2rem',
                             color: isDarkMode ? '#ffffff' : 'inherit',
                             fontWeight: 'bold',
-                            textShadow: isDarkMode ? '0 1px 2px rgba(0,0,0,0.2)' : 'none'
+                            textShadow: isDarkMode ? '0 1px 2px rgba(255, 255, 255, 0.2)' : 'none'
                         }}>
                             {chatName || 'Conversation'}
                             {/* Débogage - à supprimer en production */}

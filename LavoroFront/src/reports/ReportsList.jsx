@@ -469,12 +469,12 @@ const ReportsList = () => {
                         <ol className="breadcrumb mb-1">
                             <li className="breadcrumb-item"><a href="#!">Teams</a></li>
                             <span className="mx-1">→</span>
-                            <li className="breadcrumb-item active" aria-current="page">Rapports</li>
+                            <li className="breadcrumb-item active" aria-current="page">Reports</li>
                         </ol>
                     </nav>
                     <h1 className="page-title fw-medium fs-18 mb-0">
                         <i className="ri-error-warning-line text-danger me-2"></i>
-                        Réclamations et signalements
+                        Reports 
                     </h1>
                 </div>
                 <div className="btn-list">
@@ -482,7 +482,7 @@ const ReportsList = () => {
                         className="btn btn-primary btn-wave"
                         onClick={() => refreshReports()}
                     >
-                        <i className="ri-refresh-line me-1"></i> Rafraîchir
+                        <i className="ri-refresh-line me-1"></i> Refresh
                     </button>
                 </div>
             </div>
@@ -496,7 +496,7 @@ const ReportsList = () => {
                             <i className="ri-alarm-warning-line me-1"></i>
                             Important
                         </span>
-                        Liste des réclamations et signalements
+                        Reports List
                     </h6>
                     <div className="swiper testimonialSwiperService1">
                         <div className="row">
@@ -531,8 +531,8 @@ const ReportsList = () => {
                                                     </div>
                                                 </div>
                                                 <p className="fs-14">
-                                                    <strong>Raison:</strong> {report.reason}<br />
-                                                    <strong>Détails:</strong> {report.details.length > 100
+                                                    <strong>Reason:</strong> {report.reason}<br />
+                                                    <strong>Details:</strong> {report.details.length > 100
                                                         ? `${report.details.substring(0, 100)}...`
                                                         : report.details}
                                                     {report.details.length > 100 && (
@@ -573,7 +573,7 @@ const ReportsList = () => {
                                                                     }
 
                                                                     // Si project_id n'est pas défini ou est null
-                                                                    return 'Projet non spécifié';
+                                                                    return 'Project not defined ';
                                                                 })()
                                                             }
                                                         </p>
@@ -583,7 +583,7 @@ const ReportsList = () => {
                                                         
                                                         <div
                                                             className="btn btn-sm btn-icon btn-danger"
-                                                            title="Supprimer définitivement"
+                                                            title="Delete "
                                                             onClick={() => handleDeleteReport(report._id)}
                                                         >
                                                             <i className="ri-delete-bin-line"></i>
@@ -599,8 +599,7 @@ const ReportsList = () => {
                                     <div className="card custom-card">
                                         <div className="card-body">
                                             <i className="ri-file-list-3-line fs-3 text-muted mb-3"></i>
-                                            <h5>Aucun rapport trouvé</h5>
-                                            <p className="text-muted">Il n'y a pas encore de rapports dans le système.</p>
+                                            <h5>No Reports  Found </h5>
                                         </div>
                                     </div>
                                 </div>

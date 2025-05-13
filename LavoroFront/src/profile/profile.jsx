@@ -90,39 +90,79 @@ const Profile = () => {
   }, [navigate, location]);
 
   // Fonction pour récupérer les activités
+  // const fetchActivities = async () => {
+  //   try {
+  //     const token = localStorage.getItem('token');
+  //     if (!token) {
+  //       console.error("No token found");
+  //       navigate('/auth');
+  //       return;
+  //     }
+
+  //     const response = await axios.get('http://localhost:3000/tasks/my-tasks', {
+  //       headers: {
+  //         'Authorization': `Bearer ${token}`,
+  //         'Content-Type': 'application/json'
+  //       },
+  //       withCredentials: true
+  //     });
+
+  //     console.log("Tasks response:", response.data);
+  //     setTasks(response.data);
+
+  //   } catch (err) {
+  //     console.error("Full error:", err);
+  //     console.error("Error response:", err.response?.data);
+
+  //     if (err.response?.status === 401) {
+  //       localStorage.removeItem('token');
+  //       navigate('/signin');
+  //     } else {
+  //       alert(`Error: ${err.response?.data?.message || err.message}`);
+  //     }
+  //     setTasks([]);
+  //   }
+  // };
+
+
   const fetchActivities = async () => {
-    try {
-      const token = localStorage.getItem('token');
-      if (!token) {
-        console.error("No token found");
-        navigate('/auth');
-        return;
-      }
-
-      const response = await axios.get('http://localhost:3000/tasks/my-tasks', {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        withCredentials: true
-      });
-
-      console.log("Tasks response:", response.data);
-      setTasks(response.data);
-
-    } catch (err) {
-      console.error("Full error:", err);
-      console.error("Error response:", err.response?.data);
-
-      if (err.response?.status === 401) {
-        localStorage.removeItem('token');
-        navigate('/signin');
-      } else {
-        alert(`Error: ${err.response?.data?.message || err.message}`);
-      }
-      setTasks([]);
+  try {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      console.error("No token found");
+      navigate('/auth');
+      return;
     }
-  };
+
+    const response = await axios.get('http://localhost:3000/tasks/my-tasks', {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      withCredentials: true
+    });
+
+    console.log("Tasks response:", response.data);
+    
+    // Ensure we're setting an array
+    const tasksData = Array.isArray(response.data) ? response.data : 
+                     (response.data.tasks || response.data.data || []);
+    
+    setTasks(tasksData);
+
+  } catch (err) {
+    console.error("Full error:", err);
+    console.error("Error response:", err.response?.data);
+    
+    if (err.response?.status === 401) {
+      localStorage.removeItem('token');
+      navigate('/signin');
+    } else {
+      alert(`Error: ${err.response?.data?.message || err.message}`);
+    }
+    setTasks([]); // Set to empty array on error
+  }
+};
 
   // Charger les activités lorsque l'onglet est activé
   useEffect(() => {
@@ -277,7 +317,21 @@ const Profile = () => {
                             Edit Profile
                           </button>
                         </li>
-                        
+                        {user?.role?.RoleName === "Developer" && (
+                          <li className="nav-item" role="presentation">
+                            <button
+                              className={`nav-link w-100 text-start ${activeTab === "activities-tab-pane" ? "active" : ""}`}
+                              id="activities-tab"
+                              onClick={() => setActiveTab("activities-tab-pane")}
+                              type="button"
+                              role="tab"
+                              aria-controls="activities-tab-pane"
+                              aria-selected={activeTab === "activities-tab-pane"}
+                            >
+                              See Activities
+                            </button>
+                          </li>
+                        )}
                         <li className="nav-item" role="presentation">
                           <button
                             className={`nav-link w-100 text-start ${activeTab === "security-tab-pane" ? "active" : ""}`}
@@ -319,18 +373,18 @@ const Profile = () => {
                           tabIndex={0}
                         >
                           <div className="container activities-container">
-                            <h1 className="text-center mb-4">Mes Activités</h1>
+                            <h1 className="text-center mb-4">My Activities</h1>
                             <div className="table-responsive">
                               <table className="table table-striped table-hover">
                                 <thead className="thead-dark">
                                   <tr>
-                                    <th scope="col">Titre</th>
+                                    <th scope="col">Title</th>
                                     <th scope="col">Description</th>
-                                    <th scope="col">Statut</th>
-                                    <th scope="col">Priorité</th>
-                                    <th scope="col">Date de début</th>
-                                    <th scope="col">Date de fin</th>
-                                    <th scope="col">Durée estimée</th>
+                                    <th scope="col">Status</th>
+                                    <th scope="col">Priority</th>
+                                    <th scope="col">Start Date</th>
+                                    <th scope="col">End Date</th>
+                                    <th scope="col">Estimated Duration</th>
                                     <th scope="col">Tags</th>
                                   </tr>
                                 </thead>

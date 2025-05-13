@@ -329,7 +329,7 @@ const MemberDetails = () => {
                                         className="btn btn-danger rounded-pill btn-wave"
                                         onClick={() => setShowReportForm(true)}
                                     >
-                                        <i className="ri-alarm-warning-line me-1" ></i> Réclamation
+                                        <i className="ri-alarm-warning-line me-1" ></i> Report
                                     </button>
                                     
                                 </div>

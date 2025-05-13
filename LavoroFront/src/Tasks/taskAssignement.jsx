@@ -74,7 +74,6 @@ const assignTask = async () => {
     if (!result.success || !result.matches || result.matches.length === 0) {
       throw new Error("Aucun membre correspondant trouvé");
     }
-    
     // 3. Stocker le résultat pour confirmation ultérieure
     setAssignmentResult(result);
     setIsAssigned(true);
@@ -152,6 +151,9 @@ const assignTask = async () => {
       if (!assignmentResult || !assignmentResult?.matches) {
         throw new Error("No assignment result available");
       }
+      console.log("***********",assignmentResult.matches[0].member_id)
+      console.log("***********",taskId)
+
   
       const response = await fetch('http://localhost:3000/tasks/confirm-assignment', {
         method: 'POST',
@@ -160,7 +162,7 @@ const assignTask = async () => {
         },
         body: JSON.stringify({
           taskId: taskId,
-          teamMemberId: assignmentResult.matches.member_id
+          teamMemberId: assignmentResult.matches[0].member_id
         })
       });
   

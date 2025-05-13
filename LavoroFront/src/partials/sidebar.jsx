@@ -72,7 +72,7 @@ const Sidebar = ({ userRole }) => {
             <li className="slide">
               <Link to="/chat" className="side-menu__item">
                 <i className="ri-message-3-line side-menu__icon"></i>
-                <span className="side-menu__label">Messagerie</span>
+                <span className="side-menu__label">Chat</span>
               </Link>
             </li>
           </>
@@ -151,7 +151,7 @@ const Sidebar = ({ userRole }) => {
             <li className="slide">
               <Link to="/chat" className="side-menu__item">
                 <i className="ri-message-3-line side-menu__icon"></i>
-                <span className="side-menu__label">Messagerie</span>
+                <span className="side-menu__label">Chat</span>
               </Link>
             </li>
           </>
@@ -275,7 +275,7 @@ Member of the year                  </Link>
             <li className="slide">
               <Link to="/chat" className="side-menu__item">
                 <i className="ri-message-3-line side-menu__icon"></i>
-                <span className="side-menu__label">Messagerie</span>
+                <span className="side-menu__label">Chat</span>
               </Link>
             </li>
             
@@ -394,7 +394,7 @@ Member of the year                  </Link>
             <li className="slide">
               <Link to="/chat" className="side-menu__item">
                 <i className="ri-message-3-line side-menu__icon"></i>
-                <span className="side-menu__label">Messagerie</span>
+                <span className="side-menu__label">Chat</span>
               </Link>
             </li>
           </>

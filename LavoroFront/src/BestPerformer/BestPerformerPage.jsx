@@ -13,17 +13,17 @@ const BestPerformerPage = () => {
         setLoading(true);
         const token = localStorage.getItem('token');
 
-        // Récupérer les statistiques réelles depuis l'API
+        // Fetch actual statistics from the API
         const response = await axios.get('http://localhost:3000/teamMember/best-performer', {
           headers: {
             'Authorization': `Bearer ${token}`
           }
         });
 
-        // Extraire les statistiques du meilleur performeur
+        // Extract best performer statistics
         const performerStats = response.data.stats || {};
 
-        // Mettre à jour les statistiques globales
+        // Update global statistics
         setStats({
           totalTasks: performerStats.tasksCompleted || 0,
           completedOnTime: performerStats.tasksOnTime || 0,
@@ -34,7 +34,7 @@ const BestPerformerPage = () => {
 
         setLoading(false);
       } catch (err) {
-        console.error('Erreur lors de la récupération des données:', err);
+        console.error('Error fetching data:', err);
         setLoading(false);
       }
     };
@@ -46,12 +46,12 @@ const BestPerformerPage = () => {
     <div className="container-fluid">
       <div className="row">
         <div className="col-12 mb-4">
-          <h2 className="page-title">Tableau des Performances</h2>
-          <p className="text-muted">Découvrez les employés avec les meilleures performances et célébrez les champions du mois</p>
+          <h2 className="page-title">Performance Dashboard</h2>
+          <p className="text-muted">Discover the top-performing employees and celebrate the champions of the month</p>
         </div>
       </div>
 
-      {/* Statistiques générales */}
+      {/* General statistics */}
       {!loading && stats && (
         <div className="row mb-4">
           <div className="col-xl-3 col-lg-6 col-md-6 mb-3">
@@ -65,7 +65,7 @@ const BestPerformerPage = () => {
                   </div>
                   <div>
                     <h6 className="fw-semibold mb-0">{stats.totalTasks}</h6>
-                    <p className="text-muted mb-0 fs-12">Tâches totales</p>
+                    <p className="text-muted mb-0 fs-12">Total tasks</p>
                   </div>
                 </div>
               </div>
@@ -82,7 +82,7 @@ const BestPerformerPage = () => {
                   </div>
                   <div>
                     <h6 className="fw-semibold mb-0">{stats.completedOnTime}</h6>
-                    <p className="text-muted mb-0 fs-12">Tâches à temps</p>
+                    <p className="text-muted mb-0 fs-12">Tasks on time</p>
                   </div>
                 </div>
               </div>
@@ -99,7 +99,7 @@ const BestPerformerPage = () => {
                   </div>
                   <div>
                     <h6 className="fw-semibold mb-0">{stats.completedEarly}</h6>
-                    <p className="text-muted mb-0 fs-12">Tâches en avance</p>
+                    <p className="text-muted mb-0 fs-12">Tasks completed early</p>
                   </div>
                 </div>
               </div>
@@ -116,7 +116,7 @@ const BestPerformerPage = () => {
                   </div>
                   <div>
                     <h6 className="fw-semibold mb-0">{stats.averagePoints}</h6>
-                    <p className="text-muted mb-0 fs-12">Points moyens</p>
+                    <p className="text-muted mb-0 fs-12">Average points</p>
                   </div>
                 </div>
               </div>
@@ -126,69 +126,69 @@ const BestPerformerPage = () => {
       )}
 
       <div className="row">
-        {/* Meilleur performeur */}
+        {/* Best performer */}
         <div className="col-lg-7 col-md-12 mb-4">
           <BestPerformer />
         </div>
 
-        {/* Podium des performances */}
+        {/* Performance podium */}
         <div className="col-lg-5 col-md-12 mb-4">
           <PerformancePodium />
         </div>
       </div>
 
-      {/* Graphique de progression */}
+      {/* Points system explanation */}
       <div className="row mt-4">
         <div className="col-12">
           <div className="card custom-card">
             <div className="card-header">
-              <div className="card-title">Comment fonctionne le système de points</div>
+              <div className="card-title">How the point system works</div>
             </div>
             <div className="card-body">
               <div className="row">
                 <div className="col-md-6">
-                  <h6 className="fw-semibold mb-3">Attribution des points</h6>
+                  <h6 className="fw-semibold mb-3">Point allocation</h6>
                   <ul className="list-group list-group-flush">
                     <li className="list-group-item d-flex justify-content-between align-items-center">
                       <div>
                         <i className="ri-checkbox-circle-line text-success me-2"></i>
-                        Tâche terminée dans le délai
+                        Task completed within deadline
                       </div>
                       <span className="badge bg-success rounded-pill">+1 point</span>
                     </li>
                     <li className="list-group-item d-flex justify-content-between align-items-center">
                       <div>
                         <i className="ri-time-line text-primary me-2"></i>
-                        Terminée 1 heure avant la durée estimée
+                        Completed 1 hour before estimated time
                       </div>
                       <span className="badge bg-primary rounded-pill">+2 points</span>
                     </li>
                     <li className="list-group-item d-flex justify-content-between align-items-center">
                       <div>
                         <i className="ri-speed-up-line text-warning me-2"></i>
-                        Terminée 2 heures avant, etc.
+                        Completed 2 hours before, etc.
                       </div>
                       <span className="badge bg-warning rounded-pill">+3 points</span>
                     </li>
                     <li className="list-group-item d-flex justify-content-between align-items-center">
                       <div>
                         <i className="ri-close-circle-line text-danger me-2"></i>
-                        Tâche non terminée à temps
+                        Task not completed on time
                       </div>
                       <span className="badge bg-danger rounded-pill">-1 point</span>
                     </li>
                   </ul>
                 </div>
                 <div className="col-md-6">
-                  <h6 className="fw-semibold mb-3">Avantages du système</h6>
+                  <h6 className="fw-semibold mb-3">System benefits</h6>
                   <div className="alert alert-primary-transparent">
                     <div className="d-flex">
                       <div className="me-3">
                         <i className="ri-trophy-line fs-24"></i>
                       </div>
                       <div>
-                        <h6 className="fw-semibold">Récompenses</h6>
-                        <p className="mb-0">Les employés avec le plus de points peuvent recevoir des récompenses et une reconnaissance spéciale.</p>
+                        <h6 className="fw-semibold">Rewards</h6>
+                        <p className="mb-0">Employees with the most points can receive rewards and special recognition.</p>
                       </div>
                     </div>
                   </div>
@@ -198,8 +198,8 @@ const BestPerformerPage = () => {
                         <i className="ri-team-line fs-24"></i>
                       </div>
                       <div>
-                        <h6 className="fw-semibold">Motivation d'équipe</h6>
-                        <p className="mb-0">Encourage une saine compétition et améliore la productivité globale de l'équipe.</p>
+                        <h6 className="fw-semibold">Team motivation</h6>
+                        <p className="mb-0">Encourages healthy competition and improves the overall team productivity.</p>
                       </div>
                     </div>
                   </div>

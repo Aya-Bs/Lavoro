@@ -26,6 +26,8 @@ export const TaskList = () => {
     const [currentPage, setCurrentPage] = useState(1);
     const tasksPerPage = 5;
     const [statusFilter, setStatusFilter] = useState('all');
+    const [searchQuery, setSearchQuery] = useState('');
+    
 
     const fetchCurrentUser = async () => {
         try {
@@ -125,12 +127,29 @@ export const TaskList = () => {
         return filtered.slice(startIndex, startIndex + tasksPerPage);
     };
 
-    const getFilteredTasks = () => {
-        if (statusFilter === 'all') {
-            return tasks;
-        }
-        return tasks.filter(task => task.status === statusFilter);
-    };
+  const getFilteredTasks = () => {
+    let filtered = tasks;
+    
+    // Apply status filter if not 'all'
+    if (statusFilter !== 'all') {
+        filtered = filtered.filter(task => task.status === statusFilter);
+    }
+    
+    // Apply search filter if query exists
+    if (searchQuery) {
+        filtered = filtered.filter(task => 
+            task.title.toLowerCase().includes(searchQuery.toLowerCase())
+        );
+    }
+    
+    return filtered;
+};
+
+useEffect(() => {
+    if (searchQuery) {
+        setCurrentPage(1);
+    }
+}, [searchQuery]);
 
     const calculateStats = (tasks) => {
         const newStats = {
@@ -390,6 +409,34 @@ export const TaskList = () => {
                 )}
             </div>
         );
+
+    };
+
+
+    const handleSendReminder = async (taskId) => {
+      try {
+        const token = localStorage.getItem('token');
+        await axios.post(`http://localhost:3000/notifications/tasks/${taskId}/reminder`, {}, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        
+        // Show success message using SweetAlert2
+        Swal.fire({
+          icon: 'success',
+          title: 'Success',
+          text: 'Reminder sent successfully',
+          timer: 2000,
+          showConfirmButton: false
+        });
+      } catch (err) {
+        console.error('Error sending reminder:', err);
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: err.response?.data?.message || 'Failed to send reminder',
+          confirmButtonText: 'OK'
+        });
+      }
     };
 
     if (loading) {
@@ -514,7 +561,18 @@ export const TaskList = () => {
                     <div className="card custom-card">
                         <div className="card-header justify-content-between">
                             <div className="card-title">Total Tasks</div>
+                             <div className="input-group me-2" style={{ maxWidth: '250px' }}>
+            <input
+                type="text"
+                className="form-control form-control-sm"
+                placeholder="Search tasks..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+            />
+            
+        </div>
                             <div className="d-flex align-items-center">
+                               
                                 <div className="d-flex">
                                     <button
                                         className="btn btn-sm btn-primary btn-wave waves-light"
@@ -666,6 +724,15 @@ export const TaskList = () => {
                                                         >
                                                             <i className="ri-delete-bin-5-line" />
                                                         </button>
+                                                        <button 
+            className="btn btn-secondary-light btn-icon ms-1 btn-sm"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleSendReminder(task._id);
+            }}
+          >
+            <i className="ri-notification-3-line" />
+          </button>
                                                     </div>
                                                 </td>
                                             </tr>
@@ -710,7 +777,7 @@ export const TaskList = () => {
                                                 return (
                                                     <li key={pageNumber} className="page-item">
                                                         <button className="page-link">
-                                                            <i className="bi bi-three-dots"></i>
+                                                            <i className="ri-more-line"></i>
                                                         </button>
                                                     </li>
                                                 );

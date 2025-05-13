@@ -16,7 +16,7 @@ const TaskSchema = new Schema({
     tags: [{ type: String }],
     requiredSkills: [{ type: String, required: true }],
     created_at: { type: Date, default: Date.now },
-    score : { type: Number, default: 0 },
+    score : { type: Number, default: 4.5 },
 
 });
 

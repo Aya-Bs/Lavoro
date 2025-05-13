@@ -126,7 +126,7 @@ const PerformancePodium = () => {
     <div className="card custom-card">
       <style>{animationStyles}</style>
       <div className="card-header">
-        <div className="card-title">Podium des Performances</div>
+        <div className="card-title">Performance Podium</div>
         <span className="ms-auto shadow-lg fs-17"><i className="ri-award-fill text-warning"></i></span>
       </div>
       <div className="card-body">
@@ -203,9 +203,8 @@ const PerformancePodium = () => {
           ))}
         </div>
 
-        {/* Base du podium */}
-        <div className="bg-light rounded-3 py-2 text-center mb-3">
-          <span className="text-muted">TOP PERFORMERS</span>
+        <div className="bg-light rounded-3 py-2 text-center mb-3 " >
+          <span className="text-muted"></span>
         </div>
 
         <div className="alert alert-primary-transparent mt-3">
@@ -214,8 +213,8 @@ const PerformancePodium = () => {
               <i className="ri-trophy-line fs-24"></i>
             </div>
             <div>
-              <h6 className="fw-semibold">Félicitations aux meilleurs performeurs!</h6>
-              <p className="mb-0">Ces employés ont obtenu les meilleurs scores de performance ce mois-ci.</p>
+              <h6 className="fw-semibold">Congratulations!</h6>
+              <p className="mb-0">These employees achieved the highest performance scores this month.</p>
             </div>
           </div>
         </div>

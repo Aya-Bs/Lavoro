@@ -131,7 +131,7 @@ const BestPerformer = () => {
 
           {/* Statistiques de performance */}
           <div className="col-md-8">
-            <h6 className="fw-semibold mb-3">Statistiques de performance</h6>
+            <h6 className="fw-semibold mb-3">Performance Statistics</h6>
 
             {/* Tâches complétées */}
             <div className="d-flex align-items-center mb-3">
@@ -142,7 +142,7 @@ const BestPerformer = () => {
               </div>
               <div className="flex-grow-1">
                 <div className="d-flex align-items-center justify-content-between">
-                  <p className="mb-0">Tâches complétées</p>
+                  <p className="mb-0">Completed Tasks</p>
                   <p className="mb-0 fw-semibold">{performanceStats.tasksCompleted}</p>
                 </div>
                 <div className="progress progress-xs mt-1">
@@ -160,7 +160,7 @@ const BestPerformer = () => {
               </div>
               <div className="flex-grow-1">
                 <div className="d-flex align-items-center justify-content-between">
-                  <p className="mb-0">Tâches terminées en avance</p>
+                  <p className="mb-0">Tasks Completed In Advance</p>
                   <p className="mb-0 fw-semibold">{performanceStats.tasksEarly}</p>
                 </div>
                 <div className="progress progress-xs mt-1">
@@ -181,7 +181,7 @@ const BestPerformer = () => {
               </div>
               <div className="flex-grow-1">
                 <div className="d-flex align-items-center justify-content-between">
-                  <p className="mb-0">Tâches terminées à temps</p>
+                  <p className="mb-0">Tasks Completed On Time</p>
                   <p className="mb-0 fw-semibold">{performanceStats.tasksOnTime}</p>
                 </div>
                 <div className="progress progress-xs mt-1">
@@ -202,7 +202,7 @@ const BestPerformer = () => {
               </div>
               <div className="flex-grow-1">
                 <div className="d-flex align-items-center justify-content-between">
-                  <p className="mb-0">Tâches en retard</p>
+                  <p className="mb-0">Tasks Completed Late</p>
                   <p className="mb-0 fw-semibold">{performanceStats.tasksLate}</p>
                 </div>
                 <div className="progress progress-xs mt-1">
@@ -221,8 +221,8 @@ const BestPerformer = () => {
                   <i className="ri-bar-chart-line fs-24"></i>
                 </div>
                 <div>
-                  <h6 className="fw-semibold">Taux de réussite</h6>
-                  <p className="mb-0">{performanceStats.completionRate.toFixed(1)}% des tâches terminées à temps ou en avance</p>
+                  <h6 className="fw-semibold">Completion Rate</h6>
+                  <p className="mb-0">{performanceStats.completionRate.toFixed(1)}% of tasks completed on time or early</p>
                 </div>
               </div>
             </div>

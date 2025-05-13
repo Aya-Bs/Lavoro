@@ -84,18 +84,10 @@ function Landing() {
                     </li>
                     {/* End::slide */}
                     {/* Start::slide */}
-                    <li className="slide">
-                      <a href="#pricing" className="nav-link">
-                        <span>Pricing</span>
-                      </a>
-                    </li>
+
                     {/* End::slide */}
                     {/* Start::slide */}
-                    <li className="slide">
-                      <a href="#faqs" className="nav-link">
-                        <span>FAQ's</span>
-                      </a>
-                    </li>
+
                     {/* End::slide */}
                     {/* Start::slide */}
                     <li className="slide">
@@ -105,21 +97,17 @@ function Landing() {
                     </li>
                     {/* End::slide */}
                     {/* Start::slide */}
-                    <li className="slide">
-                      <a href="#contact" className="nav-link">
-                        <span>Contact Us</span>
-                      </a>
-                    </li>
+
                     {/* End::slide */}
                   </ul>
                 </nav>
 
                 {/* Sign Up Button and Settings Icon */}
                 <div className="buttons-group d-flex">
-                  <a href="/signin" className="btn btn-signup">
+                  <a href="/signin" className="btn  btn-primary1">
                     Sign In
                   </a>
-                  
+
                 </div>
               </div>
             </div>
@@ -140,11 +128,11 @@ function Landing() {
                         </div>
                         <p className="landing-banner-heading mb-3 text-fixed-white">Manage With Confidence, Deliver With Excellence
                           <br/>
-                           <span className="fw-semibold text-warning">Lavoro</span> </p>
+</p>
                         <div className="fs-16 mb-5 text-fixed-white op-7">The best companion to help you stay organized. <br/>An app created to ensure efficiency and productivity.
                         </div>
 
-                        <a href="/signup" className="m-1 btn btn-lg btn-primary1 btn-wave waves-effect waves-light">
+                        <a href="/signup" className="m-1 btn btn-lg btn-primary1 btn-wave waves-effect waves-light" >
                           Join US
                           <i className="ri-arrow-right-line ms-2 align-middle" />
                         </a>
@@ -152,7 +140,7 @@ function Landing() {
                     </div>
                     <div className="col-xxl-5 col-xl-5 col-lg-5 col-md-4 my-auto">
                       <div className="text-end landing-main-image landing-heading-img">
-                        <img src="/landing1.png" alt="Landing Image" className="img-fluid" />
+                        <img src="/landing1.png" alt="People joining hands from different frames, symbolizing team collaboration across platforms" className="img-fluid" />
                       </div>
                     </div>
                   </div>
@@ -224,7 +212,7 @@ function Landing() {
                 <div className="row gx-5 mx-0">
                   <div className="col-xl-5 d-flex align-items-center justify-content-center">
                     <div className="home-proving-image">
-                      <img src="/management.png" alt="Management" className="img-fluid about-image" style={{borderRadius: '12px', maxHeight: '400px', objectFit: 'cover'}} />
+                      <img src="/management.png" alt="Collaborative management between team members to ensure success" className="img-fluid about-image" style={{borderRadius: '12px', maxHeight: '400px', objectFit: 'cover'}} />
                     </div>
                     <div className="proving-pattern-1" />
                   </div>
@@ -243,7 +231,7 @@ function Landing() {
                           </div>
                           <div>
                             <span className="fs-14">
-                              <strong>Years of Experience and Reputation:</strong> Built as part of our academic journey, Lavoro combines the knowledge we've gained with the latest in project management best practices. Though we're just starting, we’ve poured in countless hours to create a tool that helps users manage their tasks effectively.
+                              <strong>Months of hard work :</strong> Built as part of our academic journey, Lavoro combines the knowledge we've gained with the latest in project management best practices. Though we're just starting, we’ve poured in countless hours to create a tool that helps users manage their tasks effectively.
                             </span>
                           </div>
                         </div>
@@ -267,24 +255,12 @@ function Landing() {
                           </div>
                           <div>
                             <span className="fs-14">
-                              <strong>Client-Centric Approach:</strong> We understand that every project is unique, which is why [App Name] is designed to be flexible, allowing users to manage their tasks and teams the way that works best for them.
+                              <strong>Client-Centric Approach:</strong> We understand that every project is unique, which is why Lavoro is designed to be flexible, allowing users to manage their tasks and teams the way that works best for them.
                             </span>
                           </div>
                         </div>
                       </div>
-                      <div className="col-xl-12">
-                        <div className="d-flex align-items-top">
-                          <div className="me-2 home-prove-svg">
-                            <i className="ri-focus-2-fill align-middle text-primary3 d-inline-block" />
-                          </div>
-                          <div>
-                            <span className="fs-14">
-                              <strong>24/7 Support:</strong>                         Though we’re a small team, we’re here to support you whenever you need it. Our goal is to ensure that users can rely on the app, with ongoing support and continuous improvements.
 
-                            </span>
-                          </div>
-                        </div>
-                      </div>
                     </div>
                   </div>
                 </div>
@@ -306,7 +282,7 @@ function Landing() {
                 </div>
                 {/* First row of cards */}
                 <div className="row mb-5">
-                  <div className="col-xl-3">
+                  <div className="col-xl-4">
                     <div className="card custom-card landing-card">
                       <div className="card-body text-center">
                         <div className="mb-4">
@@ -321,7 +297,7 @@ function Landing() {
                       </div>
                     </div>
                   </div>
-                  <div className="col-xl-3">
+                  <div className="col-xl-4">
                     <div className="card custom-card landing-card">
                       <div className="card-body text-center">
                         <div className="mb-4">
@@ -334,11 +310,11 @@ function Landing() {
                           </div>
                         </div>
                         <h6 className="fw-semibold">Tailored to Your Needs</h6>
-                        <p className="text-muted mb-0">Whether you're managing a single project or an entire portfolio, [App Name] adapts to your business model. Our customizable features help you manage tasks, track progress, and allocate resources with ease.</p>
+                        <p className="text-muted mb-0">Whether you're managing a single project or an entire portfolio, Lavoro adapts to your business model. Our customizable features help you manage tasks, track progress, and allocate resources with ease.</p>
                       </div>
                     </div>
                   </div>
-                  <div className="col-xl-3">
+                  <div className="col-xl-4">
                     <div className="card custom-card landing-card">
                       <div className="card-body text-center">
                         <div className="mb-4">
@@ -355,7 +331,11 @@ function Landing() {
                       </div>
                     </div>
                   </div>
-                  <div className="col-xl-3">
+                </div>
+
+                {/* Second row of cards */}
+                <div className="row">
+                  <div className="col-xl-4">
                     <div className="card custom-card landing-card">
                       <div className="card-body text-center">
                         <div className="mb-4">
@@ -370,11 +350,7 @@ function Landing() {
                       </div>
                     </div>
                   </div>
-                </div>
-
-                {/* Second row of cards */}
-                <div className="row">
-                  <div className="col-xl-3">
+                  <div className="col-xl-4">
                     <div className="card custom-card landing-card">
                       <div className="card-body text-center">
                         <div className="mb-4">
@@ -389,7 +365,7 @@ function Landing() {
                       </div>
                     </div>
                   </div>
-                  <div className="col-xl-3">
+                  <div className="col-xl-4">
                     <div className="card custom-card landing-card">
                       <div className="card-body text-center">
                         <div className="mb-4">
@@ -564,30 +540,7 @@ function Landing() {
                       </div>
                     </div>
                   </div>
-                  <div className="col-xl-3 col-lg-3 col-md-6 col-sm-6 col-12">
-                    <div className="card custom-card team-member text-center">
-                      <div className="team-bg-shape teal" />
-                      <div className="card-body p-4">
-                        <div className="mb-4 lh-1 d-flex gap-2 justify-content-center">
-                          <span className="avatar avatar-xl avatar-rounded bg-teal">
-                            <img src="/sarrass.jpg" className="card-img" alt="..." />
-                          </span>
-                        </div>
-                        <div className>
-                          <p className="mb-2 fs-11 badge bg-primary1 fw-medium">Board Director</p>
-                          <h6 className="mb-3 fw-semibold">Sarra Sahli</h6>
-                          <p className="text-muted fs-12">The Sunshine – Ambassador of good vibes and optimism.</p>
-                          <div className="d-flex justify-content-center mt-4">
-                            <a aria-label="anchor" href="javascript:void(0);" className="btn btn-icon btn-primary-light btn-wave btn-sm waves-effect waves-light"><i className="ri-twitter-x-fill" /></a>
-                            <a aria-label="anchor" href="javascript:void(0);" className="btn btn-icon btn-primary1-light btn-wave btn-sm ms-2 waves-effect waves-light"><i className="ri-facebook-fill" /></a>
-                            <a aria-label="anchor" href="javascript:void(0);" className="btn btn-icon btn-primary2-light btn-wave btn-sm ms-2 waves-effect waves-light"><i className="ri-instagram-line" /></a>
-                            <a aria-label="anchor" href="javascript:void(0);" className="btn btn-icon btn-primary3-light btn-wave btn-sm ms-2 waves-effect waves-light"><i className="ri-linkedin-fill" /></a>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="col-xl-3 col-lg-3 col-md-6 col-sm-6 col-12">
+                   <div className="col-xl-3 col-lg-3 col-md-6 col-sm-6 col-12">
                     <div className="card custom-card team-member text-center">
                       <div className="team-bg-shape success" />
                       <div className="card-body p-4">
@@ -610,6 +563,32 @@ function Landing() {
                       </div>
                     </div>
                   </div>
+                  <div className="col-xl-3 col-lg-3 col-md-6 col-sm-6 col-12">
+                    <div className="card custom-card team-member text-center">
+                      <div className="team-bg-shape teal" />
+                      <div className="card-body p-4">
+                        <div className="mb-4 lh-1 d-flex gap-2 justify-content-center">
+                          <span className="avatar avatar-xl avatar-rounded bg-teal">
+                            <img src="/sarrass.jpg" className="card-img" alt="..." />
+                          </span>
+                        </div>
+                        <div className>
+                          <p className="mb-2 fs-11 badge bg-primary1 fw-medium">Board Director</p>
+                          <h6 className="mb-3 fw-semibold">Sarra Sahli</h6>
+                          <p className="text-muted fs-12">The Sunshine – Ambassador of good vibes and optimism.</p>
+
+
+                          <div className="d-flex justify-content-center mt-4">
+                            <a aria-label="anchor" href="javascript:void(0);" className="btn btn-icon btn-primary-light btn-wave btn-sm waves-effect waves-light"><i className="ri-twitter-x-fill" /></a>
+                            <a aria-label="anchor" href="javascript:void(0);" className="btn btn-icon btn-primary1-light btn-wave btn-sm ms-2 waves-effect waves-light"><i className="ri-facebook-fill" /></a>
+                            <a aria-label="anchor" href="javascript:void(0);" className="btn btn-icon btn-primary2-light btn-wave btn-sm ms-2 waves-effect waves-light"><i className="ri-instagram-line" /></a>
+                            <a aria-label="anchor" href="javascript:void(0);" className="btn btn-icon btn-primary3-light btn-wave btn-sm ms-2 waves-effect waves-light"><i className="ri-linkedin-fill" /></a>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
                   <div className="col-xl-3 col-lg-3 col-md-6 col-sm-6 col-12">
                     <div className="card custom-card team-member text-center">
                       <div className="team-bg-shape orange" />
@@ -663,323 +642,7 @@ function Landing() {
             {/* Start:: Section-7 */}
 
             {/* End:: Section-7 */}
-            {/* Start:: Section-8 */}
-            <section className="section" id="faqs">
-              <div className="container text-center">
-                <p className="fs-12 fw-medium text-success mb-1"><span className="landing-section-heading text-primary">F.A.Q 's</span>
-                </p>
-                <h4 className="fw-semibold mt-3 mb-2">Frequently asked questions ?</h4>
-                <div className="row justify-content-center">
-                  <div className="col-xl-7">
-                    <p className="text-muted fs-14 mb-5 fw-normal">We have shared some of the most frequently asked
-                      questions to help you out.</p>
-                  </div>
-                </div>
-                <div className="row text-start">
-                  <div className="col-xl-12">
-                    <div className="row gy-2">
-                      <div className="col-xl-6">
-                        <div className="accordion accordion-customicon1 accordion-primary accordions-items-seperate" id="accordionFAQ1">
-                          <div className="accordion-item">
-                            <h2 className="accordion-header" id="headingcustomicon1One">
-                              <button className="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapsecustomicon1One" aria-expanded="true" aria-controls="collapsecustomicon1One">
-                                Where can I subscribe to your newsletter?
-                              </button>
-                            </h2>
-                            <div id="collapsecustomicon1One" className="accordion-collapse collapse show" aria-labelledby="headingcustomicon1One" data-bs-parent="#accordionFAQ1">
-                              <div className="accordion-body">
-                                <strong>This is the first item's accordion body.</strong> It is
-                                shown by
-                                default, until the collapse plugin adds the appropriate classes that
-                                we
-                                use to style each element. These classes control the overall
-                                appearance,
-                                as well as the showing and hiding via CSS transitions. You can
-                                modify
-                                any of this with custom CSS or overriding our default variables.
-                                It's
-                                also worth noting that just about any HTML can go within the
-                                <code>.accordion-body</code>, though the transition does limit
-                                overflow.
-                              </div>
-                            </div>
-                          </div>
-                          <div className="accordion-item">
-                            <h2 className="accordion-header" id="headingcustomicon1Two">
-                              <button className="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapsecustomicon1Two" aria-expanded="false" aria-controls="collapsecustomicon1Two">
-                                Where can in edit my address?
-                              </button>
-                            </h2>
-                            <div id="collapsecustomicon1Two" className="accordion-collapse collapse" aria-labelledby="headingcustomicon1Two" data-bs-parent="#accordionFAQ1">
-                              <div className="accordion-body">
-                                <strong>This is the first item's accordion body.</strong> It is
-                                shown by
-                                default, until the collapse plugin adds the appropriate classes that
-                                we
-                                use to style each element. These classes control the overall
-                                appearance,
-                                as well as the showing and hiding via CSS transitions. You can
-                                modify
-                                any of this with custom CSS or overriding our default variables.
-                                It's
-                                also worth noting that just about any HTML can go within the
-                                <code>.accordion-body</code>, though the transition does limit
-                                overflow.
-                              </div>
-                            </div>
-                          </div>
-                          <div className="accordion-item">
-                            <h2 className="accordion-header" id="headingcustomicon1Three">
-                              <button className="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapsecustomicon1Three" aria-expanded="false" aria-controls="collapsecustomicon1Three">
-                                What are your opening hours?
-                              </button>
-                            </h2>
-                            <div id="collapsecustomicon1Three" className="accordion-collapse collapse" aria-labelledby="headingcustomicon1Three" data-bs-parent="#accordionFAQ1">
-                              <div className="accordion-body">
-                                <strong>This is the first item's accordion body.</strong> It is
-                                shown by
-                                default, until the collapse plugin adds the appropriate classes that
-                                we
-                                use to style each element. These classes control the overall
-                                appearance,
-                                as well as the showing and hiding via CSS transitions. You can
-                                modify
-                                any of this with custom CSS or overriding our default variables.
-                                It's
-                                also worth noting that just about any HTML can go within the
-                                <code>.accordion-body</code>, though the transition does limit
-                                overflow.
-                              </div>
-                            </div>
-                          </div>
-                          <div className="accordion-item">
-                            <h2 className="accordion-header" id="headingcustomicon1Four">
-                              <button className="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapsecustomicon1Four" aria-expanded="false" aria-controls="collapsecustomicon1Four">
-                                Do I have the right to return an item?
-                              </button>
-                            </h2>
-                            <div id="collapsecustomicon1Four" className="accordion-collapse collapse" aria-labelledby="headingcustomicon1Four" data-bs-parent="#accordionFAQ1">
-                              <div className="accordion-body">
-                                <strong>This is the first item's accordion body.</strong> It is
-                                shown by
-                                default, until the collapse plugin adds the appropriate classes that
-                                we
-                                use to style each element. These classes control the overall
-                                appearance,
-                                as well as the showing and hiding via CSS transitions. You can
-                                modify
-                                any of this with custom CSS or overriding our default variables.
-                                It's
-                                also worth noting that just about any HTML can go within the
-                                <code>.accordion-body</code>, though the transition does limit
-                                overflow.
-                              </div>
-                            </div>
-                          </div>
-                          <div className="accordion-item">
-                            <h2 className="accordion-header" id="headingcustomicon1Five">
-                              <button className="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapsecustomicon1Five" aria-expanded="false" aria-controls="collapsecustomicon1Five">
-                                General Terms &amp; Conditions (GTC)
-                              </button>
-                            </h2>
-                            <div id="collapsecustomicon1Five" className="accordion-collapse collapse" aria-labelledby="headingcustomicon1Five" data-bs-parent="#accordionFAQ1">
-                              <div className="accordion-body">
-                                <strong>This is the first item's accordion body.</strong> It is
-                                shown by
-                                default, until the collapse plugin adds the appropriate classes that
-                                we
-                                use to style each element. These classes control the overall
-                                appearance,
-                                as well as the showing and hiding via CSS transitions. You can
-                                modify
-                                any of this with custom CSS or overriding our default variables.
-                                It's
-                                also worth noting that just about any HTML can go within the
-                                <code>.accordion-body</code>, though the transition does limit
-                                overflow.
-                              </div>
-                            </div>
-                          </div>
-                          <div className="accordion-item">
-                            <h2 className="accordion-header" id="headingcustomicon1Six">
-                              <button className="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapsecustomicon1Six" aria-expanded="false" aria-controls="collapsecustomicon1Six">
-                                Do I need to create an account to make an order?
-                              </button>
-                            </h2>
-                            <div id="collapsecustomicon1Six" className="accordion-collapse collapse" aria-labelledby="headingcustomicon1Six" data-bs-parent="#accordionFAQ1">
-                              <div className="accordion-body">
-                                <strong>This is the first item's accordion body.</strong> It is
-                                shown by
-                                default, until the collapse plugin adds the appropriate classes that
-                                we
-                                use to style each element. These classes control the overall
-                                appearance,
-                                as well as the showing and hiding via CSS transitions. You can
-                                modify
-                                any of this with custom CSS or overriding our default variables.
-                                It's
-                                also worth noting that just about any HTML can go within the
-                                <code>.accordion-body</code>, though the transition does limit
-                                overflow.
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                      <div className="col-xl-6">
-                        <div className="accordion accordion-customicon1 accordion-primary accordions-items-seperate" id="accordionFAQ2">
-                          <div className="accordion-item">
-                            <h2 className="accordion-header" id="headingcustomicon2Five">
-                              <button className="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapsecustomicon2Five" aria-expanded="false" aria-controls="collapsecustomicon2Five">
-                                General Terms &amp; Conditions (GTC)
-                              </button>
-                            </h2>
-                            <div id="collapsecustomicon2Five" className="accordion-collapse collapse" aria-labelledby="headingcustomicon2Five" data-bs-parent="#accordionFAQ2">
-                              <div className="accordion-body">
-                                <strong>This is the first item's accordion body.</strong> It is
-                                shown by
-                                default, until the collapse plugin adds the appropriate classes that
-                                we
-                                use to style each element. These classes control the overall
-                                appearance,
-                                as well as the showing and hiding via CSS transitions. You can
-                                modify
-                                any of this with custom CSS or overriding our default variables.
-                                It's
-                                also worth noting that just about any HTML can go within the
-                                <code>.accordion-body</code>, though the transition does limit
-                                overflow.
-                              </div>
-                            </div>
-                          </div>
-                          <div className="accordion-item">
-                            <h2 className="accordion-header" id="headingcustomicon2Six">
-                              <button className="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapsecustomicon2Six" aria-expanded="false" aria-controls="collapsecustomicon2Six">
-                                Do I need to create an account to make an order?
-                              </button>
-                            </h2>
-                            <div id="collapsecustomicon2Six" className="accordion-collapse collapse" aria-labelledby="headingcustomicon2Six" data-bs-parent="#accordionFAQ2">
-                              <div className="accordion-body">
-                                <strong>This is the first item's accordion body.</strong> It is
-                                shown by
-                                default, until the collapse plugin adds the appropriate classes that
-                                we
-                                use to style each element. These classes control the overall
-                                appearance,
-                                as well as the showing and hiding via CSS transitions. You can
-                                modify
-                                any of this with custom CSS or overriding our default variables.
-                                It's
-                                also worth noting that just about any HTML can go within the
-                                <code>.accordion-body</code>, though the transition does limit
-                                overflow.
-                              </div>
-                            </div>
-                          </div>
-                          <div className="accordion-item">
-                            <h2 className="accordion-header" id="headingcustomicon2One">
-                              <button className="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapsecustomicon2One" aria-expanded="true" aria-controls="collapsecustomicon2One">
-                                Where can I subscribe to your newsletter?
-                              </button>
-                            </h2>
-                            <div id="collapsecustomicon2One" className="accordion-collapse collapse " aria-labelledby="headingcustomicon2One" data-bs-parent="#accordionFAQ2">
-                              <div className="accordion-body">
-                                <strong>This is the first item's accordion body.</strong> It is
-                                shown by
-                                default, until the collapse plugin adds the appropriate classes that
-                                we
-                                use to style each element. These classes control the overall
-                                appearance,
-                                as well as the showing and hiding via CSS transitions. You can
-                                modify
-                                any of this with custom CSS or overriding our default variables.
-                                It's
-                                also worth noting that just about any HTML can go within the
-                                <code>.accordion-body</code>, though the transition does limit
-                                overflow.
-                              </div>
-                            </div>
-                          </div>
-                          <div className="accordion-item">
-                            <h2 className="accordion-header" id="headingcustomicon2Two">
-                              <button className="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapsecustomicon2Two" aria-expanded="false" aria-controls="collapsecustomicon2Two">
-                                Where can in edit my address?
-                              </button>
-                            </h2>
-                            <div id="collapsecustomicon2Two" className="accordion-collapse collapse" aria-labelledby="headingcustomicon2Two" data-bs-parent="#accordionFAQ2">
-                              <div className="accordion-body">
-                                <strong>This is the first item's accordion body.</strong> It is
-                                shown by
-                                default, until the collapse plugin adds the appropriate classes that
-                                we
-                                use to style each element. These classes control the overall
-                                appearance,
-                                as well as the showing and hiding via CSS transitions. You can
-                                modify
-                                any of this with custom CSS or overriding our default variables.
-                                It's
-                                also worth noting that just about any HTML can go within the
-                                <code>.accordion-body</code>, though the transition does limit
-                                overflow.
-                              </div>
-                            </div>
-                          </div>
-                          <div className="accordion-item">
-                            <h2 className="accordion-header" id="headingcustomicon2Three">
-                              <button className="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapsecustomicon2Three" aria-expanded="false" aria-controls="collapsecustomicon2Three">
-                                What are your opening hours?
-                              </button>
-                            </h2>
-                            <div id="collapsecustomicon2Three" className="accordion-collapse collapse" aria-labelledby="headingcustomicon2Three" data-bs-parent="#accordionFAQ2">
-                              <div className="accordion-body">
-                                <strong>This is the first item's accordion body.</strong> It is
-                                shown by
-                                default, until the collapse plugin adds the appropriate classes that
-                                we
-                                use to style each element. These classes control the overall
-                                appearance,
-                                as well as the showing and hiding via CSS transitions. You can
-                                modify
-                                any of this with custom CSS or overriding our default variables.
-                                It's
-                                also worth noting that just about any HTML can go within the
-                                <code>.accordion-body</code>, though the transition does limit
-                                overflow.
-                              </div>
-                            </div>
-                          </div>
-                          <div className="accordion-item">
-                            <h2 className="accordion-header" id="headingcustomicon2Four">
-                              <button className="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapsecustomicon2Four" aria-expanded="false" aria-controls="collapsecustomicon2Four">
-                                Do I have the right to return an item?
-                              </button>
-                            </h2>
-                            <div id="collapsecustomicon2Four" className="accordion-collapse collapse show" aria-labelledby="headingcustomicon2Four" data-bs-parent="#accordionFAQ2">
-                              <div className="accordion-body">
-                                <strong>This is the first item's accordion body.</strong> It is
-                                shown by
-                                default, until the collapse plugin adds the appropriate classes that
-                                we
-                                use to style each element. These classes control the overall
-                                appearance,
-                                as well as the showing and hiding via CSS transitions. You can
-                                modify
-                                any of this with custom CSS or overriding our default variables.
-                                It's
-                                also worth noting that just about any HTML can go within the
-                                <code>.accordion-body</code>, though the transition does limit
-                                overflow.
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </section>
-            {/* End:: Section-8 */}
+
             {/* Start:: Section-9 */}
             <section className="section landing-Features py-4" id="testimonials">
               <div className="container reviews-container">
@@ -999,12 +662,8 @@ function Landing() {
                           <div className="card custom-card overflow-hidden">
                             <div className="card-body">
                               <div className>
-                                <span className><sup><i className="bi bi-quote fs-1 me-1 text-fixed-white" /></sup> Customer service at this company is
-                                  outstanding. They were quick to respond to my inquiry and
-                                  resolved my issue within hours. --
-                                  <a href="javascript:void(0);" className="fw-semibold fs-11 text-fixed-white" data-bs-toggle="tooltip" data-bs-custom-class="tooltip-dark" data-bs-placement="top" data-bs-title="customer service at this company is outstanding. They were quick to respond to my inquiry and resolved my issue within hours.">Read
-                                    More
-                                  </a>
+                                <span className><sup><i class="ri-double-quotes-l fs-3 me-1 text-fixed-white mt-4" /></sup> An amazing website, rich features, user friendly, and good assistance.
+
                                 </span>
                               </div>
                               <div className="d-flex align-items-center text-end  justify-content-end">
@@ -1021,11 +680,11 @@ function Landing() {
                             <div className="p-3 bg-white-transparent">
                               <div className="d-flex align-items-center">
                                 <span className="avatar rounded-circle me-2">
-                                  <img src="../assets/images/faces/8.jpg" alt="" className="img-fluid rounded-circle border border-primary1 shadow-sm border-2" />
+                                  <img src="./lili.jpg" alt="" className="img-fluid rounded-circle border border-primary1 shadow-sm border-2" />
                                 </span>
                                 <div>
-                                  <p className="mb-0 fw-semibold text-fixed-white">Elsa Teresa</p>
-                                  <p className="mb-0 fs-11 fw-normal op-8 text-fixed-white">elsateresa@gmail.com</p>
+                                  <p className="mb-0 fw-semibold text-fixed-white">Lilia Jemai</p>
+                                  <p className="mb-0 fs-11 fw-normal op-8 text-fixed-white">lilia.jemai@gmail.com</p>
                                 </div>
                                 <div className="ms-auto fs-12 fw-semibold op-8 text-end">
                                   <div className="btn btn-sm btn-icon rounded-circle btn-white"><i className="ri-twitter-x-line" /></div>
@@ -1035,206 +694,8 @@ function Landing() {
                             </div>
                           </div>
                         </div>
-                        <div className="swiper-slide">
-                          <div className="card custom-card overflow-hidden">
-                            <div className="card-body">
-                              <div className>
-                                <span className><sup><i className="bi bi-quote fs-1 me-1 text-fixed-white" /></sup> Customer service at this company is
-                                  outstanding. They were quick to respond to my inquiry and
-                                  resolved my issue within hours. --
-                                  <a href="javascript:void(0);" className="fw-semibold fs-11 text-fixed-white" data-bs-toggle="tooltip" data-bs-custom-class="tooltip-dark" data-bs-placement="top" data-bs-title="customer service at this company is outstanding. They were quick to respond to my inquiry and resolved my issue within hours.">Read
-                                    More
-                                  </a>
-                                </span>
-                              </div>
-                              <div className="d-flex align-items-center text-end  justify-content-end">
-                                <div className="text-warning d-block me-1 fs-10">
-                                  <i className="ri-star-fill" />
-                                  <i className="ri-star-fill" />
-                                  <i className="ri-star-fill" />
-                                  <i className="ri-star-fill" />
-                                  <i className="ri-star-half-line" />
-                                </div>
-                                <span>4.3</span>
-                              </div>
-                            </div>
-                            <div className="p-3 bg-white-transparent">
-                              <div className="d-flex align-items-center">
-                                <span className="avatar rounded-circle me-2">
-                                  <img src="../assets/images/faces/9.jpg" alt="" className="img-fluid rounded-circle border border-primary1 shadow-sm border-2" />
-                                </span>
-                                <div>
-                                  <p className="mb-0 fw-semibold text-fixed-white">Henry Milo</p>
-                                  <p className="mb-0 fs-11 fw-normal op-8 text-fixed-white">henrymilo@gmail.com</p>
-                                </div>
-                                <div className="ms-auto fs-12 fw-semibold op-8 text-end">
-                                  <div className="btn btn-sm btn-icon rounded-circle btn-white"><i className="ri-twitter-x-line" /></div>
-                                  <div className="btn btn-sm btn-icon rounded-circle btn-primary1"><i className="ri-share-line" /></div>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                        <div className="swiper-slide">
-                          <div className="card custom-card overflow-hidden">
-                            <div className="card-body">
-                              <div className>
-                                <span className><sup><i className="bi bi-quote fs-1 me-1 text-fixed-white" /></sup> Customer service at this company is
-                                  outstanding. They were quick to respond to my inquiry and
-                                  resolved my issue within hours. --
-                                  <a href="javascript:void(0);" className="fw-semibold fs-11 text-fixed-white" data-bs-toggle="tooltip" data-bs-custom-class="tooltip-dark" data-bs-placement="top" data-bs-title="customer service at this company is outstanding. They were quick to respond to my inquiry and resolved my issue within hours.">Read
-                                    More
-                                  </a>
-                                </span>
-                              </div>
-                              <div className="d-flex align-items-center text-end  justify-content-end">
-                                <div className="text-warning d-block me-1 fs-10">
-                                  <i className="ri-star-fill" />
-                                  <i className="ri-star-fill" />
-                                  <i className="ri-star-fill" />
-                                  <i className="ri-star-fill" />
-                                  <i className="ri-star-half-line" />
-                                </div>
-                                <span>4.3</span>
-                              </div>
-                            </div>
-                            <div className="p-3 bg-white-transparent">
-                              <div className="d-flex align-items-center">
-                                <span className="avatar rounded-circle me-2">
-                                  <img src="../assets/images/faces/6.jpg" alt="" className="img-fluid rounded-circle border border-primary1 shadow-sm border-2" />
-                                </span>
-                                <div>
-                                  <p className="mb-0 fw-semibold text-fixed-white">Katherin Oslo</p>
-                                  <p className="mb-0 fs-11 fw-normal op-8 text-fixed-white">katherin12@gmail.com</p>
-                                </div>
-                                <div className="ms-auto fs-12 fw-semibold op-8 text-end">
-                                  <div className="btn btn-sm btn-icon rounded-circle btn-white"><i className="ri-twitter-x-line" /></div>
-                                  <div className="btn btn-sm btn-icon rounded-circle btn-primary1"><i className="ri-share-line" /></div>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                        <div className="swiper-slide">
-                          <div className="card custom-card overflow-hidden">
-                            <div className="card-body">
-                              <div className>
-                                <span className><sup><i className="bi bi-quote fs-1 me-1 text-fixed-white" /></sup> Customer service at this company is
-                                  outstanding. They were quick to respond to my inquiry and
-                                  resolved my issue within hours. --
-                                  <a href="javascript:void(0);" className="fw-semibold fs-11 text-fixed-white" data-bs-toggle="tooltip" data-bs-custom-class="tooltip-dark" data-bs-placement="top" data-bs-title="customer service at this company is outstanding. They were quick to respond to my inquiry and resolved my issue within hours.">Read
-                                    More
-                                  </a>
-                                </span>
-                              </div>
-                              <div className="d-flex align-items-center text-end  justify-content-end">
-                                <div className="text-warning d-block me-1 fs-10">
-                                  <i className="ri-star-fill" />
-                                  <i className="ri-star-fill" />
-                                  <i className="ri-star-fill" />
-                                  <i className="ri-star-fill" />
-                                  <i className="ri-star-half-line" />
-                                </div>
-                                <span>4.3</span>
-                              </div>
-                            </div>
-                            <div className="p-3 bg-white-transparent">
-                              <div className="d-flex align-items-center">
-                                <span className="avatar rounded-circle me-2">
-                                  <img src="../assets/images/faces/14.jpg" alt="" className="img-fluid rounded-circle border border-primary1 shadow-sm border-2" />
-                                </span>
-                                <div>
-                                  <p className="mb-0 fw-semibold text-fixed-white">Jestin Calm</p>
-                                  <p className="mb-0 fs-11 fw-normal op-8 text-fixed-white">jestincalm1999@gmail.com</p>
-                                </div>
-                                <div className="ms-auto fs-12 fw-semibold op-8 text-end">
-                                  <div className="btn btn-sm btn-icon rounded-circle btn-white"><i className="ri-twitter-x-line" /></div>
-                                  <div className="btn btn-sm btn-icon rounded-circle btn-primary1"><i className="ri-share-line" /></div>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                        <div className="swiper-slide">
-                          <div className="card custom-card overflow-hidden">
-                            <div className="card-body">
-                              <div className>
-                                <span className><sup><i className="bi bi-quote fs-1 me-1 text-fixed-white" /></sup> Customer service at this company is
-                                  outstanding. They were quick to respond to my inquiry and
-                                  resolved my issue within hours. --
-                                  <a href="javascript:void(0);" className="fw-semibold fs-11 text-fixed-white" data-bs-toggle="tooltip" data-bs-custom-class="tooltip-dark" data-bs-placement="top" data-bs-title="customer service at this company is outstanding. They were quick to respond to my inquiry and resolved my issue within hours.">Read
-                                    More
-                                  </a>
-                                </span>
-                              </div>
-                              <div className="d-flex align-items-center text-end  justify-content-end">
-                                <div className="text-warning d-block me-1 fs-10">
-                                  <i className="ri-star-fill" />
-                                  <i className="ri-star-fill" />
-                                  <i className="ri-star-fill" />
-                                  <i className="ri-star-fill" />
-                                  <i className="ri-star-half-line" />
-                                </div>
-                                <span>4.3</span>
-                              </div>
-                            </div>
-                            <div className="p-3 bg-white-transparent">
-                              <div className="d-flex align-items-center">
-                                <span className="avatar rounded-circle me-2">
-                                  <img src="../assets/images/faces/13.jpg" alt="" className="img-fluid rounded-circle border border-primary1 shadow-sm border-2" />
-                                </span>
-                                <div>
-                                  <p className="mb-0 fw-semibold text-fixed-white">Harin ford</p>
-                                  <p className="mb-0 fs-11 fw-normal op-8 text-fixed-white">harinford345@gmail.com</p>
-                                </div>
-                                <div className="ms-auto fs-12 fw-semibold op-8 text-end">
-                                  <div className="btn btn-sm btn-icon rounded-circle btn-white"><i className="ri-twitter-x-line" /></div>
-                                  <div className="btn btn-sm btn-icon rounded-circle btn-primary1"><i className="ri-share-line" /></div>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                        <div className="swiper-slide">
-                          <div className="card custom-card overflow-hidden">
-                            <div className="card-body">
-                              <div className>
-                                <span className><sup><i className="bi bi-quote fs-1 me-1 text-fixed-white" /></sup> Customer service at this company is
-                                  outstanding. They were quick to respond to my inquiry and
-                                  resolved my issue within hours. --
-                                  <a href="javascript:void(0);" className="fw-semibold fs-11 text-fixed-white" data-bs-toggle="tooltip" data-bs-custom-class="tooltip-dark" data-bs-placement="top" data-bs-title="customer service at this company is outstanding. They were quick to respond to my inquiry and resolved my issue within hours.">Read
-                                    More
-                                  </a>
-                                </span>
-                              </div>
-                              <div className="d-flex align-items-center text-end  justify-content-end">
-                                <div className="text-warning d-block me-1 fs-10">
-                                  <i className="ri-star-fill" />
-                                  <i className="ri-star-fill" />
-                                  <i className="ri-star-fill" />
-                                  <i className="ri-star-fill" />
-                                  <i className="ri-star-half-line" />
-                                </div>
-                                <span>4.3</span>
-                              </div>
-                            </div>
-                            <div className="p-3 bg-white-transparent">
-                              <div className="d-flex align-items-center">
-                                <span className="avatar rounded-circle me-2">
-                                  <img src="../assets/images/faces/11.jpg" alt="" className="img-fluid rounded-circle border border-primary1 shadow-sm border-2" />
-                                </span>
-                                <div>
-                                  <p className="mb-0 fw-semibold text-fixed-white">Phillip John</p>
-                                  <p className="mb-0 fs-11 fw-normal op-8 text-fixed-white">phillipjohn21@gmail.com</p>
-                                </div>
-                                <div className="ms-auto fs-12 fw-semibold op-8 text-end">
-                                  <div className="btn btn-sm btn-icon rounded-circle btn-white"><i className="ri-twitter-x-line" /></div>
-                                  <div className="btn btn-sm btn-icon rounded-circle btn-primary1"><i className="ri-share-line" /></div>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
+
+
                       </div>
                       <div className="swiper-pagination swiper-pagination-clickable swiper-pagination-bullets swiper-pagination-horizontal">
                       </div>
@@ -1253,14 +714,9 @@ function Landing() {
                 <div className="row">
                   <div className="col-md-4 col-sm-6 col-12 mb-md-0 mb-3">
                     <div className="px-4">
-                      <p className="fw-medium mb-3"><a href="index.html"><img src="../assets/images/brand-logos/desktop-dark.png" alt="" className="landing-footer-logo" /></a></p>
-                      <p className="mb-2 op-6 fw-normal">
-                        Lorem ipsum dolor sit amet consectetur adipisicing elit. Reprehenderit et magnam,
-                        fuga est mollitia eius, quo illum illo inventore optio aut quas omnis rem. Dolores
-                        accusantium aspernatur minus ea incidunt.
-                      </p>
-                      <p className="mb-0 op-6 fw-normal">Lorem ipsum dolor sit amet consectetur, adipisicing elit.
-                        Autem ea esse ad</p>
+                      <p className="fw-medium mb-3"><a href="index.html"><img src="./logo.png" alt="lavoro logo" className="landing-footer-logo" width={200}/></a></p>
+
+
                     </div>
                   </div>
                   <div className="col-md-2 col-sm-6 col-12">
