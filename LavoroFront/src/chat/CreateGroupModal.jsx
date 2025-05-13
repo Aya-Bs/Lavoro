@@ -155,16 +155,16 @@ const CreateGroupModal = ({ isOpen, onClose, onGroupCreated, currentUser, contac
     };
 
     const modalStyle = {
-        backgroundColor: '#1e2329',
+        backgroundColor: '#ffffff',
         borderRadius: '12px',
         width: '90%',
         maxWidth: '600px',
         maxHeight: '90vh',
         display: 'flex',
         flexDirection: 'column',
-        boxShadow: '0 10px 30px rgba(95, 86, 86, 0.3)',
-        border: '1px solidrgb(3, 53, 102)',
-        color: '#ffffff'
+        boxShadow: '0 10px 30px rgba(0, 0, 0, 0.2)',
+        border: '1px solid #dee2e6',
+        color: '#212529'
     };
 
     const headerStyle = {
@@ -172,8 +172,8 @@ const CreateGroupModal = ({ isOpen, onClose, onGroupCreated, currentUser, contac
         justifyContent: 'space-between',
         alignItems: 'center',
         padding: '16px 20px',
-        borderBottom: '1px solidrgb(29, 123, 216)',
-        backgroundColor: '#252a30',
+        borderBottom: '1px solid #e9ecef',
+        backgroundColor: '#f8f9fa',
         borderTopLeftRadius: '12px',
         borderTopRightRadius: '12px'
     };
@@ -182,7 +182,7 @@ const CreateGroupModal = ({ isOpen, onClose, onGroupCreated, currentUser, contac
         background: 'none',
         border: 'none',
         fontSize: '20px',
-        color: '#adb5bd',
+        color: '#6c757d',
         cursor: 'pointer',
         width: '32px',
         height: '32px',
@@ -196,7 +196,7 @@ const CreateGroupModal = ({ isOpen, onClose, onGroupCreated, currentUser, contac
         <div style={overlayStyle}>
             <div style={modalStyle}>
                 <div style={headerStyle}>
-                    <h3 style={{ margin: 0, color: '#fff', fontSize: '18px', fontWeight: 600 }}>
+                    <h3 style={{ margin: 0, color: '#212529', fontSize: '18px', fontWeight: 600 }}>
                         <i className="ri-group-line me-2"></i>Créer un nouveau groupe
                     </h3>
                     <button style={closeButtonStyle} onClick={onClose} aria-label="Fermer">
@@ -204,7 +204,7 @@ const CreateGroupModal = ({ isOpen, onClose, onGroupCreated, currentUser, contac
                     </button>
                 </div>
 
-                <div style={{ padding: '20px', overflowY: 'auto', flex: 1, backgroundColor: '#1e2329' }}>
+                <div style={{ padding: '20px', overflowY: 'auto', flex: 1, backgroundColor: '#ffffff' }}>
                     <form className="row g-3 mt-0">
                         <div className="col-12 mb-3">
                             <div className="d-flex align-items-center">
@@ -214,7 +214,7 @@ const CreateGroupModal = ({ isOpen, onClose, onGroupCreated, currentUser, contac
                                             width: '80px',
                                             height: '80px',
                                             borderRadius: '50%',
-                                            backgroundColor: '#252a30',
+                                            backgroundColor: '#f8f9fa',
                                             display: 'flex',
                                             alignItems: 'center',
                                             justifyContent: 'center',
@@ -223,7 +223,7 @@ const CreateGroupModal = ({ isOpen, onClose, onGroupCreated, currentUser, contac
                                             backgroundPosition: 'center',
                                             color: '#4a6bff',
                                             fontSize: '32px',
-                                            border: '2px solid #2c3034',
+                                            border: '2px solid #dee2e6',
                                             backgroundImage: avatarPreview ? `url(${avatarPreview})` : 'none'
                                         }}
                                     >
@@ -257,8 +257,8 @@ const CreateGroupModal = ({ isOpen, onClose, onGroupCreated, currentUser, contac
                                     </div>
                                 </div>
                                 <div className="flex-grow-1">
-                                    <h5 className="mb-1 text-">Informations du groupe</h5>
-                                    <p className="text-muted small mb-0" style={{ fontSize: '14px' }}>Créez un groupe pour discuter avec plusieurs personnes</p>
+                                    <h5 className="mb-1" style={{ color: '#212529' }}>Informations du groupe</h5>
+                                    <p className="text-muted small mb-0" style={{ fontSize: '14px', color: '#6c757d' }}>Créez un groupe pour discuter avec plusieurs personnes</p>
                                 </div>
                             </div>
                         </div>
@@ -291,13 +291,13 @@ const CreateGroupModal = ({ isOpen, onClose, onGroupCreated, currentUser, contac
                         </div>
 
                         <div className="col-12 mt-4">
-                            <h5 className="mb-3" style={{ color: '#ffffff', fontWeight: 600, fontSize: '18px' }}>
-                                <i className="ri-user-add-line me-2" style={{ color: '#ffffff' }}></i>
-                                <span style={{ color: '#ffffff' }}>Ajouter des membres</span>
+                            <h5 className="mb-3" style={{ color: '#212529', fontWeight: 600, fontSize: '18px' }}>
+                                <i className="ri-user-add-line me-2" style={{ color: '#212529' }}></i>
+                                <span style={{ color: '#212529' }}>Ajouter des membres</span>
                             </h5>
                             <div className="input-group mb-3">
-                                <span className="input-group-text" style={{ backgroundColor: '#343a40', borderColor: '#495057' }}>
-                                    <i className="ri-search-line text-white"></i>
+                                <span className="input-group-text" style={{ backgroundColor: '#f8f9fa', borderColor: '#dee2e6' }}>
+                                    <i className="ri-search-line" style={{ color: '#6c757d' }}></i>
                                 </span>
                                 <input
                                     type="text"
@@ -314,7 +314,7 @@ const CreateGroupModal = ({ isOpen, onClose, onGroupCreated, currentUser, contac
                                         type="button"
                                         onClick={() => setSearchQuery('')}
                                         title="Effacer la recherche"
-                                        style={{ borderColor: '#495057' }}
+                                        style={{ borderColor: '#dee2e6', backgroundColor: '#f8f9fa', color: '#6c757d' }}
                                     >
                                         <i className="ri-close-line"></i>
                                     </button>
@@ -325,18 +325,18 @@ const CreateGroupModal = ({ isOpen, onClose, onGroupCreated, currentUser, contac
                         <div className="col-12">
                             {selectedContacts.length > 0 && (
                                 <div style={{
-                                    backgroundColor: '#252a30',
-                                    borderColor: '#2c3034',
+                                    backgroundColor: '#f8f9fa',
+                                    borderColor: '#dee2e6',
                                     borderRadius: '0.25rem',
                                     marginBottom: '1rem'
                                 }}>
                                     <div style={{
-                                        backgroundColor: '#2c3034',
-                                        borderColor: '#2c3034',
-                                        color: '#e9ecef',
+                                        backgroundColor: '#e9ecef',
+                                        borderColor: '#dee2e6',
+                                        color: '#212529',
                                         fontWeight: 600,
                                         padding: '0.75rem 1.25rem',
-                                        borderBottom: '1px solid #2c3034'
+                                        borderBottom: '1px solid #dee2e6'
                                     }}>
                                         <i className="ri-user-follow-line me-1"></i>
                                         Membres sélectionnés ({selectedContacts.length})
@@ -347,12 +347,12 @@ const CreateGroupModal = ({ isOpen, onClose, onGroupCreated, currentUser, contac
                                                 <div key={contact._id} style={{
                                                     display: 'flex',
                                                     alignItems: 'center',
-                                                    backgroundColor: 'rgba(74, 107, 255, 0.2)',
+                                                    backgroundColor: 'rgba(74, 107, 255, 0.1)',
                                                     borderRadius: '20px',
                                                     padding: '4px 8px 4px 4px',
                                                     fontSize: '13px',
                                                     border: '1px solid rgba(74, 107, 255, 0.3)',
-                                                    color: '#fff'
+                                                    color: '#212529'
                                                 }}>
                                                     <img
                                                         src={
@@ -381,7 +381,7 @@ const CreateGroupModal = ({ isOpen, onClose, onGroupCreated, currentUser, contac
                                                             e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(contact.name || contact.firstName || 'User')}&background=4a6bff&color=fff`;
                                                         }}
                                                     />
-                                                    <span style={{ color: '#fff' }}>{contact.name}</span>
+                                                    <span style={{ color: '#212529' }}>{contact.name}</span>
                                                     <button
                                                         style={{
                                                             background: 'none',
@@ -412,17 +412,17 @@ const CreateGroupModal = ({ isOpen, onClose, onGroupCreated, currentUser, contac
 
                         <div className="col-12">
                             <div style={{
-                                backgroundColor: '#252a30',
-                                borderColor: '#2c3034',
+                                backgroundColor: '#f8f9fa',
+                                borderColor: '#dee2e6',
                                 borderRadius: '0.25rem'
                             }}>
                                 <div style={{
-                                    backgroundColor: '#2c3034',
-                                    borderColor: '#2c3034',
-                                    color: '#e9ecef',
+                                    backgroundColor: '#e9ecef',
+                                    borderColor: '#dee2e6',
+                                    color: '#212529',
                                     fontWeight: 600,
                                     padding: '0.75rem 1.25rem',
-                                    borderBottom: '1px solid #2c3034'
+                                    borderBottom: '1px solid #dee2e6'
                                 }}>
                                     <i className="ri-contacts-line me-1"></i>
                                     Contacts disponibles
@@ -434,14 +434,14 @@ const CreateGroupModal = ({ isOpen, onClose, onGroupCreated, currentUser, contac
                                                 <div key={letter} style={{ marginBottom: 0 }}>
                                                     <div style={{
                                                         padding: '6px 12px',
-                                                        backgroundColor: '#343a40',
+                                                        backgroundColor: '#e9ecef',
                                                         fontSize: '13px',
                                                         fontWeight: 600,
-                                                        color: '#e9ecef',
+                                                        color: '#212529',
                                                         position: 'sticky',
                                                         top: 0,
                                                         zIndex: 1,
-                                                        borderBottom: '1px solid #495057'
+                                                        borderBottom: '1px solid #dee2e6'
                                                     }}>{letter}</div>
                                                     {filteredContacts[letter].map(contact => (
                                                         <div
@@ -452,8 +452,8 @@ const CreateGroupModal = ({ isOpen, onClose, onGroupCreated, currentUser, contac
                                                                 padding: '8px 12px',
                                                                 cursor: 'pointer',
                                                                 transition: 'all 0.2s ease',
-                                                                backgroundColor: selectedContacts.some(c => c._id === contact._id) ? 'rgba(74, 107, 255, 0.2)' : '#252a30',
-                                                                borderBottom: '1px solid rgba(52, 58, 64, 0.5)'
+                                                                backgroundColor: selectedContacts.some(c => c._id === contact._id) ? 'rgba(74, 107, 255, 0.1)' : '#ffffff',
+                                                                borderBottom: '1px solid rgba(222, 226, 230, 0.5)'
                                                             }}
                                                             onClick={() => toggleContactSelection(contact)}
                                                         >
@@ -461,7 +461,7 @@ const CreateGroupModal = ({ isOpen, onClose, onGroupCreated, currentUser, contac
                                                                 width: '20px',
                                                                 height: '20px',
                                                                 borderRadius: '50%',
-                                                                border: '1px solid #343a40',
+                                                                border: '1px solid #dee2e6',
                                                                 marginRight: '10px',
                                                                 display: 'flex',
                                                                 alignItems: 'center',
@@ -493,7 +493,7 @@ const CreateGroupModal = ({ isOpen, onClose, onGroupCreated, currentUser, contac
                                                                     borderRadius: '50%',
                                                                     marginRight: '6px',
                                                                     objectFit: 'cover',
-                                                                    border: '1px solid #2c3034'
+                                                                    border: '1px solid #dee2e6'
                                                                 }}
                                                                 onError={(e) => {
                                                                     console.log("Image error for contact:", contact.name || contact.firstName);

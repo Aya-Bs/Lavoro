@@ -32,36 +32,8 @@ const ChatComponent = () => {
     const [showPopup, setShowPopup] = useState(false);
     const [showCreateGroupModal, setShowCreateGroupModal] = useState(false);
 
-    // Déterminer si le mode sombre est actif
-    const [isDarkMode, setIsDarkMode] = useState(
-        document.documentElement.getAttribute('data-theme-mode') === 'dark'
-    );
-
-    // Mettre à jour isDarkMode lorsque le thème change
-    useEffect(() => {
-        const checkDarkMode = () => {
-            const darkModeEnabled = document.documentElement.getAttribute('data-theme-mode') === 'dark';
-            setIsDarkMode(darkModeEnabled);
-        };
-
-        // Vérifier au chargement
-        checkDarkMode();
-
-        // Observer les changements d'attribut sur l'élément HTML
-        const observer = new MutationObserver(mutations => {
-            mutations.forEach(mutation => {
-                if (mutation.attributeName === 'data-theme-mode') {
-                    checkDarkMode();
-                }
-            });
-        });
-
-        observer.observe(document.documentElement, { attributes: true });
-
-        return () => {
-            observer.disconnect();
-        };
-    }, []);
+    // Always use light mode
+    const isDarkMode = false;
 
     // Get current user from localStorage or fetch from API
     useEffect(() => {
@@ -1677,8 +1649,8 @@ const ChatComponent = () => {
                             <button className="btn btn-white btn-wave" onClick={toggleViewMode}>
                                 <i className="ri-contract-left-right-line align-middle me-1 lh-1"></i> Mode Popup
                             </button>
-                           
-                           
+
+
                         </div>
                     </div>
                     {/* Page Header Close */}

@@ -336,11 +336,11 @@ function SignUp() {
   }
 
   const back = {
-    backgroundColor: "#19191C",
+    backgroundColor: "#FFFFFF",
   }
 
   return (
-    <div >
+    <div  >
       <div className="row authentication authentication-cover-main mx-0">
         <div className="col-xxl-6 col-xl-7">
           <div className="row justify-content-center align-items-center h-100">
@@ -385,7 +385,7 @@ function SignUp() {
                             />
                           </div>
 
-                  <form onSubmit={handleSubmit}>
+                  <form onSubmit={handleSubmit} noValidate>
                     <div className="row gy-3">
                       <div className="col-xl-12">
                         <label htmlFor="signup-fullname" className="form-label text-default">
@@ -545,14 +545,15 @@ function SignUp() {
           <div className="authentication-cover overflow-hidden">
             
             <div className="aunthentication-cover-content d-flex align-items-center justify-content-center">
-              <div>
-                <h3 className="text-fixed-white mb-1 fw-medium">Welcome!</h3>
-                <h6 className="text-fixed-white mb-3 fw-medium">Create Your Account</h6>
-                <p className="text-fixed-white mb-1 op-6">
-                  Welcome to the Admin Dashboard. Please log in to securely manage your administrative tools and oversee
-                  platform activities. Your credentials ensure system integrity and functionality.
-                </p>
-              </div>
+              <img 
+            src="./public/signin.png" // Replace with your GIF URL
+            alt="Project Management Animation"
+            style={{
+              width: '500px',
+              height: '500px',
+              
+            }}
+          />
             </div>
           </div>
         </div>

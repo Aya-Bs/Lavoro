@@ -205,7 +205,7 @@ function SignIn() {
         <div style={popupStyles}>
           <h2>2FA Verification</h2>
           <p>Please enter your 2FA code</p>
-          <form onSubmit={handle2FASubmit}>
+          <form onSubmit={handle2FASubmit} noValidate>
             <div className="input-group">
               <input
                 type="text"
@@ -266,7 +266,7 @@ function SignIn() {
                                     <div className="text-center my-3 authentication-barrier">
                                         <span>OR</span>
                                     </div>
-                                    <form onSubmit={handleSubmit}>
+                                    <form onSubmit={handleSubmit} noValidate>
                                         <div className="row gy-3">
                                             <div className="col-xl-12">
                                                 <label htmlFor="signin-username" className="form-label text-default">
@@ -345,7 +345,7 @@ function SignIn() {
       
           {/* Alternative GIF URLs */}
           <img 
-            src="./public/signin.png" // Replace with your GIF URL
+            src="./public/signup.png" // Replace with your GIF URL
             alt="Project Management Animation"
             style={{
               width: '500px',
@@ -379,7 +379,7 @@ function SignIn() {
                     <button type="button" className="btn btn-secondary" onClick={() => setShow2FAPopup(false)}>
                       Cancel
                     </button>
-                    <button type="button" className="btn btn-primary" onClick={handle2FASubmit}>
+                    <button type="button" className="btn btn-primary" onClick={handle2FASubmit} noValidate>
                       Verify
                     </button>
                   </div>

@@ -450,52 +450,29 @@ const ChatWindow = ({ chat = {}, messages = [], currentUser = {}, onSendMessage,
         ? (chat.user && chat.user.status ? chat.user.status : 'offline')
         : '';
 
-    // Déterminer si le mode sombre est actif
-    const [isDarkMode, setIsDarkMode] = useState(
-        document.documentElement.getAttribute('data-theme-mode') === 'dark'
-    );
+    // Always use light mode
+    const isDarkMode = false;
 
-    // Mettre à jour isDarkMode lorsque le thème change
-    useEffect(() => {
-        const checkDarkMode = () => {
-            const darkModeEnabled = document.documentElement.getAttribute('data-theme-mode') === 'dark';
-            setIsDarkMode(darkModeEnabled);
-        };
-
-        // Vérifier au chargement
-        checkDarkMode();
-
-        // Observer les changements d'attribut sur l'élément HTML
-        const observer = new MutationObserver(mutations => {
-            mutations.forEach(mutation => {
-                if (mutation.attributeName === 'data-theme-mode') {
-                    checkDarkMode();
-                }
-            });
-        });
-
-        observer.observe(document.documentElement, { attributes: true });
-
-        return () => {
-            observer.disconnect();
-        };
-    }, []);
-
-    // Styles pour le mode sombre
+    // Light mode styles (not actually used since we're setting isDarkMode to false)
     const darkModeStyles = {
-        backgroundColor: '#212529',
-        color: '#dee2e6',
-        borderColor: '#495057'
+        backgroundColor: '#ffffff',
+        color: '#212529',
+        borderColor: '#dee2e6'
     };
 
     return (
-        <div className="chat-window border d-flex flex-column" style={isDarkMode ? darkModeStyles : {}}>
+        <div className="chat-window border d-flex flex-column" style={{
+            backgroundColor: '#ffffff',
+            color: '#212529',
+            borderColor: '#dee2e6'
+        }}>
             {/* Chat Header - Improved design */}
             <div className="chat-header" style={{
-                ...(isDarkMode ? darkModeStyles : {}),
-                borderBottom: isDarkMode ? '1px solid #495057' : '1px solid #e9ecef',
+                backgroundColor: '#ffffff',
+                color: '#212529',
+                borderBottom: '1px solid #e9ecef',
                 padding: '15px 20px',
-                boxShadow: isDarkMode ? '0 2px 8px rgba(255, 255, 255, 0.2)' : '0 2px 8px rgba(255, 255, 255, 0.05)',
+                boxShadow: '0 2px 8px rgba(0, 0, 0, 0.05)',
                 position: 'relative',
                 zIndex: 10
             }}>
@@ -1014,9 +991,9 @@ const ChatWindow = ({ chat = {}, messages = [], currentUser = {}, onSendMessage,
                             height: '45px',
                             fontSize: '1rem',
                             padding: '10px 15px',
-                            backgroundColor: isDarkMode ? '#212529' : '',
-                            color: isDarkMode ? '#dee2e6' : '',
-                            borderColor: isDarkMode ? '#495057' : ''
+                            backgroundColor: '#ffffff',
+                            color: '#212529',
+                            borderColor: '#dee2e6'
                         }}
                     />
                     <button
