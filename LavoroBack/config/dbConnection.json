@@ -1,3 +1,3 @@
 {
-    "url":"mongodb://127.0.0.1:27017/lavoro"
+    "url":"mongodb+srv://ayaboukhriis:YnQYldEAtD4Ht6zg@cluster0.hpwaskn.mongodb.net/lavoro?retryWrites=true&w=majority"
 }
