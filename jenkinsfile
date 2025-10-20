@@ -42,11 +42,26 @@ pipeline {
             steps {
                 script {
                     echo "🔍 Starting SonarQube analysis..."
-                    // Use the SonarQube server configuration from Jenkins
-                    // The name should match what you configured in Jenkins System Configuration
-                    withSonarQubeEnv('sonar-token') {
-                        sh 'sonar-scanner'
+                    
+                    // Check if sonar-scanner is available
+                    def scannerAvailable = sh(script: 'which sonar-scanner', returnStatus: true) == 0
+                    
+                    if (!scannerAvailable) {
+                        // Try to use the downloaded sonar-scanner
+                        echo "📦 Using local sonar-scanner installation..."
+                        def scannerPath = sh(script: 'find . -name "sonar-scanner-*" -type d | head -1', returnStdout: true).trim()
+                        if (scannerPath) {
+                            echo "✅ Found sonar-scanner at: ${scannerPath}"
+                            sh "${scannerPath}/bin/sonar-scanner -Dsonar.login=sonar-token"
+                        } else {
+                            error("❌ No sonar-scanner found. Please install sonar-scanner or configure it in Jenkins.")
+                        }
+                    } else {
+                        // Use system sonar-scanner with authentication token
+                        echo "🔧 Using system sonar-scanner..."
+                        sh 'sonar-scanner -Dsonar.login=sonar-token'
                     }
+                    
                     echo "✅ SonarQube analysis completed successfully!"
                 }
             }
