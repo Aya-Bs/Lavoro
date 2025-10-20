@@ -2,219 +2,91 @@ pipeline {
     agent any
 
     environment {
-        registryCredentials = "Nexus" // Identifiants pour Nexus
-        registry = "192.168.50.4:8083" // Adresse du registre Docker (Nexus)
-        nexusUrl = "192.168.50.4:8081" // Adresse de l'interface Nexus
+        SONAR_HOST_URL = "http://192.168.50.4:9000"
     }
 
     stages {
-        // Stage 1: Install dependencies for both backend and frontend
-        stage('Install dependencies') {
+        // Stage 1: Checkout source code
+        stage('Checkout Source Code') {
             steps {
                 script {
-                    try {
-                        sh 'cd LavoroBack && npm install'
-                        sh 'cd LavoroFront && npm install'
-                    } catch (error) {
-                        echo "Error installing dependencies: ${error}"
-                        currentBuild.result = 'FAILURE'
-                        throw new Exception("Failed to install dependencies")
+                    echo "🔄 Checking out source code from GitHub..."
+                    git branch: 'main', url: 'https://github.com/Aya-Bs/Lavoro.git'
+                    echo "✅ Source code checkout completed"
+                }
+            }
+        }
+
+        // Stage 2: Verify workspace and files
+        stage('Verify Project Structure') {
+            steps {
+                script {
+                    echo "📁 Current workspace contents:"
+                    sh 'ls -la'
+                    
+                    echo "🔍 Checking for required files..."
+                    
+                    if (fileExists('sonar-project.properties')) {
+                        echo "✅ sonar-project.properties found"
+                        echo "📄 sonar-project.properties content:"
+                        sh 'head -10 sonar-project.properties'
+                    } else {
+                        error("❌ sonar-project.properties file is required for SonarQube analysis")
                     }
                 }
             }
         }
 
-        // Stage 2: Run unit tests (Backend only)
-        stage('Unit Test') {
+        // Stage 3: SonarQube Analysis
+        stage('SonarQube Analysis') {
             steps {
                 script {
-                    try {
-                        // Vérifier si le script test existe
-                        def hasTestScript = sh(script: 'cd LavoroBack && npm run | grep -q "test"', returnStatus: true) == 0
-
-                        if (hasTestScript) {
-                            sh 'cd LavoroBack && npm test'
-                        } else {
-                            echo "Warning: No test script found in package.json. Skipping tests."
-                        }
-                    } catch (Exception e) {
-                        echo "Error running unit tests: ${e}"
-                        currentBuild.result = 'FAILURE'
-                        throw new Exception("Unit tests failed")
+                    echo "🔍 Starting SonarQube analysis..."
+                    // Utiliser l'installation SonarQube configurée globalement dans Jenkins
+                    withSonarQubeEnv('SonarQube') {
+                        sh 'sonar-scanner'
                     }
+                    echo "✅ SonarQube analysis completed successfully!"
                 }
             }
-        }
-
-        // Stage 3: Build application (Backend and Frontend)
-        stage('Build application') {
-            steps {
-                script {
-                    try {
-                        // Build backend
-                        sh 'cd LavoroBack && npm run build-dev || echo "No build-dev script found, skipping backend build"'
-
-                        // Build frontend
-                        sh 'cd LavoroFront && npm run build'
-                    } catch (error) {
-                        echo "Error building application: ${error}"
-                        currentBuild.result = 'FAILURE'
-                        throw new Exception("Build failed")
-                    }
-                }
-            }
-        }
-
-        // Stage 4: SonarQube Analysis
-      stage('SonarQube Analysis') {
-            steps {
-                script {
-                    def scannerHome = tool 'scanner'
-                    withSonarQubeEnv('scanner') { // Nom correct de l'installation SonarQube dans Jenkins
-                        sh "${scannerHome}/bin/sonar-scanner"
-                    }
-                }
-            }
-        }
-
-        // Stage 5: Building Docker images
-        stage('Building Docker images') {
-          steps{
-                    script {
-                            sh('docker-compose build')
-                                    }
-                        }
-        }
-
-        // Stage 6: Deploy to Nexus
-stage('Deploy to Nexus') {
-                        steps{
-                           script {
-                               try {
-                                   // Debug information
-                                   echo "Starting Nexus deployment with registry: ${registry}"
-                                   echo "Nexus UI is at: http://${nexusUrl}"
-                                   sh "docker images | grep ${registry}/nodemongoapp"
-
-                                   // Test connectivity to Nexus UI
-                                   sh "curl -s -f http://${nexusUrl} > /dev/null || (echo 'Cannot connect to Nexus UI' && exit 1)"
-                                   echo "Successfully connected to Nexus UI"
-
-                                   // Test connectivity to Docker registry
-                                   echo "Testing connectivity to Docker registry at http://${registry}"
-                                   sh "curl -s -f http://${registry} || echo 'Warning: Cannot connect directly to Docker registry port'"
-
-                                   // Check if Docker daemon is configured for insecure registries
-                                   sh "docker info | grep 'Insecure Registries'"
-
-                                   // Check disk space
-                                   echo "Checking available disk space"
-                                   sh "df -h"
-
-                                   // ALTERNATIVE APPROACH: Configure Docker daemon for insecure registry
-                                   echo "Trying alternative approach: Configure Docker for insecure registry"
-
-                                   withCredentials([usernamePassword(credentialsId: registryCredentials,
-                                                                  usernameVariable: 'NEXUS_USER',
-                                                                  passwordVariable: 'NEXUS_PASS')]) {
-                                       // Try to create/update Docker daemon.json to allow insecure registry
-                                       echo "Attempting to configure Docker daemon for insecure registry"
-
-                                       // Check if we have permission to modify Docker config
-                                       sh "touch /tmp/test_docker_config_permission || echo 'Cannot write to /tmp'"
-
-                                       // Try direct push with explicit login
-                                       echo "Trying direct push with explicit credentials"
-                                       sh "echo \${NEXUS_PASS} | docker login -u \${NEXUS_USER} --password-stdin http://${registry} || echo 'Login failed but continuing'"
-                                       sh "docker push ${registry}/nodemongoapp:5.0 || echo 'Push failed but continuing'"
-
-                                       // Try with a different tag as a last resort
-                                       echo "Trying with a different tag as last resort"
-                                       sh "docker tag ${registry}/nodemongoapp:5.0 ${registry}/nodemongoapp:latest"
-                                       sh "docker push ${registry}/nodemongoapp:latest || echo 'Push with latest tag also failed'"
-                                   }
-
-                                   echo "Deployment process completed. Check logs for success/failure details."
-                               } catch (Exception e) {
-                                   echo "ERROR: Failed to push to Nexus: ${e.getMessage()}"
-
-                                   // Detailed diagnostic information
-                                   echo "\n==== DETAILED DIAGNOSTICS ===="
-                                   echo "1. Disk Space (Critical Issue Detected):"
-                                   sh "df -h"
-                                   sh "du -sh /var/* | sort -hr | head -10 || echo 'Cannot check directory sizes'"
-
-                                   echo "\n2. Docker Images and Disk Usage:"
-                                   sh "docker images"
-                                   sh "docker system df"
-
-                                   echo "\n3. Docker Info:"
-                                   sh "docker info"
-
-                                   echo "\n4. Network Connectivity to Nexus:"
-                                   sh "ping -c 3 192.168.50.4 || echo 'Ping failed'"
-                                   sh "curl -v http://${nexusUrl} || echo 'Cannot connect to Nexus UI'"
-                                   sh "curl -v http://${registry} || echo 'Cannot connect to Docker registry'"
-
-                                   echo "\n5. Nexus Container Status:"
-                                   sh "docker ps | grep -E 'nexus|sonar' || echo 'No Nexus container found'"
-
-                                   echo "\n==== TROUBLESHOOTING TIPS ===="
-                                   echo "1. DISK SPACE ISSUE: Free up disk space on the Jenkins server"
-                                   echo "   - Run: docker system prune -a"
-                                   echo "   - Run: docker volume prune"
-                                   echo "   - Remove old builds: rm -rf /var/jenkins_home/jobs/*/builds/*/archive"
-
-                                   echo "\n2. DOCKER REGISTRY ISSUES:"
-                                   echo "   - Verify Nexus Docker registry is enabled and running on port 8083"
-                                   echo "   - Check Nexus container port mappings: docker port <nexus-container-id>"
-                                   echo "   - Configure Docker for insecure registry: add '${registry}' to insecure-registries"
-                                   echo "   - Restart Docker after configuration changes: systemctl restart docker"
-
-                                   currentBuild.result = 'FAILURE'
-                                   error "Failed to deploy to Nexus. See diagnostics above."
-                               }
-                           }
-                        }
-                    }
-        // Stage 7: Run application
-        stage('Run application') {
-            steps {
-                script {
-                    try {
-                        echo "Starting application deployment"
-
-                        // Use the same registry and tag as in previous stages
-                        withCredentials([usernamePassword(credentialsId: registryCredentials,
-                                                      usernameVariable: 'NEXUS_USER',
-                                                      passwordVariable: 'NEXUS_PASS')]) {
-                            // Pull the image we just pushed
-                            echo "Pulling image from registry"
-                            sh "docker pull ${registry}/nodemongoapp:5.0 || echo 'Pull failed, using local image'"
-
-                            // Start the application with docker-compose
-                            echo "Starting application with docker-compose"
-                            sh "docker-compose up -d"
-                            echo "Application started successfully"
-                        }
-                    } catch (Exception e) {
-                        echo "ERROR: Failed to run application: ${e.getMessage()}"
-                        currentBuild.result = 'FAILURE'
-                        error "Failed to run application. See logs for details."
-                    }
-                }
-            }
-        }
-
-    } // Fin du bloc stages
-
-    // Gestion des échecs
-    post {
-        failure {
-            echo "Pipeline failed. Check the logs for more details."
-        }
-        success {
-            echo "Pipeline succeeded. Deployment completed."
         }
     }
-} // Fin du pipeline
+
+    post {
+        always {
+            script {
+                // Only wait for Quality Gate if SonarQube analysis was successful
+                if (currentBuild.result == null || currentBuild.result == 'SUCCESS') {
+                    try {
+                        echo "⏳ Waiting for SonarQube Quality Gate..."
+                        timeout(time: 10, unit: 'MINUTES') {
+                            def qg = waitForQualityGate()
+                            echo "🎯 Quality Gate result: ${qg.status}"
+                            if (qg.status != 'OK') {
+                                currentBuild.result = 'UNSTABLE'
+                            }
+                        }
+                    } catch (Exception e) {
+                        echo "⚠️ Could not wait for Quality Gate: ${e.getMessage()}"
+                        echo "Please check SonarQube dashboard manually at: ${SONAR_HOST_URL}"
+                    }
+                }
+            }
+        }
+        success {
+            echo "🎉 Pipeline completed successfully!"
+            echo "🔍 View SonarQube results at: ${SONAR_HOST_URL}/dashboard?id=nodeapp"
+        }
+        failure {
+            echo "💥 Pipeline failed. Check the logs above for details."
+            echo "💡 Possible solutions:"
+            echo "  1. Configure SonarQube Scanner in Jenkins (Manage Jenkins -> Global Tool Configuration)"
+            echo "  2. Install sonar-scanner on the Jenkins agent"
+            echo "  3. Check SonarQube server connectivity at ${SONAR_HOST_URL}"
+        }
+        unstable {
+            echo "⚠️ Pipeline completed with warnings (Quality Gate issues)."
+            echo "🔍 Check SonarQube dashboard at: ${SONAR_HOST_URL}/dashboard?id=nodeapp"
+        }
+    }
+}
