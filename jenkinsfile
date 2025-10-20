@@ -42,8 +42,9 @@ pipeline {
             steps {
                 script {
                     echo "🔍 Starting SonarQube analysis..."
-                    // Utiliser l'installation SonarQube configurée globalement dans Jenkins
-                    withSonarQubeEnv('SonarQube') {
+                    // Use the SonarQube server configuration from Jenkins
+                    // The name should match what you configured in Jenkins System Configuration
+                    withSonarQubeEnv('sonar-token') {
                         sh 'sonar-scanner'
                     }
                     echo "✅ SonarQube analysis completed successfully!"
