@@ -43,26 +43,57 @@ pipeline {
                 script {
                     echo "🔍 Starting SonarQube analysis..."
                     
-                    // Check if sonar-scanner is available
-                    def scannerAvailable = sh(script: 'which sonar-scanner', returnStatus: true) == 0
+                    // Check Java version compatibility
+                    def javaVersion = sh(script: 'java -version 2>&1 | head -1', returnStdout: true).trim()
+                    echo "☕ Current Java version: ${javaVersion}"
                     
-                    if (!scannerAvailable) {
-                        // Try to use the downloaded sonar-scanner
-                        echo "📦 Using local sonar-scanner installation..."
-                        def scannerPath = sh(script: 'find . -name "sonar-scanner-*" -type d | head -1', returnStdout: true).trim()
-                        if (scannerPath) {
-                            echo "✅ Found sonar-scanner at: ${scannerPath}"
-                            sh "${scannerPath}/bin/sonar-scanner -Dsonar.login=sonar-token"
+                    try {
+                        // First, try to use a compatible local scanner (older version)
+                        echo "📦 Trying local sonar-scanner installations..."
+                        def scanner470Path = "./sonar-scanner-4.7.0.2747"
+                        def scanner480Path = "./sonar-scanner-4.8.0.2856"
+                        
+                        if (fileExists("${scanner470Path}/bin/sonar-scanner")) {
+                            echo "✅ Using SonarQube Scanner 4.7.0 (Java 11 compatible)"
+                            sh "${scanner470Path}/bin/sonar-scanner -Dsonar.login=sonar-token -Dsonar.verbose=true"
+                        } else if (fileExists("${scanner480Path}/bin/sonar-scanner")) {
+                            echo "✅ Using SonarQube Scanner 4.8.0"
+                            sh "${scanner480Path}/bin/sonar-scanner -Dsonar.login=sonar-token -Dsonar.verbose=true"
                         } else {
-                            error("❌ No sonar-scanner found. Please install sonar-scanner or configure it in Jenkins.")
+                            // Fallback to system scanner with Java version check
+                            echo "🔧 Using system sonar-scanner with compatibility handling..."
+                            
+                            // Try to set JAVA_HOME to a compatible version if available
+                            def java17Available = sh(script: 'which java17 || which java-17', returnStatus: true) == 0
+                            
+                            if (java17Available) {
+                                echo "☕ Found Java 17, using it for SonarQube analysis..."
+                                sh '''
+                                    export JAVA_HOME=$(dirname $(dirname $(which java17 || which java-17)))
+                                    export PATH=$JAVA_HOME/bin:$PATH
+                                    java -version
+                                    sonar-scanner -Dsonar.login=sonar-token -Dsonar.verbose=true
+                                '''
+                            } else {
+                                echo "⚠️ Java 17 not found, trying with current Java version..."
+                                sh 'sonar-scanner -Dsonar.login=sonar-token -Dsonar.verbose=true'
+                            }
                         }
-                    } else {
-                        // Use system sonar-scanner with authentication token
-                        echo "🔧 Using system sonar-scanner..."
-                        sh 'sonar-scanner -Dsonar.login=sonar-token'
+                        
+                        echo "✅ SonarQube analysis completed successfully!"
+                        
+                    } catch (Exception e) {
+                        echo "❌ SonarQube analysis failed: ${e.getMessage()}"
+                        echo "💡 This is likely due to Java version compatibility issues."
+                        echo "🔧 Your SonarQube server requires Java 17, but Jenkins is running Java 11."
+                        echo "📋 Possible solutions:"
+                        echo "   1. Install Java 17 on your Jenkins agent"
+                        echo "   2. Downgrade your SonarQube server to a version compatible with Java 11"
+                        echo "   3. Use a Docker-based SonarQube scanner with Java 17"
+                        
+                        // Don't fail the pipeline completely, mark as unstable
+                        currentBuild.result = 'UNSTABLE'
                     }
-                    
-                    echo "✅ SonarQube analysis completed successfully!"
                 }
             }
         }
