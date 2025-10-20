@@ -55,12 +55,12 @@ pipeline {
                         
                         if (fileExists("${scanner470Path}/bin/sonar-scanner")) {
                             echo "✅ Using SonarQube Scanner 4.7.0 (Java 11 compatible)"
-                            // Replace 'YOUR_ACTUAL_TOKEN_HERE' with the token you generated from SonarQube
-                            sh "${scanner470Path}/bin/sonar-scanner -Dsonar.token=YOUR_ACTUAL_TOKEN_HERE -Dsonar.verbose=true"
+                            // Using the generated SonarQube token
+                            sh "${scanner470Path}/bin/sonar-scanner -Dsonar.token=squ_82e7677f348761f3f5d985be099af4348abe7615 -Dsonar.verbose=true"
                         } else if (fileExists("${scanner480Path}/bin/sonar-scanner")) {
                             echo "✅ Using SonarQube Scanner 4.8.0"
-                            // Replace 'YOUR_ACTUAL_TOKEN_HERE' with the token you generated from SonarQube
-                            sh "${scanner480Path}/bin/sonar-scanner -Dsonar.token=YOUR_ACTUAL_TOKEN_HERE -Dsonar.verbose=true"
+                            // Using the generated SonarQube token
+                            sh "${scanner480Path}/bin/sonar-scanner -Dsonar.token=squ_82e7677f348761f3f5d985be099af4348abe7615 -Dsonar.verbose=true"
                         } else {
                             // Fallback to system scanner with Java version check
                             echo "🔧 Using system sonar-scanner with compatibility handling..."
@@ -78,7 +78,7 @@ pipeline {
                                 '''
                             } else {
                                 echo "⚠️ Java 17 not found, trying with current Java version..."
-                                sh 'sonar-scanner -Dsonar.token=YOUR_ACTUAL_TOKEN_HERE -Dsonar.verbose=true'
+                                sh 'sonar-scanner -Dsonar.token=squ_82e7677f348761f3f5d985be099af4348abe7615 -Dsonar.verbose=true'
                             }
                         }
                         
